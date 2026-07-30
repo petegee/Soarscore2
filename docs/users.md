@@ -67,7 +67,7 @@ result. Highest privilege; often the same person as the Organiser in practice.
 
 **One Scorer per competitor**, not a single central operator. During a group's
 working time each flying pilot has a Scorer standing beside them who records that
-pilot's task metrics on a device — times, landings, laps, heights, motor runs,
+pilot's task metrics — times, landings, laps, heights, motor runs,
 penalties.
 
 **Key needs**
@@ -89,6 +89,6 @@ penalties.
 ### 5. Pilot / Competitor
 
 The reason the contest exists. In the MVP the pilot does **not enter their own
-data** — their flight result is recorded on a device by the Scorer beside them, and
+data** — their flight result is recorded by the Scorer beside them, and
 the pilot *reads* the draw and results. Pilots do **not** self-score (a conflict of
 interest), so they remain an indirect user by design.

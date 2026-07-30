@@ -3,6 +3,7 @@
 ## Core Principles
  - System is headless only
  - Hexagonal architecture
+ - SOLID
  - Domain Driven Design
  - Lean and Focused
  - Testable by design
@@ -12,7 +13,7 @@
  - Append only immutable log as state storage (Event Sourced)
  - CQRS pattern to cleanly seperate Reads from Writes
  - Commands and Queries only
- - Immutability as core princple
+ - Functional-Like as a Core Princple
 
  ### Headless
 The system must be headless in nature. It must not offer a UI or alternative interaction.
@@ -24,9 +25,17 @@ The layers should be:
  2, Application: exposes Ports, contains domain services, and use cases, state management
  3, Domain: Contains the aggregate roots, and their entities/value objects
 
+### SOLID
+It should try to maintain SOLID principes, but we care more about (SLID): 
+ - Single Responsibilty - Single reason to change.
+ - Liskov Substitution Principle - Subtypes must be substitutable for their base types without altering the correctness of the program.
+ - Interface Segregation Principle - Clients should not be forced to depend on methods they do not use.
+ - Dependency Inversion Principle - "Dont ask, we'll tell you"
+
 ### Domain Driven Design
 Domain-Driven Design (DDD) is a software development approach that aligns code structure with 
-real business needs by modeling software around a specific domain using a shared vocabulary.
+real business needs by modeling software around a specific domain using a shared vocabulary. The 
+Domain layer must have **NO** dependencies.
 
 ### Lean and Focused
 This system is to be as light weight and as un-opinionated as possible to allow maximum 
@@ -41,6 +50,14 @@ All functionality must be verifiable by test which are:
  - isolated - Tests must not depend on each other
  - Be able to be driven without HTTP testing tools
  - NO UI TESTING
+
+ Tests must not have unessessary knowledge of the structure of the code they're testing. 
+ Eg Black-Box sociable style tests.
+
+#### Overlapping Socialable Testing is preferred
+We prefer to minimise solitary style white-box testing and mocking, and instead choose to 
+do overlapping sociable black-box style tests verifing behaviour without "double-encoding"
+the structure and dependencies of the application.
 
 ### System assumes no specific external UX requirements
 We do not let external parties shape this system. It is the core kernel of a wider integrated 
@@ -72,6 +89,13 @@ The mechanisms to do queries must be separate from the mechanism which does stat
 The application layer only supports either Commands or Queries. These are dispatched via a 
 mediator pattern. This dove-tails nicely with intent-based APIs.
 
-### Immutability as core princple
-The system code should design for, create, treat object instances as immutable. The application
-should be as functional like as possible.  
+### Functional-Like as a Core Princple
+The system code should borrow core concepts of functional programming (but not necessarily 
+use a functional language). The principles we choose to apply are:
+ - Immutability. Data is immutable, meaning once a value is assigned, it cannot be changed.
+ - Pure functions where possible. A pure function always produces the same output for the 
+   same input. It does not have side effects.
+ - Function Composition. Functions can be combined to build more complex functions.
+ - Declarative Style. The focus is on what to solve rather than how to solve it.
+ - Avoiding Side Effects. Functions should not produce side effects that affect 
+   the program's state outside their scope

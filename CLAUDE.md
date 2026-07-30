@@ -7,9 +7,9 @@ size and each addition should be justifiable. If something here goes stale, fix 
 ## What this is
 
 Soarscore is a **scoring and running system for radio-control glider
-competitions** (FAI classes F3B, F3J, F3K, F5J, F5K, F5L). It manages master
-data, competition setup, fair round-by-round draws, live on-device score
-capture, mid-contest adjustments, and results reporting.
+competitions** (FAI classes F3B, F3J, F3K, F5J, F5K, F5L, ALES Radian etc). It manages master
+data, competition setup, fair round-by-round draws, raw score capture, score calculation, 
+and results reporting.
 
 The fundamental domain concept glossary is here: docs/soaring-domain-glossary.md 
 No new concepts should be added; always stop and surface to the user any new
@@ -17,8 +17,12 @@ concepts and justification for adding them. Do not add to the glossary without
 explicit approval.
 
 
-## Project status
+## Docs Ground Rules
+ - Agents MUST NOT update the docs/rules section
+ - Agents must not add transient information to anything /docs
+ - Agents must ask the user before adding anything in /docs
 
+## Project status
 Currently under active green-field development. There are no current users, 
 and no existing real data that needs to be preserved, or migrated.
 
@@ -27,7 +31,6 @@ TBC
 
 
 ## Domain in one screen
-
 Domain diagram is here: docs/soaring-domain-class-diagram.md - as with the glossary
 this cannot be changed without approval.
 

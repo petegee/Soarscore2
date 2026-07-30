@@ -17,8 +17,8 @@ Drawing them per-aggregate exposes a problem the whole-model diagram hides: the
 composition spine is ten deep, and if all of it lives inside **Competition**,
 then the entire event — every flight, every raw measurement — is one aggregate.
 Its lower half (**Entry → Flight → Measurement → Amendment**) is written *live*
-by the timing devices, at high volume and high concurrency. Keeping that inside
-Competition means every device write must load and lock the whole event.
+by the scorers, at high concurrency. Keeping that inside
+Competition means every score update must load and lock the whole event.
 
 So the model pushes toward a **fourth root: Entry** — the unit of live capture.
 Split out and referenced from Group by id, each pilot's working-time record
@@ -222,15 +222,15 @@ classDiagram
 
 ---
 
-## 4. Entry — the live flying record *(recommended fourth root)*
+## 4. Entry — the live flying record
 
 One competitor's working-time window and everything captured in it. This is what
-the timing devices write to: an ordered list of Flights, each with raw
+the scorers directly update: an ordered list of Flights, each with raw
 Measurements (append-only, corrected by Amendments, never overwritten). A
 reflight is simply a second Entry pointing at whichever Group flew it. Isolating
-this as its own aggregate is what keeps concurrent device writes from contending.
+this as its own aggregate is what keeps concurrent scorer writes from contending.
 `competitorRef` identifies the Competitor registration inside the Competition
-aggregate — the record that carries the competitor number the devices tag
+aggregate — the record that carries the competitor number the scorers name/id
 captures with, and the link back to the Person. Referencing an internal entity
 of another aggregate by id is fine here (precedent: `groupRef`) because Entry
 only ever holds the id — any mutation of a Competitor still goes through the
