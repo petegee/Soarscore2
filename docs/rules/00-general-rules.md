@@ -18,8 +18,7 @@ limits, flying-site geometry and roles are out of scope.
 > **frequency-management** rules (per-pilot frequency allocation, and the
 > frequency-based grouping that F3B/F3J/F3K use — "frequency follows frequency")
 > described in this family are retained as **sport reference** but are **out of
-> MVP software scope**. They return when those capabilities are built — see
-> [Future Enhancements](../high-level-requirements.md#future-enhancements).
+> MVP software scope**. 
 
 **Sources.** FAI Sporting Code Section 4: *CIAM General Rules* (2026, refs `C.x`);
 *Volume F3 Soaring* (2025 v2, refs `F3x.x`); *Volume F5 Electric* (2026 ed.2, refs
