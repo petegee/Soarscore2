@@ -1,26 +1,20 @@
 # RC Soaring Competitions — Domain Class Diagram
 
-Class diagram for the RC soaring timing and scoring domain model. Captures the
-compositional spine (Competition down to Measurement), the reference-data side
-(CompetitionClass and its rule policies), and the scoring service as pure
-derivation over raw data.
+Class diagrams for the RC soaring timing and scoring domain model. Three views:
+the compositional spine (Competition down to Measurement), the Competition Class
+structure (phases and tasks), and the scoring vocabulary a class composes its
+arithmetic from.
+
+The class model carries all per-class variance (NFR-1). Nothing in the spine
+branches on which class is being run.
+
+---
+
+## 1. The competition spine
 
 ```mermaid
 classDiagram
     direction TB
-
-    class CompetitionClass {
-        <<aggregate root>>
-        +string faiDesignation
-        +TaskMode taskMode
-        +MetricSchema metricsSchema
-        +RoundRules roundRules
-        +GroupRules groupRules
-        +HeightTable heightBonusPenalty
-        +LandingPointsTable landingPoints
-        +FlightTimeRules flightTimeRules
-        +PenaltyCatalogue penaltyCosts
-    }
 
     class Competition {
         <<aggregate root>>
@@ -28,7 +22,43 @@ classDiagram
         +string location
         +date startDate
         +date endDate
-        +string pinnedRuleVersion
+        +string evaluatorVersion
+    }
+
+    class AdoptedRules {
+        <<value object>>
+        +ClassDefinition definition
+        +string sourceClassId
+        +string sourceVersion
+        +timestamp adoptedAt
+    }
+
+    class RulesAmendment {
+        +ClassDefinition definition
+        +string reason
+        +string by
+        +timestamp at
+    }
+
+    class ParameterBinding {
+        +string parameterName
+        +MeasuredValue boundValue
+        +string by
+        +timestamp at
+    }
+
+    class Finalisation {
+        +FinalisationScope scope
+        +int revision
+        +string by
+        +timestamp at
+    }
+
+    class DeclaredResult {
+        +competitorId competitorRef
+        +decimal aggregate
+        +int placing
+        +bool promoted
     }
 
     class Person {
@@ -47,6 +77,7 @@ classDiagram
 
     class Phase {
         +PhaseType type
+        +int ordinal
     }
 
     class Draw {
@@ -62,12 +93,7 @@ classDiagram
     class TaskRound {
         +int ordinal
         +TaskRoundState state
-    }
-
-    class Task {
-        +string name
-        +string kind
-        +MetricDefinition metrics
+        +taskId taskRef
     }
 
     class Group {
@@ -75,7 +101,9 @@ classDiagram
     }
 
     class Entry {
+        <<aggregate root>>
         +TimeWindow workingTime
+        +ReflightRole role
     }
 
     class Flight {
@@ -84,13 +112,20 @@ classDiagram
     }
 
     class Measurement {
-        +string type
-        +decimal value
+        +string metric
+        +MeasuredValue value
         +timestamp capturedAt
     }
 
+    class MeasuredValue {
+        <<value object>>
+        +MeasuredKind kind
+        +decimal number
+        +bool flag
+    }
+
     class Amendment {
-        +decimal newValue
+        +MeasuredValue newValue
         +string reason
         +string by
         +timestamp at
@@ -101,35 +136,14 @@ classDiagram
         +PenaltyScope scope
     }
 
-    class DropPolicy {
-        <<value object>>
-        +DropDimension dimension
-        +int threshold
-    }
-
-    class ReflightRule {
-        <<value object>>
-        +ReflightStrategy strategy
-    }
-
     class ClubAffiliation {
         <<value object>>
         +string clubName
         +string membershipNumber
     }
 
-    class ScoringService {
-        <<domain service>>
-        +interpretEntry(Entry) TaskResult
-        +selectScoringEntry(Competitor, TaskRound) Entry
-        +normaliseGroup(Group) GroupResult
-        +aggregate(Competitor) ScoreResult
-    }
-
-    class ScoreResult {
-        <<derived>>
-        +decimal normalisedScore
-        +int placing
+    class CompetitionClass {
+        <<aggregate root>>
     }
 
     class PhaseType {
@@ -154,11 +168,159 @@ classDiagram
         Competition
     }
 
-    class TaskMode {
+    class MeasuredKind {
         <<enumeration>>
-        SingleTask
-        SimpleMultiTask
-        ComplexMultiTask
+        Number
+        Flag
+    }
+
+    class ReflightRole {
+        <<enumeration>>
+        Original
+        Entitled
+        Filler
+    }
+
+    class FinalisationScope {
+        <<enumeration>>
+        Phase
+        Competition
+    }
+
+    Competition "1" *-- "1" AdoptedRules : rulebook snapshot
+    Competition "1" *-- "0..*" RulesAmendment : corrections
+    Competition "1" *-- "0..*" ParameterBinding : choices made
+    Competition "1" *-- "0..*" Finalisation : declared results
+    Finalisation "1" *-- "1..*" DeclaredResult
+    Competition "1" *-- "0..*" Competitor : field
+    Competition "1" *-- "1..*" Phase : has
+    Competition "1" *-- "0..*" Penalty : records
+    Phase "1" *-- "1..*" Round : has
+    Round "1" *-- "1..*" TaskRound : has
+    TaskRound "1" *-- "1..*" Group : divided into
+    Entry "1" *-- "1..*" Flight : contains
+    Flight "1" *-- "1..*" Measurement : captures
+    Measurement "1" *-- "1" MeasuredValue
+    Measurement "1" *-- "0..*" Amendment : corrected by
+    Entry "1" *-- "0..*" Penalty : flight / entry scope
+
+    Competitor "*" --> "1" Person : registration of
+    Person "1" *-- "0..1" ClubAffiliation : club
+    Phase "1" --> "1" Draw : organised by
+    Draw "1" --> "2..*" Competitor : allocates
+    Draw ..> Group : produces initial
+    Entry "*" --> "1" Group : flown in
+    Entry "*" --> "1" Competitor : flown by
+    TaskRound ..> AdoptedRules : task by id
+    DeclaredResult ..> Competitor : for
+    AdoptedRules ..> CompetitionClass : adopted from
+
+    note for AdoptedRules "The whole rulebook, copied in at creation. Scoring reads this, never the library class."
+    note for Measurement "Raw and append-only; corrections recorded as Amendments"
+    note for Entry "A reflight is a second Entry; role decides which one counts"
+    note for Finalisation "Captures what was declared; the raw record stays authoritative"
+
+    classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
+    classDef external fill:#EEEEEE,stroke:#BDBDBD,stroke-width:1px,color:#555
+    cssClass "Competition,Person,Entry" aggregateRoot
+    cssClass "CompetitionClass" external
+```
+
+---
+
+## 2. Competition Class — structure
+
+The rulebook. An ordered list of phase definitions, each owning its own tasks
+and aggregation; the class owns only what is genuinely true of the whole event.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class CompetitionClass {
+        <<aggregate root>>
+        +id id
+        +string name
+        +string faiDesignation
+        +string version
+    }
+
+    class Parameter {
+        +string name
+        +MeasuredKind kind
+        +MeasuredValue defaultValue
+        +ParameterBindingPoint boundAt
+    }
+
+    class PhaseDefinition {
+        +int ordinal
+        +PhaseType type
+        +bool mandatory
+    }
+
+    class RoundComposition {
+        <<value object>>
+        +CompositionKind kind
+        +int tasksPerRound
+        +bool requireDistinctTaskPerRound
+    }
+
+    class Task {
+        +string code
+        +string name
+    }
+
+    class DropPolicy {
+        <<value object>>
+        +DropDimension dimension
+        +int dropCount
+        +int applyWhenCompletedAtLeast
+    }
+
+    class ValidityRule {
+        <<value object>>
+        +int minRounds
+        +int minTasks
+    }
+
+    class PromotionRule {
+        <<value object>>
+        +PromotionKind kind
+        +int topN
+        +decimal topPercent
+        +int minGroupSize
+        +int maxGroupSize
+        +bool carryPenalties
+    }
+
+    class FinalRankingRule {
+        <<value object>>
+        +FinalRankingKind kind
+    }
+
+    class ReflightRule {
+        <<value object>>
+        +ReflightSelection entitledScores
+        +ReflightSelection othersScore
+        +int minNewGroupSize
+    }
+
+    class PenaltyCatalogue {
+        <<value object>>
+    }
+
+    class PenaltyDefinition {
+        +string infractionType
+        +PenaltyEffect effect
+        +decimal points
+        +PenaltyApplication appliedAt
+        +string zeroesTermRef
+    }
+
+    class CompositionKind {
+        <<enumeration>>
+        FixedSequence
+        ChooseFromCatalogue
     }
 
     class DropDimension {
@@ -167,93 +329,364 @@ classDiagram
         ByTask
     }
 
-    class ReflightStrategy {
+    class PromotionKind {
         <<enumeration>>
-        Replacement
-        BetterOfN
+        TopN
+        TopPercent
     }
 
-    CompetitionClass "1" *-- "1..*" Task : defines
-    CompetitionClass "1" *-- "1" DropPolicy : drop rule
-    CompetitionClass "1" *-- "1" ReflightRule : reflight rule
+    class FinalRankingKind {
+        <<enumeration>>
+        SinglePhase
+        LastPhaseOnly
+        LastPhaseReplaces
+        SplitByPromotion
+    }
 
-    Competition "1" *-- "1..*" Phase : has
-    Competition "1" *-- "0..*" Penalty : records
-    Phase "1" *-- "1..*" Round : has
-    Round "1" *-- "1..*" TaskRound : has
-    TaskRound "1" *-- "1..*" Group : divided into
-    Group "1" *-- "1..*" Entry : contains
-    Entry "1" *-- "1..*" Flight : contains
-    Flight "1" *-- "1..*" Measurement : captures
-    Measurement "1" *-- "0..*" Amendment : corrected by
+    class ReflightSelection {
+        <<enumeration>>
+        Replacement
+        BetterOf
+        UndefinedRequiresRuling
+    }
 
-    Competition "1..*" --> "1" CompetitionClass : instance of / pins version
-    Competition "1" *-- "0..*" Competitor : field
-    Competitor "*" --> "1" Person : registration of
-    Person "1" *-- "0..1" ClubAffiliation : club
-    Phase "1" --> "2..*" Competitor : field
-    Phase "1" --> "1" Draw : organised by
-    Draw "1" --> "2..*" Competitor : allocates
-    Draw ..> Group : produces initial
-    TaskRound "*" --> "1" Task : for
-    Entry "*" --> "1" Competitor : flown by
+    class PenaltyEffect {
+        <<enumeration>>
+        DeductPoints
+        ZeroFlight
+        ZeroRound
+        ZeroTask
+        ZeroScoreTerm
+        Disqualify
+    }
 
-    Penalty ..> Flight : may attach to
-    Penalty ..> Entry : may attach to
-    Penalty ..> TaskRound : may attach to
-    Penalty ..> Competition : may attach to
+    class PenaltyApplication {
+        <<enumeration>>
+        RawScore
+        NormalisedRoundScore
+        FinalAggregate
+    }
 
-    ScoringService ..> CompetitionClass : applies rules
-    ScoringService ..> Entry : reads
-    ScoringService ..> Measurement : reads raw
-    ScoringService ..> Penalty : reads
-    ScoringService ..> ScoreResult : produces
+    class ParameterBindingPoint {
+        <<enumeration>>
+        CompetitionSetup
+        BeforeFlying
+        PerRound
+        DuringRound
+    }
 
-    note for Round "Completion is derived from its TaskRounds"
-    note for Measurement "Raw and append-only; corrections recorded as Amendments"
-    note for ScoreResult "Computed on demand from raw data + rules; never stored"
-    note for Competitor "One per person per competition; created by the organiser from registered Persons"
+    CompetitionClass "1" *-- "1..*" PhaseDefinition : ordered
+    CompetitionClass "1" *-- "0..*" Parameter : declares
+    CompetitionClass "1" *-- "1" FinalRankingRule
+    CompetitionClass "1" *-- "1" ReflightRule
+    CompetitionClass "1" *-- "1" PenaltyCatalogue
+    PenaltyCatalogue "1" *-- "0..*" PenaltyDefinition
+    PhaseDefinition "1" *-- "1" RoundComposition
+    PhaseDefinition "1" *-- "1..*" Task : catalogue
+    PhaseDefinition "1" *-- "1" DropPolicy
+    PhaseDefinition "1" *-- "1" ValidityRule
+    PhaseDefinition "1" *-- "0..1" PromotionRule : entry criteria
+
+    note for PhaseDefinition "A flyoff changes working times, caps, available tasks and penalty carry-over. Those rules live here, not on the class."
+    note for ReflightRule "Two roles, one event: the entitled competitor takes the reflight; everyone else in the group takes the better of two."
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
-    cssClass "CompetitionClass,Competition,Person" aggregateRoot
+    cssClass "CompetitionClass" aggregateRoot
 ```
+
+---
+
+## 3. Competition Class — the scoring vocabulary
+
+What a Task composes to turn measurements into points. This is the closed
+vocabulary NFR-2 refers to: the scoring process interprets these generically and
+has no notion of landings, launch heights, laps or motor runs.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Task {
+        +string code
+        +string name
+    }
+
+    class MetricDefinition {
+        +string name
+        +MeasuredKind kind
+        +string unit
+        +bool declaredBeforeLaunch
+    }
+
+    class FlightSelection {
+        <<value object>>
+        +SelectionKind kind
+        +int count
+        +TargetAssignment targets
+        +decimal[] targetValues
+    }
+
+    class ScoreTerm {
+        +ScoreTermKind kind
+        +string metricRef
+        +decimal rate
+        +decimal cap
+        +decimal value
+    }
+
+    class Band {
+        <<value object>>
+        +decimal from
+        +decimal to
+        +decimal ratePerUnit
+    }
+
+    class LookupRow {
+        <<value object>>
+        +decimal upTo
+        +decimal points
+    }
+
+    class Predicate {
+        <<value object>>
+        +string leftMetricRef
+        +Comparator op
+        +string rightMetricRef
+        +decimal rightValue
+    }
+
+    class TaskTiming {
+        <<value object>>
+        +WorkingTimeKind kind
+        +duration workingTime
+        +duration preparationTime
+        +int maxLaunches
+    }
+
+    class GroupConstraint {
+        <<value object>>
+        +int minPerGroup
+        +bool wholeFieldAsOneGroup
+    }
+
+    class Normalisation {
+        <<value object>>
+        +NormalisationDirection direction
+        +int winnerScore
+    }
+
+    class Rounding {
+        <<value object>>
+        +RoundingMode mode
+        +decimal precision
+    }
+
+    class SelectionKind {
+        <<enumeration>>
+        Last
+        LastN
+        BestN
+        All
+        ExactlyNInOrder
+    }
+
+    class TargetAssignment {
+        <<enumeration>>
+        None
+        AnyOrder
+        InOrder
+    }
+
+    class ScoreTermKind {
+        <<enumeration>>
+        Rate
+        Lookup
+        Piecewise
+        Constant
+        Conditional
+    }
+
+    class Comparator {
+        <<enumeration>>
+        LessThan
+        LessOrEqual
+        GreaterThan
+        GreaterOrEqual
+        EqualTo
+    }
+
+    class WorkingTimeKind {
+        <<enumeration>>
+        Fixed
+        UntilAllFlightsComplete
+    }
+
+    class NormalisationDirection {
+        <<enumeration>>
+        HigherIsBetter
+        LowerIsBetter
+    }
+
+    class RoundingMode {
+        <<enumeration>>
+        Truncate
+        HalfUp
+        Ceiling
+    }
+
+    Task "1" *-- "1..*" MetricDefinition : records
+    Task "1" *-- "1" FlightSelection : which flights count
+    Task "1" *-- "1..*" ScoreTerm : raw score
+    Task "1" *-- "1" TaskTiming
+    Task "1" *-- "1" GroupConstraint
+    Task "1" *-- "1" Normalisation
+    MetricDefinition "1" *-- "1" Rounding : capture precision
+    Normalisation "1" *-- "1" Rounding : of the normalised score
+    ScoreTerm "1" *-- "0..*" Band : piecewise
+    ScoreTerm "1" *-- "0..*" LookupRow : lookup
+    ScoreTerm "1" *-- "0..1" Predicate : conditional
+    ScoreTerm "1" *-- "0..2" ScoreTerm : then / else
+    ScoreTerm ..> MetricDefinition : reads
+    Predicate ..> MetricDefinition : compares
+
+    note for ScoreTerm "A landing table and a launch-height penalty are the same term reading different metrics."
+    note for Band "Bands are cumulative: 1 pt/s to 600 s then -1 pt/s scores 599 at 601 s."
+    note for Normalisation "Direction is per task: F3B Speed inverts, because the lowest time wins."
+
+    classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
+```
+
+---
+
+## 4. Scoring
+
+`ScoringService` is a domain service, not an aggregate. It reads the rulebook
+from the Competition's own copy, structure from the Competition, and raw data
+from the Entries.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class ScoringService {
+        <<domain service>>
+        +interpretFlight(Flight) FlightResult
+        +selectFlights(Entry) TaskResult
+        +normaliseGroup(Group) GroupResult
+        +aggregate(Competitor, Phase) PhaseResult
+        +rank(Competition) ScoreResult
+    }
+
+    class TaskResult {
+        <<derived>>
+        +ResultState state
+        +decimal rawScore
+    }
+
+    class ScoreResult {
+        <<derived>>
+        +decimal normalisedScore
+        +int placing
+    }
+
+    class ResultState {
+        <<enumeration>>
+        Valid
+        NoResult
+    }
+
+    ScoringService ..> TaskResult : produces
+    ScoringService ..> ScoreResult : produces
+    TaskResult "1" *-- "1" ResultState
+
+    note for ResultState "NoResult is not a score of zero. It is excluded when finding the group winner."
+```
+
+**The pipeline is fixed and core-owned; every stage takes class data.**
+
+```
+capture → interpret flight → select flights → assemble raw → clamp → round
+  → normalise → round → aggregate phase → drop → apply penalties → rank
+```
+
+Classes disagree about *where* in this sequence things happen, which is why the
+order is explicit: F3J subtracts penalties before normalising, F5J deducts them
+from the final aggregate; F5K truncates the raw score to whole points, then
+normalises, then rounds again.
+
+---
 
 ## Modelling notes
 
-- **Aggregate roots are shaded yellow** — CompetitionClass, Competition, and Person. Per-aggregate boundary diagrams (one per root) are in `soaring-aggregates.md`.
-- **Filled diamonds are composition, hollow arrows are references.** The whole
-  spine Competition → … → Measurement is composition (the parts have no life
-  outside their parent). CompetitionClass, Person, and Task are referenced
-  by association because they are their own aggregates. The field itself now
-  lives inside Competition: each Competitor is one person's registration into
-  this one event, referencing the system-wide Person by id.
-- **Person vs Competitor:** Person is the system-wide identity — name, contact
-  details, club affiliation — created once when someone registers with the
-  system. A Competitor is that person's participation in one competition: a
-  reference to the Person, a competitor number, and registered/withdrawn
-  timestamps. The organiser creates Competitors by picking from registered
-  Persons; there is no self-service path. The registration process is in
-  `soaring-registration.md`.
-- **DropPolicy and ReflightRule are broken out as value objects** rather than
-  buried as attributes, because their two dimensions (drop = ByRound vs ByTask;
-  reflight = Replacement vs BetterOfN) are class-defined rules that vary between
-  formats and deserve to be visible.
-- **ScoringService only ever reads.** No arrow writes a score back onto any
-  entity; `ScoreResult` is marked «derived» and produced on demand. This is the
-  raw-first guarantee made visual — scores are computed from raw measurements
-  plus pinned rules, never captured or stored authoritatively.
-- **Penalty's four dashed arrows** are the polymorphic scope: a penalty may
-  attach to a Flight, an Entry, a TaskRound, or the Competition as a whole. The
-  `scope` enum plus a single reference is a valid alternative if polymorphic
-  association is undesirable.
-- **Round completion is derived** from the state of its TaskRounds, not stored
-  as a flag — so partial annulment (weather kills some groups) is handled by
-  filtering rather than by mutating a completion field.
-- **Rule versioning:** Competition pins the CompetitionClass rule version at
-  creation (`pinnedRuleVersion`) so historical results re-score deterministically
-  even after the sporting code changes.
-
-Several attributes are typed to value-object names (`MetricSchema`,
-`HeightTable`, `LandingPointsTable`, etc.) rather than modelled as full classes,
-to keep CompetitionClass legible. Promote any of them to a first-class type if
-its internal structure becomes significant.
+- **Aggregate roots are shaded yellow** — CompetitionClass, Competition, Person
+  and Entry. Per-aggregate boundary diagrams are in `aggregate-roots.md`.
+- **The Competition owns its rulebook.** `AdoptedRules` is the whole class
+  definition copied in at creation, with provenance (which library class and
+  version it came from) and the evaluator version that interprets it. Scoring
+  never reads the library `CompetitionClass`, so editing or deleting a class in
+  the library cannot perturb a running or finished event. The version pin it
+  replaces only worked if nobody ever edited seed data in place.
+- **Rulebook corrections are retroactive.** A `RulesAmendment` applies to the
+  whole competition, not from a point in time. This costs nothing because
+  results are derived — the next query simply returns corrected numbers — and it
+  is what you want when a transcription error is found at round 3.
+- **Parameters vs bindings.** The class declares what may vary (`Parameter`);
+  the Competition records what was chosen and when (`ParameterBinding`). They
+  are bound at different moments — F5K's height reference from the measured
+  wind the day before, F3K's task selection per round, a flyoff cut at the end
+  of qualifying. Bindings must be recorded as they happen or re-scoring is not
+  reproducible.
+- **Phases own their scoring rules.** A flyoff is not a shorter preliminary: it
+  changes working times, points caps, which tasks are available, and whether
+  penalties carry over. `PhaseDefinition` holds all of it; `FinalRankingRule`
+  says how phases combine, and the four variants exist because the classes
+  genuinely disagree — flyoff aggregate alone, flyoff replacing preliminary
+  points, or qualifiers and non-qualifiers ranked on different bases.
+- **Tasks own everything that varies per task.** The test applied throughout:
+  *if it varies between tasks, it belongs on the Task.* F3B settles this on its
+  own — within one class its group minima, flight-time precision, landing table
+  and normalisation direction all differ per task.
+- **Score terms replace named rule slots.** There is no `landingPoints` or
+  `heightBonusPenalty` attribute, because naming them puts a discipline concept
+  in the core. A landing table is `Lookup` over a distance metric; a launch
+  height penalty is `Piecewise` over a height metric; F3B's −1 pt/s beyond 600 s
+  is a second cumulative band on the same term as the flight points.
+- **Bands are cumulative.** A piecewise term applies each band's rate to the
+  portion of the measurement falling inside it. This is what lets one term type
+  express both F3B's overtime deduction and F5J's two-slope height penalty.
+- **`NoResult` is not zero.** A flight that never validly completed has no
+  result. This matters wherever the lowest value wins: in F3B Speed a raw zero
+  would otherwise be the fastest time in the group. Competitors with `NoResult`
+  score nothing and are ignored when finding the group winner; a group with too
+  few valid results is annulled.
+- **Measurements are not all numbers.** `MeasuredValue` carries a number or a
+  flag, because the rules require plain observations (landed in the defined
+  area, score card signed) as well as quantities. `declaredBeforeLaunch` marks
+  metrics the pilot nominates *before* flying — a Poker target — which the
+  scoring rules then compare the flight against.
+- **Penalties are recorded infractions only.** Deductions the system *derives*
+  from what was measured — an overfly deduction, a per-launch penalty — are
+  score terms, not Penalties, and nobody records them as infractions. The
+  distinction matches how the data is captured: launch counts are inferred from
+  flight records, never entered. A `PenaltyDefinition` carries an *effect*, not
+  merely a cost, because zeroing a flight, a round or a single term are all real
+  outcomes in the rules and none of them is a point deduction.
+- **Reflight scoring is per role, not per class.** In one reflight group the
+  entitled competitor's new attempt is official even if worse, while every other
+  pilot takes the better of their two — so `Entry` carries the role.
+  `UndefinedRequiresRuling` exists because at least one class defines no rule at
+  all, and the system must be able to say so and record the Contest Director's
+  decision rather than invent one.
+- **Finalisation captures, it does not compute.** Results are derived on demand
+  while a competition is live. Finalising a phase freezes its results and names
+  who was promoted — which is where a flyoff cut decision is recorded — and
+  finalising the competition captures the final classification. A declared
+  result answers "what was declared"; asking "what is the score" still derives
+  from raw data, so the two can always be compared. Reopening appends a new
+  revision; nothing is overwritten.
+- **Round completion is derived** from the state of its TaskRounds, so partial
+  annulment is handled by filtering rather than by mutating a completion flag.
+- **Tie-breaking is not yet modelled**, and when it is it will need two kinds,
+  not one: comparison against another figure (a best dropped score, a qualifying
+  position) and *scheduling more flying* (an additional full round, a one-task
+  tie-break flyoff). An ordered list of comparators cannot express the second.

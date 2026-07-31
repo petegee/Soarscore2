@@ -4,7 +4,19 @@ Several times a year, national radio-controlled soaring competitions take place.
 
 ## Competition Class
 
-A competition class is the rulebook for a type of contest. It defines the FAI designation, which task or tasks are flown, what is measured on each flight, how groups and rounds are organised, the height penalty and bonus tables, landing points, flight-time point rules, which penalties can apply and what they cost, and how raw results are turned into scores. The class exists so that every contest of the same type — anywhere, run by anyone — is flown and scored the same way.
+A competition class is the rulebook for a type of contest. It defines the phases a contest runs through, which task or tasks are flown in each, what is measured on every flight and to what precision, how competitors are grouped, which penalties can apply, and how raw measurements are turned into scores and placings. Well-known classes carry an FAI designation; a club may also author its own. The class exists so that every contest of the same type — anywhere, run by anyone — is flown and scored the same way. Everything that differs between one type of contest and another lives here and nowhere else: the rest of the system reads a class without ever knowing which one it is.
+
+## Phase Definition
+
+A phase definition is the class's description of one phase: which tasks may be flown in it, how long the working time is, how results are aggregated, how many rounds make it valid, and — for any phase after the first — which competitors are promoted into it from the one before. A class is an ordered list of phase definitions, of which the preliminary phase is simply the first. They exist because a flyoff is not merely a shorter preliminary: classes routinely change the working time, the points cap, the tasks available, and even whether penalties carry across. Keeping each phase's rules with the phase is what stops those differences leaking into the rest of the system.
+
+## Parameter
+
+A parameter is a value a class declares but deliberately does not fix, to be chosen for each competition. Some are settled when the contest is set up, some the day before flying from the measured conditions, some round by round, and some in the moment by the Contest Director. The class defines what may vary and within what bounds; the competition records what was actually chosen, and when. Parameters exist so that a legitimate local choice — a working time, a height reference, the size of a flyoff — does not require a separate rulebook for every combination.
+
+## Score Term
+
+A score term is one piece of the arithmetic that turns a flight's measurements into points: so many points per second up to a cap, a table lookup from a measured distance, a rate that changes across bands, a fixed value, or any of these applied only when some condition holds. A task's score is built by composing terms. Terms exist so the system can carry out a class's arithmetic without knowing what the numbers mean — a landing table and a launch-height penalty are the same kind of term reading different measurements, which is why the scoring process needs no notion of landings or launch heights at all.
 
 ## Competition
 
@@ -28,7 +40,7 @@ A task is a defined flying challenge: what the pilot must do, and what gets meas
 
 ## Round
 
-A round is one complete cycle of the competition: every competitor gets the chance to fly every task the class requires for that cycle. In single-task classes, a round is simply everyone flying the task once. In complex multi-task classes, a round is only complete when every competitor has flown the full set of tasks. Rounds are the yardstick of the competition: they determine whether a contest is valid (a minimum number must be flown), and they are the unit counted when the rules allow a worst score to be dropped.
+A round is one complete cycle of the competition: every competitor gets the chance to fly every task the class requires for that cycle. In single-task classes, a round is simply everyone flying the task once. In complex multi-task classes, a round is only complete when every competitor has flown the full set of tasks. Rounds are the yardstick of the competition: they determine whether a contest is valid (a minimum number must be flown), and they are usually the unit counted when the rules allow a worst score to be dropped — though some classes discard per task instead, dropping a competitor's weakest result in each task rather than their weakest round.
 
 ## Task-Round
 
@@ -52,7 +64,7 @@ A flight is a single launch through to a landing. In most classes a competitor m
 
 ## Measurement
 
-Measurements are the raw facts captured from a flight: flight times, launch heights, landing distances, and whatever else the class calls for. They are recorded exactly as captured and never altered — if a mistake is found, a correction is recorded alongside the original rather than overwriting it. Keeping the raw record untouched means results can always be verified, disputes can be settled from the evidence, and scores can be recalculated at any time.
+Measurements are the raw facts captured from a flight: flight times, launch heights, landing distances, and whatever else the class calls for. Not all of them are numbers — some are plain observations, such as whether the model landed in the defined area or whether the score card was signed — and some are declarations the pilot makes *before* launching, such as the target time nominated in a Poker task, which the class rules then test the flight against. They are recorded exactly as captured and never altered — if a mistake is found, a correction is recorded alongside the original rather than overwriting it. Keeping the raw record untouched means results can always be verified, disputes can be settled from the evidence, and scores can be recalculated at any time.
 
 ## Penalty
 
@@ -60,4 +72,12 @@ A penalty is a recorded infraction of the rules — an over-height launch, a saf
 
 ## Score
 
-Scores are computed, never captured. A separate scoring process takes the raw measurements and applies the class rules: interpreting each entry's flights into a task result, normalising results within each group (the best in the group typically earning 1000 points, the rest in proportion), applying penalties, dropping the permitted worst scores, and totalling everything into final placings. Because scoring works only from the raw record and the rules, it can be re-run at any time — after a protest, a correction, or a rules query — and will produce the same placings from the same facts.
+Scores are computed, not captured. A separate scoring process takes the raw measurements and applies the class rules: interpreting each entry's flights into a task result, normalising results within each group (the best in the group typically earning 1000 points, the rest in proportion), applying penalties, dropping the permitted worst scores, and totalling everything into final placings. Because scoring works only from the raw record and the rules, it can be re-run at any time — after a protest, a correction, or a rules query — and will produce the same placings from the same facts. Scores are derived on demand throughout a competition; at finalisation they are additionally captured as a record of what was declared, which never displaces the raw record as the source of truth.
+
+A result is not always a number. A flight that was never validly completed has *no result at all*, which is not the same as a result of zero: in a task where the fastest time wins, a zero would otherwise win the group outright. A competitor with no result scores nothing for that task, is ignored when deciding who won the group, and — if too few valid results remain — the group's result is annulled altogether.
+
+## Finalisation
+
+Finalisation is the moment results stop being a live calculation and become a declared fact. During a contest, scores are derived afresh from the raw record every time they are asked for. When a phase closes, the Contest Director finalises it: the results are captured as they stood and, where a flyoff follows, the qualifiers are named — which is what records the cut that was actually applied. Finalising the competition captures the final classification.
+
+Captured results answer "what was declared", never "what is the score": the raw measurements and the competition's own copy of the rules remain the source of truth, so a finalised result can always be re-derived and compared against what was published. If an error comes to light afterwards the competition is reopened, the correction recorded, and the competition re-finalised — both result sets are kept, and nothing is overwritten.

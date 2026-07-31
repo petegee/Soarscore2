@@ -34,6 +34,25 @@ extension is additive only: a new task/class definition (NFR-1's encoding),
 not edits to what already runs. Existing classes' behaviour, stored data and
 results must be unaffected by the addition.
 
+**Scope of that guarantee.** A class's arithmetic is expressed as a *closed
+vocabulary* of score terms (rate, table lookup, banded rate, constant,
+conditional) and flight selectors. Any class whose scoring falls within that
+vocabulary — which is all six FAI classes we ship — is pure data, and adding it
+touches no code at all. A genuinely novel scoring *shape*, one no existing class
+needs, requires a new term type. That is an **additive core extension: a new
+variant, never an edit to an existing one**, and existing definitions,
+stored data and results remain untouched by it.
+
+This is deliberate. The alternative — an open expression language, so no core
+change is ever needed — would satisfy the letter of this requirement while
+destroying two things this system needs more: complete *static validation* of a
+class definition before a competition adopts it, and deterministic re-scoring.
+An error in a rulebook must be caught at adoption, not discovered mid-contest.
+
+To keep the vocabulary from sprawling into a general rules engine (NFR-3), a
+term type is admitted **only when an existing class's rules require it**, cited
+to the rule that demands it.
+
 ## NFR-3 — Core System Only
 
 This system should be a core headless system only, housing the kernal only. 

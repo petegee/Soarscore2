@@ -11,8 +11,7 @@ reference by id only.
 
 You marked three roots: **CompetitionClass**, **Competition**, **Competitor**
 (the last has since been reworked: the system-wide root is now **Person**, and
-*Competitor* names a person's registration inside a Competition — see §2–§3 and
-`soaring-registration.md`).
+*Competitor* names a person's registration inside a Competition).
 Drawing them per-aggregate exposes a problem the whole-model diagram hides: the
 composition spine is ten deep, and if all of it lives inside **Competition**,
 then the entire event — every flight, every raw measurement — is one aggregate.
@@ -34,62 +33,102 @@ scoped penalties live in the Competition aggregate.
 
 ---
 
-## 1. CompetitionClass — the rulebook
+## 1. CompetitionClass — the rulebook library
 
-Pure reference data. It defines the tasks and every rule used to turn raw numbers
-into scores, and it references nothing else. Versioned, and pinned by a
-Competition at creation so historical results stay reproducible.
+Pure reference data, and referencing nothing else. An ordered list of phase
+definitions, each owning the tasks flown in it and how their results aggregate;
+the class itself holds only what is true of the whole event. Every task carries
+its own metrics, flight selection, timing, group constraints and scoring terms,
+because all of those vary per task within a single class.
+
+**This aggregate is not on the scoring path.** A Competition takes a complete
+copy of a class definition when it is created (§3), and scoring reads that copy.
+CompetitionClass is the library you adopt *from* — seed data for the FAI classes,
+plus any a club authors — so editing or retiring one here cannot disturb a
+running or finished event.
 
 ```mermaid
 classDiagram
     direction TB
     class CompetitionClass {
+        +id id
+        +string name
         +string faiDesignation
-        +TaskMode taskMode
         +string version
     }
-    class Task {
+    class PhaseDefinition {
+        +int ordinal
+        +PhaseType type
+    }
+    class Parameter {
         +string name
-        +string kind
-        +MetricDefinition metrics
+        +MeasuredValue defaultValue
+        +ParameterBindingPoint boundAt
+    }
+    class Task {
+        +string code
+        +string name
+    }
+    class ScoreTerm {
+        +ScoreTermKind kind
+        +string metricRef
+    }
+    class MetricDefinition {
+        +string name
+        +MeasuredKind kind
+        +bool declaredBeforeLaunch
+    }
+    class FlightSelection {
+        <<value object>>
+        +SelectionKind kind
+        +int count
+    }
+    class Normalisation {
+        <<value object>>
+        +NormalisationDirection direction
     }
     class DropPolicy {
         <<value object>>
         +DropDimension dimension
-        +int threshold
+        +int dropCount
+    }
+    class PromotionRule {
+        <<value object>>
+        +PromotionKind kind
     }
     class ReflightRule {
         <<value object>>
-        +ReflightStrategy strategy
+        +ReflightSelection entitledScores
+        +ReflightSelection othersScore
     }
-    class MetricSchema {
+    class FinalRankingRule {
         <<value object>>
-    }
-    class HeightTable {
-        <<value object>>
-    }
-    class LandingPointsTable {
-        <<value object>>
-    }
-    class FlightTimeRules {
-        <<value object>>
+        +FinalRankingKind kind
     }
     class PenaltyCatalogue {
         <<value object>>
     }
 
-    CompetitionClass "1" *-- "1..*" Task
-    CompetitionClass "1" *-- "1" DropPolicy
+    CompetitionClass "1" *-- "1..*" PhaseDefinition
+    CompetitionClass "1" *-- "0..*" Parameter
     CompetitionClass "1" *-- "1" ReflightRule
-    CompetitionClass "1" *-- "1" MetricSchema
-    CompetitionClass "1" *-- "1" HeightTable
-    CompetitionClass "1" *-- "1" LandingPointsTable
-    CompetitionClass "1" *-- "1" FlightTimeRules
+    CompetitionClass "1" *-- "1" FinalRankingRule
     CompetitionClass "1" *-- "1" PenaltyCatalogue
+    PhaseDefinition "1" *-- "1..*" Task
+    PhaseDefinition "1" *-- "1" DropPolicy
+    PhaseDefinition "1" *-- "0..1" PromotionRule
+    Task "1" *-- "1..*" MetricDefinition
+    Task "1" *-- "1..*" ScoreTerm
+    Task "1" *-- "1" FlightSelection
+    Task "1" *-- "1" Normalisation
+    ScoreTerm "1" *-- "0..2" ScoreTerm : then / else
 
     classDef root fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     cssClass "CompetitionClass" root
 ```
+
+Full structure and the scoring vocabulary are in
+[soaring-domain-class-diagram.md](soaring-domain-class-diagram.md) §2–§3.
 
 ---
 
@@ -144,6 +183,25 @@ reflight group, annul a task-round). It holds no live flight data — Entries re
 Competitor by id from outside. Task-round completion and annulment live here;
 scoring reads this structure but writes nothing back to it.
 
+It also holds three things that make results reproducible:
+
+- **`AdoptedRules`** — a complete copy of the class definition, taken at
+  creation, with the source class and version it came from and the evaluator
+  version that interprets it. This is what scoring reads. A `RulesAmendment`
+  appends a corrected definition and applies to the whole competition
+  retroactively; because results are derived, that costs nothing but a
+  re-query. Adoption is also the gate at which a definition is validated — a
+  Competition cannot come into existence holding an invalid rulebook.
+- **`ParameterBinding`** — one per choice the class left open, recorded when it
+  is made and by whom. Some arrive at setup, some the day before flying from
+  measured conditions, some per round, some mid-round. They are events rather
+  than configuration precisely because re-scoring must reproduce the decisions
+  as they were actually taken.
+- **`Finalisation`** — the declared results. Finalising a phase freezes its
+  results and names who was promoted, which is where a flyoff cut decision is
+  recorded; finalising the competition captures the final classification.
+  Reopening after an error appends a further revision and keeps the earlier one.
+
 ```mermaid
 classDiagram
     direction TB
@@ -152,7 +210,36 @@ classDiagram
         +string location
         +date startDate
         +date endDate
-        +string pinnedRuleVersion
+        +string evaluatorVersion
+    }
+    class AdoptedRules {
+        <<value object>>
+        +ClassDefinition definition
+        +string sourceClassId
+        +string sourceVersion
+        +timestamp adoptedAt
+    }
+    class RulesAmendment {
+        +ClassDefinition definition
+        +string reason
+        +timestamp at
+    }
+    class ParameterBinding {
+        +string parameterName
+        +MeasuredValue boundValue
+        +string by
+        +timestamp at
+    }
+    class Finalisation {
+        +FinalisationScope scope
+        +int revision
+        +timestamp at
+    }
+    class DeclaredResult {
+        +competitorId competitorRef
+        +decimal aggregate
+        +int placing
+        +bool promoted
     }
     class Competitor {
         +personId personRef
@@ -192,6 +279,11 @@ classDiagram
 
     Competition "1" *-- "0..*" Competitor : field
     Competition "1" *-- "1..*" Phase
+    Competition "1" *-- "1" AdoptedRules : rulebook copy
+    Competition "1" *-- "0..*" RulesAmendment
+    Competition "1" *-- "0..*" ParameterBinding
+    Competition "1" *-- "0..*" Finalisation
+    Finalisation "1" *-- "1..*" DeclaredResult
     Phase "1" *-- "1" Draw
     Phase "1" *-- "1..*" Round
     Round "1" *-- "1..*" TaskRound
@@ -199,9 +291,10 @@ classDiagram
     Competition "1" *-- "0..*" Penalty : task-round / competition scope
 
     Draw "1" --> "0..*" Competitor : allocates
-    Competition ..> CompetitionClass : pins version
     Competitor ..> Person : registration of
-    TaskRound ..> CompetitionClass : task by id
+    DeclaredResult ..> Competitor : for
+    TaskRound ..> AdoptedRules : task by id
+    AdoptedRules ..> CompetitionClass : copied from at creation
 
     classDef root fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     classDef external fill:#EEEEEE,stroke:#BDBDBD,stroke-width:1px,color:#555
@@ -227,8 +320,16 @@ classDiagram
 One competitor's working-time window and everything captured in it. This is what
 the scorers directly update: an ordered list of Flights, each with raw
 Measurements (append-only, corrected by Amendments, never overwritten). A
-reflight is simply a second Entry pointing at whichever Group flew it. Isolating
-this as its own aggregate is what keeps concurrent scorer writes from contending.
+Measurement's value may be a number or a plain flag — the rules require
+observations such as *landed in the defined area* or *score card signed*
+alongside quantities. Isolating this as its own aggregate is what keeps
+concurrent scorer writes from contending.
+
+A reflight is simply a second Entry pointing at whichever Group flew it, and
+`role` is what decides which Entry counts: within a single reflight group the
+**entitled** competitor's new attempt is official even if worse, while every
+other pilot flying it — the **fillers** drawn in to make up the group — takes
+the better of their two. One event, two rules, discriminated by role.
 `competitorRef` identifies the Competitor registration inside the Competition
 aggregate — the record that carries the competitor number the scorers name/id
 captures with, and the link back to the Person. Referencing an internal entity
@@ -243,18 +344,25 @@ classDiagram
         +TimeWindow workingTime
         +groupId groupRef
         +competitorId competitorRef
+        +ReflightRole role
     }
     class Flight {
         +int sequence
         +timestamp launchAt
     }
     class Measurement {
-        +string type
-        +decimal value
+        +string metric
+        +MeasuredValue value
         +timestamp capturedAt
     }
+    class MeasuredValue {
+        <<value object>>
+        +MeasuredKind kind
+        +decimal number
+        +bool flag
+    }
     class Amendment {
-        +decimal newValue
+        +MeasuredValue newValue
         +string reason
         +string by
         +timestamp at
@@ -272,6 +380,7 @@ classDiagram
 
     Entry "1" *-- "1..*" Flight
     Flight "1" *-- "1..*" Measurement
+    Measurement "1" *-- "1" MeasuredValue
     Measurement "1" *-- "0..*" Amendment
     Entry "1" *-- "0..*" Penalty : flight / entry scope
 
@@ -288,10 +397,23 @@ classDiagram
 
 ## Scoring is cross-aggregate (not a root)
 
-The scoring service is a domain service, not an aggregate. It *reads* rules from
-CompetitionClass, structure from Competition, and raw data from the Entries, and
-*produces* a ScoreResult that is derived on demand and never persisted as source
-of truth. It has no consistency boundary of its own — it spans all of them.
+The scoring service is a domain service, not an aggregate. It *reads* the rules
+and the structure from the **Competition** — the rulebook is the Competition's
+own copy, not the library class — and raw data from the Entries, and *produces*
+a ScoreResult derived on demand. It has no consistency boundary of its own.
+
+**It spans two roots, not three.** Because the Competition carries its own
+rulebook, `CompetitionClass` is absent from the scoring path entirely. That is
+the point of the copy: the library can be edited, versioned or retired without
+any live or historical event noticing.
+
+Results stay derived throughout the event. At finalisation they are additionally
+*captured* on the Competition as a declared record — which answers "what was
+declared", never "what is the score". Raw measurements plus the adopted rules
+remain the sole source of truth, so a declared result can always be re-derived
+and compared against what was published. That comparison is the reason to
+capture them at all: it is what makes a later change in the evaluator visible
+instead of silent.
 
 ```mermaid
 classDiagram
@@ -304,12 +426,10 @@ classDiagram
         +aggregate() ScoreResult
     }
     class ScoreResult {
-        <<derived, not persisted>>
+        <<derived>>
+        +ResultState state
         +decimal normalisedScore
         +int placing
-    }
-    class CompetitionClass {
-        <<root>>
     }
     class Competition {
         <<root>>
@@ -318,11 +438,11 @@ classDiagram
         <<root>>
     }
 
-    ScoringService ..> CompetitionClass : rules
-    ScoringService ..> Competition : structure
+    ScoringService ..> Competition : adopted rules + structure
     ScoringService ..> Entry : raw data
     ScoringService ..> ScoreResult : produces
+    ScoreResult ..> Competition : captured at finalisation
 
     classDef external fill:#EEEEEE,stroke:#BDBDBD,stroke-width:1px,color:#555
-    cssClass "CompetitionClass,Competition,Entry" external
+    cssClass "Competition,Entry" external
 ```
