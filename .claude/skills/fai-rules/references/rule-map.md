@@ -54,8 +54,10 @@ Frequency-follows-frequency is permitted **only** for F3B/F3J/F3K:
 Common field list: `00-general-rules.md#2`. F3-vs-F5 difference (no launch height in
 F3): `f3-general-rules.md#2`.
 
-Signed score card required (unsigned = 0 for the round): **F3K** (`F3K.1.2`), F5K,
-F5L. Elsewhere general practice.
+Signed score card **scores 0 for the round if unsigned**: **F3K** only
+(`F3K.1.2`, verbatim). F5K requires signed cards as the *sole admissible
+evidence* for results, with no stated penalty (`5.5.10.16`); F5L states nothing.
+Elsewhere general practice.
 
 ## Flight points and landing bonus
 

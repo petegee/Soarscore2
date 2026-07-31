@@ -64,7 +64,7 @@ A flight is a single launch through to a landing. In most classes a competitor m
 
 ## Measurement
 
-Measurements are the raw facts captured from a flight: flight times, launch heights, landing distances, and whatever else the class calls for. Not all of them are numbers — some are plain observations, such as whether the model landed in the defined area or whether the score card was signed — and some are declarations the pilot makes *before* launching, such as the target time nominated in a Poker task, which the class rules then test the flight against. They are recorded exactly as captured and never altered — if a mistake is found, a correction is recorded alongside the original rather than overwriting it. Keeping the raw record untouched means results can always be verified, disputes can be settled from the evidence, and scores can be recalculated at any time.
+Measurements are the raw facts captured from a flight: flight times, launch heights, landing distances, and whatever else the class calls for. Not all of them are numbers — some are plain observations, such as whether the model landed in the defined area or whether the model was touched during landing — and some are declarations the pilot makes *before* launching, such as the target time nominated in a Poker task, which the class rules then test the flight against. They are recorded exactly as captured and never altered — if a mistake is found, a correction is recorded alongside the original rather than overwriting it. Keeping the raw record untouched means results can always be verified, disputes can be settled from the evidence, and scores can be recalculated at any time.
 
 ## Penalty
 

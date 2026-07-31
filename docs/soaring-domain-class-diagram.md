@@ -249,8 +249,22 @@ classDiagram
         +string name
         +MeasuredKind kind
         +MeasuredValue defaultValue
+        +MeasuredValue[] allowedValues
         +ParameterBindingPoint boundAt
     }
+
+    class ParameterRef {
+        <<value object>>
+        +string parameterName
+    }
+    %% A ParameterRef may stand in for a literal in exactly these eleven slots,
+    %% and nowhere else (validated at adoption):
+    %%   TaskTiming.workingTime, TaskTiming.maxLaunches
+    %%   ScoreTerm.cap, ScoreTerm.origin
+    %%   GroupConstraint.minPerGroup
+    %%   ValidityRule.minRounds
+    %%   PromotionRule.topN, .minGroupSize, .maxGroupSize, .carryPenalties
+    %%   ReflightRule.minNewGroupSize
 
     class PhaseDefinition {
         +int ordinal
@@ -314,7 +328,6 @@ classDiagram
         +PenaltyEffect effect
         +decimal points
         +PenaltyApplication appliedAt
-        +string zeroesTermRef
     }
 
     class CompositionKind {
@@ -338,7 +351,6 @@ classDiagram
     class FinalRankingKind {
         <<enumeration>>
         SinglePhase
-        LastPhaseOnly
         LastPhaseReplaces
         SplitByPromotion
     }
@@ -356,14 +368,12 @@ classDiagram
         ZeroFlight
         ZeroRound
         ZeroTask
-        ZeroScoreTerm
         Disqualify
     }
 
     class PenaltyApplication {
         <<enumeration>>
         RawScore
-        NormalisedRoundScore
         FinalAggregate
     }
 
@@ -372,11 +382,11 @@ classDiagram
         CompetitionSetup
         BeforeFlying
         PerRound
-        DuringRound
     }
 
     CompetitionClass "1" *-- "1..*" PhaseDefinition : ordered
     CompetitionClass "1" *-- "0..*" Parameter : declares
+    ParameterRef ..> Parameter : resolves to (validated at adoption)
     CompetitionClass "1" *-- "1" FinalRankingRule
     CompetitionClass "1" *-- "1" ReflightRule
     CompetitionClass "1" *-- "1" PenaltyCatalogue
@@ -425,12 +435,17 @@ classDiagram
         +TargetAssignment targets
         +decimal[] targetValues
     }
+    %% targetValues are in the UNITS OF THE METRIC the task's scoring term
+    %% consumes, not in points. Each selected flight's metric is clamped to its
+    %% assigned target, then scored.
 
     class ScoreTerm {
         +ScoreTermKind kind
         +string metricRef
         +decimal rate
         +decimal cap
+        +CapScope capScope
+        +decimal origin
         +decimal value
     }
 
@@ -440,12 +455,15 @@ classDiagram
         +decimal to
         +decimal ratePerUnit
     }
+    %% Bands are cumulative and are evaluated over (metric - ScoreTerm.origin).
 
     class LookupRow {
         <<value object>>
         +decimal upTo
         +decimal points
     }
+    %% upTo is nullable; null means unbounded. Legal only on the last row; validated at
+    %% adoption (rows ascending, at most one unbounded, and it must be last).
 
     class Predicate {
         <<value object>>
@@ -453,7 +471,10 @@ classDiagram
         +Comparator op
         +string rightMetricRef
         +decimal rightValue
+        +Predicate[] allOf
     }
+    %% Exactly one of {leaf comparison, allOf} is populated. There is no anyOf:
+    %% every multi-condition site in the six FAI classes is a conjunction.
 
     class TaskTiming {
         <<value object>>
@@ -466,8 +487,10 @@ classDiagram
     class GroupConstraint {
         <<value object>>
         +int minPerGroup
-        +bool wholeFieldAsOneGroup
+        +int minValidResults
     }
+    %% minValidResults is nullable; unset means the class states no annulment
+    %% threshold, and no group is annulled for want of valid results.
 
     class Normalisation {
         <<value object>>
@@ -495,6 +518,12 @@ classDiagram
         None
         AnyOrder
         InOrder
+    }
+
+    class CapScope {
+        <<enumeration>>
+        PerFlight
+        PerTask
     }
 
     class ScoreTermKind {
@@ -540,8 +569,10 @@ classDiagram
     Task "1" *-- "1" TaskTiming
     Task "1" *-- "1" GroupConstraint
     Task "1" *-- "1" Normalisation
+    Task "1" *-- "0..1" Predicate : validWhen
+    Task "1" *-- "0..1" Rounding : of the raw score
     MetricDefinition "1" *-- "1" Rounding : capture precision
-    Normalisation "1" *-- "1" Rounding : of the normalised score
+    Normalisation "1" *-- "0..1" Rounding : of the normalised score
     ScoreTerm "1" *-- "0..*" Band : piecewise
     ScoreTerm "1" *-- "0..*" LookupRow : lookup
     ScoreTerm "1" *-- "0..1" Predicate : conditional
@@ -635,13 +666,24 @@ normalises, then rounds again.
   are bound at different moments — F5K's height reference from the measured
   wind the day before, F3K's task selection per round, a flyoff cut at the end
   of qualifying. Bindings must be recorded as they happen or re-scoring is not
-  reproducible.
+  reproducible. A `ParameterRef` is how a definition *consumes* one, and it is
+  legal only in the eleven slots the FAI classes need — a working time, a
+  launch cap, a band origin, a group minimum, a minimum-rounds rule, a
+  promotion size, penalty carry-over, a reflight group minimum. `allowedValues`
+  records the bounds where the rules state them, so a binding can be validated
+  rather than trusted.
+- **Rule-silence is a parameter, not a default.** Where a rulebook simply does
+  not say — whether penalties carry into a flyoff, how large the flyoff is —
+  the class declares a parameter with *no default*, so the CD chooses at setup
+  and the choice enters the event log. The alternative, a sensible default, is
+  the software inventing a rule and hiding it. Reading a definition for `no
+  default` finds every place its rulebook is silent.
 - **Phases own their scoring rules.** A flyoff is not a shorter preliminary: it
   changes working times, points caps, which tasks are available, and whether
   penalties carry over. `PhaseDefinition` holds all of it; `FinalRankingRule`
-  says how phases combine, and the four variants exist because the classes
-  genuinely disagree — flyoff aggregate alone, flyoff replacing preliminary
-  points, or qualifiers and non-qualifiers ranked on different bases.
+  says how phases combine, and its three variants exist because the classes
+  genuinely disagree — a single phase, a flyoff replacing preliminary points, or
+  qualifiers and non-qualifiers ranked on different bases.
 - **Tasks own everything that varies per task.** The test applied throughout:
   *if it varies between tasks, it belongs on the Task.* F3B settles this on its
   own — within one class its group minima, flight-time precision, landing table
@@ -650,26 +692,37 @@ normalises, then rounds again.
   `heightBonusPenalty` attribute, because naming them puts a discipline concept
   in the core. A landing table is `Lookup` over a distance metric; a launch
   height penalty is `Piecewise` over a height metric; F3B's −1 pt/s beyond 600 s
-  is a second cumulative band on the same term as the flight points.
+  is a second cumulative band on the same term as the flight points. A term's
+  `cap` clamps the *metric consumed*, not the points produced, and `capScope`
+  says whether it clamps each flight or their sum — F5K caps total flight time
+  across a task while leaving the launch-height bonus outside the cap.
 - **Bands are cumulative.** A piecewise term applies each band's rate to the
   portion of the measurement falling inside it. This is what lets one term type
   express both F3B's overtime deduction and F5J's two-slope height penalty.
+  Bands are measured from `ScoreTerm.origin`, which defaults to zero: F5K's
+  launch points are per metre *relative to an announced height*, so its bands
+  read from a parameter rather than from nothing.
 - **`NoResult` is not zero.** A flight that never validly completed has no
   result. This matters wherever the lowest value wins: in F3B Speed a raw zero
   would otherwise be the fastest time in the group. Competitors with `NoResult`
-  score nothing and are ignored when finding the group winner; a group with too
-  few valid results is annulled.
+  score nothing and are ignored when finding the group winner; a group is
+  annulled when fewer than `GroupConstraint.minValidResults` remain, where the
+  class states such a threshold. `Task.validWhen` is what decides validity: a
+  rule saying an incomplete course "scores zero" means *no result*, and writing
+  it as a zero would hand the group to whoever failed.
 - **Measurements are not all numbers.** `MeasuredValue` carries a number or a
   flag, because the rules require plain observations (landed in the defined
-  area, score card signed) as well as quantities. `declaredBeforeLaunch` marks
+  area, model touched during landing) as well as quantities. `declaredBeforeLaunch` marks
   metrics the pilot nominates *before* flying — a Poker target — which the
   scoring rules then compare the flight against.
 - **Penalties are recorded infractions only.** Deductions the system *derives*
   from what was measured — an overfly deduction, a per-launch penalty — are
   score terms, not Penalties, and nobody records them as infractions. The
   distinction matches how the data is captured: launch counts are inferred from
-  flight records, never entered. A `PenaltyDefinition` carries an *effect*, not
-  merely a cost, because zeroing a flight, a round or a single term are all real
+  flight records, never entered, and a term reads which launch a flight was via
+  the reserved intrinsic `flight.sequence` rather than by anyone writing it on a
+  card. A `PenaltyDefinition` carries an *effect*, not
+  merely a cost, because zeroing a flight, a round or a task are all real
   outcomes in the rules and none of them is a point deduction.
 - **Reflight scoring is per role, not per class.** In one reflight group the
   entitled competitor's new attempt is official even if worse, while every other
@@ -686,7 +739,25 @@ normalises, then rounds again.
   revision; nothing is overwritten.
 - **Round completion is derived** from the state of its TaskRounds, so partial
   annulment is handled by filtering rather than by mutating a completion flag.
+- **Predicates combine, but only by conjunction.** `Predicate.allOf` exists
+  because several rules gate one outcome on many observations at once — F5L
+  voids its landing bonus on any of seven. There is deliberately no `anyOf`:
+  no FAI class in the corpus needs disjunction, and the vocabulary admits a
+  construct only when a rule requires it. This is not an expression language —
+  no arithmetic, no functions — so a definition stays statically validatable at
+  adoption.
+- **Two penalty rules are not yet modelled.** *Precedence*: F3K and F3J both
+  say only one penalty may be incurred per flight attempt, the larger winning
+  where several apply; `PenaltyCatalogue` has no precedence rule. *Compound
+  effects*: F3B's non-conforming winch both zeroes the flight and deducts 1000,
+  but `PenaltyEffect` holds a single value.
 - **Tie-breaking is not yet modelled**, and when it is it will need two kinds,
   not one: comparison against another figure (a best dropped score, a qualifying
   position) and *scheduling more flying* (an additional full round, a one-task
   tie-break flyoff). An ordered list of comparators cannot express the second.
+- **The notation is the model's test.** `docs/competition-class-notation.md`
+  defines a hand-writing notation for a class definition, and `seed-data/`
+  holds the six FAI classes written in it. The notation is deliberately
+  isomorphic to this diagram — one keyword per model element, no keyword that
+  is not one — so anything the six classes cannot express is a gap here, not
+  there. Every change above came from writing them.

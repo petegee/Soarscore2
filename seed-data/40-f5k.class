@@ -1,0 +1,176 @@
+# F5K — RC Electric Thermal Duration, Multiple-Task     seed definition, draft
+# Rule refs: FAI Sporting Code Volume F5 Electric 2026 ed.2 (5.5.10.x)
+# Provisional class.
+#
+# The class that pushes hardest on the model. Three of the six findings come
+# from here: launch points measured relative to a parameter (F5), a per-launch
+# cost that must read the flight's own sequence number (F6), and a task-total
+# cap and a raw-score rounding with nowhere to live (F4).
+
+class F5K
+  name     "RC Electric Thermal Duration, Multiple-Task"
+  fai      "F5K"
+  version  "FAI F5 Electric 2026 ed.2"
+
+  # The Nominal Launch Height: 60 m in light wind, 70 m in moderate wind,
+  # announced by the CD one day before from the mean wind 11:00–17:00. The
+  # textbook Parameter — a legitimate local choice, bound from measured
+  # conditions before flying.
+  param nlh            Number m default 60 boundAt BeforeFlying      # 5.5.10.3
+  param flyoffSize     Number   no default boundAt CompetitionSetup  # 5.5.10 — size not fixed by the rules (F12)
+  param minPerGroup    Number   no default boundAt CompetitionSetup  # F5K states no group minimum (F12)
+  param carryPenalties Flag     no default boundAt CompetitionSetup  # F5K states nothing (F12)
+  param minRounds      Number   no default boundAt CompetitionSetup  # 5.5.10 states no minimum-rounds rule (F12)
+
+  finalRanking LastPhaseReplaces                                     # 5.5.10.16 "fly-off replaces preliminary points"
+
+  reflight
+    entitled     Replacement                                         # 5.5.10.13
+    others       BetterOf                                            # 5.5.10.13
+    minNewGroup  4                                                   # 5.5.10.13
+
+  penalty "motorRestartInFlight"    zeroFlight at RawScore           # 5.5.10.12 flight penalty c
+  penalty "hitPersonOtherThanTimer" zeroRound  at RawScore           # 5.5.10.12 safety penalty a
+  penalty "safetyZone"              deduct 300 at FinalAggregate     # 5.5.10.12 safety penalty b, c "deducted from the final score"
+
+  metricSet f5kFlight
+    metric flightTime            Number s Truncate 1                 # 5.5.10.6 f whole seconds, tenths not rounded
+    metric launchAltitude        Number m Truncate 1                 # 5.5.10.3 highest altitude to 10 s after motor stop
+    metric landedInPilotArea     Flag                                # 5.5.10.15
+    metric landedOnField         Flag                                # 5.5.10.12 flight penalty b — landing off the field = 0 for that flight
+    metric overflewLandingWindow Flag                                # 5.5.10.12 flight penalty a
+
+  # ========================================================================
+  phase Preliminary mandatory
+
+    rounds    ChooseFromCatalogue tasksPerRound 1                    # 5.5.10.2 one task per round from A–E
+    validity  minRounds param(minRounds)                             # 5.5.10 defines no minimum-rounds rule, so the CD decides (F12)
+    drop      ByRound 1 whenCompleted >= 7                           # 5.5.10.16 "if 7 or more rounds are flown"
+
+    # -- A ---------------------------------------------------------------
+    # Four targets in any order; every flight counts whether or not its target
+    # is reached, so the target is a clamp (as F3K K), not a Poker condition.
+    task A "1, 2, 3, 4 minute flights in any order"                  # 5.5.10.2
+      use       f5kFlight
+      flights   bestN 4 targets anyOrder [60, 120, 180, 240] s       # 5.5.10.2
+      timing    Fixed 600 s prep 300 s maxLaunches 4                 # 5.5.10.2; 5.5.10 preparation time >= 5 min per round
+      group     minPerGroup param(minPerGroup)                       # F5K states no group minimum (F12)
+      normalise HigherIsBetter winner 1000 round HalfUp 1            # 5.5.10.15 rounded to whole points
+      rawScore  round Truncate 1                                     # 5.5.10.15 raw truncated down to whole points (F4b, adopted)
+      score
+        when landedOnField == true                                   # 5.5.10.12 flight penalty b
+          then rate flightTime 1 pt/s cap 599 perTask                # 5.5.10.15 1 pt/s; the assigned target caps each flight,
+          else constant 0                                            # 5.5.10.2 "maximum total flight time used for scoring:
+                                                                     #   9.59 min" caps the SUM (F4a, adopted). Not a cap on the
+                                                                     #   raw score: the launch bonus below is added after it.
+        # Launch points relative to the announced NLH. Cumulative bands read
+        # from an origin: at NLH+15 the deduction is 10×1.0 + 5×3.0 = 25.
+        # The below-NLH band has a NEGATIVE rate over a NEGATIVE portion,
+        # which is what makes it a bonus.
+        when flightTime >= 30                                        # 5.5.10.4 no bonus for flights shorter than 30 s
+          then piecewise launchAltitude from param(nlh)              # origin (F5, adopted)
+                 any..0   @ -0.5 pt/m                                # 5.5.10.4 each metre below NLH: +0.5 bonus
+                 0..10    @ -1.0 pt/m                                # 5.5.10.4
+                 10..any  @ -3.0 pt/m                                # 5.5.10.4
+          else piecewise launchAltitude from param(nlh)              # penalties still apply under 30 s
+                 0..10    @ -1.0 pt/m
+                 10..any  @ -3.0 pt/m
+        when landedInPilotArea == false
+          then constant -10                                          # 5.5.10.15 −10 per landing outside the Pilot Area
+          else constant 0
+        when overflewLandingWindow == true
+          then constant -100                                         # 5.5.10.12 flight penalty a
+          else constant 0
+
+    # -- B ---------------------------------------------------------------
+    # Only the last flight counts — so the launch cost must be read off that
+    # flight's own sequence number, which is the whole of finding F6.
+    task B "Last flight, 5 out of 7 minutes" like A                  # 5.5.10.2
+      flights   last
+      timing    Fixed 420 s prep 300 s maxLaunches 3
+      rawScore  round Truncate 1                                     # 5.5.10.15 (no 9:59 total cap on B)
+      score
+        when landedOnField == true
+          then rate flightTime 1 pt/s cap 300 s                      # 5.5.10.2 maximum flight time 5 minutes
+          else constant 0
+        when flightTime >= 30
+          then piecewise launchAltitude from param(nlh)
+                 any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
+          else piecewise launchAltitude from param(nlh)
+                 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m
+        lookup flight.sequence                                       # intrinsic ref (F6, adopted)
+          <= 1 ->   0 ;  <= 2 -> -10 ;  any -> -20                   # 5.5.10.2 Task B launch penalties (cumulative on the last flight)
+        when landedInPilotArea == false then constant -10 else constant 0    # 5.5.10.15
+        when overflewLandingWindow == true then constant -100 else constant 0 # 5.5.10.12 flight penalty a
+
+    # -- C ---------------------------------------------------------------
+    task C "All up, 4 minutes maximum (3x)" like A                   # 5.5.10.2
+      flights   all
+      timing    Fixed 241 s prep 15 s maxLaunches 3                  # 5.5.10.2 working time 4:01 PER launch (finding F13)
+      rawScore  round Truncate 1
+      score
+        when landedOnField == true
+          then rate flightTime 1 pt/s cap 240 s                      # 5.5.10.2 maximum measured flight time 4 minutes
+          else constant 0
+        when flightTime >= 30
+          then piecewise launchAltitude from param(nlh)
+                 any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
+          else piecewise launchAltitude from param(nlh)
+                 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m
+        when landedInPilotArea == false then constant -10 else constant 0
+        when overflewLandingWindow == true then constant -100 else constant 0
+
+    # -- D ---------------------------------------------------------------
+    task D "3, 3, 4 minute flights in any order" like A              # 5.5.10.2
+      flights   bestN 3 targets anyOrder [180, 180, 240] s           # 5.5.10.2
+      timing    Fixed 600 s prep 300 s maxLaunches 3
+      rawScore  round Truncate 1                                     # 5.5.10.15
+      # The `cap 599 perTask` on the flight-time term comes with `like A`, and
+      # D needs it for the same reason: 180+180+240 = 600 s. 5.5.10.2.
+
+    # -- E ---------------------------------------------------------------
+    # Poker. Unlike F3K's, the launch cost applies to every launch made, so the
+    # selection must be `all` — an unachieved flight scores no flight points
+    # and no height adjustment, but still carries its launch penalty.
+    task E "Poker" like A                                            # 5.5.10.2
+      metric    targetTime Number s Truncate 1 declared              # 5.5.10.2 announced to, and recorded by, the timekeeper
+      flights   all
+      timing    Fixed 600 s prep 300 s maxLaunches 3
+      rawScore  round Truncate 1
+      score
+        when all(landedOnField == true, flightTime >= targetTime)    # 5.5.10.2 marked "Y" — the pilot is credited with the target time
+          then rate targetTime 1 pt/s cap 599                        # "any time over the target time is not counted";
+                                                                     # 5.5.10.2 "the target and maximum allowable flight time
+                                                                     #   is 9 minutes and 59 seconds" — per flight, not per task
+          else constant 0
+        # 5.5.10.2: "the launch altitude bonus or penalty only applies where
+        # the target time is achieved" — a second guard F5K's other tasks lack.
+        when all(flightTime >= targetTime, flightTime >= 30)
+          then piecewise launchAltitude from param(nlh)
+                 any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
+          else constant 0
+        lookup flight.sequence                                       # intrinsic ref (F6, adopted)
+          <= 1 ->   0 ;  <= 2 -> -10 ;  any -> -20                   # 5.5.10.2 Task E: 2nd launch −10, 3rd a further −20
+        when landedInPilotArea == false then constant -10 else constant 0
+        when overflewLandingWindow == true then constant -100 else constant 0
+
+  # ========================================================================
+  phase Flyoff optional                                              # 5.5.10 — mandatory for seniors at World/Continental Championships
+
+    promotion TopN param(flyoffSize) group param(minPerGroup)..unlimited
+                carryPenalties param(carryPenalties)                 # F5K states nothing about carry-over (F12)
+                                                                     # 5.5.10 — F5K is SILENT on carry-over (finding F12)
+    rounds    ChooseFromCatalogue tasksPerRound 1
+    validity  minRounds 3                                            # 5.5.10 "if fewer than 3 complete, preliminary results stand"
+    drop      none
+
+    task A like Preliminary.A ; task B like Preliminary.B ; task C like Preliminary.C
+    task D like Preliminary.D ; task E like Preliminary.E
+
+# ---- unresolved for F5K --------------------------------------------------
+# Tie-break (5.5.10.16: best dropped score, then a one-task tie-break fly-off)
+# needs both kinds of tie-break and is not writable. Finding F15.
+#
+# Junior fly-off size = 2/3 of the senior fly-off size. Not writable: the model
+# has no notion of competitor categories, and adding one would be a new domain
+# concept. Stopped rather than added; flagged in findings (F18).

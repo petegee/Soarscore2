@@ -22,13 +22,17 @@ and no existing real data that needs to be preserved, or migrated.
 
 ## Repository map
 
-No application code yet — the repo is documentation only.
+No application code yet.
 
 - `docs/rules/` — the FAI rule knowledge base. `source-docs/` is the verbatim
   official text; the files above it are condensed, software-relevant summaries.
   See House-keeping rule 1.
 - `docs/soaring-domain-glossary.md`, `docs/soaring-domain-class-diagram.md` —
   the domain concepts and their relationships. Approval required to change.
+- `docs/competition-class-notation.md` — the notation for writing a Competition
+  Class by hand, isomorphic to the class diagram.
+- `seed-data/` — the six FAI classes written in that notation. They are the
+  model's test: anything they cannot express is a gap in the model.
 - `docs/high-level-architecture.md`, `docs/aggregate-roots.md` — intended shape
   of the system.
 - `docs/non-functional-requirements.md` — NFR-1 … NFR-3.

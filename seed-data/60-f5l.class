@@ -1,0 +1,104 @@
+# F5L — RC Electric Thermal Gliders, RES        seed definition, draft
+# Rule refs: FAI Sporting Code Volume F5 Electric 2026 ed.2 (5.5.12.x)
+# Provisional class.
+#
+# Two things make F5L worth writing even though it is the simplest class:
+#   - its penalty catalogue is EMPTY. Every consequence in the F5L rules is
+#     derived from something measured, so all of them are score terms.
+#   - it is the class ReflightSelection.UndefinedRequiresRuling exists for.
+
+class F5L
+  name     "RC Electric Thermal Gliders, RES"
+  fai      "F5L"
+  version  "FAI F5 Electric 2026 ed.2"
+
+  param groupSize      Number no default boundAt CompetitionSetup  # 5.5.12.4 — group size not fixed by the rules (F12);
+                                                                   # declared once because the fly-off must match it
+  param flyoffSize     Number no default boundAt CompetitionSetup  # 5.5.12.4 "the top normalised qualifiers" — number not stated (F12)
+  param carryPenalties Flag   no default boundAt CompetitionSetup  # F5L states nothing (F12)
+
+  finalRanking SplitByPromotion                                    # 5.5.12.12 qualifiers ranked by the fly-off, non-qualifiers by qualifying
+
+  # 5.5.12.9 states entitlement and the claim/waiver conditions and NOTHING
+  # about placement or which score counts. Borrowing the parent pattern would
+  # be a CD ruling, not an F5L rule — so the class says it does not know.
+  reflight
+    entitled     UndefinedRequiresRuling                           # 5.5.12.9
+    others       UndefinedRequiresRuling                           # 5.5.12.9
+    minNewGroup  0                                                 # 5.5.12.9 not stated
+
+  # (no penalty definitions — see the header note)
+
+  metricSet f5lFlight
+    metric flightTime             Number s Truncate 1              # 5.5.12.11.1 recorded in full seconds
+    metric landingDistance        Number m Truncate 0.1            # 5.5.12.11.2 — no capture precision stated (F12 residual)
+    metric overflySeconds         Number s Truncate 1              # 5.5.12.11.2
+    metric landedInLandingArea    Flag                             # 5.5.12.11.2 (zero for the entire task)
+    metric lostPart               Flag                             # 5.5.12.11.2 a
+    metric touchedByCompetitor    Flag                             # 5.5.12.11.2 c
+    metric touchedBeforeMeasuring Flag                             # 5.5.12.11.2 d
+    metric amrtPresetsCorrect     Flag                             # 5.5.12.4 flight = 0 if the AMRT settings differ from the presets (30 s / 90 m)
+    metric timingDeviationInFavour Flag                            # 5.5.12.4 d helper-timed flight out by > 3 s in the competitor's favour = zero
+
+  # ========================================================================
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1
+    validity  minRounds 4                                          # 5.5.12.4 "at least 4 qualifying rounds"
+    drop      ByRound 1 whenCompleted >= 6                         # 5.5.12.12 "if more than 5, the lowest round score is dropped"
+
+    task D "Duration"
+      use       f5lFlight
+      flights   last                                               # 5.5.12.4 unlimited attempts; the last flight is the official score
+      timing    Fixed 540 s maxLaunches unlimited                  # 5.5.12.4 working time 9 minutes
+      group     minPerGroup param(groupSize)                       # 5.5.12.4 — not fixed by the rules; see the fly-off below
+      normalise HigherIsBetter winner 1000                         # 5.5.12.11 states no rounding precision, so none is applied (F12)
+      score
+        # 2 pt/s to 390 s, then the overflying time is "deducted from 390 s" —
+        # which is F3B Task A's shape at a different rate. 400 s scores
+        # 390×2 + 10×(−2) = 760, i.e. 380 scored seconds.
+        when all(landedInLandingArea == true,                      # 5.5.12.11.2 zero for the entire task
+                 overflySeconds <= 30,                             # 5.5.12.11.2 b
+                 amrtPresetsCorrect == true,                       # 5.5.12.4
+                 timingDeviationInFavour == false)                 # 5.5.12.4 d
+          then piecewise flightTime
+                 0..390    @  2 pt/s                               # 5.5.12.11.1 two points per second, max 6:30
+                 390..any  @ -2 pt/s                               # 5.5.12.11.1 "the overflying time will be deducted from 390 s"
+          else constant 0
+        # Five separate ways to lose the landing bonus, plus the two that zero
+        # the whole task. Seven conditions on one term — the clearest case in
+        # the corpus for finding F3.
+        when all(landedInLandingArea == true,                      # 5.5.12.11.2 (entire task)
+                 amrtPresetsCorrect == true,                       # 5.5.12.4
+                 timingDeviationInFavour == false,                 # 5.5.12.4 d
+                 overflySeconds == 0,                              # 5.5.12.11.2 b
+                 lostPart == false,                                # 5.5.12.11.2 a
+                 touchedByCompetitor == false,                     # 5.5.12.11.2 c
+                 touchedBeforeMeasuring == false)                  # 5.5.12.11.2 d
+          then lookup landingDistance                              # 5.5.12.11.2
+                 <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
+                 <= 1.0 ->  96 ;  <= 1.2 -> 95 ;  <= 1.4 -> 94 ;  <= 1.6 -> 93
+                 <= 1.8 ->  92 ;  <= 2.0 -> 91 ;  <= 3.0 -> 90 ;  <= 4.0 -> 85
+                 <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
+                 <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
+                 <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
+          else constant 0
+
+  # ========================================================================
+  phase Flyoff optional                                            # 5.5.12.4
+
+    # "The fly-off group size equals the preliminary group size" is why
+    # groupSize is declared once at class level and referenced twice.
+    promotion TopN param(flyoffSize) group param(groupSize)..param(groupSize)
+                carryPenalties param(carryPenalties)                # F5L states nothing about carry-over (F12)
+                                                                   # 5.5.12.4; F5L is SILENT on carry-over (finding F12)
+    rounds    FixedSequence tasksPerRound 1
+    validity  minRounds 2                                          # 5.5.12.4 "minimum 2 rounds"
+    drop      none
+
+    # F5L changes nothing about the task in the fly-off — the only class of the
+    # six for which that is true.
+    task D "Duration (fly-off)" like Preliminary.D
+
+# ---- unresolved for F5L --------------------------------------------------
+# Tie-break: 5.5.12 states none. Nothing to write, and nothing missing.

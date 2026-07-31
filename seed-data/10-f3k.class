@@ -1,0 +1,191 @@
+# F3K — RC Hand-Launch Gliders                 seed definition, draft
+# Rule refs: FAI Sporting Code Volume F3 Soaring 2025 ed.2 (F3K.x)
+# Written first, deliberately: 14 tasks, five of the six selection kinds,
+# both target-assignment orders, the corpus's only UntilAllFlightsComplete.
+
+class F3K
+  name     "RC Hand-Launch Gliders"
+  fai      "F3K"
+  version  "FAI F3 Soaring 2025 ed.2"
+
+  # ---- parameters --------------------------------------------------------
+  # The rules offer the organiser a choice at each of these points, and state
+  # the permitted values — so each carries `allowed` (F8) and a binding is
+  # validated against it. A parameter with `no default` is one the rules leave
+  # open entirely: the CD must choose at setup and the choice is logged (F12).
+  param workingTime.A  Number s default 600 allowed [420, 600] boundAt PerRound          # F3K.11.1
+  param workingTime.B  Number s default 600 allowed [420, 600] boundAt PerRound          # F3K.11.2
+  param maxFlight.B    Number s default 240 allowed [180, 240] boundAt PerRound          # F3K.11.2
+  param launches.C     Number   default 3   allowed [3, 4, 5]  boundAt CompetitionSetup  # F3K.11.3
+  param workingTime.E  Number s default 600 allowed [600, 900] boundAt PerRound          # F3K.11.5
+  param workingTime.L  Number s default 600 allowed [420, 600] boundAt PerRound          # F3K.11.12
+  param maxFlight.L    Number s default 599 allowed [419, 599] boundAt PerRound          # F3K.11.12
+  param flyoffSize     Number   no default                     boundAt CompetitionSetup  # F3K.9.1 size not fixed by the rules
+  param carryPenalties Flag     no default                     boundAt CompetitionSetup  # F3K states nothing (F12)
+
+  # ---- class-wide rules --------------------------------------------------
+  finalRanking LastPhaseReplaces                                      # F3K.10 "fly-off replaces preliminary scores for its participants"
+
+  reflight
+    entitled     Replacement                                          # F3K.9.6 the re-flyer's new attempt is official even if worse
+    others       BetterOf                                             # F3K.9.6
+    minNewGroup  4                                                    # F3K.9.6
+
+  penalty "unsignedScoreCard"            zeroRound       at RawScore       # F3K.1.2 "if the result is not signed by the
+                                                                           #   competitor, the score for the round will be 0"
+  penalty "flewOutsideTestingWindow"     deduct 100      at FinalAggregate # F3K.9.5
+  penalty "safetyAreaObjectContact"      deduct 100      at FinalAggregate # F3K.4.3
+  penalty "safetyAreaPersonContact"      deduct 300      at FinalAggregate # F3K.4.3
+  penalty "landedInSafetyArea"           deduct 100      at FinalAggregate # F3K.4.3
+  # F3K.4.3: "each flight attempt may only incur a single penalty" — a
+  # precedence rule PenaltyCatalogue cannot express. Recorded, unmodelled.
+
+  # ---- shared metrics ----------------------------------------------------
+  metricSet f3kFlight
+    metric flightTime Number s Truncate 0.1                           # F3K.7 recorded to 0.1 s, truncated
+
+  # ========================================================================
+  phase Preliminary mandatory
+
+    rounds    ChooseFromCatalogue tasksPerRound 1 distinctTaskPerRound  # F3K.10 five rounds, each a different task
+    validity  minRounds 5                                               # F3K.10
+    drop      ByRound 1 whenCompleted >= 6                              # F3K.10 "if 6 or more rounds are flown"
+
+    # -- A ---------------------------------------------------------------
+    task A "Last flight"                                              # F3K.11.1
+      use       f3kFlight
+      flights   last                                                  # "only the last flight is taken into account"
+      timing    Fixed param(workingTime.A) maxLaunches unlimited
+      group     minPerGroup 5                                         # F3K.9.1
+      normalise HigherIsBetter winner 1000 round HalfUp 0.1           # F3K.9.1
+      score
+        rate flightTime 1 pt/s cap 300 s                              # F3K.11.1
+
+    # -- B ---------------------------------------------------------------
+    task B "Next to last and last flight" like A                      # F3K.11.2
+      flights   lastN 2
+      timing    Fixed param(workingTime.B) maxLaunches unlimited
+      score
+        rate flightTime 1 pt/s cap param(maxFlight.B)
+
+    # -- C ---------------------------------------------------------------
+    # The only UntilAllFlightsComplete task in the corpus: the working time IS
+    # the sum of the flights ("the aggregate of all 3 (or 5) flight times
+    # means the working time").
+    task C "All up, last down" like A                                 # F3K.11.3
+      metric    launchedOnSignal Flag                                 # F3K.11.3 within 3 s of the acoustic signal
+      flights   all
+      timing    UntilAllFlightsComplete prep 60 s maxLaunches param(launches.C)
+      score
+        when launchedOnSignal == true
+          then rate flightTime 1 pt/s cap 180 s                       # F3K.11.3
+          else constant 0                                             # F3K.11.3 early or >3 s late = zero for the flight
+
+    # -- D ---------------------------------------------------------------
+    task D "Two flights" like A                                       # F3K.11.4
+      flights   all
+      timing    Fixed 600 s maxLaunches 2
+      score
+        rate flightTime 1 pt/s cap 300 s
+
+    # -- E ---------------------------------------------------------------
+    # Poker. An achieved target credits the TARGET, not the flight time; a
+    # missed one credits nothing. bestN 3 is what enforces "up to three (3)
+    # target times" — F3K allows unlimited launches, so a launch cap will not.
+    task E "Poker — variable target time" like A                      # F3K.11.5
+      metric    targetTime Number s Truncate 1 declared               # F3K.11.5 announced before release
+      flights   bestN 3
+      timing    Fixed param(workingTime.E) maxLaunches unlimited
+      score
+        when flightTime >= targetTime
+          then rate targetTime 1 pt/s                                 # F3K.11.5 "the target time is credited"
+          else constant 0
+
+    # -- F ---------------------------------------------------------------
+    task F "3 out of 6" like A                                        # F3K.11.6
+      flights   bestN 3
+      timing    Fixed 600 s maxLaunches 6
+      score
+        rate flightTime 1 pt/s cap 180 s
+
+    # -- G ---------------------------------------------------------------
+    task G "Five longest flights" like A                              # F3K.11.7
+      flights   bestN 5
+      timing    Fixed 600 s maxLaunches unlimited
+      score
+        rate flightTime 1 pt/s cap 120 s
+
+    # -- H ---------------------------------------------------------------
+    # No cap on the term: the assigned target IS the cap. Longest flight takes
+    # the 240 s target, and so down — that is TargetAssignment.AnyOrder.
+    task H "1, 2, 3 and 4 minute targets, any order" like A           # F3K.11.8
+      flights   bestN 4 targets anyOrder [60, 120, 180, 240] s
+      timing    Fixed 600 s maxLaunches unlimited
+      score
+        rate flightTime 1 pt/s
+
+    # -- I ---------------------------------------------------------------
+    task I "Three longest flights" like A                             # F3K.11.9
+      flights   bestN 3
+      timing    Fixed 600 s maxLaunches unlimited
+      score
+        rate flightTime 1 pt/s cap 200 s
+
+    # -- J ---------------------------------------------------------------
+    task J "Three last flights" like A                                # F3K.11.10
+      flights   lastN 3
+      timing    Fixed 600 s maxLaunches unlimited
+      score
+        rate flightTime 1 pt/s cap 180 s
+
+    # -- K ---------------------------------------------------------------
+    # "The competitors do not have to reach or exceed the target times to count
+    # each flight time" — so this is a clamp, not a Poker-style conditional.
+    task K "Big Ladder — increasing by 30 s" like A                   # F3K.11.11
+      flights   exactlyN 5 targets inOrder [60, 90, 120, 150, 180] s
+      timing    Fixed 600 s maxLaunches 5
+      score
+        rate flightTime 1 pt/s
+
+    # -- L ---------------------------------------------------------------
+    task L "One flight" like A                                        # F3K.11.12
+      flights   last
+      timing    Fixed param(workingTime.L) maxLaunches 1
+      score
+        rate flightTime 1 pt/s cap param(maxFlight.L)
+
+    # -- N ---------------------------------------------------------------
+    task N "Best flight" like A                                       # F3K.11.14
+      flights   bestN 1
+      timing    Fixed 600 s maxLaunches unlimited
+      score
+        rate flightTime 1 pt/s cap 599 s
+
+  # ========================================================================
+  # Mandatory at World / Continental Championships; if fewer than 3 fly-off
+  # rounds complete, the preliminary results stand — which is `validity`
+  # plus FinalRankingKind.LastPhaseReplaces, not a separate rule.
+  phase Flyoff optional                                               # F3K.9.1
+
+    promotion TopN param(flyoffSize) group 5..unlimited
+                carryPenalties param(carryPenalties)                  # F3K.9.1; F3K states nothing about carry-over (F12)
+    rounds    ChooseFromCatalogue tasksPerRound 1                     # F3K.9.1 3–6 rounds
+    validity  minRounds 3                                             # F3K.9.1
+    drop      none                                                    # F3K.10 discard applies to the preliminary aggregate only
+
+    task A like Preliminary.A ; task B like Preliminary.B ; task C like Preliminary.C
+    task D like Preliminary.D ; task E like Preliminary.E ; task F like Preliminary.F
+    task G like Preliminary.G ; task H like Preliminary.H ; task I like Preliminary.I
+    task J like Preliminary.J ; task K like Preliminary.K ; task L like Preliminary.L
+    task N like Preliminary.N
+
+    # -- M, fly-off only -------------------------------------------------
+    task M "Huge Ladder — increasing by 2 min" like Preliminary.K      # F3K.11.13
+      flights   exactlyN 3 targets inOrder [180, 300, 420] s
+      timing    Fixed 900 s maxLaunches 3
+      score
+        rate flightTime 1 pt/s
+
+# ---- unresolved for F3K --------------------------------------------------
+# Tie-break (F3K.10: best dropped score, then a one-task tie-break fly-off) is
+# not writable — tie-breaking is deliberately unmodelled. Finding F15.

@@ -1,0 +1,116 @@
+# F3J — RC Thermal Duration Gliders             seed definition, draft
+# Rule refs: FAI Sporting Code Volume F3 Soaring 2025 ed.2 (F3J.x)
+#
+# Penalty application point: F3J contradicts itself. Each penalty clause says
+# "deduction from the competitor's final score" (F3J.2.4 d, F3J.7 d, F3J.8.3),
+# while F3J.10.10's group-winner formula puts penalties inside the group total.
+# Ruled: the specific clauses govern, and F3J.10.10's "minus penalty points"
+# means the DERIVED −30 overfly deduction (F3J.10.3), which is a score term.
+
+class F3J
+  name     "RC Thermal Duration Gliders"
+  fai      "F3J"
+  version  "FAI F3 Soaring 2025 ed.2"
+
+  param flyoffSize     Number default 9 boundAt CompetitionSetup   # F3J.11 top >= 9; the CD may raise the number
+  param carryPenalties  Flag   no default boundAt CompetitionSetup # F3J states nothing (F12 — silence is a parameter)
+  param flyoffMinRounds Number no default boundAt CompetitionSetup # F3J.11 states no fly-off minimum (F12)
+
+  finalRanking SplitByPromotion                                    # F3J.11 qualifiers ranked on the fly-off, the rest on qualifying
+
+  reflight
+    entitled     Replacement                                       # F3J.4
+    others       BetterOf                                          # F3J.4
+    minNewGroup  4                                                 # F3J.4
+
+  penalty "towlineNotClearedWithin30s" deduct 100  at FinalAggregate  # F3J.8.3
+  penalty "nonConformingWinch"         deduct 1000 at FinalAggregate  # F3J.8.2 p
+  penalty "unauthorisedTransmission"   deduct 300  at FinalAggregate  # F3J.7 d
+  penalty "safetyAreaObjectContact"    deduct 300  at FinalAggregate  # F3J.2.4 a
+  penalty "safetyAreaPersonContact"    deduct 1000 at FinalAggregate  # F3J.2.4 b
+  penalty "safetySpaceNotLeft"         deduct 300  at FinalAggregate  # F3J.2.4 d
+  # F3J.2.4 c: only one penalty per attempt, and where both a person and an
+  # object are touched the 1000 applies. Not writable — PenaltyCatalogue has no
+  # precedence or mutual-exclusion rule. Recorded, unmodelled.
+
+  metricSet f3jFlight
+    metric flightTime          Number s HalfUp 0.1                 # F3J.10.2 "recorded to one decimal place" — the MODE is not
+                                                                   #   stated. F3K states truncation explicitly, which suggests
+                                                                   #   F3J is not truncated. Chosen, not cited (F12 residual).
+    metric landingDistance     Number m Truncate 0.1               # F3J.10.6 — no capture precision stated (F12 residual)
+    metric overflySeconds      Number s Truncate 1                 # F3J.10.3, 10.4 — seconds flown past the end of working time
+    metric touchedByCompetitor Flag                                # F3J.10.8
+
+  # ========================================================================
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1
+    validity  minRounds 4                                          # F3J.3.1 a
+    drop      ByRound 1 whenCompleted >= 8                         # F3J.3.1 a "if more than 7 qualification rounds are flown" — the highest threshold of the six
+
+    task D "Duration"
+      use       f3jFlight
+      flights   last
+      timing    Fixed 600 s maxLaunches unlimited                  # F3J.6 working time 10 minutes
+      group     minPerGroup 6                                      # F3J.6.1 minimum 6, preferably 8–10
+      normalise HigherIsBetter winner 1000 round Truncate 0.1      # F3J.10.11 "recorded (truncated) to one place after the decimal point"
+      score
+        when overflySeconds <= 60
+          then rate flightTime 1 pt/s cap 600 s                    # F3J.10 1 pt/s; timed to the end of working time (F3J.10.1 c)
+          else constant 0                                          # F3J.10.4 zero for overflying by more than one minute
+        # A DERIVED deduction, not a Penalty: nobody records an infraction, it
+        # falls out of the measured overfly. Where a long overfly has already
+        # zeroed the flight, this leaves −30, which the pipeline clamps to 0.
+        when overflySeconds > 0
+          then constant -30                                        # F3J.10.3
+          else constant 0
+        when all(overflySeconds == 0,                              # F3J.10.9
+                 touchedByCompetitor == false)                     # F3J.10.8
+          then lookup landingDistance                              # F3J.10.5
+                 <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
+                 <= 1.0 ->  96 ;  <= 1.2 -> 95 ;  <= 1.4 -> 94 ;  <= 1.6 -> 93
+                 <= 1.8 ->  92 ;  <= 2.0 -> 91 ;  <= 3.0 -> 90 ;  <= 4.0 -> 85
+                 <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
+                 <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
+                 <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
+          else constant 0
+
+  # ========================================================================
+  phase Flyoff optional                                            # F3J.11
+
+    promotion TopN param(flyoffSize) group 9..unlimited
+                carryPenalties param(carryPenalties)               # F3J.11 top >= 9, a single group;
+                                                                   # F3J states nothing about carry-over, so the CD decides
+                                                                   # at setup and the choice is logged (F12)
+    rounds    FixedSequence tasksPerRound 1
+    validity  minRounds param(flyoffMinRounds)                     # not stated for F3J (F12)
+    drop      none                                                 # F3J.3.1 a the discard applies to the qualifying aggregate
+
+    task D "Duration (fly-off)" like Preliminary.D
+      timing  Fixed 900 s maxLaunches unlimited                    # F3J.6 15 minutes for the fly-off
+      score
+        when overflySeconds <= 60
+          then rate flightTime 1 pt/s cap 900 s
+          else constant 0
+        when overflySeconds > 0 then constant -30 else constant 0  # F3J.10.3
+        when all(overflySeconds == 0, touchedByCompetitor == false)
+          then lookup landingDistance                              # F3J.10.5
+                 <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
+                 <= 1.0 ->  96 ;  <= 1.2 -> 95 ;  <= 1.4 -> 94 ;  <= 1.6 -> 93
+                 <= 1.8 ->  92 ;  <= 2.0 -> 91 ;  <= 3.0 -> 90 ;  <= 4.0 -> 85
+                 <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
+                 <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
+                 <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
+          else constant 0
+
+# ---- unresolved for F3J --------------------------------------------------
+# Fly-off ties broken by qualifying position (F3J.11). Not writable. Finding F15.
+#
+# Group neutralisation (F3J.5.2: in a fly-off round or the last group of a
+# qualification round, a re-flight event inside the first 30 s lets the CD
+# restart the whole group) is unique to F3J and is NOT writable — ReflightRule
+# has no group-scoped variant. Assessed as a CD action recorded against the
+# Competition rather than a scoring rule: it changes which flights exist, not
+# how they score, so nothing is missing from the class model. Finding F18a.
+#
+# Penalty precedence (F3J.2.4 c) is unmodelled — see the catalogue above.
