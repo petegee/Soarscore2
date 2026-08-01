@@ -12,11 +12,11 @@ class F5L
   fai      "F5L"
   version  "FAI F5 Electric 2026 ed.2"
 
-  param groupSize      Number no default boundAt CompetitionSetup  # 5.5.12.4 — group size not fixed by the rules (F12);
-                                                                   # declared once because the fly-off must match it
-  param flyoffSize     Number no default boundAt CompetitionSetup  # 5.5.12.4 "the top normalised qualifiers" — number not stated (F12)
-  param carryPenalties Flag   no default boundAt CompetitionSetup  # F5L states nothing (F12)
-  param minNewGroup    Number no default boundAt CompetitionSetup  # 5.5.12.9 states no minimum for a re-flight group (F12)
+  param groupSize           no default  # 5.5.12.4 — group size not fixed by the rules (F12);
+                                        #   declared once because the fly-off must match it
+  param flyoffSize          no default  # 5.5.12.4 "the top normalised qualifiers" — number not stated (F12)
+  param carryPenalties Flag no default  # F5L states nothing (F12)
+  param minNewGroup         no default  # 5.5.12.9 states no minimum for a re-flight group (F12)
 
   finalRanking SplitByPromotion                                    # 5.5.12.12 qualifiers ranked by the fly-off, non-qualifiers by qualifying
 
@@ -44,14 +44,13 @@ class F5L
   # ========================================================================
   phase Preliminary
 
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                          # 5.5.12.4 "at least 4 qualifying rounds"
     drop      ByRound 1 whenRounds >= 6                            # 5.5.12.12 "if more than 5, the lowest round score is dropped"
 
     task D "Duration"
       use       f5lFlight
       flights   last                                               # 5.5.12.4 unlimited attempts; the last flight is the official score
-      timing    Fixed 540 s maxLaunches unlimited                  # 5.5.12.4 working time 9 minutes
+      timing    Fixed 540 s                                        # 5.5.12.4 working time 9 minutes
       group     minPerGroup param(groupSize)                       # 5.5.12.4 — not fixed by the rules; see the fly-off below
       normalise HigherIsBetter winner 1000                         # 5.5.12.11 states no rounding precision, so none is applied (F12)
       score
@@ -65,7 +64,6 @@ class F5L
           then piecewise flightTime
                  0..390    @  2 pt/s                               # 5.5.12.11.1 two points per second, max 6:30
                  390..any  @ -2 pt/s                               # 5.5.12.11.1 "the overflying time will be deducted from 390 s"
-          else constant 0
         # Five separate ways to lose the landing bonus, plus the two that zero
         # the whole task. Seven conditions on one term — the clearest case in
         # the corpus for finding F3.
@@ -83,7 +81,6 @@ class F5L
                  <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
                  <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
                  <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
-          else constant 0
 
   # ========================================================================
   phase Flyoff                                                     # 5.5.12.4
@@ -93,7 +90,6 @@ class F5L
     promotion TopN param(flyoffSize) group param(groupSize)..param(groupSize)
                 carryPenalties param(carryPenalties)                # F5L states nothing about carry-over (F12)
                                                                    # 5.5.12.4; F5L is SILENT on carry-over (finding F12)
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds 2                                          # 5.5.12.4 "minimum 2 rounds"
     # no drop: 5.5.12 states no fly-off discard
 

@@ -17,7 +17,7 @@ class NZ-P
   fai      ""                                                    # a national class; no FAI designation
   version  "NZMAA Section 5 Soaring, March 2024"
 
-  param roundDuration Number s no default boundAt BeforeFlying   # NZ.3.15.1 k "decided by the CD taking into account
+  param roundDuration s no default boundAt BeforeFlying          # NZ.3.15.1 k "decided by the CD taking into account
                                                                  #   the number of competitors, weather conditions
                                                                  #   etc. For example each round could be 1 hour" (F12)
 
@@ -66,7 +66,6 @@ class NZ-P
                  airborneAtRoundEnd == false)                    # NZ.3.15.1 j, read per NZ.3.13.1 j — see below
           then lookup landingDistance                            # NZ.3.15.1 e
                  <=  7 -> 50 ;  <= 15 -> 25 ;  any -> 0
-          else constant 0
 
 # ---- RULES QUERY, not a model gap ----------------------------------------
 # NZ.3.15.1 j reads: "The model must be airborne at the end of the round the

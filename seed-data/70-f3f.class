@@ -11,7 +11,7 @@ class F3F
   fai      "F3F"
   version  "FAI F3 Soaring 2025"
 
-  param reflightAfterNPilots Number no default boundAt BeforeFlying
+  param reflightAfterNPilots no default boundAt BeforeFlying
                                     # F3F.1.5 "after a fixed number of pilots (e.g. 5),
                                     #   pre-defined and announced by the organiser".
                                     # Declared so the CD's choice reaches the event log;
@@ -41,7 +41,8 @@ class F3F
   # ========================================================================
   phase Preliminary
 
-    rounds    FixedSequence tasksPerRound 1                    # F3F.1.7 "the flights are to be performed round by round"; no ceiling stated
+    # rounds: F3F.1.7 "the flights are to be performed round by round" — the
+    #   default composition, one task per round, and no ceiling is stated
     validity  minRounds 4                                      # F3F.1.13 "a minimum of four (4) rounds must be flown"
     # Two tiers, most selective first (F22). Reversed, a 15-round contest would
     # match the >= 4 line and discard one — adoption rejects non-descending gates.

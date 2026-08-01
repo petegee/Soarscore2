@@ -13,15 +13,15 @@ class F3K
   # the permitted values — so each carries `allowed` (F8) and a binding is
   # validated against it. A parameter with `no default` is one the rules leave
   # open entirely: the CD must choose at setup and the choice is logged (F12).
-  param workingTime.A  Number s default 600 allowed [420, 600] boundAt PerRound          # F3K.11.1
-  param workingTime.B  Number s default 600 allowed [420, 600] boundAt PerRound          # F3K.11.2
-  param maxFlight.B    Number s default 240 allowed [180, 240] boundAt PerRound          # F3K.11.2
-  param launches.C     Number   default 3   allowed [3, 4, 5]  boundAt CompetitionSetup  # F3K.11.3
-  param workingTime.E  Number s default 600 allowed [600, 900] boundAt PerRound          # F3K.11.5
-  param workingTime.L  Number s default 600 allowed [420, 600] boundAt PerRound          # F3K.11.12
-  param maxFlight.L    Number s default 599 allowed [419, 599] boundAt PerRound          # F3K.11.12
-  param flyoffSize     Number   no default                     boundAt CompetitionSetup  # F3K.9.1 size not fixed by the rules
-  param carryPenalties Flag     no default                     boundAt CompetitionSetup  # F3K states nothing (F12)
+  param workingTime.A  s     default 600 allowed [420, 600] boundAt PerRound  # F3K.11.1
+  param workingTime.B  s     default 600 allowed [420, 600] boundAt PerRound  # F3K.11.2
+  param maxFlight.B    s     default 240 allowed [180, 240] boundAt PerRound  # F3K.11.2
+  param launches.C           default 3   allowed [3, 4, 5]                    # F3K.11.3
+  param workingTime.E  s     default 600 allowed [600, 900] boundAt PerRound  # F3K.11.5
+  param workingTime.L  s     default 600 allowed [420, 600] boundAt PerRound  # F3K.11.12
+  param maxFlight.L    s     default 599 allowed [419, 599] boundAt PerRound  # F3K.11.12
+  param flyoffSize           no default                                       # F3K.9.1 size not fixed by the rules
+  param carryPenalties Flag  no default                                       # F3K states nothing (F12)
 
   # ---- class-wide rules --------------------------------------------------
   finalRanking LastPhaseReplaces                                      # F3K.10 "fly-off replaces preliminary scores for its participants"
@@ -70,7 +70,7 @@ class F3K
     task A "Last flight"                                              # F3K.11.1
       use       f3kFlight
       flights   last                                                  # "only the last flight is taken into account"
-      timing    Fixed param(workingTime.A) maxLaunches unlimited
+      timing    Fixed param(workingTime.A)
       group     minPerGroup 5                                         # F3K.9.1
       normalise HigherIsBetter winner 1000 round HalfUp 0.1           # F3K.9.1
       # Two class-wide flight voids (F17). They zero this flight's contribution
@@ -85,7 +85,7 @@ class F3K
     # -- B ---------------------------------------------------------------
     task B "Next to last and last flight" like A                      # F3K.11.2
       flights   lastN 2
-      timing    Fixed param(workingTime.B) maxLaunches unlimited
+      timing    Fixed param(workingTime.B)
       score
         rate flightTime 1 pt/s cap param(maxFlight.B)
 
@@ -112,11 +112,12 @@ class F3K
         rate flightTime 1 pt/s cap 180 s                              # F3K.11.3 "the maximum measured flight time is 180 seconds"
 
     # -- D ---------------------------------------------------------------
+    # D restates no `score`, so A's whole term list comes with `like`:
+    # `rate flightTime 1 pt/s cap 300 s` is what F3K.11.4 states for D as well
+    # (300 s each, both flights summed).
     task D "Two flights" like A                                       # F3K.11.4
       flights   all
       timing    Fixed 600 s maxLaunches 2
-      score
-        rate flightTime 1 pt/s cap 300 s
 
     # -- E ---------------------------------------------------------------
     # Poker. An achieved target credits the TARGET, not the flight time; a
@@ -125,11 +126,10 @@ class F3K
     task E "Poker — variable target time" like A                      # F3K.11.5
       metric    targetTime Number s Truncate 1 declared               # F3K.11.5 announced before release
       flights   bestN 3
-      timing    Fixed param(workingTime.E) maxLaunches unlimited
+      timing    Fixed param(workingTime.E)
       score
         when flightTime >= targetTime
           then rate targetTime 1 pt/s                                 # F3K.11.5 "the target time is credited"
-          else constant 0
 
     # -- F ---------------------------------------------------------------
     task F "3 out of 6" like A                                        # F3K.11.6
@@ -141,7 +141,7 @@ class F3K
     # -- G ---------------------------------------------------------------
     task G "Five longest flights" like A                              # F3K.11.7
       flights   bestN 5
-      timing    Fixed 600 s maxLaunches unlimited
+      timing    Fixed 600 s
       score
         rate flightTime 1 pt/s cap 120 s
 
@@ -156,21 +156,21 @@ class F3K
     # worked examples, F3K.11.5 → 142 s and F3K.11.8 → 569 s.
     task H "1, 2, 3 and 4 minute targets, any order" like A           # F3K.11.8
       flights   bestN 4 rankBy flightTime targets anyOrder [60, 120, 180, 240] s
-      timing    Fixed 600 s maxLaunches unlimited
+      timing    Fixed 600 s
       score
         rate flightTime 1 pt/s
 
     # -- I ---------------------------------------------------------------
     task I "Three longest flights" like A                             # F3K.11.9
       flights   bestN 3
-      timing    Fixed 600 s maxLaunches unlimited
+      timing    Fixed 600 s
       score
         rate flightTime 1 pt/s cap 200 s
 
     # -- J ---------------------------------------------------------------
     task J "Three last flights" like A                                # F3K.11.10
       flights   lastN 3
-      timing    Fixed 600 s maxLaunches unlimited
+      timing    Fixed 600 s
       score
         rate flightTime 1 pt/s cap 180 s
 
@@ -185,15 +185,14 @@ class F3K
 
     # -- L ---------------------------------------------------------------
     task L "One flight" like A                                        # F3K.11.12
-      flights   last
-      timing    Fixed param(workingTime.L) maxLaunches 1
+      timing    Fixed param(workingTime.L) maxLaunches 1              # F3K.11.12 one launch; `flights last` comes from A
       score
         rate flightTime 1 pt/s cap param(maxFlight.L)
 
     # -- N ---------------------------------------------------------------
     task N "Best flight" like A                                       # F3K.11.14
       flights   bestN 1
-      timing    Fixed 600 s maxLaunches unlimited
+      timing    Fixed 600 s
       score
         rate flightTime 1 pt/s cap 599 s
 
@@ -223,11 +222,12 @@ class F3K
     task N like Preliminary.N
 
     # -- M, fly-off only -------------------------------------------------
+    # Only the ladder and the working time differ from K; the uncapped
+    # `rate flightTime 1 pt/s` comes with `like`, and is right for the same
+    # reason — the assigned target is the cap (F3K.11.13).
     task M "Huge Ladder — increasing by 2 min" like Preliminary.K      # F3K.11.13
       flights   exactlyN 3 targets inOrder [180, 300, 420] s
       timing    Fixed 900 s maxLaunches 3
-      score
-        rate flightTime 1 pt/s
 
 # ---- unresolved for F3K --------------------------------------------------
 # Tie-break (F3K.10: best dropped score, then a one-task tie-break fly-off) is

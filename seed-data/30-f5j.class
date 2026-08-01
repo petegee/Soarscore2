@@ -9,8 +9,8 @@ class F5J
   fai      "F5J"
   version  "FAI F5 Electric 2026 ed.2"
 
-  param flyoffMaxGroup Number default 14 boundAt CompetitionSetup   # 5.5.11.8 max 14; the CD may set a lower maximum
-  param flyoffMinRounds Number no default boundAt CompetitionSetup  # 5.5.11 states no fly-off minimum (F12)
+  param flyoffMaxGroup  default 14  # 5.5.11.8 max 14; the CD may set a lower maximum
+  param flyoffMinRounds no default  # 5.5.11 states no fly-off minimum (F12)
 
   finalRanking SplitByPromotion                                     # 5.5.11.13 qualifiers ranked on the fly-off, the rest on qualifying
 
@@ -47,14 +47,13 @@ class F5J
   # ========================================================================
   phase Preliminary
 
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                           # 5.5.11.13
     drop      ByRound 1 whenRounds >= 5                             # 5.5.11.13 "if more than 4, the lowest round score is dropped"
 
     task D "Duration"
       use       f5jFlight
       flights   last
-      timing    Fixed 600 s maxLaunches unlimited                    # 5.5.11.8 working time 10 minutes
+      timing    Fixed 600 s                                          # 5.5.11.8 working time 10 minutes
       group     minPerGroup 6                                        # 5.5.11.8
       normalise HigherIsBetter winner 1000                           # 5.5.11.12 m states no rounding precision, so none is applied (F12)
       # Both conditions zero THE FLIGHT, not one term (F17). Written as term
@@ -79,7 +78,6 @@ class F5J
                  <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
                  <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
                  <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
-          else constant 0
 
   # ========================================================================
   phase Flyoff                                                       # 5.5.11.13
@@ -88,16 +86,15 @@ class F5J
                 carryPenalties false                                 # 5.5.11.12 n — F5J is the one class that STATES it
                                                                      # 5.5.11.13 top 30% rounded down; 5.5.11.8 single group 6–14;
                                                                      # 5.5.11.12 n penalties are not carried into the fly-off
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds param(flyoffMinRounds)                       # not stated for F5J (F12)
     # no drop: 5.5.11.13's discard applies to the qualifying aggregate
 
-    # Same task; two numbers change, and both live on the task, which is why
-    # the fly-off restates it rather than inheriting it.
+    # Same task; two numbers change — the working time and the flight-points
+    # cap. `use`, `flights`, `group`, `normalise` and `flightValidWhen` all come
+    # with `like`. The whole `score` block is restated only because one term in
+    # it moved: a restated block replaces the parent's entire block.
     task D "Duration (fly-off)" like Preliminary.D
-      timing  Fixed 900 s maxLaunches unlimited                      # 5.5.11.8 15 minutes
-      flightValidWhen all(overflySeconds <= 60,                      # 5.5.11.12 g
-                          startHeightRecorded == true)               # 5.5.11.12 d
+      timing  Fixed 900 s                                            # 5.5.11.8 15 minutes
       score
         rate flightTime 1 pt/s cap 900 s                             # 5.5.11.12 c 900 points for the fly-off rounds
         piecewise startHeight
@@ -108,7 +105,6 @@ class F5J
                  <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
                  <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
                  <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
-          else constant 0
 
 # ---- unresolved for F5J --------------------------------------------------
 # Fly-off ties are broken by qualifying position (5.5.11.13) — a comparison

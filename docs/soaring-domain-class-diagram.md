@@ -206,7 +206,7 @@ classDiagram
 
     Competitor "*" --> "1" Person : registration of
     Person "1" *-- "0..1" ClubAffiliation : club
-    Phase "1" --> "1" Draw : organised by
+    Phase "1" *-- "1" Draw : organised by
     Draw "1" --> "2..*" Competitor : allocates
     Draw ..> Group : produces initial
     Entry "*" --> "1" Group : flown in
@@ -589,6 +589,9 @@ classDiagram
         +duration preparationTime
         +int maxLaunches
     }
+    %% maxLaunches is nullable, and unset means the task limits launches not at
+    %% all — half the corpus. The notation writes nothing rather than a word for
+    %% "unlimited"; a limit the rules leave to the CD is a ParameterRef instead.
 
     class GroupConstraint {
         <<value object>>
@@ -717,6 +720,11 @@ classDiagram
     ScoreTerm "1" *-- "0..*" LookupRow : lookup
     ScoreTerm "1" *-- "0..1" Predicate : conditional
     ScoreTerm "1" *-- "0..2" ScoreTerm : then / else
+    %% A Conditional with one child has only a `then`: the unmatched branch
+    %% contributes 0 to the sum, which is why the notation need not write it.
+    %% A non-zero fallback is a real second child — F5K's launch-altitude term
+    %% keeps its `else`, because under 30 s the height penalties still apply
+    %% while the bonus does not (5.5.10.4).
     ScoreTerm ..> MetricDefinition : reads
     Predicate ..> MetricDefinition : compares
 

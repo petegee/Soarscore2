@@ -12,9 +12,9 @@ class F3J
   fai      "F3J"
   version  "FAI F3 Soaring 2025 ed.2"
 
-  param flyoffSize     Number default 9 boundAt CompetitionSetup   # F3J.11 top >= 9; the CD may raise the number
-  param carryPenalties  Flag   no default boundAt CompetitionSetup # F3J states nothing (F12 — silence is a parameter)
-  param flyoffMinRounds Number no default boundAt CompetitionSetup # F3J.11 states no fly-off minimum (F12)
+  param flyoffSize           default 9   # F3J.11 top >= 9; the CD may raise the number
+  param carryPenalties  Flag no default  # F3J states nothing (F12 — silence is a parameter)
+  param flyoffMinRounds      no default  # F3J.11 states no fly-off minimum (F12)
 
   finalRanking SplitByPromotion                                    # F3J.11 qualifiers ranked on the fly-off, the rest on qualifying
 
@@ -51,14 +51,13 @@ class F3J
   # ========================================================================
   phase Preliminary
 
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                          # F3J.3.1 a
     drop      ByRound 1 whenRounds >= 8                            # F3J.3.1 a "if more than 7 qualification rounds are flown" — the highest threshold of the six
 
     task D "Duration"
       use       f3jFlight
       flights   last
-      timing    Fixed 600 s maxLaunches unlimited                  # F3J.6 working time 10 minutes
+      timing    Fixed 600 s                                        # F3J.6 working time 10 minutes
       group     minPerGroup 6                                      # F3J.6.1 minimum 6, preferably 8–10
       normalise HigherIsBetter winner 1000 round Truncate 0.1      # F3J.10.11 "recorded (truncated) to one place after the decimal point"
       # F3J.10.4 zeroes THE FLIGHT, not the flight-points term (F17). As a term
@@ -73,7 +72,6 @@ class F3J
         # falls out of the measured overfly.
         when overflySeconds > 0
           then constant -30                                        # F3J.10.3
-          else constant 0
         when all(overflySeconds == 0,                              # F3J.10.9
                  touchedByCompetitor == false)                     # F3J.10.8
           then lookup landingDistance                              # F3J.10.5
@@ -83,7 +81,6 @@ class F3J
                  <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
                  <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
                  <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
-          else constant 0
 
   # ========================================================================
   phase Flyoff                                                     # F3J.11
@@ -92,16 +89,17 @@ class F3J
                 carryPenalties param(carryPenalties)               # F3J.11 top >= 9, a single group;
                                                                    # F3J states nothing about carry-over, so the CD decides
                                                                    # at setup and the choice is logged (F12)
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds param(flyoffMinRounds)                     # not stated for F3J (F12)
     # no drop: F3J.3.1 a's discard applies to the qualifying aggregate
 
+    # Two numbers change, the working time and the flight-points cap;
+    # `flightValidWhen` and everything else comes with `like`. The `score` block
+    # is restated whole because a restated block replaces the parent's entirely.
     task D "Duration (fly-off)" like Preliminary.D
-      timing  Fixed 900 s maxLaunches unlimited                    # F3J.6 15 minutes for the fly-off
-      flightValidWhen overflySeconds <= 60                         # F3J.10.4
+      timing  Fixed 900 s                                          # F3J.6 15 minutes for the fly-off
       score
         rate flightTime 1 pt/s cap 900 s
-        when overflySeconds > 0 then constant -30 else constant 0  # F3J.10.3
+        when overflySeconds > 0 then constant -30                  # F3J.10.3
         when all(overflySeconds == 0, touchedByCompetitor == false)
           then lookup landingDistance                              # F3J.10.5
                  <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
@@ -110,7 +108,6 @@ class F3J
                  <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
                  <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
                  <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
-          else constant 0
 
 # ---- unresolved for F3J --------------------------------------------------
 # Fly-off ties broken by qualifying position (F3J.11). Not writable. Finding F15.

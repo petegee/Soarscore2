@@ -19,7 +19,7 @@ class NZ-N
   fai      ""                                                    # a national class; no FAI designation
   version  "NZMAA Section 5 Soaring, March 2024"
 
-  param roundDuration Number s no default boundAt BeforeFlying   # NZ.3.13.1 k "the duration of each round will be
+  param roundDuration s no default boundAt BeforeFlying          # NZ.3.13.1 k "the duration of each round will be
                                                                  #   decided by the CD taking into account the number
                                                                  #   of competitors, weather conditions and any other
                                                                  #   pertinent factors" — entirely open (F12)
@@ -73,7 +73,6 @@ class NZ-N
                  airborneAtRoundEnd == false)                    # NZ.3.13.1 j "as well as no landing points awarded"
           then lookup landingDistance                            # NZ.3.13.1 e
                  <=  7 -> 50 ;  <= 15 -> 25 ;  any -> 0
-          else constant 0
 
 # ---- unresolved for NZ Class N -------------------------------------------
 # 1. The 123 m launch height and 20 s motor run — the numbers the class is named

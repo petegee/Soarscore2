@@ -25,7 +25,7 @@ class NZ-M-NDC
   # 10 minutes", so the parent's CD discretion (NZ.3.12.1 g) does not apply and
   # the turning point is a rule constant again.
 
-  param minNewGroup Number no default boundAt CompetitionSetup   # NZ.3.12.5 l states no minimum for a
+  param minNewGroup no default                                   # NZ.3.12.5 l states no minimum for a
                                                                  #   re-flight group (F12), as the parent
 
   # no finalRanking: one phase, so SinglePhase (NZ.3.12.7 has no fly-off)
@@ -76,7 +76,6 @@ class NZ-M-NDC
                  <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
                  <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
                  <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
-          else constant 0
 
 # ---- arithmetic check ----------------------------------------------------
 # NZ.3.12.7 c states its own maxima, which is rare and useful:

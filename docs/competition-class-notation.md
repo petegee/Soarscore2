@@ -73,8 +73,8 @@ class <ID>
   fai           "<string>"                    # .faiDesignation
   version       "<string>"                    # .version
 
-  param   <name> <Number|Flag> [<unit>] <default <value> | no default>
-                                        [allowed [<v>, …]] boundAt <BindingPoint>
+  param   <name> [<Number|Flag>] [<unit>] <default <value> | no default>
+                                        [allowed [<v>, …]] [boundAt <BindingPoint>]
   [finalRanking <SinglePhase|LastPhaseReplaces|SplitByPromotion>]
 
   reflight
@@ -89,7 +89,8 @@ class <ID>
   phase … (one or more, in order)
 ```
 
-`<BindingPoint>` ∈ `CompetitionSetup | BeforeFlying | PerRound`.
+`<BindingPoint>` ∈ `CompetitionSetup | BeforeFlying | PerRound`. Omitted, it is
+`CompetitionSetup`; an omitted kind is `Number`. Both are §7 defaults.
 `<effect>` ∈ `deduct <pts> | zeroFlight | zeroRound | zeroTask | disqualify`.
 
 **`NotPermitted`** (F26) is a rulebook that definitely grants no re-flight, and
@@ -253,8 +254,8 @@ silent.
 
 ```
   phase <Preliminary|Flyoff>
-    rounds     <FixedSequence|ChooseFromCatalogue> tasksPerRound <n>
-                 [distinctTaskPerRound] [maxRounds <n>]
+    [rounds    <FixedSequence|ChooseFromCatalogue> tasksPerRound <n>
+                 [distinctTaskPerRound] [maxRounds <n>]]              # §7 default
     validity   minRounds <n> [minTasks <n>]
     [drop      <ByRound|ByTask> <count> [whenRounds >= <n>] [whenResults >= <n>]
                  … (one or more, in order)]                       # optional
@@ -343,7 +344,7 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
     task <code> "<name>"
       metric     <name> <Number|Flag> [<unit>] [<Truncate|HalfUp|Ceiling> <precision>] [declared]
       flights    <selection>
-      timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n|unlimited>]
+      timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n>]
       group      minPerGroup <n> [minValidResults <n>]             # optional
       normalise  <HigherIsBetter|LowerIsBetter> winner <n> [round <mode> <precision>]
                                                                     # optional
@@ -361,6 +362,13 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
 
 `declared` sets `MetricDefinition.declaredBeforeLaunch` — a value the pilot
 nominates before releasing (a Poker target).
+
+**An omitted `maxLaunches` means the task limits launches not at all**, which is
+half the corpus — F3B, F3J, F5J, F5L and eight of F3K's tasks. It is the absence
+of a constraint rather than an invented one, and it is a §7 default; so is the
+omitted `else` on a conditional term, which contributes 0 to the sum. Both are
+stated in full there, with the three `else` clauses in F5K that are load-bearing
+and must stay written.
 
 **`group` is optional, and absent is not the same as `param(groupSize)` with no
 default.** The two were previously written almost identically and they state
@@ -523,7 +531,7 @@ piecewise  <metric> [from <origin>]
 constant   <v>
 when <predicate>
   then <term>
-  else <term>
+  [else <term>]                                                       # §7 default
 ```
 
 - **`rate` `cap`** caps the *metric value consumed*, not the points produced:
@@ -625,10 +633,15 @@ predicates. It stays statically validatable at adoption.
 
 ---
 
-## 7. Sugar
+## 7. Sugar and defaults
 
-Two, both expanding to complete model instances. Sugar is a property of the
-notation, not of the stored class.
+Both are properties of the notation, not of the stored class, and both expand
+before adoption — what `AdoptedRules` snapshots is always the complete model
+instance, never the abbreviation.
+
+### 7.1 Sugar
+
+Two, both expanding to complete model instances.
 
 | Sugar | Expands to |
 |---|---|
@@ -646,6 +659,158 @@ Without it the F3K catalogue is ~350 lines of near-identical blocks. It is worth
 recording that this is a *notation* fix for a *model* fact — `PhaseDefinition
 *-- 1..* Task` means a flyoff genuinely re-states its catalogue.
 
+**The granularity of an override is the keyword block.** A keyword block the
+derived task restates replaces the parent's block **entirely**; a keyword block
+it does not restate is **inherited whole**; nothing is ever merged *within* a
+block. There is no third case: the smallest thing `like` can override is one
+keyword, and the notation has no way to reach inside a block and change part of
+it. Everything in §7.2's precedence rules follows from this sentence.
+
+For a one-line keyword — `flights`, `rawScore`, `group`, `use` — the rule is
+barely visible. On a **multi-line block it is the whole of the story**:
+
+- **`score`** — restating it replaces the parent's *entire* term list. F5K Task
+  D restates no `score` at all and so inherits A's four terms, `cap 599 perTask`
+  included; F5K Task B needs one different cap and must therefore re-transcribe
+  the launch-altitude `piecewise` and the −10 / −100 terms it did not want to
+  change. `score` and `score normalised` are two blocks, replaced independently.
+- **`flightValidWhen`** (and `validWhen`) — the predicate is one term,
+  `all(…)` and all. A derived task adding a third condition writes all three, as
+  F3K Task C does.
+- **`timing`** — `prep` and `maxLaunches` belong to the `timing` line, so a
+  restated `timing` that omits them means *no prep, unlimited launches*, not the
+  parent's. That is §7.2 rule 3 meeting this one.
+- **`metric`** — a derived task's own `metric` declarations replace the
+  parent's own `metric` declarations. They do not touch what `use` brought in:
+  `use` is a separate keyword, inherited or restated on its own. F3K Tasks C and
+  E each add one metric to a parent that declares none, so both readings agree
+  there; the rule above is what settles the case the corpus does not yet have.
+
+**The cost of "replaces entirely" is real, and is recorded here rather than
+glossed.** Because a `score` block cannot be partly overridden, a derived task
+that needs to change one term re-transcribes all of them. F5K Tasks B and C
+carry a verbatim copy of the launch-altitude bands, and F5J's and F3J's fly-off
+tasks each carry a verbatim copy of their preliminary's landing table — 11 rows
+and 24 rows — in every case only because one cap moved. A hand-maintained duplicate of a scoring table
+is the F22/F24 failure shape — it adopts, it runs, and it produces a plausible
+number — so these duplicates are a standing liability, not a tidiness
+complaint. Removing them needs either a reusable score fragment or a term-level
+override, both of which are open questions and neither of which this section
+pre-empts. What stating the granularity does buy immediately is the ability to
+tell a load-bearing restatement from a no-op one: a restatement that reproduces
+what `like` already supplies changes nothing and has been deleted from the
+corpus.
+
+### 7.2 Defaults
+
+A default is the notation declining to write a value the model already treats
+as absent or as the identity. **No default here changes the model** — no
+multiplicity, attribute or enum moved to make one possible; each writes exactly
+the instance the long form wrote. Five exist.
+
+| Written nowhere | Means | Sites removed |
+|---|---|---|
+| `else <term>` on a conditional | the omitted branch contributes **0** to the sum | 26 of 29 conditionals |
+| `maxLaunches <n>` on `timing` | **unlimited** launches | 16 of 32 `timing` lines |
+| `rounds …` on a phase | `FixedSequence tasksPerRound 1`, no `distinctTaskPerRound`, no `maxRounds` | 8 of 16 phases |
+| `boundAt <point>` on a `param` | `CompetitionSetup` | 22 of 33 params |
+| the kind on a `param` | `Number` | 29 of 33 params |
+
+The three that were *not* adopted are recorded in §7.3, because the half that
+did not change is the more useful half.
+
+**How a reader tells "defaulted" from "the author forgot".** The corpus already
+answers this twice: rule *silence* is a `no default` parameter (§3, F12), and an
+*inapplicable* field is omitted with a `# no drop:` / `# no group:` /
+`# no minNewGroup:` comment saying why (§3, §4, §5). Neither convention is
+carried over wholesale here, and the reason is that neither situation arises —
+each of the five is a case where absence and the written value are the *same
+statement*, not two different ones:
+
+- **`else`** — none needed, and none is possible in principle. An absent `else`
+  and `else constant 0` produce the identical number, so a forgotten `else`
+  cannot mis-score; the only thing forgetting can produce is the intended
+  answer. What a writer can still get wrong is meaning a *non-zero* fallback and
+  omitting it — and that is guarded by the corpus habit that a non-zero `else`
+  is always written out. F5K Tasks A, B and C are the three that have one: their
+  launch-altitude term keeps `else piecewise …`, because under 30 s the height
+  *penalties* still apply while the bonus does not (`5.5.10.4`). Those three
+  `else` clauses are load-bearing and must never be dropped.
+- **`maxLaunches`** — none needed. Absence of a launch limit is not a rule the
+  class is failing to state; it is the ordinary case, and 16 of the corpus's 32
+  `timing` lines are in it. Where a rulebook says *unlimited attempts* in as
+  many words the citation already lives on the `flights` line, as F3B
+  (`F3B.1.5`) and F5L (`5.5.12.4`) both write it. A `maxLaunches` that is
+  genuinely unknown is a `param(<name>)` with `no default`, exactly as F3K Task
+  C writes `param(launches.C)`.
+- **`rounds`** — none needed as a marker, but **a citation the line carried
+  survives as a comment**, in the `# no drop:` style. F3F is the only such case
+  in the corpus: `F3F.1.7`'s "the flights are to be performed round by round" is
+  a rule about round composition and is worth keeping even though the
+  composition it states is the default one. A phase always writes `validity`, so
+  a phase block is never empty and a missing `rounds` cannot be misread as a
+  truncated block.
+- **`boundAt`** — none needed; the asymmetry is the marker. `BeforeFlying` and
+  `PerRound` place an obligation on the CD at a named moment during the event
+  and are always written. `CompetitionSetup` places none — it is where the CD is
+  already sitting with the class definition open — so it is the point a
+  parameter binds at when nothing says otherwise.
+- **`param` kind** — none needed; `Flag` is always written, and there are only
+  two kinds. The four `Flag` parameters in the corpus are all `carryPenalties`.
+  Note that this default is **not** extended to `metric`, whose kind stays
+  mandatory: metrics are 39 `Flag` to 28 `Number`, so there is no dominant value
+  to default to and the reader of a `score` block needs the kind to hand.
+
+**Defaults and `like` compose; the precedence is stated once, here.** Applying
+§7.1's granularity rule — a restated block replaces, an unrestated block is
+inherited, nothing merges within a block — a derived task (`task X … like Y`)
+resolves in this order, most specific first:
+
+1. **A keyword written in the derived task wins**, over both the parent and the
+   default.
+2. **A keyword block the derived task does not restate is inherited entire from
+   the parent** — including values the parent itself took by default.
+3. **A keyword absent from the derived task, from the parent, and from any block
+   the derived task *did* restate, takes its default.**
+
+Rule 3 is the one with an edge: because a restated block replaces it whole, a
+keyword the parent wrote and the restated block omits takes the *default*, not
+the parent's value. No `like` in the eleven definitions relies on that — every
+`timing` line in the corpus that is restated writes its own launch limit or
+means unlimited — so no default made an existing `like` ambiguous. The other
+four defaults cannot interact with `like` at all: `rounds` is on a phase and
+phases have no `like`, and `param` is class-scoped.
+
+### 7.3 Defaults considered and rejected
+
+Three values are as dominant in the corpus as the five above and are still
+written out every time.
+
+- **`winner 1000` on `normalise`** — all 10 `normalise` clauses in the corpus
+  write it. Rejected under notation rule 3: it is a rule-derived constant, and
+  every rule-derived constant carries its source ref. `F3B.2.6`, `F3F.1.12`'s
+  `Ri = 1000 × Tw / Ti`, `5.5.11.12 m` and `NZ.3.12.3 c` each state the 1000
+  themselves, and a default would leave a `#` ref pointing at a number that is
+  no longer on the line.
+- **`1 pt/s` on `rate`** — the dominant rate. Rejected for the same reason, and
+  F5L is why it matters: `5.5.12.11.1` is 2 pt/s, so the rate is a number the
+  rules genuinely vary and a reader who has stopped seeing it will not notice
+  the class that differs.
+- **`HigherIsBetter` on `normalise`** — 8 of 10 directions. **Rejected as
+  actively dangerous, not merely unhelpful.** F3B Task C and F3F both invert
+  (`F3B.2.6`, `F3F.1.12`), and in an inverted task a wrong direction still
+  produces a full, plausible ranking. This is the F22 and F24 failure shape a
+  third time: the definition adopts, the contest runs, and the number is merely
+  wrong. §8's F3K trap is the same hazard one level down, and the notation
+  already spends a paragraph on it. Making the safe-looking value the silent one
+  would move that hazard from "check these two against the rule text" to
+  "nothing on the page to check".
+
+The distinction between the five and these three: the five are places where the
+rules say *nothing*, and writing nothing is therefore the honest transcription.
+These three are places where the rules state a number or a direction, and the
+notation's job is to carry it.
+
 ---
 
 ## 8. Worked example — the two hardest terms in the corpus
@@ -659,10 +824,10 @@ are cumulative and share a metric:
           then piecewise flightTime
                  0..600    @  1 pt/s                        # F3B.2.3 b
                  600..any  @ -1 pt/s                        # F3B.2.3 c
-          else constant 0
 ```
 
-At 601 s: `600×1 + 1×(−1)` = **599**.
+At 601 s: `600×1 + 1×(−1)` = **599**. The `when` has no `else`, so a flight
+outside the landing area contributes 0 to the sum (§7).
 
 **F3K Task E, Poker.** Achieving a target credits the *target*, not the flight
 time; missing it credits nothing (`F3K.11.5`, worked example in the rule):
@@ -674,7 +839,6 @@ time; missing it credits nothing (`F3K.11.5`, worked example in the rule):
       score
         when flightTime >= targetTime
           then rate targetTime 1 pt/s
-          else constant 0
 ```
 
 Rule's example — announced 45/50/47, flew 46/48,52/49 — gives 45 + 0 + 50 + 47,

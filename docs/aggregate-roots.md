@@ -300,7 +300,7 @@ classDiagram
     TaskRound "1" *-- "1..*" Group
     Competition "1" *-- "0..*" Penalty : task-round / competition scope
 
-    Draw "1" --> "0..*" Competitor : allocates
+    Draw "1" --> "2..*" Competitor : allocates
     Competitor ..> Person : registration of
     DeclaredResult ..> Competitor : for
     TaskRound ..> AdoptedRules : task by id

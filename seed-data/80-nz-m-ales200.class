@@ -19,15 +19,15 @@ class NZ-M
   fai      ""                                                    # a national class; no FAI designation
   version  "NZMAA Section 5 Soaring, March 2024"
 
-  param targetTime  Number s default 600 boundAt BeforeFlying    # NZ.3.12.1 f "a target time announced by the CD.
+  param targetTime  s default 600 boundAt BeforeFlying           # NZ.3.12.1 f "a target time announced by the CD.
                                                                  #   10 minutes is recommended"
                                                                  # NZ.3.12.1 g the CD may change it "based on local
                                                                  #   conditions" — announced at the contestants
                                                                  #   meeting (NZ.2.5.1), hence BeforeFlying
-  param groupSize   Number   no default boundAt CompetitionSetup # NZ.3.12 states no group size at all (F12)
-  param minRounds   Number   no default boundAt CompetitionSetup # NZ.3.12 states no round count (F12);
+  param groupSize   no default                                   # NZ.3.12 states no group size at all (F12)
+  param minRounds   no default                                   # NZ.3.12 states no round count (F12);
                                                                  #   only the NDC variant fixes one
-  param minNewGroup Number   no default boundAt CompetitionSetup # NZ.3.12.5 l states no minimum for a
+  param minNewGroup no default                                   # NZ.3.12.5 l states no minimum for a
                                                                  #   re-flight group (F12)
 
   # no finalRanking: one phase, so SinglePhase (NZ.3.12 has no fly-off)
@@ -51,7 +51,6 @@ class NZ-M
 
   phase Preliminary
 
-    rounds    FixedSequence tasksPerRound 1
     validity  minRounds param(minRounds)
     # no drop: NZ.3.12 states no discard
 
@@ -95,7 +94,6 @@ class NZ-M
                  <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
                  <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
                  <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
-          else constant 0
 
 # ---- unresolved for NZ Class M -------------------------------------------
 # 1. NZ.2.8.3's zero is discretionary ("the CD may assign"). Written above as a
