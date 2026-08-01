@@ -13,6 +13,7 @@
  - Append only immutable log as state storage (Event Sourced)
  - CQRS pattern to cleanly seperate Reads from Writes
  - Commands and Queries only
+ - Core-owned invariants
  - Functional-Like as a Core Princple
 
  ### Headless
@@ -88,6 +89,40 @@ The mechanisms to do queries must be separate from the mechanism which does stat
 ### Commands and Queries only
 The application layer only supports either Commands or Queries. These are dispatched via a 
 mediator pattern. This dove-tails nicely with intent-based APIs.
+
+### Core-owned invariants
+
+A handful of rules are true of *every* competition class and so are owned by the
+core rather than written into a Competition Class definition. Each one below was
+reached by trying to express an FAI rule as class data and concluding it did not
+belong there. This list is deliberately short: anything that varies between
+classes is class data by the law in `CLAUDE.md`, and an entry here must be
+defensible as universal, not merely as convenient.
+
+**Flight times within an Entry cannot exceed that Entry's working time.**
+Enforced at capture. `F3K.7` states a stricter form of this — the sum of scored
+flight times may not exceed the working time minus one second per scored flight —
+but that arithmetic is F3K-specific and is a knowingly accepted deviation, not an
+oversight; see §6 of `competition-class-notation.md`.
+
+**A field smaller than a task's `minPerGroup` flies as one group.**
+`F3B.1.8 b` writes the escape hatch out loud ("a minimum of eight competitors *or
+all competitors*") and F3K does not, but F3K's minimum of five is equally
+unsatisfiable in a four-pilot event and nobody would call that contest
+impossible. It belongs to the draw, not to `GroupConstraint`.
+
+**The scoring pipeline is flight-local up to flight selection.**
+`interpret flight` sees one Flight's Measurements and the `flight.sequence`
+intrinsic — never sibling flights, never task-level values, and never arithmetic
+between them. `select flights` is the first stage that sees the whole Entry.
+Holding this line is what keeps a class definition statically validatable at
+adoption, so it is a constraint on the scoring implementation and not just a
+description of it.
+
+**Validated at adoption, before a Competition may hold a rulebook:**
+`FlightSelection.rankByMetric` resolves to a metric declared on that task; a
+`PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects, since
+"the largest applies" is undefined across effect kinds.
 
 ### Functional-Like as a Core Princple
 The system code should borrow core concepts of functional programming (but not necessarily 

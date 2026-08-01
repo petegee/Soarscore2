@@ -277,7 +277,11 @@ classDiagram
         +CompositionKind kind
         +int tasksPerRound
         +bool requireDistinctTaskPerRound
+        +int maxRounds
     }
+    %% maxRounds is nullable; unset means the rules state no ceiling. It bounds
+    %% what may be scheduled, which is why it is not on ValidityRule: a phase
+    %% over its ceiling is not "invalid" in the sense minRounds means.
 
     class Task {
         +string code
@@ -288,8 +292,13 @@ classDiagram
         <<value object>>
         +DropDimension dimension
         +int dropCount
-        +int applyWhenCompletedAtLeast
+        +int applyWhenRoundsCompletedAtLeast
+        +int applyWhenResultsAtLeast
     }
+    %% Both gates are nullable and conjunctive: a drop applies only when every
+    %% populated gate holds. F3B.2.8 states two — more than five complete rounds
+    %% AND a task with more than five results — and they diverge whenever a
+    %% group is annulled under F3B.1.8 c.
 
     class ValidityRule {
         <<value object>>
@@ -325,10 +334,22 @@ classDiagram
 
     class PenaltyDefinition {
         +string infractionType
+        +string exclusionGroup
+    }
+
+    class PenaltyEffectSpec {
+        <<value object>>
         +PenaltyEffect effect
         +decimal points
         +PenaltyApplication appliedAt
     }
+    %% One infraction may carry several effects at different pipeline points:
+    %% F3B.2.2 p zeroes the flight AND deducts 1000 from the final score;
+    %% F3K.4.1 deducts AND zeroes the whole round.
+    %% exclusionGroup is nullable. Within one flight attempt at most one penalty
+    %% from a group applies, the largest winning (F3K.4.3, F3J). A group may
+    %% contain only DeductPoints effects — "largest" is undefined across effect
+    %% kinds — and that is validated at adoption.
 
     class CompositionKind {
         <<enumeration>>
@@ -391,14 +412,16 @@ classDiagram
     CompetitionClass "1" *-- "1" ReflightRule
     CompetitionClass "1" *-- "1" PenaltyCatalogue
     PenaltyCatalogue "1" *-- "0..*" PenaltyDefinition
+    PenaltyDefinition "1" *-- "1..*" PenaltyEffectSpec
     PhaseDefinition "1" *-- "1" RoundComposition
     PhaseDefinition "1" *-- "1..*" Task : catalogue
+    Task "1" *-- "0..1" ReflightRule : overrides the class default
     PhaseDefinition "1" *-- "1" DropPolicy
     PhaseDefinition "1" *-- "1" ValidityRule
     PhaseDefinition "1" *-- "0..1" PromotionRule : entry criteria
 
     note for PhaseDefinition "A flyoff changes working times, caps, available tasks and penalty carry-over. Those rules live here, not on the class."
-    note for ReflightRule "Two roles, one event: the entitled competitor takes the reflight; everyone else in the group takes the better of two."
+    note for ReflightRule "Two roles, one event: the entitled competitor takes the reflight; everyone else in the group takes the better of two. The class states the default; a Task overrides it where its rules differ."
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     cssClass "CompetitionClass" aggregateRoot
@@ -432,12 +455,19 @@ classDiagram
         <<value object>>
         +SelectionKind kind
         +int count
+        +string rankByMetric
         +TargetAssignment targets
         +decimal[] targetValues
     }
     %% targetValues are in the UNITS OF THE METRIC the task's scoring term
     %% consumes, not in points. Each selected flight's metric is clamped to its
     %% assigned target, then scored.
+    %% rankByMetric is nullable and only meaningful to BestN. Null ranks the
+    %% candidate flights by score (F3K.11.5, Poker: an achieved target credits
+    %% the target, so score is the only ordering that means anything). Set,
+    %% it ranks by that metric's raw value — F3K.11.8 assigns targets to the
+    %% four longest FLIGHTS, and no flight has a score until a target has been
+    %% assigned to it, so ranking by score there is circular.
 
     class ScoreTerm {
         +ScoreTermKind kind
@@ -570,6 +600,7 @@ classDiagram
     Task "1" *-- "1" GroupConstraint
     Task "1" *-- "1" Normalisation
     Task "1" *-- "0..1" Predicate : validWhen
+    Task "1" *-- "0..1" Predicate : flightValidWhen
     Task "1" *-- "0..1" Rounding : of the raw score
     MetricDefinition "1" *-- "1" Rounding : capture precision
     Normalisation "1" *-- "0..1" Rounding : of the normalised score
@@ -583,6 +614,7 @@ classDiagram
     note for ScoreTerm "A landing table and a launch-height penalty are the same term reading different metrics."
     note for Band "Bands are cumulative: 1 pt/s to 600 s then -1 pt/s scores 599 at 601 s."
     note for Normalisation "Direction is per task: F3B Speed inverts, because the lowest time wins."
+    note for Predicate "Two gates, different outcomes: validWhen decides whether the TASK has a result at all; flightValidWhen zeroes one flight while leaving it selectable."
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
 ```
@@ -645,6 +677,16 @@ order is explicit: F3J subtracts penalties before normalising, F5J deducts them
 from the final aggregate; F5K truncates the raw score to whole points, then
 normalises, then rounds again.
 
+**Every stage is flight-local or later.** `interpret flight` sees one `Flight`'s
+`Measurement`s and the `flight.sequence` intrinsic — never its siblings, never
+task-level values, and never arithmetic between them. `select flights` is the
+first stage that sees the whole `Entry`, and it is the only one that needs to.
+Three FAI rules push on that boundary and all three are answered without moving
+it: `F3K.11.8` by `FlightSelection.rankByMetric` (selection legitimately sees
+every flight already), `F3K.9.3` by a captured flag read through
+`Task.flightValidWhen`, and `F3K.7`'s per-task sum limit by a core invariant on
+capture rather than by class data. See `high-level-architecture.md`.
+
 ---
 
 ## Modelling notes
@@ -702,6 +744,15 @@ normalises, then rounds again.
   Bands are measured from `ScoreTerm.origin`, which defaults to zero: F5K's
   launch points are per metre *relative to an announced height*, so its bands
   read from a parameter rather than from nothing.
+- **A zeroed flight is still a flight.** `Task.flightValidWhen` is the per-flight
+  gate — `F3K.9.3`'s late landing, `F3K.11.3`'s launch outside the three-second
+  signal, `F3K.7`'s launch before the working time. It zeroes that flight's
+  contribution and nothing else: the flight is still selected, because
+  `F3K.11.1` scores *the last flight* and a late-landing last flight does not
+  promote its predecessor. Voiding it on the `Flight` itself would, which is why
+  the gate lives on the Task and is read at `interpret flight`, not at capture.
+  It is distinct from `Task.validWhen`, which decides whether the task has a
+  result at all.
 - **`NoResult` is not zero.** A flight that never validly completed has no
   result. This matters wherever the lowest value wins: in F3B Speed a raw zero
   would otherwise be the fastest time in the group. Competitors with `NoResult`
@@ -723,7 +774,16 @@ normalises, then rounds again.
   the reserved intrinsic `flight.sequence` rather than by anyone writing it on a
   card. A `PenaltyDefinition` carries an *effect*, not
   merely a cost, because zeroing a flight, a round or a task are all real
-  outcomes in the rules and none of them is a point deduction.
+  outcomes in the rules and none of them is a point deduction. It carries
+  *several*, because one infraction can do two things at two points in the
+  pipeline: `F3B.2.2 p` zeroes the flight and deducts 1000 from the final score,
+  `F3K.4.1` deducts and zeroes the whole round. `exclusionGroup` is the other
+  half — `F3K.4.3` and `F3J` both say a flight attempt may incur only one
+  penalty, the largest applying, so penalties do not simply sum.
+- **Reflight rules default at the class and override at the task.** `F3B.1.5 e`
+  scopes its better-of rule to Tasks A and B by name; Task C's is unstated, and
+  `UndefinedRequiresRuling` can only say so if a Task can hold a rule of its own.
+  Five of the six classes never override.
 - **Reflight scoring is per role, not per class.** In one reflight group the
   entitled competitor's new attempt is official even if worse, while every other
   pilot takes the better of their two — so `Entry` carries the role.
@@ -746,15 +806,17 @@ normalises, then rounds again.
   construct only when a rule requires it. This is not an expression language —
   no arithmetic, no functions — so a definition stays statically validatable at
   adoption.
-- **Two penalty rules are not yet modelled.** *Precedence*: F3K and F3J both
-  say only one penalty may be incurred per flight attempt, the larger winning
-  where several apply; `PenaltyCatalogue` has no precedence rule. *Compound
-  effects*: F3B's non-conforming winch both zeroes the flight and deducts 1000,
-  but `PenaltyEffect` holds a single value.
 - **Tie-breaking is not yet modelled**, and when it is it will need two kinds,
   not one: comparison against another figure (a best dropped score, a qualifying
   position) and *scheduling more flying* (an additional full round, a one-task
   tie-break flyoff). An ordered list of comparators cannot express the second.
+- **Two rule exceptions remain unwritable.** `F3B.2.3 b` and `F3B.2.4 f` zero a
+  flight that misses the landing area *"except in the case of midair collision"*
+  — an exception to a score term, which no predicate over measurements reaches.
+  `F3K.9.3`'s Task C cascade — still airborne in the sixty-second preparation
+  period zeroes the *next* attempt — is cross-flight, and the flight-local
+  boundary above refuses it: the timekeeper records the next attempt's flag
+  directly, so the system honours a judgement rather than deriving one.
 - **The notation is the model's test.** `docs/competition-class-notation.md`
   defines a hand-writing notation for a class definition, and `seed-data/`
   holds the six FAI classes written in it. The notation is deliberately
