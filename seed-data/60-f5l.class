@@ -45,7 +45,7 @@ class F5L
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                          # 5.5.12.4 "at least 4 qualifying rounds"
-    drop      ByRound 1 whenCompleted >= 6                         # 5.5.12.12 "if more than 5, the lowest round score is dropped"
+    drop      ByRound 1 whenRounds >= 6                            # 5.5.12.12 "if more than 5, the lowest round score is dropped"
 
     task D "Duration"
       use       f5lFlight

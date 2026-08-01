@@ -34,22 +34,37 @@ class F3K
   penalty "unsignedScoreCard"            zeroRound       at RawScore       # F3K.1.2 "if the result is not signed by the
                                                                            #   competitor, the score for the round will be 0"
   penalty "flewOutsideTestingWindow"     deduct 100      at FinalAggregate # F3K.9.5
-  penalty "safetyAreaObjectContact"      deduct 100      at FinalAggregate # F3K.4.3
-  penalty "safetyAreaPersonContact"      deduct 300      at FinalAggregate # F3K.4.3
-  penalty "landedInSafetyArea"           deduct 100      at FinalAggregate # F3K.4.3
-  # F3K.4.3: "each flight attempt may only incur a single penalty" — a
-  # precedence rule PenaltyCatalogue cannot express. Recorded, unmodelled.
+
+  # F3K.4.3 "each flight attempt may only incur a single penalty … only the
+  # highest penalty will be applied" — one exclusion group, largest wins (F20).
+  # All three effects are deductions, which is what the group requires.
+  penalty "safetyAreaObjectContact"      exclusionGroup "safetyInfraction"
+    deduct 100      at FinalAggregate                                      # F3K.4.3 1) an object, including the ground, inside the safety area
+  penalty "safetyAreaPersonContact"      exclusionGroup "safetyInfraction"
+    deduct 300      at FinalAggregate                                      # F3K.4.3 2) airborne contact with a person inside the safety area
+  penalty "personContactOutsideSafetyArea" exclusionGroup "safetyInfraction"
+    deduct 100      at FinalAggregate                                      # F3K.4.3 3) airborne contact with a person anywhere outside it
+  penalty "landedInSafetyArea"           exclusionGroup "safetyInfraction"
+    deduct 100      at FinalAggregate                                      # F3K.4.3
+
+  # F3K.4.1 does two things at two points in the pipeline (F20): the deduction
+  # comes from F3K.4.3, and the round zero is additional.
+  penalty "personContactAtLaunch"
+    deduct 300      at FinalAggregate                                      # F3K.4.1 "a penalty according to paragraph F3K.4.3"
+    zeroRound       at RawScore                                            # F3K.4.1 "in addition … a zero score for the whole round"
 
   # ---- shared metrics ----------------------------------------------------
   metricSet f3kFlight
-    metric flightTime Number s Truncate 0.1                           # F3K.7 recorded to 0.1 s, truncated
+    metric flightTime            Number s Truncate 0.1                # F3K.7 recorded to 0.1 s, truncated
+    metric landedWithinWindow    Flag                                 # F3K.9.3 the 30 s landing window
+    metric launchedInWorkingTime Flag                                 # F3K.7 "launched before the beginning of the working time … zero score"
 
   # ========================================================================
   phase Preliminary mandatory
 
     rounds    ChooseFromCatalogue tasksPerRound 1 distinctTaskPerRound  # F3K.10 five rounds, each a different task
     validity  minRounds 5                                               # F3K.10
-    drop      ByRound 1 whenCompleted >= 6                              # F3K.10 "if 6 or more rounds are flown"
+    drop      ByRound 1 whenRounds >= 6                                 # F3K.10 "if 6 or more rounds are flown"; F3K needs only the first gate
 
     # -- A ---------------------------------------------------------------
     task A "Last flight"                                              # F3K.11.1
@@ -58,6 +73,12 @@ class F3K
       timing    Fixed param(workingTime.A) maxLaunches unlimited
       group     minPerGroup 5                                         # F3K.9.1
       normalise HigherIsBetter winner 1000 round HalfUp 0.1           # F3K.9.1
+      # Two class-wide flight voids (F17). They zero this flight's contribution
+      # WITHOUT deselecting it, which is what F3K.11.1 needs: a late-landing
+      # last flight must score zero, not promote its predecessor. Every task
+      # below inherits this through `like`.
+      flightValidWhen all(landedWithinWindow    == true,               # F3K.9.3 "if a model glider lands later, then that flight will score zero"
+                          launchedInWorkingTime == true)               # F3K.7
       score
         rate flightTime 1 pt/s cap 300 s                              # F3K.11.1
 
@@ -76,10 +97,19 @@ class F3K
       metric    launchedOnSignal Flag                                 # F3K.11.3 within 3 s of the acoustic signal
       flights   all
       timing    UntilAllFlightsComplete prep 60 s maxLaunches param(launches.C)
+      # The launch-signal void is a third condition here, not a score-term
+      # wrapper (F17): with `flights all` a wrapper would have to be repeated
+      # on every term, and this task's landing window is its own (3:03–3:33 per
+      # attempt, F3K.9.3) rather than the general 30 s one.
+      # F3K.9.3's cascade — a model still airborne during the 60 s preparation
+      # time zeroes the NEXT attempt too — is recorded by the timekeeper as the
+      # next attempt's landedWithinWindow flag; the notation sees one flight at
+      # a time and deliberately cannot reach across attempts.
+      flightValidWhen all(landedWithinWindow    == true,               # F3K.9.3 3:03–3:33 window for Task C
+                          launchedInWorkingTime == true,               # F3K.7
+                          launchedOnSignal      == true)               # F3K.11.3 early or >3 s late = zero for the flight
       score
-        when launchedOnSignal == true
-          then rate flightTime 1 pt/s cap 180 s                       # F3K.11.3
-          else constant 0                                             # F3K.11.3 early or >3 s late = zero for the flight
+        rate flightTime 1 pt/s cap 180 s                              # F3K.11.3 "the maximum measured flight time is 180 seconds"
 
     # -- D ---------------------------------------------------------------
     task D "Two flights" like A                                       # F3K.11.4
@@ -118,8 +148,14 @@ class F3K
     # -- H ---------------------------------------------------------------
     # No cap on the term: the assigned target IS the cap. Longest flight takes
     # the 240 s target, and so down — that is TargetAssignment.AnyOrder.
+    # `rankBy flightTime` (F16) is load-bearing and is the ONE place in the
+    # corpus that needs it: F3K.11.8 assigns targets to the four longest
+    # FLIGHTS, and no flight has a score until a target has been assigned, so
+    # the default ranking (by score) is circular here. Task E a few lines above
+    # is the exact opposite and must NOT have it — check both against the
+    # worked examples, F3K.11.5 → 142 s and F3K.11.8 → 569 s.
     task H "1, 2, 3 and 4 minute targets, any order" like A           # F3K.11.8
-      flights   bestN 4 targets anyOrder [60, 120, 180, 240] s
+      flights   bestN 4 rankBy flightTime targets anyOrder [60, 120, 180, 240] s
       timing    Fixed 600 s maxLaunches unlimited
       score
         rate flightTime 1 pt/s
@@ -169,8 +205,11 @@ class F3K
 
     promotion TopN param(flyoffSize) group 5..unlimited
                 carryPenalties param(carryPenalties)                  # F3K.9.1; F3K states nothing about carry-over (F12)
-    rounds    ChooseFromCatalogue tasksPerRound 1                     # F3K.9.1 3–6 rounds
-    validity  minRounds 3                                             # F3K.9.1
+    rounds    ChooseFromCatalogue tasksPerRound 1 maxRounds 6         # F3K.10.3 "at least three (3) rounds with a maximum of six (6)" — the
+                                                                      #   only stated ceiling in the corpus (F21); it bounds what may be
+                                                                      #   scheduled, which is why it is not on `validity`
+    validity  minRounds 3                                             # F3K.10.3 "if less than three (3) fly-off rounds can be completed,
+                                                                      #   the result of the preliminary rounds determine the final ranking"
     drop      none                                                    # F3K.10 discard applies to the preliminary aggregate only
 
     task A like Preliminary.A ; task B like Preliminary.B ; task C like Preliminary.C

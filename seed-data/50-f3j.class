@@ -26,12 +26,19 @@ class F3J
   penalty "towlineNotClearedWithin30s" deduct 100  at FinalAggregate  # F3J.8.3
   penalty "nonConformingWinch"         deduct 1000 at FinalAggregate  # F3J.8.2 p
   penalty "unauthorisedTransmission"   deduct 300  at FinalAggregate  # F3J.7 d
-  penalty "safetyAreaObjectContact"    deduct 300  at FinalAggregate  # F3J.2.4 a
-  penalty "safetyAreaPersonContact"    deduct 1000 at FinalAggregate  # F3J.2.4 b
-  penalty "safetySpaceNotLeft"         deduct 300  at FinalAggregate  # F3J.2.4 d
-  # F3J.2.4 c: only one penalty per attempt, and where both a person and an
-  # object are touched the 1000 applies. Not writable — PenaltyCatalogue has no
-  # precedence or mutual-exclusion rule. Recorded, unmodelled.
+  # F3J.2.4 c "for each attempt only one penalty can be given, if a person and
+  # at the same attempt an object is touched the 1000 points penalty is
+  # applied" — one exclusion group, largest wins (F20). Previously recorded
+  # here as unmodelled.
+  # READING: c) is written inside F3J.2.4 Safety Rules and is taken to govern
+  # the whole clause, so d) joins the group. The rule does not say so in as
+  # many words; nothing else in F3J.2.4 suggests d) stands apart.
+  penalty "safetyAreaObjectContact"    exclusionGroup "safetyRules"
+    deduct 300  at FinalAggregate                                     # F3J.2.4 a
+  penalty "safetyAreaPersonContact"    exclusionGroup "safetyRules"
+    deduct 1000 at FinalAggregate                                     # F3J.2.4 b
+  penalty "safetySpaceNotLeft"         exclusionGroup "safetyRules"
+    deduct 300  at FinalAggregate                                     # F3J.2.4 d
 
   metricSet f3jFlight
     metric flightTime          Number s HalfUp 0.1                 # F3J.10.2 "recorded to one decimal place" — the MODE is not
@@ -46,7 +53,7 @@ class F3J
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                          # F3J.3.1 a
-    drop      ByRound 1 whenCompleted >= 8                         # F3J.3.1 a "if more than 7 qualification rounds are flown" — the highest threshold of the six
+    drop      ByRound 1 whenRounds >= 8                            # F3J.3.1 a "if more than 7 qualification rounds are flown" — the highest threshold of the six
 
     task D "Duration"
       use       f3jFlight
@@ -54,13 +61,16 @@ class F3J
       timing    Fixed 600 s maxLaunches unlimited                  # F3J.6 working time 10 minutes
       group     minPerGroup 6                                      # F3J.6.1 minimum 6, preferably 8–10
       normalise HigherIsBetter winner 1000 round Truncate 0.1      # F3J.10.11 "recorded (truncated) to one place after the decimal point"
+      # F3J.10.4 zeroes THE FLIGHT, not the flight-points term (F17). As a term
+      # wrapper it left the −30 of F3J.10.3 standing, so a 90 s overfly scored
+      # −30 rather than the zero the rule states; the old comment here appealed
+      # to a pipeline clamp to zero that F3J nowhere states. The gate is now
+      # explicit and the −30 can only apply within 0 < overfly <= 60.
+      flightValidWhen overflySeconds <= 60                         # F3J.10.4 "a zero score will be recorded for overflying … by more than one (1) minute"
       score
-        when overflySeconds <= 60
-          then rate flightTime 1 pt/s cap 600 s                    # F3J.10 1 pt/s; timed to the end of working time (F3J.10.1 c)
-          else constant 0                                          # F3J.10.4 zero for overflying by more than one minute
+        rate flightTime 1 pt/s cap 600 s                           # F3J.10 1 pt/s; timed to the end of working time (F3J.10.1 c)
         # A DERIVED deduction, not a Penalty: nobody records an infraction, it
-        # falls out of the measured overfly. Where a long overfly has already
-        # zeroed the flight, this leaves −30, which the pipeline clamps to 0.
+        # falls out of the measured overfly.
         when overflySeconds > 0
           then constant -30                                        # F3J.10.3
           else constant 0
@@ -88,10 +98,9 @@ class F3J
 
     task D "Duration (fly-off)" like Preliminary.D
       timing  Fixed 900 s maxLaunches unlimited                    # F3J.6 15 minutes for the fly-off
+      flightValidWhen overflySeconds <= 60                         # F3J.10.4
       score
-        when overflySeconds <= 60
-          then rate flightTime 1 pt/s cap 900 s
-          else constant 0
+        rate flightTime 1 pt/s cap 900 s
         when overflySeconds > 0 then constant -30 else constant 0  # F3J.10.3
         when all(overflySeconds == 0, touchedByCompetitor == false)
           then lookup landingDistance                              # F3J.10.5
@@ -113,4 +122,5 @@ class F3J
 # Competition rather than a scoring rule: it changes which flights exist, not
 # how they score, so nothing is missing from the class model. Finding F18a.
 #
-# Penalty precedence (F3J.2.4 c) is unmodelled — see the catalogue above.
+# Penalty precedence (F3J.2.4 c) is now written as an exclusionGroup (F20) —
+# see the catalogue above. Only the scope of c) is a reading, not the mechanism.

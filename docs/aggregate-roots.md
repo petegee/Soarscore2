@@ -115,7 +115,7 @@ classDiagram
     CompetitionClass "1" *-- "1" FinalRankingRule
     CompetitionClass "1" *-- "1" PenaltyCatalogue
     PhaseDefinition "1" *-- "1..*" Task
-    PhaseDefinition "1" *-- "1" DropPolicy
+    PhaseDefinition "1" *-- "1..*" DropPolicy
     PhaseDefinition "1" *-- "0..1" PromotionRule
     Task "1" *-- "1..*" MetricDefinition
     Task "1" *-- "1..*" ScoreTerm

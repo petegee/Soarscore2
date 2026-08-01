@@ -1,0 +1,108 @@
+# F3F — RC Slope Soaring Gliders                   seed definition, draft
+# Rule refs: FAI Sporting Code Volume F3 Soaring 2025 (F3F.x)
+#
+# The seventh class, and the first the notation was not designed against — see
+# notation §11. Structurally the simplest in the corpus: one phase, one task,
+# one flight, one metric. It is shape-identical to F3B Task C, and interesting
+# only for the two things it broke (F22, F23) and the one it still cannot say.
+
+class F3F
+  name     "RC Slope Soaring Gliders"
+  fai      "F3F"
+  version  "FAI F3 Soaring 2025"
+
+  param reflightAfterNPilots Number no default boundAt BeforeFlying
+                                    # F3F.1.5 "after a fixed number of pilots (e.g. 5),
+                                    #   pre-defined and announced by the organiser".
+                                    # Declared so the CD's choice reaches the event log;
+                                    # nothing reads it — notation §11 "Left open".
+
+  finalRanking SinglePhase                                     # F3F has no fly-off
+
+  reflight
+    entitled     Replacement                                   # F3F.1.5 — the repeat replaces; no better-of provision
+    others       UndefinedRequiresRuling                       # F3F.1.5 re-flies one pilot; it says nothing about the rest of the group
+    minNewGroup  0                                             # F3F re-flies into the running order, not into a new group
+
+  # F3F.1.10 is the corpus's only clause that both MULTIPLIES a penalty and
+  # SUPERSEDES it with a larger one (F23). Crossings accrue per occurrence;
+  # the group then keeps the largest accrued contribution, so a person contact
+  # takes the whole deduction to 1000.
+  penalty "safetyPlaneCrossing"     exclusionGroup "safety" perOccurrence
+    deduct 100  at FinalAggregate                              # F3F.1.10 "penalised by 100 points each"
+  penalty "safetyAreaObjectContact" exclusionGroup "safety"
+    deduct 100  at FinalAggregate                              # F3F.1.10 "the number of contacts does not matter (maximum one penalty)"
+  penalty "safetyAreaPersonContact" exclusionGroup "safety"
+    deduct 1000 at FinalAggregate                              # F3F.1.10 "only 1000 points will be deducted"
+  penalty "prohibitedTelemetry"
+    disqualify at FinalAggregate                               # F3F.1.2 "the competitor will be disqualified from the contest"
+
+  # ========================================================================
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1                    # F3F.1.7 "the flights are to be performed round by round"; no ceiling stated
+    validity  minRounds 4                                      # F3F.1.13 "a minimum of four (4) rounds must be flown"
+    # Two tiers, most selective first (F22). Reversed, a 15-round contest would
+    # match the >= 4 line and discard one — adoption rejects non-descending gates.
+    drop      ByRound 2 whenRounds >= 15                       # F3F.1.13 "if more than fourteen (14) rounds were flown, the two (2) lowest round scores will be discarded"
+    drop      ByRound 1 whenRounds >= 4                        # F3F.1.13 "in this case the lowest round score of each competitor will be discarded"
+
+    # -- Task S — Speed --------------------------------------------------
+    # The inverted task, as F3B Task C is. A raw zero is the FASTEST time in
+    # the group, so every "scores zero" clause in F3F.1.6 reaches validWhen —
+    # never a zero score term, and never a zeroFlight penalty effect.
+    task S "Speed"                                             # F3F.1.8 ten (10) legs of a 100 m closed course
+      metric    courseTime                Number s Truncate 0.01  # F3F.1.12 "the time in seconds and hundredths of seconds"
+      metric    courseCompleted           Flag                 # F3F.1.6 e "the flight is not carried through"
+      metric    landedInDefinedArea       Flag                 # F3F.1.6 f
+      metric    launchedWithin30s         Flag                 # F3F.1.6 g "not launched within 30 seconds from the moment the starting order is given"
+      metric    modelIntact               Flag                 # F3F.1.6 b "the model loses any part while airborne"
+      metric    clearedPlaneWithin5s      Flag                 # F3F.1.6 h
+      metric    seenEnteringCourse        Flag                 # F3F.1.6 i "not seen entering the course by the Judge at Base A"
+      metric    flownWithinRules          Flag                 # F3F.1.6 a, c, d — non-conforming model, helper advice during the
+                                                               #   timed flight, control by anyone other than the competitor:
+                                                               #   three officials' rulings, one recorded observation
+      flights   last                                           # F3F.1.5 "the competitor has one (1) attempt on each flight"
+      timing    UntilAllFlightsComplete prep 180 s maxLaunches 1  # F3F.1.7 "three (3) minutes of preparation time"
+      group     minPerGroup 10                                 # F3F.1.7 "at least ten (10) competitors in one group";
+                                                               #   no annulment threshold is stated, so minValidResults is unset (F12)
+      normalise LowerIsBetter winner 1000                      # F3F.1.12 Ri = 1000 × Tw / Ti; no precision stated (F12)
+      validWhen all(courseCompleted      == true,              # F3F.1.6 — "official but gets a zero score" means NO RESULT here
+                    landedInDefinedArea  == true,
+                    launchedWithin30s    == true,
+                    modelIntact          == true,
+                    clearedPlaneWithin5s == true,
+                    seenEnteringCourse   == true,
+                    flownWithinRules     == true)
+      score
+        rate courseTime 1 pt/s                                 # the raw result IS the elapsed time; the direction inverts it
+
+# ---- unresolved for F3F --------------------------------------------------
+# Tie-break (F3F.1.13: "classification rounds" are flown until the ties are
+# broken, then the discarded round's result decides) is not writable — the
+# first half schedules more flying, which an ordered list of comparators cannot
+# express, and the second half reads a score the drop has already removed.
+# Finding F15, now open across F3B, F3K/F5K and F3F.
+#
+# Re-flight scheduling (F3F.1.5, "after a fixed number of pilots") has no
+# ReflightRule field and no ParameterRef slot. Declared as a param above so the
+# choice is recorded; it affects running order, never a score.
+#
+# F3F.1.10 does not say whether safety-plane crossings COMBINE with a
+# safety-area object contact. It states only that the 1000-point person contact
+# supersedes. Under "largest accrued contribution wins" two crossings (200)
+# beat an object contact (100) and 300 is never deducted. That is a reading,
+# not a rule, and wants a ruling rather than a model change.
+#
+# ---- confirmed non-gaps ---------------------------------------------------
+# * wholeFieldAsOneGroup stays removed. F3F.1.17 evaluates the whole field as
+#   one group when the weather is stable and splits only when it is not;
+#   "as few groups as possible, minimum 10" already yields one group at any
+#   field size, and the split is a weather ruling on the Competition, not class
+#   data. Second class to test F11's removal, second to confirm it.
+# * The two thirty-second windows (F3F.1.7) need no timing vocabulary: the
+#   launch window is the launchedWithin30s flag, and the course-entry window
+#   only moves the instant courseTime starts, which is a measurement rule.
+# * Weather interruption (F3F.1.17: a group interrupted for more than thirty
+#   minutes restarts from the beginning) is a group annulment and a re-draw —
+#   the same ruling as F3B.1.11 c. No model gap.

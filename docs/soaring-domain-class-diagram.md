@@ -299,6 +299,10 @@ classDiagram
     %% populated gate holds. F3B.2.8 states two — more than five complete rounds
     %% AND a task with more than five results — and they diverge whenever a
     %% group is annulled under F3B.1.8 c.
+    %% A phase holds an ORDERED list of policies and the first whose gates all
+    %% hold is the one that applies (F22). F3F.1.13 tiers the discard: one round
+    %% at four or more, two rounds above fourteen. A single-element list is the
+    %% case in all six original classes.
 
     class ValidityRule {
         <<value object>>
@@ -335,7 +339,13 @@ classDiagram
     class PenaltyDefinition {
         +string infractionType
         +string exclusionGroup
+        +PenaltyAccrual accrual
     }
+    %% accrual defaults to OncePerAttempt, which is what F3K.4.3 and F3J.2.4 c
+    %% require literally ("each flight attempt may only incur a single penalty")
+    %% and what all six original classes assume. PerOccurrence multiplies the
+    %% deduction by the number of recorded occurrences: F3F.1.10 penalises a
+    %% safety-plane crossing "by 100 points each" (F23).
 
     class PenaltyEffectSpec {
         <<value object>>
@@ -350,6 +360,11 @@ classDiagram
     %% from a group applies, the largest winning (F3K.4.3, F3J). A group may
     %% contain only DeductPoints effects — "largest" is undefined across effect
     %% kinds — and that is validated at adoption.
+    %% "Largest" compares each definition's accrued contribution, not its
+    %% points: two PerOccurrence crossings contribute 200, and F3F.1.10's 1000
+    %% point person-contact still supersedes them. With every member
+    %% OncePerAttempt the contribution IS the points, so F3K and F3J are
+    %% unchanged by the refinement.
 
     class CompositionKind {
         <<enumeration>>
@@ -398,6 +413,12 @@ classDiagram
         FinalAggregate
     }
 
+    class PenaltyAccrual {
+        <<enumeration>>
+        OncePerAttempt
+        PerOccurrence
+    }
+
     class ParameterBindingPoint {
         <<enumeration>>
         CompetitionSetup
@@ -416,7 +437,7 @@ classDiagram
     PhaseDefinition "1" *-- "1" RoundComposition
     PhaseDefinition "1" *-- "1..*" Task : catalogue
     Task "1" *-- "0..1" ReflightRule : overrides the class default
-    PhaseDefinition "1" *-- "1" DropPolicy
+    PhaseDefinition "1" *-- "1..*" DropPolicy : ordered, first match wins
     PhaseDefinition "1" *-- "1" ValidityRule
     PhaseDefinition "1" *-- "0..1" PromotionRule : entry criteria
 
@@ -779,7 +800,13 @@ capture rather than by class data. See `high-level-architecture.md`.
   pipeline: `F3B.2.2 p` zeroes the flight and deducts 1000 from the final score,
   `F3K.4.1` deducts and zeroes the whole round. `exclusionGroup` is the other
   half — `F3K.4.3` and `F3J` both say a flight attempt may incur only one
-  penalty, the largest applying, so penalties do not simply sum.
+  penalty, the largest applying, so penalties do not simply sum. `accrual` is
+  the third: those two rules mean it *literally* ("each flight attempt may only
+  incur a single penalty"), but `F3F.1.10` deducts 100 points per safety-plane
+  crossing, so how many times an infraction counts is class data rather than a
+  universal. `OncePerAttempt` is the default and the case in all six original
+  classes; the exclusion group then compares accrued contributions, which
+  leaves those six scoring exactly as before.
 - **Reflight rules default at the class and override at the task.** `F3B.1.5 e`
   scopes its better-of rule to Tasks A and B by name; Task C's is unstated, and
   `UndefinedRequiresRuling` can only say so if a Task can hold a rule of its own.

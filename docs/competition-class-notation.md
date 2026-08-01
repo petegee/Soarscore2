@@ -34,6 +34,11 @@ more (F16–F21, §10): `rankBy`, `flightValidWhen`, the two-gate `drop`, a
 per-task `reflight` override, multi-effect penalties with `exclusionGroup`, and
 `maxRounds`.
 
+Writing a *seventh* class the notation was never designed against — F3F, RC
+slope soaring — found two more (F22–F23, §11) and confirmed the rest. That is
+the extensibility claim of NFR-2 being tested rather than asserted, so §11
+records what held as carefully as what did not.
+
 ---
 
 ## 2. Shape
@@ -71,7 +76,7 @@ class <ID>
     others       <Replacement|BetterOf|UndefinedRequiresRuling>
     minNewGroup  <int>
 
-  penalty <"infractionType"> [exclusionGroup <"name">]
+  penalty <"infractionType"> [exclusionGroup <"name">] [perOccurrence]
     <effect> [<points>] at <RawScore|FinalAggregate>
     <effect> [<points>] at <RawScore|FinalAggregate>   # one or more
 
@@ -96,6 +101,21 @@ attempt at most one penalty from a named group is applied. A group may contain
 only `deduct` effects — "largest" has no meaning between a `zeroFlight` and a
 deduction — and that is rejected at adoption rather than resolved by an invented
 ordering.
+
+**`perOccurrence`** (F23) sets `PenaltyDefinition.accrual`. The default,
+`OncePerAttempt`, is what `F3K.4.3` and `F3J.2.4 c` say word for word — "each
+flight attempt may only incur a single penalty" — and it is what all six
+original classes assume, so no existing definition writes it. `F3F.1.10` is the
+first rule that counts: a safety-plane crossing is "penalised by 100 points
+each", and the deduction is the recorded occurrence count times the points.
+
+The two interact, and the order matters. Each definition's **accrued
+contribution** is computed first, and the exclusion group then keeps the largest
+contribution rather than the largest `points` value. F3F needs exactly that —
+two crossings contribute 200, and a person contact's 1000 still supersedes them
+("only 1000 points will be deducted"). Where every member of a group is
+`OncePerAttempt` the contribution *is* the points, which is why this refines
+F3K and F3J without changing a score either produces.
 
 Finding F11 removed five variants no class requires: `LastPhaseOnly`,
 `NormalisedRoundScore`, `ZeroScoreTerm` (with `zeroesTermRef`, which could never
@@ -149,7 +169,7 @@ is silent.
                  [distinctTaskPerRound] [maxRounds <n>]
     validity   minRounds <n> [minTasks <n>]
     drop       <ByRound|ByTask> <count> [whenRounds >= <n>] [whenResults >= <n>]
-                                                                  # or: drop none
+                 … (one or more, in order)                        # or: drop none
     promotion  <TopN <n> | TopPercent <pct>> group <min>..<max>
                  carryPenalties <true|false|param(<name>)>
     task … (one or more — the catalogue available in this phase)
@@ -169,8 +189,27 @@ The two counts diverge whenever a group is annulled under `F3B.1.8 c`: a
 competitor can have six completed rounds but five Task-C results. F3K needs only
 the first gate (`drop ByRound 1 whenRounds >= 6`, `F3K.10.1`).
 
-`drop none` is sugar for `ByRound 0` with neither gate — `DropPolicy` is
-mandatory (1..1) on `PhaseDefinition`, so a phase with no drop still needs one.
+**A phase carries an ordered list of drops and the first whose gates all hold is
+the one that applies** (F22). Every one of the six original classes writes a
+single line, which is why the list was not noticed until F3F. `F3F.1.13` tiers
+the discard and needs two, most-specific first:
+
+```
+    drop ByRound 2 whenRounds >= 15   # F3F.1.13 "if more than fourteen (14) rounds
+                                      #   were flown, the two (2) lowest round scores"
+    drop ByRound 1 whenRounds >= 4    # F3F.1.13 "a minimum of four (4) rounds …
+                                      #   the lowest round score will be discarded"
+```
+
+Order is significant and the more selective gate must come first — written the
+other way round a fifteen-round contest matches the `>= 4` line and discards
+one. That is a real hazard rather than a theoretical one, because both orderings
+produce a plausible number, so **adoption rejects a list whose gates are not
+strictly descending**: the writer does not get to rely on remembering.
+
+`drop none` is sugar for a single `ByRound 0` with neither gate — `DropPolicy`
+is mandatory (1..\*) on `PhaseDefinition`, so a phase with no drop still needs
+one.
 
 **`maxRounds`** (F21) is the ceiling on what may be scheduled, and it is on
 `rounds` rather than on `validity` deliberately: a phase over its ceiling is not
@@ -392,9 +431,10 @@ predicates. It stays statically validatable at adoption.
   `height`, `motor`, `lap` and every hit is a *metric name* or a *comment* —
   never a keyword. That is the CLAUDE.md test, mechanised.
 - **No tie-breaking.** Deliberately unmodelled; the hole is left open. F3B
-  (`F3B.2.8`, an extra full round) and F3K/F5K (`F3K.10`, best dropped score then
-  a one-task tie-break flyoff) both need it and neither is writable. See
-  finding F15.
+  (`F3B.2.8`, an extra full round), F3K/F5K (`F3K.10`, best dropped score then
+  a one-task tie-break flyoff) and F3F (`F3F.1.13`, "classification rounds" flown
+  until the tie breaks, then the discarded round decides) all need it and none is
+  writable. See finding F15 — three of seven classes now.
 - **No exceptions to a score term.** `F3B.2.3 b` and `F3B.2.4 f` zero a flight
   that misses the landing area *"except in the case of midair collision"*. A
   predicate over measurements cannot reach it; it is a contest official's ruling,
@@ -411,7 +451,7 @@ notation, not of the stored class.
 |---|---|
 | `metricSet <name>` at class scope; `use <name>` in a task | a copy of each `MetricDefinition` into that task |
 | `task <code> "<name>" like <other>` + overrides | a complete `Task` copy with the overrides applied |
-| `drop none` | `DropPolicy{ByRound, 0, 0}` |
+| `drop none` | a one-element list, `[DropPolicy{ByRound, 0, 0}]` |
 
 `like` earns its place on F3K: fourteen tasks that share metrics, timing shape,
 group constraint and normalisation, and differ only in flight selection and cap.
@@ -458,6 +498,20 @@ measurement.
 Note what is *not* here: no `poker` keyword, no `target` term type. Poker is a
 `Conditional` over a `Rate` reading a `declaredBeforeLaunch` metric — vocabulary
 that already existed for other reasons.
+
+> **Trap — F3K Tasks E and H.** Both are `bestN`, they sit a few lines apart in
+> the F3K definition, and they rank their candidate flights on **opposite**
+> bases. Task E above must be ranked by *score*, so it takes no `rankBy`: a 52 s
+> flight against a 50 s target scores 50, while a 49 s flight against a 47 s
+> target scores 47, and the shorter flight is the better one. Task H must be
+> ranked by *flight time* and needs `rankBy flightTime`, because `F3K.11.8`
+> assigns the targets to the four longest flights and no flight has a score until
+> a target is assigned to it (§5, F16).
+>
+> The failure is silent in both directions — each still produces *a* number — so
+> whenever the seed data is re-written, check these two against the worked
+> examples in the rule text (`F3K.11.5` → 142 s, `F3K.11.8` → 569 s) rather than
+> against each other.
 
 ---
 
@@ -526,3 +580,68 @@ half of the record:
 - **`wholeFieldAsOneGroup` stays removed** (§3). `F3B.1.8 b` looked like it
   required readmitting F11's variant and does not — it is a draw invariant.
 - **`GroupConstraint` and the eleven `ParameterRef` slots are unchanged.**
+
+---
+
+## 11. Findings F22–F23 — the F3F probe
+
+F1–F21 came from the six classes the notation was built against, which makes
+them a poor test of NFR-2: a notation shaped by six rulebooks will fit those six.
+So the notation was pointed at a **seventh class it had never seen** — F3F, RC
+slope soaring (`F3F.1`, F3 Soaring 2025) — chosen because it is the most
+structurally distant class in the volume: no launch, no landing bonus, no
+duration, a course flown against the clock on a hillside.
+
+The result is the useful part. F3F is one phase, one task, one flight, one
+metric, and it is **shape-identical to F3B Task C** — `LowerIsBetter winner
+1000`, which is `F3F.1.12`'s `Ri = 1000 × Tw / Ti` written out. It needed no new
+score-term type, no new intrinsic, no arithmetic, no `anyOf`, and no discipline
+vocabulary. Two things broke, both structural, both additive.
+
+| # | Extension | Forced by |
+|---|---|---|
+| F22 | Ordered `drop` list — `PhaseDefinition *-- 1..* DropPolicy` | `F3F.1.13` tiers the discard: one round at ≥4, two above 14. A single `DropPolicy` writes only the first tier |
+| F23 | `perOccurrence` — `PenaltyDefinition.accrual`, and "largest in group" comparing accrued contributions | `F3F.1.10` deducts 100 points per safety-plane crossing, while a person contact's 1000 still supersedes the lot |
+
+F22 is the one that matters. Without it F3F is not merely inexpressible but
+**silently mis-scored**: the class still adopts, still runs, and discards one
+round where the rule says two. F3F contests routinely fly more than fourteen
+rounds, so this is an ordinary Saturday, not a corner case.
+
+### What held, which is the more useful half
+
+- **`exclusionGroup` semantics are unchanged, and the first proposed fix was
+  wrong.** The obvious reading of `F3F.1.10` — sum repeats of one infraction,
+  exclude between infractions — was checked against `F3K.4.3` and `F3J.2.4 c`
+  and contradicts both: each says a flight attempt may incur *one* penalty, full
+  stop, so two object contacts in one F3K attempt cost 100 and not 200.
+  Accrual therefore had to become per-definition class data (F23) rather than a
+  redefinition of the group. Recorded because the wrong fix is cheap to
+  re-derive and expensive to adopt.
+- **`validWhen` versus a zero score term paid off a second time.** `F3F.1.6`
+  lists nine conditions under which a flight is "official but gets a zero score",
+  in an inverted task where a raw zero is the *fastest* time in the group. All
+  nine route to `validWhen`, exactly as `F3B.2.5 g` does. The corollary is worth
+  stating: **the `zeroFlight` and `zeroRound` penalty effects are unusable in any
+  `LowerIsBetter` task**, so F3F's catalogue can only ever hold `deduct` and
+  `disqualify`. A candidate adoption check.
+- **`wholeFieldAsOneGroup` stays removed, on a second independent class.**
+  `F3F.1.17` evaluates the whole field as one group when the weather is stable
+  and splits only when it is not. "As few groups as possible, minimum ten"
+  already yields one group at any field size, and the split is a weather ruling
+  on the Competition. Second test of F11's removal, second confirmation.
+- **The evaluation boundary held again.** `F3F.1.7`'s two thirty-second windows
+  looked like they needed timing vocabulary and do not: the launch window is a
+  flag the starter records, and the course-entry window only moves the instant
+  `courseTime` starts, which is a measurement rule.
+- **`GroupConstraint`, the `ParameterRef` slots, `TaskTiming` and the whole
+  score-term vocabulary are unchanged.**
+
+### Left open
+
+`F3F.1.5` schedules a re-flight "after a fixed number of pilots (e.g. 5),
+pre-defined and announced by the organiser". It has no `ReflightRule` field and
+no `ParameterRef` slot, so the F3F definition declares it as a `param` the CD
+binds — putting the choice in the event log — that nothing reads. It affects
+running order, never a score, so it is recorded rather than fixed; the twelfth
+`ParameterRef` slot is additive whenever the draw needs it.

@@ -47,7 +47,7 @@ class F5J
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                           # 5.5.11.13
-    drop      ByRound 1 whenCompleted >= 5                          # 5.5.11.13 "if more than 4, the lowest round score is dropped"
+    drop      ByRound 1 whenRounds >= 5                             # 5.5.11.13 "if more than 4, the lowest round score is dropped"
 
     task D "Duration"
       use       f5jFlight
@@ -55,23 +55,24 @@ class F5J
       timing    Fixed 600 s maxLaunches unlimited                    # 5.5.11.8 working time 10 minutes
       group     minPerGroup 6                                        # 5.5.11.8
       normalise HigherIsBetter winner 1000                           # 5.5.11.12 m states no rounding precision, so none is applied (F12)
+      # Both conditions zero THE FLIGHT, not one term (F17). Written as term
+      # wrappers they had to be repeated on all three, and the start-height
+      # deduction below is negative — so a long overfly scored 0 flight points,
+      # 0 landing bonus and a NEGATIVE height deduction, when 5.5.11.12 g says
+      # "a zero score will be recorded". Hoisted; behaviour on every other path
+      # is unchanged, since all three terms already carried both conditions.
+      flightValidWhen all(overflySeconds <= 60,                      # 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
+                          startHeightRecorded == true)               # 5.5.11.12 d
       score
-        # Flight points — zeroed by a long overfly or by a missing start height.
-        when all(overflySeconds <= 60,                               # 5.5.11.12 g
-                 startHeightRecorded == true)                        # 5.5.11.12 d
-          then rate flightTime 1 pt/s cap 600 s                      # 5.5.11.12 c 1 pt per full second, max 600 points
-          else constant 0
+        rate flightTime 1 pt/s cap 600 s                             # 5.5.11.12 c 1 pt per full second, max 600 points
         # Start-height deduction. Cumulative bands: 0.5/m for the first 200 m
         # and 3/m thereafter, so 220 m deducts 100 + 60 = 160, not 660.
-        when startHeightRecorded == true
-          then piecewise startHeight                                 # 5.5.11.12 e
-                 0..200    @ -0.5 pt/m
-                 200..any  @ -3   pt/m
-          else constant 0
+        piecewise startHeight                                        # 5.5.11.12 e
+          0..200    @ -0.5 pt/m
+          200..any  @ -3   pt/m
         # Landing bonus — the coarser 50→0 table, forfeited two ways.
         when all(overflySeconds == 0,                                # 5.5.11.12 k
-                 touchedByCompetitor == false,                       # 5.5.11.12 j
-                 startHeightRecorded == true)
+                 touchedByCompetitor == false)                       # 5.5.11.12 j
           then lookup landingDistance                                # 5.5.11.12 h
                  <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
                  <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
@@ -93,16 +94,14 @@ class F5J
     # the fly-off restates it rather than inheriting it.
     task D "Duration (fly-off)" like Preliminary.D
       timing  Fixed 900 s maxLaunches unlimited                      # 5.5.11.8 15 minutes
+      flightValidWhen all(overflySeconds <= 60,                      # 5.5.11.12 g
+                          startHeightRecorded == true)               # 5.5.11.12 d
       score
-        when all(overflySeconds <= 60, startHeightRecorded == true)
-          then rate flightTime 1 pt/s cap 900 s                      # 5.5.11.12 c 900 points for the fly-off rounds
-          else constant 0
-        when startHeightRecorded == true
-          then piecewise startHeight
-                 0..200    @ -0.5 pt/m                               # 5.5.11.12 e
-                 200..any  @ -3   pt/m
-          else constant 0
-        when all(overflySeconds == 0, touchedByCompetitor == false, startHeightRecorded == true)
+        rate flightTime 1 pt/s cap 900 s                             # 5.5.11.12 c 900 points for the fly-off rounds
+        piecewise startHeight
+          0..200    @ -0.5 pt/m                                      # 5.5.11.12 e
+          200..any  @ -3   pt/m
+        when all(overflySeconds == 0, touchedByCompetitor == false)
           then lookup landingDistance                                # 5.5.11.12 h
                  <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
                  <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15

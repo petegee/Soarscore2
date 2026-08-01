@@ -45,7 +45,7 @@ class F5K
 
     rounds    ChooseFromCatalogue tasksPerRound 1                    # 5.5.10.2 one task per round from A–E
     validity  minRounds param(minRounds)                             # 5.5.10 defines no minimum-rounds rule, so the CD decides (F12)
-    drop      ByRound 1 whenCompleted >= 7                           # 5.5.10.16 "if 7 or more rounds are flown"
+    drop      ByRound 1 whenRounds >= 7                              # 5.5.10.16 "if 7 or more rounds are flown"
 
     # -- A ---------------------------------------------------------------
     # Four targets in any order; every flight counts whether or not its target
@@ -57,10 +57,17 @@ class F5K
       group     minPerGroup param(minPerGroup)                       # F5K states no group minimum (F12)
       normalise HigherIsBetter winner 1000 round HalfUp 1            # 5.5.10.15 rounded to whole points
       rawScore  round Truncate 1                                     # 5.5.10.15 raw truncated down to whole points (F4b, adopted)
+      # 5.5.10.12 flight penalty b zeroes THE FLIGHT, not the flight-time term
+      # (F17). Written as a term wrapper it guarded only the first term, so a
+      # model landing off the field still collected its launch-height
+      # adjustment and its −10/−100 deductions. The gate belongs here, where it
+      # zeroes every term at once and still leaves the flight selected —
+      # "zero points for that flight only", so Task B's last flight stays last.
+      # Inherited by B, C, D and E through `like`.
+      flightValidWhen landedOnField == true                          # 5.5.10.12 flight penalty b
       score
-        when landedOnField == true                                   # 5.5.10.12 flight penalty b
-          then rate flightTime 1 pt/s cap 599 perTask                # 5.5.10.15 1 pt/s; the assigned target caps each flight,
-          else constant 0                                            # 5.5.10.2 "maximum total flight time used for scoring:
+        rate flightTime 1 pt/s cap 599 perTask                       # 5.5.10.15 1 pt/s; the assigned target caps each flight,
+                                                                     # 5.5.10.2 "maximum total flight time used for scoring:
                                                                      #   9.59 min" caps the SUM (F4a, adopted). Not a cap on the
                                                                      #   raw score: the launch bonus below is added after it.
         # Launch points relative to the announced NLH. Cumulative bands read
@@ -90,9 +97,7 @@ class F5K
       timing    Fixed 420 s prep 300 s maxLaunches 3
       rawScore  round Truncate 1                                     # 5.5.10.15 (no 9:59 total cap on B)
       score
-        when landedOnField == true
-          then rate flightTime 1 pt/s cap 300 s                      # 5.5.10.2 maximum flight time 5 minutes
-          else constant 0
+        rate flightTime 1 pt/s cap 300 s                             # 5.5.10.2 maximum flight time 5 minutes
         when flightTime >= 30
           then piecewise launchAltitude from param(nlh)
                  any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
@@ -109,9 +114,7 @@ class F5K
       timing    Fixed 241 s prep 15 s maxLaunches 3                  # 5.5.10.2 working time 4:01 PER launch (finding F13)
       rawScore  round Truncate 1
       score
-        when landedOnField == true
-          then rate flightTime 1 pt/s cap 240 s                      # 5.5.10.2 maximum measured flight time 4 minutes
-          else constant 0
+        rate flightTime 1 pt/s cap 240 s                             # 5.5.10.2 maximum measured flight time 4 minutes
         when flightTime >= 30
           then piecewise launchAltitude from param(nlh)
                  any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
@@ -138,7 +141,8 @@ class F5K
       timing    Fixed 600 s prep 300 s maxLaunches 3
       rawScore  round Truncate 1
       score
-        when all(landedOnField == true, flightTime >= targetTime)    # 5.5.10.2 marked "Y" — the pilot is credited with the target time
+        when flightTime >= targetTime                                # 5.5.10.2 marked "Y" — the pilot is credited with the target time
+                                                                     # (landedOnField now gates the whole flight, not this term)
           then rate targetTime 1 pt/s cap 599                        # "any time over the target time is not counted";
                                                                      # 5.5.10.2 "the target and maximum allowable flight time
                                                                      #   is 9 minutes and 59 seconds" — per flight, not per task
@@ -174,3 +178,11 @@ class F5K
 # Junior fly-off size = 2/3 of the senior fly-off size. Not writable: the model
 # has no notion of competitor categories, and adding one would be a new domain
 # concept. Stopped rather than added; flagged in findings (F18).
+#
+# Ruled (CD, 2026-08-01): a model landing off the flying field scores zero for
+# that flight outright — the launch altitude is still recorded, but it cannot
+# move a score that is already zero. This is why 5.5.10.12 flight penalty b sits
+# on `flightValidWhen` and not on a score term. It changes one number as a side
+# effect: in Task E a flight that lands off the field used to contribute its
+# −10/−20 launch cost through the flight.sequence lookup and now contributes 0.
+# That follows from "zero points for that flight" and is intended.

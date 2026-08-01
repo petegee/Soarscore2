@@ -21,16 +21,23 @@ class F3B
     minNewGroup  param(minNewGroup)                             # F3B states no minimum, so the CD decides at setup (F12)
 
   penalty "safetyPlaneCrossing"  deduct 300  at FinalAggregate  # F3B.2.5 h "deduction from the competitor's final score"
-  penalty "nonConformingWinch"   deduct 1000 at FinalAggregate  # F3B.2.2 p — note the rule ALSO zeroes the flight before the
-                                                                #   test; the zero is not writable as a Penalty effect
-                                                                #   combined with a deduction (recorded, unmodelled)
+
+  # Two effects at two points in the pipeline (F20): the rule zeroes the flight
+  # AND deducts from the final score. Previously recorded here as unmodelled.
+  penalty "nonConformingWinch"
+    zeroFlight              at RawScore                         # F3B.2.2 p the flight preceding the test is zeroed
+    deduct 1000             at FinalAggregate                   # F3B.2.2 p
 
   # ========================================================================
   phase Preliminary mandatory
 
     rounds    FixedSequence tasksPerRound 3                     # F3B: a round is one flight of each of A, B and C
     validity  minRounds param(minRounds) minTasks 1             # F3B.1.8 b "one (1) round and one (1) task"
-    drop      ByTask 1 whenCompleted >= 6                       # F3B.2.8 "if more than 5 complete rounds are flown, the lowest partial score of each task"
+    # Both gates, conjunctive (F18). They diverge whenever a group is annulled
+    # under F3B.1.8 c: a competitor can hold six completed rounds but only five
+    # Task-C results, and the rule requires both counts before the drop applies.
+    drop      ByTask 1 whenRounds >= 6 whenResults >= 6         # F3B.2.8 "if more than five complete rounds are flown, the lowest
+                                                                #   partial score of each task with more than five results is omitted"
 
     # -- Task A — Duration -----------------------------------------------
     task A "Duration"                                           # F3B.2.3
@@ -86,6 +93,13 @@ class F3B
       group     minPerGroup 8 minValidResults 2                 # F3B.1.8 b "minimum 8 competitors or all competitors";
                                                                 # (F7, adopted)
       normalise LowerIsBetter winner 1000                       # F3B.2.6 partial C = 1000 × T_winner / T_own; no precision stated (F12)
+      # F19: the class default above comes from F3B.1.5 e, which scopes itself
+      # to "task A (Duration) … or task B (Distance)" BY NAME and says nothing
+      # about Task C. The silence is recorded rather than assumed away.
+      reflight
+        entitled UndefinedRequiresRuling                        # F3B.1.5 e covers Tasks A and B only
+        others   UndefinedRequiresRuling                        # F3B.1.5 e
+        minNewGroup param(minNewGroup)
       validWhen all(courseCompleted == true,                    # F2 + F3, adopted
                     landedInDefinedArea == true)
       score
