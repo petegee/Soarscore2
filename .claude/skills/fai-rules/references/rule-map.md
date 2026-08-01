@@ -4,9 +4,12 @@ Routing index for `docs/rules/`. **Cells are lookup hints, not authority.** Befo
 any value here lands in code, a class definition or a requirement, confirm it in the
 class doc named in the pointer column, and cite the source ref.
 
-Classes: **F3B** (multi-task winch), **F3J** (thermal duration, tow), **F3K**
+FAI classes: **F3B** (multi-task winch), **F3J** (thermal duration, tow), **F3K**
 (hand-launch multi-task), **F5J** (electric thermal duration), **F5K** (electric
 multi-task), **F5L** (electric RES).
+
+NZ national classes are mapped separately at the foot of this file — **they are a
+different rulebook and the FAI tables below do not describe them.**
 
 ---
 
@@ -145,3 +148,58 @@ group. No other class has this.
 | Team classification (three best, tie-breaks) | `00-general-rules.md#5` (`C.15.6.2`) |
 | CD penalty powers up to disqualification | `00-general-rules.md#6` (`C.19.1`) |
 | Results published in classification order | `00-general-rules.md#5` (`C.13.7 h`) |
+
+---
+
+# NZ national classes (NZMAA Section 5: Soaring, March 2024)
+
+A **separate rulebook by a separate body**, not FAI variations. Refs are written
+`NZ.<clause>`. Docs live in `docs/rules/nz/`; definitions in `seed-data/80–85`.
+
+**Do not read the FAI tables above across to these classes.** The differences are
+structural, not numeric — see the warning table in `SKILL.md`.
+
+## Contest shape
+
+| | M — ALES 200 | N — ALES 123 | P — ALES Radian |
+|---|---|---|---|
+| **Scoring basis** | man-on-man, **normalised ×1000** | **raw points, no normalisation** | **raw points, no normalisation** |
+| **Target time** | **CD-announced**, 10 min recommended | 6 min (360 pts) | 7 min (420 pts) |
+| **Over-target** | −1 pt/s | −1 pt/s | −1 pt/s |
+| **Rounds** | not stated (NDC: 4) | 3, all count | 3, all count |
+| **Drop-worst** | **none** | **none** | **none** |
+| **Fly-off** | none | none | none |
+| **Landing bonus** | `NZ.2.4.5` table, 50→5 over 10 m | 50 / 25 / 0 at 7 m / 15 m | 50 / 25 / 0 at 7 m / 15 m |
+| **Bonus applied** | **after normalising** | in the raw score | in the raw score |
+| **Re-flights** | entitled, **outcome unstated** | **none permitted** | **none permitted** |
+| **Launch limit** | 200 m / 30 s | 123 m / 20 s | 200 m / 30 s |
+
+Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.md`.
+
+## Cross-class NZ rules
+
+| Topic | Where |
+|---|---|
+| The 75 m rule — flight cancelled, zero score | `NZ.2.4.6` → `nz/00-nz-general-rules.md#3-landing-nz24` |
+| Electric precision landing table (10 m, 50→5) | `NZ.2.4.5` → same |
+| Gliding precision landing table (15 m, 100→30) | `NZ.2.4.4` — **not used by M, N or P** |
+| Altitude Limiter Switch; the 10% overrun zero | `NZ.2.8` → `nz/00-nz-general-rules.md#5-altitude-limiters-nz28` |
+| One official flight per round | `NZ.1.6` |
+| Repeat attempts — **tow-launched classes only**, so not ALES | `NZ.1.6.1` |
+| Flight annulment | `NZ.1.7` |
+| Contestants meeting (when CD-announced values bind) | `NZ.2.5.1` |
+| NZ variations to FAI classes, and NDC formats for them | PREFACE, `NZ.0.0` — **not modelled** |
+
+## Traps
+
+- **`NZ.3.12.7` (Class M NDC) is a different pipeline, not a different number** —
+  four rounds, raw sum, no normalisation. Modelled as its own class definition
+  (`81-nz-m-ndc.class`). Its stated maxima (650/round, 2600 total) are a useful
+  arithmetic check.
+- **`NZ.3.12.7 b` cross-references §3.13.1 and §3.13.7 c where it means §3.12.1
+  and §3.12.7 c** — stale numbering from the Jan 2013 revision.
+- **`NZ.3.15.1 j` is self-contradictory** (says a Class P model must be *airborne*
+  for its landing to count). The Class N equivalent `NZ.3.13.1 j` states the
+  sensible rule. Flagged, not fixed — see `nz/class-p-radian.md#8`.
+- **Class P group scoring is a CD option** the model cannot currently express;
+  the definition writes the individual form. See `nz/class-p-radian.md#1`.

@@ -4,10 +4,10 @@ A hand-writing notation for a `CompetitionClass`. Written as language-neutral
 pseudo-code — the host language is not yet chosen, and §9 states exactly which
 host-language features it assumes.
 
-The six FAI classes are written in it in `seed-data/`. They are the notation's
-test and the model's: because the notation is isomorphic to
-`soaring-domain-class-diagram.md`, anything the six cannot express is a gap in
-the model rather than in the notation.
+Seven FAI classes and three NZ national classes are written in it in
+`seed-data/`. They are the notation's test and the model's: because the notation
+is isomorphic to `soaring-domain-class-diagram.md`, anything they cannot express
+is a gap in the model rather than in the notation.
 
 ---
 
@@ -38,6 +38,12 @@ Writing a *seventh* class the notation was never designed against — F3F, RC
 slope soaring — found two more (F22–F23, §11) and confirmed the rest. That is
 the extensibility claim of NFR-2 being tested rather than asserted, so §11
 records what held as carefully as what did not.
+
+Pointing it at a **different rulebook entirely** — three NZ national classes
+from NZMAA Section 5, not FAI classes at all — found four more (F24–F27, §12).
+Three of the four are structural and one of them, F24, would have mis-scored a
+class that adopted and ran cleanly. The FAI corpus could not have found them:
+all seven FAI classes agree on two things the NZ classes do not.
 
 ---
 
@@ -72,8 +78,8 @@ class <ID>
   finalRanking  <SinglePhase|LastPhaseReplaces|SplitByPromotion>
 
   reflight
-    entitled     <Replacement|BetterOf|UndefinedRequiresRuling>
-    others       <Replacement|BetterOf|UndefinedRequiresRuling>
+    entitled     <Replacement|BetterOf|NotPermitted|UndefinedRequiresRuling>
+    others       <Replacement|BetterOf|NotPermitted|UndefinedRequiresRuling>
     minNewGroup  <int>
 
   penalty <"infractionType"> [exclusionGroup <"name">] [perOccurrence]
@@ -85,6 +91,13 @@ class <ID>
 
 `<BindingPoint>` ∈ `CompetitionSetup | BeforeFlying | PerRound`.
 `<effect>` ∈ `deduct <pts> | zeroFlight | zeroRound | zeroTask | disqualify`.
+
+**`NotPermitted`** (F26) is a rulebook that definitely grants no re-flight, and
+it is not the same statement as `UndefinedRequiresRuling`. NZ Classes N and P
+say "no re-flights are permitted" in as many words (`NZ.3.13.1 h`,
+`NZ.3.15.1 h`); F5L's `5.5.12.9` states entitlement and stops, leaving the CD to
+decide. Writing the first as the second puts a ruling in front of a CD that the
+rules have already made; writing the second as the first invents one.
 
 **Penalties carry one or more effects** (F20). One infraction can act twice, at
 two different points in the pipeline — `F3B.2.2 p` zeroes the flight *and*
@@ -132,7 +145,7 @@ class data — see `high-level-architecture.md`.
 
 **`param(<name>)`** — a *parameter reference* (`ParameterRef`), adopted per
 finding F1. It is **not** allowed anywhere a numeric literal is: it is legal in
-exactly eleven slots, and rejected at adoption anywhere else.
+exactly thirteen slots, and rejected at adoption anywhere else.
 
 | Slot | Notation |
 |---|---|
@@ -140,12 +153,18 @@ exactly eleven slots, and rejected at adoption anywhere else.
 | `TaskTiming.maxLaunches` | `timing … maxLaunches param(launches.C)` |
 | `ScoreTerm.cap` | `rate flightTime 1 pt/s cap param(maxFlight.B)` |
 | `ScoreTerm.origin` | `piecewise launchAltitude from param(nlh)` |
+| `Band.from` / `Band.to` (F27) | `0..param(targetTime) @ 1 pt/s` |
 | `GroupConstraint.minPerGroup` | `group minPerGroup param(groupSize)` |
 | `ValidityRule.minRounds` | `validity minRounds param(minRounds)` |
 | `PromotionRule.topN` | `promotion TopN param(flyoffSize)` |
 | `PromotionRule.minGroupSize` / `.maxGroupSize` | `group param(groupSize)..param(groupSize)` |
 | `PromotionRule.carryPenalties` | `carryPenalties param(carryPenalties)` |
 | `ReflightRule.minNewGroupSize` | `minNewGroup param(minNewGroup)` |
+
+Band bounds (F27) carry one extra adoption check the other slots do not need:
+piecewise bands must still meet, so where one band's `to` and the next band's
+`from` are both parameters they must be the *same* parameter. A gap or an
+overlap between bands is a silent mis-score, not a load error.
 
 Adoption-time validation: every ref resolves to a declared `Parameter`, and
 every referenced parameter is bound before the pipeline stage that reads it.
@@ -156,8 +175,8 @@ slot is not.
 bindings, where the rules state them. **`no default`** (F12) leaves
 `Parameter.defaultValue` unset: it marks a value the rules leave *entirely*
 open, so the CD must choose at setup and the choice is recorded in the event
-log. Grepping the six definitions for `no default` finds every place a rulebook
-is silent.
+log. Grepping the definitions for `no default` finds every place a rulebook is
+silent.
 
 ---
 
@@ -232,6 +251,7 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
       timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n|unlimited>]
       group      minPerGroup <n> [minValidResults <n>]
       normalise  <HigherIsBetter|LowerIsBetter> winner <n> [round <mode> <precision>]
+                                                                    # optional
       rawScore   round <mode> <precision>                           # optional
       validWhen  <predicate>                                        # optional
       flightValidWhen <predicate>                                   # optional
@@ -240,10 +260,36 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
       score
         <term>
         <term>          # terms are summed
+      score normalised                                              # optional
+        <term>          # added AFTER normalising; not scaled by it
 ```
 
 `declared` sets `MetricDefinition.declaredBeforeLaunch` — a value the pilot
 nominates before releasing (a Poker target).
+
+**`normalise` is itself optional** (F25). Written, the task normalises and the
+`score` block is what normalisation consumes. Omitted, the task does not
+normalise at all: the raw score *is* the task result, and rounds aggregate raw
+points. All seven FAI classes write it, which is why it was mandatory until the
+NZ classes; `NZ.3.13.1 i` and `NZ.3.15.1 i` — "each flight counts. The final
+score is the total of all points over three flights" — do not. There is no
+normalisation that leaves scores unchanged, so there was no honest way to write
+these classes with a mandatory `Normalisation`; a `winner 1000` put there to
+satisfy a multiplicity is a fabricated rule.
+
+**`score normalised`** (F24) is the second, optional term list —
+`ScoreTerm.applyAt = Normalised`. Its terms are evaluated per the same
+vocabulary but added *after* the `normalise` stage, so normalisation does not
+scale them. `NZ.3.12.1 e` states it outright: "landing points will be added to
+the **normalized** flight score". Every FAI class wants the other order and so
+writes only the plain `score` block — F5J and F5L normalise their landing bonus
+along with the flight time deliberately, and nothing about them changes.
+
+Two adoption checks: a `score normalised` block on a task with no `normalise` is
+rejected (there is no stage for it to land at), and so is a task that has *only*
+a `score normalised` block (nothing for normalisation to consume). See §12 for
+the worked example showing that the two orders reorder a group, which is why
+this is a stage rather than a formatting choice.
 
 `round` on `normalise` is **optional** (F12): `Normalisation *-- 0..1 Rounding`,
 unset meaning no rounding. F3B, F5J and F5L state no normalised precision and
@@ -282,7 +328,8 @@ multi-term task like F3B's Task A where a forgotten wrapper silently awards a
 landing bonus on a voided flight.
 
 **`reflight` on a task** (F19) overrides `CompetitionClass.reflightRule` for that
-task only. Absent — the case in five of the six classes, and in every F3K task —
+task only. Absent — the case in five of the six original classes, in every F3K
+task, and in all three NZ classes —
 means the class default applies. `F3B.1.5 e` scopes its better-of rule to "task A
 … or task B" by name and says nothing about Task C, which is writable only as an
 override:
@@ -396,9 +443,10 @@ all(<p>, <p>, …)
 `all(…)` is `Predicate.allOf` (F3) — a conjunction, usable both in `when` and in
 `validWhen`. Exactly one of {leaf comparison, `allOf`} is populated.
 
-**There is no `any`.** All twelve multi-condition sites in the six classes are
-conjunctions, so disjunction has no rule behind it and was not adopted. A class
-that needs it must arrive with the citation.
+**There is no `any`.** All twelve multi-condition sites in the six original
+classes are conjunctions, and F3F and the three NZ classes added no disjunction
+either, so it still has no rule behind it and was not adopted. A class that
+needs it must arrive with the citation.
 
 This is not an expression language: no arithmetic, no functions, no user-defined
 predicates. It stays statically validatable at adoption.
@@ -427,9 +475,10 @@ predicates. It stays statically validatable at adoption.
   times within an entry cannot exceed the entry's working time — is a core
   invariant instead (`high-level-architecture.md`), and the one-second-per-flight
   of slack is an accepted deviation, not an oversight.
-- **No discipline vocabulary.** Grep the six definitions for `landing`,
-  `height`, `motor`, `lap` and every hit is a *metric name* or a *comment* —
-  never a keyword. That is the CLAUDE.md test, mechanised.
+- **No discipline vocabulary.** Grep every definition in `seed-data/` for
+  `landing`, `height`, `motor`, `lap` and every hit is a *metric name* or a
+  *comment* — never a keyword. That is the CLAUDE.md test, mechanised, and it
+  still holds across a second rulebook.
 - **No tie-breaking.** Deliberately unmodelled; the hole is left open. F3B
   (`F3B.2.8`, an extra full round), F3K/F5K (`F3K.10`, best dropped score then
   a one-task tie-break flyoff) and F3F (`F3F.1.13`, "classification rounds" flown
@@ -643,5 +692,114 @@ rounds, so this is an ordinary Saturday, not a corner case.
 pre-defined and announced by the organiser". It has no `ReflightRule` field and
 no `ParameterRef` slot, so the F3F definition declares it as a `param` the CD
 binds — putting the choice in the event log — that nothing reads. It affects
-running order, never a score, so it is recorded rather than fixed; the twelfth
-`ParameterRef` slot is additive whenever the draw needs it.
+running order, never a score, so it is recorded rather than fixed; a
+`ParameterRef` slot for it is additive whenever the draw needs it.
+
+---
+
+## 12. Findings F24–F27 — the NZ probe
+
+F1–F23 all came from FAI rulebooks. That is a narrower test than it looks:
+seven classes drafted by one body over decades share drafting habits, and a
+notation shaped by them will fit them. So the notation was pointed at a
+**different rulebook** — NZMAA *Flying Rules, Section 5: Soaring* (March 2024),
+the New Zealand national classes, which is also the rulebook this system's
+actual users fly to (`users.md`).
+
+Three classes were written: **Class M — ALES 200** (`NZ.3.12`), **Class N — ALES
+123 Open** (`NZ.3.13`) and **Class P — ALES Radian** (`NZ.3.15`). They were
+chosen because they are the NZ classes closest in shape to F5J, so a fit was
+the expected result. It was not the result.
+
+| # | Extension | Forced by |
+|---|---|---|
+| F24 | `score normalised` — `ScoreTerm.applyAt : ScoreStage` | `NZ.3.12.1 e`, `NZ.3.12.3 d`: Class M adds landing points to the *normalised* flight score, not to the raw score |
+| F25 | `normalise` optional — `Task *-- 0..1 Normalisation` | `NZ.3.13.1 i`, `NZ.3.15.1 i`: Classes N and P do not normalise; rounds aggregate raw points |
+| F26 | `NotPermitted` — a fourth `ReflightSelection` | `NZ.3.13.1 h`, `NZ.3.15.1 h`: "no re-flights are permitted" is a definite rule, not a silence |
+| F27 | `param()` on `Band.from` / `Band.to` | `NZ.3.12.1 f, g`: Class M's +1/−1 turning point is the target time the CD announces on the day |
+
+### Why F24 is the one that matters
+
+Class M scores +1 pt/s to the target time and −1 pt/s beyond it, normalises
+against the best in the group, and *then* adds the landing bonus. F5J and F5L
+put their landing bonus in the raw score and normalise the sum. Both are
+coherent; they are different rules, and the model could express only one of
+them.
+
+Target 600 s, one group of two. Pilot A flies 600 s and lands 9 m out (bonus
+10). Pilot B flies 500 s and lands 1 m out (bonus 50).
+
+| | A | B | Winner |
+|---|---|---|---|
+| Per `NZ.3.12.3 c, d` — normalise, then add | 1000 + 10 = **1010** | 1000×500/600 + 50 = **883** | A |
+| Landing folded into the raw score | 1000×610/610 = **1000** | 1000×550/610 = **902** | A |
+
+Same rulebook, different scores, and with the numbers moved a little the two
+orders swap the *order* as well. Nothing in a definition written the wrong way
+would say so: it adopts, it runs, it produces plausible numbers. That is the F22
+failure mode again, and it is the reason a stage was added to the pipeline
+rather than the landing bonus being quietly folded in "because F5J does it".
+
+### Why F25 could not be worked around
+
+There is no identity value for normalisation. `HigherIsBetter winner 1000`
+rescales every score in the group; `minPerGroup 1` makes each pilot their own
+group and awards everyone 1000. A mandatory `Normalisation` on a class that does
+not normalise can only be satisfied by writing a rule the rulebook does not
+contain, so the multiplicity was wrong rather than the classes.
+
+### What held
+
+- **The entire score-term vocabulary.** No new term kind, no new intrinsic, no
+  arithmetic, no `anyOf`, no discipline keyword. The NZ +1/−1 target-time shape
+  is F3B Task A's `piecewise`; the 50/25/0 bonus in N and P and the ten-row
+  table in `NZ.2.4.5` are both `lookup`; `NZ.2.4.5`'s "rounded to the next full
+  metre" is `Ceiling 1`, already in `RoundingMode`.
+- **`flightValidWhen` earned its place a third time.** `NZ.2.4.6` cancels a
+  flight whose nose does not come to rest within 75 m of the landing spot, and
+  the motor-restart and still-airborne forfeits in N and P are conditions on the
+  landing term. Same split as F3K and F3F, no new machinery.
+- **`UndefinedRequiresRuling` was needed again, and F26 did not swallow it.**
+  Class M's `NZ.3.12.5 l` grants a re-flight for an unexpected event and says
+  nothing about which score counts — F5L's case exactly. That it sits in the
+  same rulebook as two classes needing `NotPermitted` is the clearest evidence
+  the two values are genuinely distinct.
+- **The launch height limits are not scoring data.** 200 m, 123 m, 20 s, 30 s —
+  the headline numbers of all three classes — are enforced by an onboard
+  altitude limiter switch (`NZ.2.8`) and never reach the scorer. Nothing to
+  model. Worth recording because the opposite was assumed at the outset.
+- **The evaluation boundary held a third time.** Nothing in the three classes
+  needed a term to see beyond the flight being scored.
+- **`GroupConstraint`, `TaskTiming`, `DropPolicy` and the penalty machinery are
+  unchanged.**
+
+### Left open
+
+- **Class P makes group scoring itself a CD choice.** Its preamble: the CD "may
+  decide to mass launch groups of pilots … may use group scoring in this
+  instance", with such results ineligible for records or NDC. Whether the task
+  normalises is therefore a setup-time decision, and `Normalisation` is a value
+  object, so no `ParameterRef` slot can reach it — the same residual F12 hit on
+  `Rounding`. The seed definition writes the individual (un-normalised) form,
+  which is the one that counts for NDC. Recorded, not fixed.
+- **Class M has two scoring modes.** `NZ.3.12.7` defines an NDC format: four
+  rounds, "the sum of the four rounds **raw** scores", no normalisation. Same
+  class, different pipeline. Written as a second definition (`81-nz-m-ndc`),
+  which is additive and consistent with the law in `CLAUDE.md` — but it does
+  mean "competition class" and "class in the rulebook" are not one-to-one, and
+  nothing in the model records that the two are related.
+- **`NZ.2.8.3`'s zero is discretionary.** A launch exceeding the designated
+  altitude by 10% means the CD "*may* assign a score of zero". Same category as
+  `F3B.2.3 b`'s midair exception (§6): a ruling, not a predicate.
+- **`faiDesignation` is empty for a national class.** Three definitions now
+  leave it blank. It is presumably nullable, but the field name says otherwise
+  and nothing states it.
+- **A drafting error in `NZ.3.15.1 j`.** It reads "the model must be airborne at
+  the end of the round the flight time for the flight & landing to count", where
+  the parallel Class N clause `NZ.3.13.1 j` says the opposite — still airborne at
+  the end of the round means the time stops there and no landing points. The
+  seed definition follows Class N. **This is a question for the NZMAA, not a
+  model gap**, and it is flagged in `85-nz-p-radian.class` so it is not silently
+  inherited.
+- **Tie-break: all three state none** — consistent with F15, now three of ten
+  classes needing one and none able to write it.

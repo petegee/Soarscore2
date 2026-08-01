@@ -37,11 +37,17 @@ results must be unaffected by the addition.
 **Scope of that guarantee.** A class's arithmetic is expressed as a *closed
 vocabulary* of score terms (rate, table lookup, banded rate, constant,
 conditional) and flight selectors. Any class whose scoring falls within that
-vocabulary — which is all six FAI classes we ship — is pure data, and adding it
-touches no code at all. A genuinely novel scoring *shape*, one no existing class
-needs, requires a new term type. That is an **additive core extension: a new
-variant, never an edit to an existing one**, and existing definitions,
-stored data and results remain untouched by it.
+vocabulary — which is every class we ship, FAI and NZ national alike — is pure
+data, and adding it touches no code at all. A genuinely novel scoring *shape*,
+one no existing class needs, requires a new term type. That is an **additive
+core extension: a new variant, never an edit to an existing one**, and existing
+definitions, stored data and results remain untouched by it.
+
+The three NZ ALES classes are the sharpest evidence so far that the line is in
+the right place. They come from a rulebook by a different body and they needed
+**no new score-term type at all** — but they did need four structural changes
+(F24–F27), every one of them additive and none of them altering a score any FAI
+class produces. Novel *shapes* have not appeared; novel *pipeline stages* have.
 
 This is deliberate. The alternative — an open expression language, so no core
 change is ever needed — would satisfy the letter of this requirement while

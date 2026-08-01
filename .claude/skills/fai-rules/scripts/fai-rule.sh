@@ -9,7 +9,8 @@
 #   fai-rule.sh check-links           verify every docs/rules anchor resolves
 #
 #   <ref> examples: F3B.1.5  F3J.10.5  F3K.9.6  5.5.11.12  5.5.12.11.1  C.16.2.6
-#   <vol>          : f3 | f5 | ciam   (inferred from <ref> in `show`)
+#                   NZ.3.12.3  NZ.2.4.5            (New Zealand national classes)
+#   <vol>          : f3 | f5 | ciam | nz   (inferred from <ref> in `show`)
 
 set -euo pipefail
 
@@ -17,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 RULES_DIR="$REPO_ROOT/docs/rules"
 SRC_DIR="$RULES_DIR/source-docs"
+NZ_SRC_DIR="$RULES_DIR/nz/source-docs"
 
 die() { printf 'fai-rule: %s\n' "$1" >&2; exit 1; }
 
@@ -25,30 +27,42 @@ volume_file() {
     f3)   echo "$SRC_DIR/f3-soaring-2025.md" ;;
     f5)   echo "$SRC_DIR/f5-electric-2026.md" ;;
     ciam) echo "$SRC_DIR/ciam-general-rules-2026.md" ;;
-    *)    die "unknown volume '$1' (expected f3, f5 or ciam)" ;;
+    nz)   echo "$NZ_SRC_DIR/nzmaa-s5-soaring-2024.md" ;;
+    *)    die "unknown volume '$1' (expected f3, f5, ciam or nz)" ;;
   esac
 }
 
-# Route a rule ref to its volume: F3x.* -> f3, 5.5.* -> f5, C.* -> ciam
+all_source_files() { echo "$SRC_DIR"/*.md "$NZ_SRC_DIR"/*.md; }
+
+# Route a rule ref to its volume: F3x.* -> f3, 5.5.* -> f5, C.* -> ciam,
+# NZ.* -> nz. The NZ volume is NOT an FAI document; see docs/rules/nz/.
 volume_of_ref() {
   case "$1" in
-    F3*|f3*) echo f3 ;;
-    5.5*)    echo f5 ;;
-    C.*|c.*) echo ciam ;;
-    *)       die "cannot infer volume from ref '$1' (expected F3B.1.5, 5.5.11.12 or C.16.2.6)" ;;
+    F3*|f3*)   echo f3 ;;
+    5.5*)      echo f5 ;;
+    C.*|c.*)   echo ciam ;;
+    NZ.*|nz.*) echo nz ;;
+    *)         die "cannot infer volume from ref '$1' (expected F3B.1.5, 5.5.11.12, C.16.2.6 or NZ.3.12.3)" ;;
   esac
 }
 
 # Normalise case: class prefixes are uppercase in the source headings.
+# The NZ. prefix disambiguates refs for humans but is not in the headings —
+# NZ clause numbers collide with FAI ones (both have a "2.4") — so strip it.
 norm_ref() {
-  printf '%s' "$1" | awk '{ if (tolower($0) ~ /^(f3|c\.)/) print toupper($0); else print }'
+  printf '%s' "$1" \
+    | awk '{ if (tolower($0) ~ /^(f3|c\.)/) print toupper($0); else print }' \
+    | sed 's/^[Nn][Zz]\.//'
 }
 
 cmd_show() {
   [ $# -ge 1 ] || die "show needs a rule ref, e.g. 'show 5.5.11.12'"
-  local ref file
+  local ref file vol
+  # Volume is inferred from the RAW ref: norm_ref strips the NZ. prefix that
+  # the inference depends on, so it must run second.
+  vol="$(volume_of_ref "$1")"
   ref="$(norm_ref "$1")"
-  file="$(volume_file "$(volume_of_ref "$ref")")"
+  file="$(volume_file "$vol")"
 
   awk -v ref="$ref" '
     BEGIN { FS = " " }
@@ -65,14 +79,14 @@ cmd_show() {
     }
     found { print }
     END { if (!found) exit 3 }
-  ' "$file" || die "rule '$ref' not found in $(basename "$file") — try: fai-rule.sh toc $(volume_of_ref "$ref") ${ref%.*}"
+  ' "$file" || die "rule '$ref' not found in $(basename "$file") — try: fai-rule.sh toc $vol ${ref%.*}"
 }
 
 cmd_find() {
   [ $# -ge 1 ] || die "find needs a regex, e.g. 'find \"landing bonus\"'"
   local pat="$1"; shift
   local files=()
-  if [ $# -ge 1 ]; then files=("$(volume_file "$1")"); else files=("$SRC_DIR"/*.md); fi
+  if [ $# -ge 1 ]; then files=("$(volume_file "$1")"); else read -r -a files <<<"$(all_source_files)"; fi
 
   for file in "${files[@]}"; do
     awk -v pat="$pat" -v vol="$(basename "$file")" '
@@ -110,25 +124,36 @@ cmd_check_links() {
   # per-link check is a plain lookup (a `grep -q` inside a pipeline would
   # SIGPIPE its producer and, under `pipefail`, fake a broken link).
   anchors_for() {
-    local f="$1" cache
-    cache="$tmp/$(basename "$f").anchors"
-    [ -f "$cache" ] || grep '^#' "$RULES_DIR/$f" \
+    local abs="$1" cache
+    cache="$tmp/$(echo "$abs" | tr / _).anchors"
+    [ -f "$cache" ] || grep '^#' "$abs" \
       | sed 's/^#* //; s/[^A-Za-z0-9 -]//g; s/ /-/g' \
       | tr 'A-Z' 'a-z' > "$cache"
     echo "$cache"
   }
 
-  while IFS= read -r link; do
-    file="${link%%#*}"; anchor="${link#*#}"
-    [ "$link" = "$file" ] && continue   # bare file link, no anchor
-    if [ ! -f "$RULES_DIR/$file" ]; then
-      printf 'BROKEN  missing file: %s\n' "$file"; rc=1; continue
-    fi
-    n=$((n + 1))
-    if ! grep -qFx -- "$anchor" "$(anchors_for "$file")"; then
-      printf 'BROKEN  %s#%s\n' "$file" "$anchor"; rc=1
-    fi
-  done < <(grep -oh '(source-docs/[^)]*)' "$RULES_DIR"/*.md | tr -d '()' | sort -u)
+  # Links are relative to the doc that contains them, so each condensed-doc
+  # directory is scanned against its own source-docs/ — docs/rules/nz/ has a
+  # separate one holding the NZMAA text.
+  local dir doc abs
+  for dir in "$RULES_DIR" "$RULES_DIR"/nz; do
+    [ -d "$dir" ] || continue
+    for doc in "$dir"/*.md; do
+      [ -e "$doc" ] || continue
+      while IFS= read -r link; do
+        file="${link%%#*}"; anchor="${link#*#}"
+        [ "$link" = "$file" ] && continue   # bare file link, no anchor
+        abs="$dir/$file"
+        if [ ! -f "$abs" ]; then
+          printf 'BROKEN  %s -> missing file: %s\n' "$(basename "$doc")" "$file"; rc=1; continue
+        fi
+        n=$((n + 1))
+        if ! grep -qFx -- "$anchor" "$(anchors_for "$abs")"; then
+          printf 'BROKEN  %s -> %s#%s\n' "$(basename "$doc")" "$file" "$anchor"; rc=1
+        fi
+      done < <(grep -o '(source-docs/[^)]*)' "$doc" | tr -d '()' | sort -u)
+    done
+  done
 
   [ $rc -eq 0 ] && echo "OK — $n source-doc anchors in docs/rules all resolve"
   return $rc

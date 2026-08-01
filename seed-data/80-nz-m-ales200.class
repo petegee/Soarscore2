@@ -1,0 +1,106 @@
+# NZ Class M — ALES 200 (Altitude Limited Electric Soaring)   seed definition, draft
+# Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.12,
+#            plus NZ.2.4.5 electric landing table, NZ.2.4.6, NZ.2.8, NZ.1.6)
+#
+# The first non-FAI class in the corpus, and the class that found F24: it adds
+# its landing bonus to the NORMALISED flight score, where F5J and F5L add theirs
+# to the raw score and normalise the sum. Both are coherent rules; the model
+# could express only F5J's until this class was written. See notation §12 for
+# the worked example showing the two orders reorder a group.
+#
+# It also found F27: the +1/-1 turning point is the target time the CD announces
+# on the day, not a rule constant, so a Band bound has to read a parameter.
+#
+# The NDC variant of this class scores raw and is a separate definition,
+# 81-nz-m-ndc.class.
+
+class NZ-M
+  name     "ALES 200 (Altitude Limited Electric Soaring)"
+  fai      ""                                                    # a national class; no FAI designation
+  version  "NZMAA Section 5 Soaring, March 2024"
+
+  param targetTime Number s default 600 boundAt BeforeFlying     # NZ.3.12.1 f "a target time announced by the CD.
+                                                                 #   10 minutes is recommended"
+                                                                 # NZ.3.12.1 g the CD may change it "based on local
+                                                                 #   conditions" — announced at the contestants
+                                                                 #   meeting (NZ.2.5.1), hence BeforeFlying
+  param groupSize  Number   no default boundAt CompetitionSetup  # NZ.3.12 states no group size at all (F12)
+  param minRounds  Number   no default boundAt CompetitionSetup  # NZ.3.12 states no round count (F12);
+                                                                 #   only the NDC variant fixes one
+
+  finalRanking SinglePhase                                       # NZ.3.12 has no fly-off
+
+  # NZ.3.12.5 l grants the re-flight and stops: nothing about placement or which
+  # score counts. That is F5L's case exactly, and it is why F26's NotPermitted
+  # had to be a separate value rather than a re-reading of this one — Classes N
+  # and P, two clauses away in the same rulebook, need the opposite.
+  reflight
+    entitled     UndefinedRequiresRuling                         # NZ.3.12.5 l
+    others       UndefinedRequiresRuling                         # NZ.3.12.5 l
+    minNewGroup  0                                               # not stated
+
+  penalty "launchOutsideBuzzerWindow" zeroRound at RawScore      # NZ.3.12.1 h "launched before or after the launch
+                                                                 #   buzzer will receive 0 points for the round"
+  penalty "landedOutsideFieldBounds"  zeroRound at RawScore      # NZ.3.12.4 a "landing beyond the field boundaries
+                                                                 #   will receive 0 points for the round"
+  penalty "launchHeightExceeded"      zeroRound at RawScore      # NZ.2.8.3 — but the rule says the CD "MAY assign a
+                                                                 #   score of zero"; the discretion is not modelled.
+                                                                 #   See notation §12, Left open.
+
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1
+    validity  minRounds param(minRounds)
+    drop      none                                               # NZ.3.12 states no discard
+
+    task D "Thermal Duration"
+      metric flightTime          Number s Truncate 1             # NZ.3.12.3 a "truncated for scoring purposes"
+      metric landingDistance     Number m Ceiling  1             # NZ.2.4.5 "rounded to the next full metre"
+      metric significantDamage   Flag                            # NZ.3.12.2 d
+      metric touchedByCompetitor Flag                            # NZ.3.12.2 e
+      metric landedWithin75m     Flag                            # NZ.2.4.6
+
+      flights   last                                             # NZ.1.6 one official flight per round
+      timing    UntilAllFlightsComplete maxLaunches 1            # NZ.3.12.1 h one mass launch on a 10 s buzzer;
+                                                                 #   NZ.3.12 sets no working time, the group flies
+                                                                 #   until the last model is down
+      group     minPerGroup param(groupSize)                     # NZ.3.12 "Man-On-Man (Group scored)"
+      normalise HigherIsBetter winner 1000                       # NZ.3.12.3 c "the ratio of the contestants score to
+                                                                 #   that of the highest score for that flight group
+                                                                 #   and multiplying by 1000"; no precision stated (F12)
+
+      flightValidWhen landedWithin75m == true                    # NZ.2.4.6 "the flight is cancelled and recorded as
+                                                                 #   a zero score"
+
+      # Raw score — flight points only. Cumulative bands, F3B Task A's shape at
+      # a parameterised turning point (F27): at target 600 a 700 s flight scores
+      # 600x1 + 100x(-1) = 500, not 600.
+      score
+        piecewise flightTime                                     # NZ.3.12.3 b
+          0..param(targetTime)    @  1 pt/s                      # NZ.3.12.1 m "1 point/second for each second up to
+                                                                 #   and including the target time"
+          param(targetTime)..any  @ -1 pt/s                      # NZ.3.12.1 n "for each second beyond the target time
+                                                                 #   the score will be decreased by 1 point/second"
+
+      # Landing points, added AFTER normalising (F24). This is the whole reason
+      # ScoreTerm.applyAt exists — NZ.3.12.1 e "landing points will be added to
+      # the normalized flight score", NZ.3.12.3 d "the sum of the pilot's
+      # normalized flight score and the landing score".
+      score normalised
+        when all(significantDamage   == false,                   # NZ.3.12.2 d
+                 touchedByCompetitor == false)                   # NZ.3.12.2 e
+          then lookup landingDistance                            # NZ.3.12.2 b, table at NZ.2.4.5
+                 <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
+                 <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
+                 <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
+          else constant 0
+
+# ---- unresolved for NZ Class M -------------------------------------------
+# 1. NZ.2.8.3's zero is discretionary ("the CD may assign"). Written above as a
+#    penalty definition the CD invokes; the "may" itself is a ruling, in the
+#    same category as F3B.2.3 b's midair exception (notation §6).
+# 2. NZ.3.12.7 defines a second scoring mode for NDC contests — four rounds,
+#    raw sum, no normalisation. Split out as 81-nz-m-ndc.class. Nothing in the
+#    model records that the two definitions are the same rulebook class.
+# 3. Tie-break: NZ.3.12 states none. Finding F15.
+# 4. faiDesignation is empty. Presumably nullable; nothing says so.

@@ -1,0 +1,94 @@
+# NZ Class P — ALES Radian (or similar 2 m all-foam electric glider)
+#                                                       seed definition, draft
+# Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.15,
+#            plus NZ.2.4.6, NZ.2.8, NZ.1.6)
+#
+# Class N's shape with a 7 minute target and a 200 m limit. It is written out in
+# full rather than as `like NZ-N.D` because `like` is a task-level shortcut
+# within one class definition and these are two classes; that is a real cost of
+# PhaseDefinition owning its tasks, and it is worth seeing.
+#
+# Its own contribution to the corpus is a gap rather than an extension: NZ.3.15
+# makes group scoring a CD choice, and no ParameterRef slot can reach a
+# Normalisation. See the foot of this file and notation §12.
+
+class NZ-P
+  name     "ALES Radian (2 m all-foam electric glider)"
+  fai      ""                                                    # a national class; no FAI designation
+  version  "NZMAA Section 5 Soaring, March 2024"
+
+  param roundDuration Number s no default boundAt BeforeFlying   # NZ.3.15.1 k "decided by the CD taking into account
+                                                                 #   the number of competitors, weather conditions
+                                                                 #   etc. For example each round could be 1 hour" (F12)
+
+  finalRanking SinglePhase
+
+  reflight
+    entitled     NotPermitted                                    # NZ.3.15.1 h "no re-flights are permitted"
+    others       NotPermitted                                    # NZ.3.15.1 h
+    minNewGroup  0                                               # no new group is ever formed
+
+  # (no penalty definitions — every consequence in NZ.3.15 is derived from
+  #  something measured)
+
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1 maxRounds 3          # NZ.3.15 "three 7 minutes flights over 3 rounds"
+    validity  minRounds 3                                        # NZ.3.15
+    drop      none                                               # NZ.3.15.1 i "each flight counts"
+
+    task D "Duration"
+      metric flightTime         Number s Truncate 1              # NZ.3.15.1 f; no precision stated (F12 residual)
+      metric landingDistance    Number m Truncate 0.1            # NZ.3.15.1 e; no capture precision stated
+      metric motorRestarted     Flag                             # NZ.3.15.1 g
+      metric airborneAtRoundEnd Flag                             # NZ.3.15.1 j — but see the note at the foot
+      metric landedWithin75m    Flag                             # NZ.2.4.6
+
+      flights   last                                             # NZ.1.6 one official flight per round
+      timing    Fixed param(roundDuration) maxLaunches 1         # NZ.3.15.1 k
+      group     minPerGroup 1                                    # individual scoring; see the note at the foot
+
+      # NO `normalise` (F25). NZ.3.15.1 i: "the final score is the total of all
+      # points over three flights". This is the NDC-eligible form of the class.
+
+      flightValidWhen landedWithin75m == true                    # NZ.2.4.6
+
+      score
+        # Cumulative bands: 450 s scores 420x1 + 30x(-1) = 390.
+        piecewise flightTime                                     # NZ.3.15.1 c
+          0..420    @  1 pt/s                                    # NZ.3.15.1 c "one point for each second flown up to
+                                                                 #   7 minutes (i.e. 420 points)"
+          420..any  @ -1 pt/s                                    # NZ.3.15.1 c "then one point lost for each second
+                                                                 #   flown over this time"
+        when all(motorRestarted     == false,                    # NZ.3.15.1 g "landing points will be lost"
+                 airborneAtRoundEnd == false)                    # NZ.3.15.1 j, read per NZ.3.13.1 j — see below
+          then lookup landingDistance                            # NZ.3.15.1 e
+                 <=  7 -> 50 ;  <= 15 -> 25 ;  any -> 0
+          else constant 0
+
+# ---- RULES QUERY, not a model gap ----------------------------------------
+# NZ.3.15.1 j reads: "The model must be airborne at the end of the round the
+# flight time for the flight & landing to count."  As written that requires a
+# model to be STILL FLYING for its landing to score, which cannot be meant. The
+# parallel Class N clause NZ.3.13.1 j says the opposite and makes sense: "if the
+# model is still airborne at the end of the round the flight time stops at that
+# point as well as no landing points awarded."
+# This definition follows Class N. The reading should be confirmed with the
+# NZMAA before this class is used to score a contest, and per house-keeping
+# rule 1 the rule document itself is NOT to be edited to match.
+
+# ---- unresolved for NZ Class P -------------------------------------------
+# 1. GROUP SCORING IS A CD CHOICE AND IS NOT WRITABLE. NZ.3.15 preamble: "A
+#    Contest Director may decide to mass launch groups of pilots to add to the
+#    fun of the event. The CD may use group scoring in this instance but points
+#    will not be eligible for any record claims or NDC." Whether the task
+#    normalises is therefore bound at setup, and Normalisation is a value
+#    object, so no ParameterRef slot reaches it (the same residual F12 hit on
+#    Rounding). This file writes the individual form, which is the one that
+#    counts for NDC. A group-scored Class P contest cannot currently be scored
+#    by this definition. Notation §12, Left open.
+# 2. The 200 m launch height and 30 s motor run are enforced by the onboard
+#    altitude limiter switch (NZ.2.8) and are not scoring data.
+# 3. NZ.2.8.3's launch-overrun zero is discretionary. A CD ruling.
+# 4. Tie-break: NZ.3.15 states none. Finding F15.
+# 5. faiDesignation is empty. Presumably nullable; nothing says so.

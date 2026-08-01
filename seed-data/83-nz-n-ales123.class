@@ -1,0 +1,85 @@
+# NZ Class N — ALES 123 Open (Altitude Limited Electric Soaring)
+#                                                       seed definition, draft
+# Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.13,
+#            plus NZ.2.4.6, NZ.2.8, NZ.1.6)
+#
+# One of the two classes that found F25: it does not normalise. NZ.3.13.1 i —
+# "each flight counts. The final score is the total of all points over three
+# flights" — is raw points summed across rounds, and there is no normalisation
+# that leaves scores unchanged, so `normalise` had to become optional rather
+# than be satisfied with an invented `winner 1000`.
+#
+# It also found F26 with NZ.3.13.1 h: "no re-flights are permitted" is a
+# definite rule, not a rulebook silence.
+#
+# Everything else in the class writes with vocabulary that already existed.
+
+class NZ-N
+  name     "ALES 123 Open (Altitude Limited Electric Soaring)"
+  fai      ""                                                    # a national class; no FAI designation
+  version  "NZMAA Section 5 Soaring, March 2024"
+
+  param roundDuration Number s no default boundAt BeforeFlying   # NZ.3.13.1 k "the duration of each round will be
+                                                                 #   decided by the CD taking into account the number
+                                                                 #   of competitors, weather conditions and any other
+                                                                 #   pertinent factors" — entirely open (F12)
+
+  finalRanking SinglePhase
+
+  reflight
+    entitled     NotPermitted                                    # NZ.3.13.1 h "no re-flights are permitted"
+    others       NotPermitted                                    # NZ.3.13.1 h
+    minNewGroup  0                                               # no new group is ever formed
+
+  # (no penalty definitions — every consequence in NZ.3.13 is derived from
+  #  something measured, as in F5L)
+
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1 maxRounds 3          # NZ.3.13 "three 6 minutes flights over 3 rounds"
+    validity  minRounds 3                                        # NZ.3.13
+    drop      none                                               # NZ.3.13.1 i "each flight counts"
+
+    task D "Duration"
+      metric flightTime         Number s Truncate 1              # NZ.3.13.1 f; no precision stated (F12 residual)
+      metric landingDistance    Number m Truncate 0.1            # NZ.3.13.1 e; no capture precision stated
+      metric motorRestarted     Flag                             # NZ.3.13.1 g
+      metric airborneAtRoundEnd Flag                             # NZ.3.13.1 j
+      metric landedWithin75m    Flag                             # NZ.2.4.6
+
+      flights   last                                             # NZ.1.6 one official flight per round
+      timing    Fixed param(roundDuration) maxLaunches 1         # NZ.3.13.1 k
+      group     minPerGroup 1                                    # NZ.3.13 never mentions groups; the class is scored
+                                                                 #   individually, so this is the degenerate value
+
+      # NO `normalise` (F25) — see the header note. The raw score below IS the
+      # task result, and rounds aggregate raw points.
+
+      flightValidWhen landedWithin75m == true                    # NZ.2.4.6 "the flight is cancelled and recorded as
+                                                                 #   a zero score"
+
+      score
+        # Cumulative bands: 400 s scores 360x1 + 40x(-1) = 320.
+        piecewise flightTime                                     # NZ.3.13.1 c
+          0..360    @  1 pt/s                                    # NZ.3.13.1 c "one point for each second flown up to
+                                                                 #   6 minutes (i.e. 360 points)"
+          360..any  @ -1 pt/s                                    # NZ.3.13.1 c "then one point lost for each second
+                                                                 #   flown over this time"
+        # Two ways to lose the landing bonus. NZ.3.13.1 g also stops the watch
+        # at the restart, which is a measurement rule the timekeeper applies —
+        # only the bonus forfeit is scoring data.
+        when all(motorRestarted     == false,                    # NZ.3.13.1 g "landing points will be lost"
+                 airborneAtRoundEnd == false)                    # NZ.3.13.1 j "as well as no landing points awarded"
+          then lookup landingDistance                            # NZ.3.13.1 e
+                 <=  7 -> 50 ;  <= 15 -> 25 ;  any -> 0
+          else constant 0
+
+# ---- unresolved for NZ Class N -------------------------------------------
+# 1. The 123 m launch height and 20 s motor run — the numbers the class is named
+#    for — are enforced by the onboard altitude limiter switch (NZ.2.8) and are
+#    not scoring data. Nothing to model, and nothing missing.
+# 2. NZ.2.8.3's launch-overrun zero is discretionary ("the CD may assign"), so
+#    unlike Class M this class carries no penalty definition for it; there is no
+#    group scoring here for it to distort. A CD ruling either way.
+# 3. Tie-break: NZ.3.13 states none. Finding F15.
+# 4. faiDesignation is empty. Presumably nullable; nothing says so.

@@ -257,14 +257,19 @@ classDiagram
         <<value object>>
         +string parameterName
     }
-    %% A ParameterRef may stand in for a literal in exactly these eleven slots,
+    %% A ParameterRef may stand in for a literal in exactly these thirteen slots,
     %% and nowhere else (validated at adoption):
     %%   TaskTiming.workingTime, TaskTiming.maxLaunches
     %%   ScoreTerm.cap, ScoreTerm.origin
+    %%   Band.from, Band.to
     %%   GroupConstraint.minPerGroup
     %%   ValidityRule.minRounds
     %%   PromotionRule.topN, .minGroupSize, .maxGroupSize, .carryPenalties
     %%   ReflightRule.minNewGroupSize
+    %% Band.from/.to were added for NZ Class M (F27), whose +1/-1 turning point
+    %% is the CD-announced target time rather than a rule constant. Adjacent
+    %% bands must still meet, so a parameter bound on one band's `to` and the
+    %% next band's `from` must be the SAME parameter — checked at adoption.
 
     class PhaseDefinition {
         +int ordinal
@@ -395,8 +400,14 @@ classDiagram
         <<enumeration>>
         Replacement
         BetterOf
+        NotPermitted
         UndefinedRequiresRuling
     }
+    %% NotPermitted (F26) is a rule that DEFINITELY grants no re-flight — NZ
+    %% 3.13.1 h and 3.15.1 h, "no re-flights are permitted". Distinct from
+    %% UndefinedRequiresRuling, which asserts the rulebook is silent and a CD
+    %% must decide. Conflating them would put a ruling in front of the CD that
+    %% the rules have already made.
 
     class PenaltyEffect {
         <<enumeration>>
@@ -498,7 +509,19 @@ classDiagram
         +CapScope capScope
         +decimal origin
         +decimal value
+        +ScoreStage applyAt
     }
+    %% applyAt defaults to RawScore: the term contributes to the value that
+    %% normalisation consumes, which is what all seven FAI classes want — F5J
+    %% and F5L normalise their landing bonus along with the flight time.
+    %% Normalised terms are added AFTER normalisation and are not scaled by it
+    %% (F24). NZ Class M 3.12.1 e states it outright: "landing points will be
+    %% added to the normalized flight score". The two orders give different
+    %% scores and, in a close group, a different ORDER — so this is not a
+    %% rounding difference.
+    %% A Normalised term is meaningless on a task with no Normalisation, and a
+    %% task whose ONLY terms are Normalised has no raw score to normalise.
+    %% Both are rejected at adoption.
 
     class Band {
         <<value object>>
@@ -507,6 +530,7 @@ classDiagram
         +decimal ratePerUnit
     }
     %% Bands are cumulative and are evaluated over (metric - ScoreTerm.origin).
+    %% from and to accept a ParameterRef (F27).
 
     class LookupRow {
         <<value object>>
@@ -548,6 +572,12 @@ classDiagram
         +NormalisationDirection direction
         +int winnerScore
     }
+    %% Optional on Task (F25). Absent means the task does not normalise at all:
+    %% the raw score IS the task result and rounds aggregate raw points. Every
+    %% FAI class normalises, so this was 1..1 until the NZ classes; ALES 123 and
+    %% ALES Radian say "each flight counts, the final score is the total of all
+    %% points over three flights" (3.13.1 i, 3.15.1 i). There is no identity
+    %% value for normalisation, so absence is the only truthful encoding.
 
     class Rounding {
         <<value object>>
@@ -586,6 +616,12 @@ classDiagram
         Conditional
     }
 
+    class ScoreStage {
+        <<enumeration>>
+        RawScore
+        Normalised
+    }
+
     class Comparator {
         <<enumeration>>
         LessThan
@@ -616,10 +652,10 @@ classDiagram
 
     Task "1" *-- "1..*" MetricDefinition : records
     Task "1" *-- "1" FlightSelection : which flights count
-    Task "1" *-- "1..*" ScoreTerm : raw score
+    Task "1" *-- "1..*" ScoreTerm : staged by applyAt
     Task "1" *-- "1" TaskTiming
     Task "1" *-- "1" GroupConstraint
-    Task "1" *-- "1" Normalisation
+    Task "1" *-- "0..1" Normalisation
     Task "1" *-- "0..1" Predicate : validWhen
     Task "1" *-- "0..1" Predicate : flightValidWhen
     Task "1" *-- "0..1" Rounding : of the raw score
@@ -690,13 +726,21 @@ classDiagram
 
 ```
 capture → interpret flight → select flights → assemble raw → clamp → round
-  → normalise → round → aggregate phase → drop → apply penalties → rank
+  → normalise → add normalised terms → round → aggregate phase → drop
+  → apply penalties → rank
 ```
 
 Classes disagree about *where* in this sequence things happen, which is why the
 order is explicit: F3J subtracts penalties before normalising, F5J deducts them
 from the final aggregate; F5K truncates the raw score to whole points, then
 normalises, then rounds again.
+
+Two stages are skipped rather than parameterised when a class is silent.
+`normalise` is a no-op where the task has no `Normalisation` — the NZ ALES
+classes aggregate raw points — and `add normalised terms` is a no-op wherever no
+term sets `applyAt Normalised`, which is every FAI class. NZ Class M is the only
+definition in `seed-data/` that uses the stage, and it is the reason the stage
+is named separately rather than folded into `assemble raw`.
 
 **Every stage is flight-local or later.** `interpret flight` sees one `Flight`'s
 `Measurement`s and the `flight.sequence` intrinsic — never its siblings, never
@@ -730,9 +774,10 @@ capture rather than by class data. See `high-level-architecture.md`.
   wind the day before, F3K's task selection per round, a flyoff cut at the end
   of qualifying. Bindings must be recorded as they happen or re-scoring is not
   reproducible. A `ParameterRef` is how a definition *consumes* one, and it is
-  legal only in the eleven slots the FAI classes need — a working time, a
-  launch cap, a band origin, a group minimum, a minimum-rounds rule, a
-  promotion size, penalty carry-over, a reflight group minimum. `allowedValues`
+  legal only in thirteen slots — a working time, a
+  launch cap, a band origin, a band bound, a group minimum, a minimum-rounds
+  rule, a promotion size, penalty carry-over, a reflight group minimum.
+  `allowedValues`
   records the bounds where the rules state them, so a binding can be validated
   rather than trusted.
 - **Rule-silence is a parameter, not a default.** Where a rulebook simply does
@@ -764,7 +809,26 @@ capture rather than by class data. See `high-level-architecture.md`.
   express both F3B's overtime deduction and F5J's two-slope height penalty.
   Bands are measured from `ScoreTerm.origin`, which defaults to zero: F5K's
   launch points are per metre *relative to an announced height*, so its bands
-  read from a parameter rather than from nothing.
+  read from a parameter rather than from nothing. A band *bound* may also read a
+  parameter: NZ Class M's +1/−1 turning point is the target time the CD
+  announces on the day, not a rule constant.
+- **A score term names the stage it lands at.** `ScoreTerm.applyAt` is
+  `RawScore` by default — the term feeds the value normalisation consumes, and
+  that is what every FAI class wants, including F5J and F5L, which deliberately
+  normalise their landing bonus along with the flight time. NZ Class M states
+  the other order: "landing points will be added to the *normalized* flight
+  score". The distinction is not cosmetic. Two pilots in one group, target 600 s
+  — A flies 600 s and lands 9 m out (bonus 10), B flies 500 s and lands 1 m out
+  (bonus 50). Added after normalising: A 1010, B 883. Folded into the raw score
+  and normalised: A 1000, B 902. Different scores and a different order, from
+  the same rulebook, with nothing in the definition to say which was meant.
+- **Normalisation is optional, and its absence is a statement.** A task with no
+  `Normalisation` does not normalise: its raw score *is* its result and rounds
+  aggregate raw points. Every FAI class normalises, which is why this was
+  mandatory for the first seven; the NZ ALES classes do not — "each flight
+  counts, the final score is the total of all points over three flights". There
+  is no normalisation that leaves scores unchanged, so writing one to satisfy a
+  multiplicity would have been a fabricated rule, not a harmless default.
 - **A zeroed flight is still a flight.** `Task.flightValidWhen` is the per-flight
   gate — `F3K.9.3`'s late landing, `F3K.11.3`'s launch outside the three-second
   signal, `F3K.7`'s launch before the working time. It zeroes that flight's
@@ -846,7 +910,9 @@ capture rather than by class data. See `high-level-architecture.md`.
   directly, so the system honours a judgement rather than deriving one.
 - **The notation is the model's test.** `docs/competition-class-notation.md`
   defines a hand-writing notation for a class definition, and `seed-data/`
-  holds the six FAI classes written in it. The notation is deliberately
-  isomorphic to this diagram — one keyword per model element, no keyword that
-  is not one — so anything the six classes cannot express is a gap here, not
-  there. Every change above came from writing them.
+  holds seven FAI classes and three NZ national classes written in it. The
+  notation is deliberately isomorphic to this diagram — one keyword per model
+  element, no keyword that is not one — so anything a class cannot express is a
+  gap here, not there. Every change above came from writing them, and the last
+  four came from the three NZ classes, which is the point of keeping a corpus
+  the model was not designed against.

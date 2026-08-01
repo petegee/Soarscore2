@@ -24,21 +24,28 @@ and no existing real data that needs to be preserved, or migrated.
 
 No application code yet.
 
-- `docs/rules/` — the FAI rule knowledge base. `source-docs/` is the verbatim
+- `docs/rules/` — the rule knowledge base. `source-docs/` is the verbatim
   official text; the files above it are condensed, software-relevant summaries.
   See House-keeping rule 1.
+- `docs/rules/nz/` — the **NZMAA** New Zealand rules, same structure and same
+  read-only discipline. A *separate rulebook by a separate body*, not FAI
+  variations; refs are written `NZ.3.12.3`. The FAI cross-class invariants do
+  not hold for these classes — the `fai-rules` skill lists how.
 - `docs/soaring-domain-glossary.md`, `docs/soaring-domain-class-diagram.md` —
   the domain concepts and their relationships. Approval required to change.
 - `docs/competition-class-notation.md` — the notation for writing a Competition
   Class by hand, isomorphic to the class diagram.
-- `seed-data/` — the six FAI classes written in that notation. They are the
-  model's test: anything they cannot express is a gap in the model.
+- `seed-data/` — seven FAI classes and the NZ national ALES classes written in
+  that notation. They are the model's test: anything they cannot express is a
+  gap in the model. The NZ classes are there because they are a *different*
+  rulebook — they found four gaps the FAI corpus could not.
 - `docs/high-level-architecture.md`, `docs/aggregate-roots.md` — intended shape
   of the system.
 - `docs/non-functional-requirements.md` — NFR-1 … NFR-3.
 - `docs/users.md` — who needs this and why.
 - `.claude/skills/fai-rules/` — agent skill for looking up, citing and
-  compliance-checking the FAI rules without loading whole rule volumes.
+  compliance-checking the rules — FAI and NZMAA — without loading whole rule
+  volumes. (Named for the FAI; the corpus is now broader than the name.)
 
 
 ## Domain in one screen

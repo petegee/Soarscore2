@@ -1,0 +1,89 @@
+# NZ Class M — ALES 200, NDC format                     seed definition, draft
+# Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.12.7,
+#            which incorporates NZ.3.12.1–3.12.6 except for the scoring)
+#
+# NZ.3.12.7 is the National Decentralized Contest format of the same rulebook
+# class as 80-nz-m-ales200.class. It fixes the round count at four, fixes the
+# target time at ten minutes, and — the reason it cannot be a parameter binding
+# on the parent — scores "the sum of the four rounds RAW scores", with no
+# normalisation at all.
+#
+# That is a different pipeline, not a different number, so it is a different
+# CompetitionClass. Additive, and consistent with the law in CLAUDE.md. The
+# cost is recorded in notation §12: nothing in the model says these two
+# definitions are one class in the rulebook.
+#
+# It exercises F25 (no `normalise`) alongside 83/85, and is the one place a
+# maximum score is stated outright, which makes it a good arithmetic check.
+
+class NZ-M-NDC
+  name     "ALES 200 (NDC format)"
+  fai      ""
+  version  "NZMAA Section 5 Soaring, March 2024"
+
+  # No targetTime parameter: NZ.3.12.7 a fixes the rounds at "4 rounds, each of
+  # 10 minutes", so the parent's CD discretion (NZ.3.12.1 g) does not apply and
+  # the turning point is a rule constant again.
+
+  finalRanking SinglePhase
+
+  reflight
+    entitled     UndefinedRequiresRuling                         # NZ.3.12.5 l, as the parent
+    others       UndefinedRequiresRuling                         # NZ.3.12.5 l
+    minNewGroup  0
+
+  penalty "launchOutsideBuzzerWindow" zeroRound at RawScore      # NZ.3.12.1 h
+  penalty "landedOutsideFieldBounds"  zeroRound at RawScore      # NZ.3.12.4 a
+  penalty "launchHeightExceeded"      zeroRound at RawScore      # NZ.2.8.3 (discretionary — see the parent)
+
+  phase Preliminary mandatory
+
+    rounds    FixedSequence tasksPerRound 1 maxRounds 4          # NZ.3.12.7 a "an NDC contest will comprise 4 rounds"
+    validity  minRounds 4                                        # NZ.3.12.7 a
+    drop      none                                               # NZ.3.12.7 c "the sum of the four rounds"
+
+    task D "Thermal Duration (NDC)"
+      metric flightTime          Number s Truncate 1             # NZ.3.12.3 a
+      metric landingDistance     Number m Ceiling  1             # NZ.2.4.5
+      metric significantDamage   Flag                            # NZ.3.12.2 d
+      metric touchedByCompetitor Flag                            # NZ.3.12.2 e
+      metric landedWithin75m     Flag                            # NZ.2.4.6
+
+      flights   last                                             # NZ.1.6
+      timing    UntilAllFlightsComplete maxLaunches 1            # NZ.3.12.1 h
+      group     minPerGroup 1                                    # NZ.3.12.7 c scores raw, so the group affects the
+                                                                 #   running order but never a score
+
+      # NO `normalise` (F25). NZ.3.12.7 c: "for NDC only, scoring will be the
+      # sum of the four rounds Raw Scores." Because nothing normalises, the
+      # landing bonus belongs in the RAW score here — the parent's `score
+      # normalised` block would have no stage to land at, and adoption rejects
+      # it. Same rulebook class, opposite answer to F24's question.
+
+      flightValidWhen landedWithin75m == true                    # NZ.2.4.6
+
+      score
+        piecewise flightTime                                     # NZ.3.12.3 b
+          0..600    @  1 pt/s                                    # NZ.3.12.7 a 10 minute target;
+                                                                 #   NZ.3.12.7 c i "flight time max is 10min (600 points)"
+          600..any  @ -1 pt/s                                    # NZ.3.12.1 n
+        when all(significantDamage   == false,                   # NZ.3.12.2 d
+                 touchedByCompetitor == false)                   # NZ.3.12.2 e
+          then lookup landingDistance                            # NZ.3.12.2 b, table at NZ.2.4.5
+                 <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
+                 <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
+                 <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
+          else constant 0
+
+# ---- arithmetic check ----------------------------------------------------
+# NZ.3.12.7 c states its own maxima, which is rare and useful:
+#   "Flight time max is 10min (600 points) plus landing max of 50. Max round
+#    score of 650."  ->  600 + 50 = 650, per the score block above.
+#   "Max NDC score is 2600 points"  ->  4 x 650 = 2600, per maxRounds 4 and
+#    `drop none`, with no normalisation to rescale it.
+# Any evaluator that does not produce 2600 for four perfect rounds has either
+# normalised something or applied a discard.
+
+# ---- unresolved for NZ Class M (NDC) -------------------------------------
+# 1. Tie-break: NZ.3.12.7 states none. Finding F15.
+# 2. The relationship to 80-nz-m-ales200.class is unmodelled — see notation §12.
