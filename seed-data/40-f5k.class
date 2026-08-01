@@ -29,9 +29,9 @@ class F5K
     others       BetterOf                                            # 5.5.10.13
     minNewGroup  4                                                   # 5.5.10.13
 
-  penalty "motorRestartInFlight"    zeroFlight at RawScore           # 5.5.10.12 flight penalty c
-  penalty "hitPersonOtherThanTimer" zeroRound  at RawScore           # 5.5.10.12 safety penalty a
-  penalty "safetyZone"              deduct 300 at FinalAggregate     # 5.5.10.12 safety penalty b, c "deducted from the final score"
+  penalty "motorRestartInFlight"    zeroFlight                       # 5.5.10.12 flight penalty c
+  penalty "hitPersonOtherThanTimer" zeroRound                        # 5.5.10.12 safety penalty a
+  penalty "safetyZone"              deduct 300                       # 5.5.10.12 safety penalty b, c "deducted from the final score"
 
   metricSet f5kFlight
     metric flightTime            Number s Truncate 1                 # 5.5.10.6 f whole seconds, tenths not rounded
@@ -41,7 +41,7 @@ class F5K
     metric overflewLandingWindow Flag                                # 5.5.10.12 flight penalty a
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    ChooseFromCatalogue tasksPerRound 1                    # 5.5.10.2 one task per round from A–E
     validity  minRounds param(minRounds)                             # 5.5.10 defines no minimum-rounds rule, so the CD decides (F12)
@@ -159,14 +159,20 @@ class F5K
         when overflewLandingWindow == true then constant -100 else constant 0
 
   # ========================================================================
-  phase Flyoff optional                                              # 5.5.10 — mandatory for seniors at World/Continental Championships
+  # Whether this phase is flown at all is not class data. 5.5.10 makes the
+  # fly-off mandatory for seniors at World and Continental Championships and
+  # leaves it to the organiser everywhere else, so mandatoriness is conditional
+  # on the event level — something the model has no notion of. A flag on the
+  # phase could only ever have said "optional" here, and would have been wrong
+  # at a championship.
+  phase Flyoff                                                       # 5.5.10
 
     promotion TopN param(flyoffSize) group param(minPerGroup)..unlimited
                 carryPenalties param(carryPenalties)                 # F5K states nothing about carry-over (F12)
                                                                      # 5.5.10 — F5K is SILENT on carry-over (finding F12)
     rounds    ChooseFromCatalogue tasksPerRound 1
     validity  minRounds 3                                            # 5.5.10 "if fewer than 3 complete, preliminary results stand"
-    drop      none
+    # no drop: 5.5.10 states no fly-off discard
 
     task A like Preliminary.A ; task B like Preliminary.B ; task C like Preliminary.C
     task D like Preliminary.D ; task E like Preliminary.E

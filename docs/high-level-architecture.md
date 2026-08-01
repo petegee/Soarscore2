@@ -119,10 +119,70 @@ Holding this line is what keeps a class definition statically validatable at
 adoption, so it is a constraint on the scoring implementation and not just a
 description of it.
 
-**Validated at adoption, before a Competition may hold a rulebook:**
-`FlightSelection.rankByMetric` resolves to a metric declared on that task; a
-`PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects, since
-"the largest applies" is undefined across effect kinds.
+**Validated at adoption, before a Competition may hold a rulebook.**
+
+A class definition is checked once, on adoption, and a Competition cannot come
+into existence holding one that fails (`aggregate-roots.md` §3). The list below
+is the **complete inventory** of those checks and is maintained as one:
+**anything that introduces an adoption check adds a line here.** Each line is
+the check only. The rule citation and the reason the check exists stay where
+they are stated — in `competition-class-notation.md` and
+`soaring-domain-class-diagram.md`, next to the construct they guard — because
+that reasoning is the valuable half and flattening it into a list would lose it.
+
+*References resolve.*
+
+1. Every metric named by a `ScoreTerm` or a `Predicate` resolves to a
+   `MetricDefinition` declared on that task — notation §9.
+2. `FlightSelection.rankByMetric` resolves to a metric declared on that task —
+   diagram §3.
+3. Every `ParameterRef` resolves to a declared `Parameter`, and every referenced
+   parameter is bound before the pipeline stage that reads it — notation §3.
+4. A `ParameterRef` occurs only in the thirteen slots that permit one, and
+   nowhere a numeric literal would otherwise sit — notation §3, diagram §2.
+
+*Structures are well formed.*
+
+5. Adjacent piecewise bands meet: where one band's `to` and the next band's
+   `from` are both `ParameterRef`s, they name the *same* parameter (F27) —
+   notation §3, diagram §2. A gap or an overlap is a silent mis-score.
+6. `lookup` rows ascend, at most one row is unbounded, and an unbounded row is
+   last (F9) — notation §5, diagram §3.
+7. Exactly one of {leaf comparison, `allOf`} is populated on a `Predicate` —
+   notation §5, diagram §3.
+8. A phase's ordered `DropPolicy` list has strictly descending gates (F22) —
+   notation §4. Both orderings produce a plausible number, so the writer does
+   not get to rely on remembering.
+
+*A slot's presence agrees with the rest of the definition.* These are the checks
+optional multiplicities buy: where a slot may be absent, something has to reject
+the combinations absence makes incoherent.
+
+9. `finalRanking` written as `SinglePhase` on a class with more than one
+   `PhaseDefinition` is rejected — notation §3, diagram §2.
+10. A class with more than one `PhaseDefinition` and no `finalRanking` is
+    rejected — notation §3, diagram §2. The omission is available only where the
+    phase list forces the value.
+11. `ReflightRule.minNewGroupSize` populated while both selections are
+    `NotPermitted` is rejected — notation §3, diagram §2. The rules have already
+    ruled out the group the number would size.
+12. A `ScoreTerm` with `applyAt = Normalised` on a task with no `Normalisation`
+    is rejected (F24) — notation §5, diagram §3. There is no stage for it to
+    land at.
+13. A task whose terms are *all* `Normalised` is rejected (F24) — notation §5,
+    diagram §3. Nothing is left for normalisation to consume.
+14. A task with a `Normalisation` and no `GroupConstraint` is rejected —
+    notation §5, diagram §3. Normalisation is defined against the best score in
+    the group, so a class that normalises has to say how groups are formed.
+15. A `PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects —
+    notation §3, diagram §2, since "the largest applies" is undefined across
+    effect kinds.
+
+One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
+unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in
+the group. Notation §11 records it as a candidate and no definition in
+`seed-data/` needs it enforced; it joins the list with the first class that
+does.
 
 ### Functional-Like as a Core Princple
 The system code should borrow core concepts of functional programming (but not necessarily 

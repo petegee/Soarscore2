@@ -13,23 +13,23 @@ class F3B
   param minRounds    Number default 1  allowed [1, 5] boundAt CompetitionSetup  # F3B.1.8 b — 1 normally, 5 at World/Continental Championships
   param minNewGroup  Number no default                boundAt CompetitionSetup  # F3B states no minimum for a re-flight group (F12)
 
-  finalRanking SinglePhase                                      # F3B has no fly-off
+  # no finalRanking: one phase, so SinglePhase (F3B has no fly-off)
 
   reflight
     entitled     Replacement                                    # F3B.1.5 e "the repetition is the official score"
     others       BetterOf                                       # F3B.1.5 e
     minNewGroup  param(minNewGroup)                             # F3B states no minimum, so the CD decides at setup (F12)
 
-  penalty "safetyPlaneCrossing"  deduct 300  at FinalAggregate  # F3B.2.5 h "deduction from the competitor's final score"
+  penalty "safetyPlaneCrossing"  deduct 300                     # F3B.2.5 h "deduction from the competitor's final score"
 
   # Two effects at two points in the pipeline (F20): the rule zeroes the flight
   # AND deducts from the final score. Previously recorded here as unmodelled.
   penalty "nonConformingWinch"
-    zeroFlight              at RawScore                         # F3B.2.2 p the flight preceding the test is zeroed
-    deduct 1000             at FinalAggregate                   # F3B.2.2 p
+    zeroFlight                                                  # F3B.2.2 p the flight preceding the test is zeroed
+    deduct 1000                                                 # F3B.2.2 p
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 3                     # F3B: a round is one flight of each of A, B and C
     validity  minRounds param(minRounds) minTasks 1             # F3B.1.8 b "one (1) round and one (1) task"

@@ -39,7 +39,19 @@ Pure reference data, and referencing nothing else. An ordered list of phase
 definitions, each owning the tasks flown in it and how their results aggregate;
 the class itself holds only what is true of the whole event. Every task carries
 its own metrics, flight selection, timing, group constraints and scoring terms,
-because all of those vary per task within a single class.
+because all of those vary per task within a single class — and several of those
+slots are optional, because a rulebook that states no rule is recorded as
+stating none: a phase need not discard, a task need not normalise and need not
+group-score.
+
+**The diagram below abbreviates; it does not disagree.** Only the attributes
+that identify each class are shown, and the value objects that add nothing to
+the *boundary* picture — `RoundComposition`, `ValidityRule`, `TaskTiming`,
+`GroupConstraint`, `Rounding`, `Band`, `LookupRow`, `Predicate`,
+`PenaltyEffectSpec` — are left out for legibility. What *is* drawn must match
+[soaring-domain-class-diagram.md](soaring-domain-class-diagram.md) §2–§3
+exactly, multiplicity for multiplicity; that document is the authority whenever
+the two differ.
 
 **This aggregate is not on the scoring path.** A Competition takes a complete
 copy of a class definition when it is created (§3), and scoring reads that copy.
@@ -55,6 +67,7 @@ classDiagram
         +string name
         +string faiDesignation
         +string version
+        +FinalRankingKind finalRanking
     }
     class PhaseDefinition {
         +int ordinal
@@ -101,26 +114,23 @@ classDiagram
         +ReflightSelection entitledScores
         +ReflightSelection othersScore
     }
-    class FinalRankingRule {
-        <<value object>>
-        +FinalRankingKind kind
-    }
-    class PenaltyCatalogue {
-        <<value object>>
+    class PenaltyDefinition {
+        +string infractionType
+        +string exclusionGroup
     }
 
     CompetitionClass "1" *-- "1..*" PhaseDefinition
     CompetitionClass "1" *-- "0..*" Parameter
     CompetitionClass "1" *-- "1" ReflightRule
-    CompetitionClass "1" *-- "1" FinalRankingRule
-    CompetitionClass "1" *-- "1" PenaltyCatalogue
+    CompetitionClass "1" *-- "0..*" PenaltyDefinition
     PhaseDefinition "1" *-- "1..*" Task
-    PhaseDefinition "1" *-- "1..*" DropPolicy
+    PhaseDefinition "1" *-- "0..*" DropPolicy
     PhaseDefinition "1" *-- "0..1" PromotionRule
     Task "1" *-- "1..*" MetricDefinition
     Task "1" *-- "1..*" ScoreTerm
     Task "1" *-- "1" FlightSelection
-    Task "1" *-- "1" Normalisation
+    Task "1" *-- "0..1" Normalisation
+    Task "1" *-- "0..1" ReflightRule : overrides the class default
     ScoreTerm "1" *-- "0..2" ScoreTerm : then / else
 
     classDef root fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
@@ -420,14 +430,19 @@ classDiagram
     direction LR
     class ScoringService {
         <<domain service>>
-        +interpretEntry(Entry) TaskResult
-        +selectScoringEntry() Entry
-        +normaliseGroup() GroupResult
-        +aggregate() ScoreResult
+        +interpretFlight(Flight) FlightResult
+        +selectFlights(Entry) TaskResult
+        +normaliseGroup(Group) GroupResult
+        +aggregate(Competitor, Phase) PhaseResult
+        +rank(Competition) ScoreResult
+    }
+    class TaskResult {
+        <<derived>>
+        +ResultState state
+        +decimal rawScore
     }
     class ScoreResult {
         <<derived>>
-        +ResultState state
         +decimal normalisedScore
         +int placing
     }
@@ -440,6 +455,7 @@ classDiagram
 
     ScoringService ..> Competition : adopted rules + structure
     ScoringService ..> Entry : raw data
+    ScoringService ..> TaskResult : produces
     ScoringService ..> ScoreResult : produces
     ScoreResult ..> Competition : captured at finalisation
 

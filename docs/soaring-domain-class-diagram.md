@@ -243,7 +243,15 @@ classDiagram
         +string name
         +string faiDesignation
         +string version
+        +FinalRankingKind finalRanking
     }
+    %% finalRanking is nullable, and absent means SinglePhase — the only value a
+    %% one-phase class can take, so six of the eleven definitions no longer
+    %% write it. It is not a default in the "invented rule" sense: the phase
+    %% list forces it. Two adoption checks, one each way: SinglePhase on a class
+    %% with more than one PhaseDefinition is rejected, and so is a multi-phase
+    %% class that leaves it unset. It was a FinalRankingRule value object
+    %% holding this one enum; the wrapper was removed as empty.
 
     class Parameter {
         +string name
@@ -274,8 +282,14 @@ classDiagram
     class PhaseDefinition {
         +int ordinal
         +PhaseType type
-        +bool mandatory
     }
+    %% There is no `mandatory` flag. It was perfectly correlated with type
+    %% across all eleven definitions, but only because it mis-recorded the one
+    %% real case: 5.5.10 makes the F5K fly-off mandatory for seniors at World
+    %% and Continental Championships, and F3K.9.1 the same at championships,
+    %% and both were written "optional" because mandatoriness there is
+    %% conditional on the EVENT LEVEL, which nothing in the model represents.
+    %% Readmitting the flag needs that concept first, not another class.
 
     class RoundComposition {
         <<value object>>
@@ -308,6 +322,15 @@ classDiagram
     %% hold is the one that applies (F22). F3F.1.13 tiers the discard: one round
     %% at four or more, two rounds above fourteen. A single-element list is the
     %% case in all six original classes.
+    %% The list may also be EMPTY, and empty means no discard. This was 1..*,
+    %% and the notation carried a `drop none` sugar expanding to a single
+    %% {ByRound, 0} so that a phase with no discard could satisfy it — the same
+    %% mistake F25 found on Normalisation, and here the majority case: nine of
+    %% the sixteen phases in seed-data/ have no discard, every fly-off among
+    %% them. Discarding nothing does have an identity value, so nothing was
+    %% mis-scored; what was wrong was recording a discard rule for a phase
+    %% whose rules state none. F3K.10 and 5.5.11.13 apply their discards to the
+    %% PRELIMINARY aggregate, which is why the fly-offs have nothing to state.
 
     class ValidityRule {
         <<value object>>
@@ -325,21 +348,21 @@ classDiagram
         +bool carryPenalties
     }
 
-    class FinalRankingRule {
-        <<value object>>
-        +FinalRankingKind kind
-    }
-
     class ReflightRule {
         <<value object>>
         +ReflightSelection entitledScores
         +ReflightSelection othersScore
         +int minNewGroupSize
     }
-
-    class PenaltyCatalogue {
-        <<value object>>
-    }
+    %% minNewGroupSize is nullable, and absent is not "unstated". Where the
+    %% rulebook is silent the class declares a no-default Parameter and the
+    %% field holds a ParameterRef — F3B, F5L (5.5.12.9) and NZ Class M
+    %% (NZ.3.12.5 l) all do. Absent means the field is INAPPLICABLE because no
+    %% new group is ever formed: NZ Classes N and P permit no re-flight at all
+    %% (NZ.3.13.1 h, NZ.3.15.1 h — F26), and F3F.1.5 re-flies one pilot into
+    %% the running order. Zero is never correct; it would assert that a group
+    %% of none is an acceptable minimum. Adoption rejects a populated
+    %% minNewGroupSize where both selections are NotPermitted.
 
     class PenaltyDefinition {
         +string infractionType
@@ -356,11 +379,23 @@ classDiagram
         <<value object>>
         +PenaltyEffect effect
         +decimal points
-        +PenaltyApplication appliedAt
     }
-    %% One infraction may carry several effects at different pipeline points:
-    %% F3B.2.2 p zeroes the flight AND deducts 1000 from the final score;
-    %% F3K.4.1 deducts AND zeroes the whole round.
+    %% There is no appliedAt: the pipeline stage is a property of the EFFECT,
+    %% not a second choice on top of it. DeductPoints and Disqualify act on the
+    %% final aggregate; ZeroFlight, ZeroRound and ZeroTask act on the raw score,
+    %% which is the only stage at which a flight or a round is still a
+    %% distinguishable thing to zero. All eleven definitions agreed before the
+    %% attribute was removed — 24 deductions and one disqualification at the
+    %% final aggregate, 13 zeroes at the raw score — and the unused pairings are
+    %% not statable rules. §4 below is where the pipeline reads the derivation.
+    %% Disqualify is the odd one: it is not an arithmetic operation on a score
+    %% at all, it removes the competitor from the ranking (F3F.1.2). It has no
+    %% stage of its own to disagree about, and grouping it with the aggregate
+    %% effects is what the one definition using it already assumed.
+    %% One infraction may still carry several effects at different pipeline
+    %% points, precisely because the effects differ: F3B.2.2 p zeroes the flight
+    %% AND deducts 1000 from the final score; F3K.4.1 deducts AND zeroes the
+    %% whole round.
     %% exclusionGroup is nullable. Within one flight attempt at most one penalty
     %% from a group applies, the largest winning (F3K.4.3, F3J). A group may
     %% contain only DeductPoints effects — "largest" is undefined across effect
@@ -418,12 +453,6 @@ classDiagram
         Disqualify
     }
 
-    class PenaltyApplication {
-        <<enumeration>>
-        RawScore
-        FinalAggregate
-    }
-
     class PenaltyAccrual {
         <<enumeration>>
         OncePerAttempt
@@ -440,15 +469,13 @@ classDiagram
     CompetitionClass "1" *-- "1..*" PhaseDefinition : ordered
     CompetitionClass "1" *-- "0..*" Parameter : declares
     ParameterRef ..> Parameter : resolves to (validated at adoption)
-    CompetitionClass "1" *-- "1" FinalRankingRule
     CompetitionClass "1" *-- "1" ReflightRule
-    CompetitionClass "1" *-- "1" PenaltyCatalogue
-    PenaltyCatalogue "1" *-- "0..*" PenaltyDefinition
+    CompetitionClass "1" *-- "0..*" PenaltyDefinition
     PenaltyDefinition "1" *-- "1..*" PenaltyEffectSpec
     PhaseDefinition "1" *-- "1" RoundComposition
     PhaseDefinition "1" *-- "1..*" Task : catalogue
     Task "1" *-- "0..1" ReflightRule : overrides the class default
-    PhaseDefinition "1" *-- "1..*" DropPolicy : ordered, first match wins
+    PhaseDefinition "1" *-- "0..*" DropPolicy : ordered, first match wins
     PhaseDefinition "1" *-- "1" ValidityRule
     PhaseDefinition "1" *-- "0..1" PromotionRule : entry criteria
 
@@ -482,6 +509,10 @@ classDiagram
         +string unit
         +bool declaredBeforeLaunch
     }
+    %% Capture precision is 0..1, not 1: a Flag metric has nothing to round, so
+    %% no Flag in seed-data/ writes one. Where a Number metric's rules state no
+    %% capture precision the definition still chooses one and says so — that is
+    %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 i).
 
     class FlightSelection {
         <<value object>>
@@ -566,6 +597,27 @@ classDiagram
     }
     %% minValidResults is nullable; unset means the class states no annulment
     %% threshold, and no group is annulled for want of valid results.
+    %% Optional on Task, and ABSENT IS NOT THE SAME STATEMENT AS A
+    %% PARAMETERISED minPerGroup. The two were written almost identically and
+    %% mean different things:
+    %%   absent                      -> the class does not GROUP-SCORE at all.
+    %%     No pilot's score depends on another's, so there is no scoring group
+    %%     to size and none to annul. NZ Classes N and P (3.13.1 i, 3.15.1 i)
+    %%     and Class M's NDC format (3.12.7 c) total raw points per pilot. All
+    %%     three used to write minPerGroup 1 and call it the degenerate value;
+    %%     1 is a fabricated rule, and it also tells the DRAW that a group of
+    %%     one is an acceptable split.
+    %%   minPerGroup = ParameterRef  -> the class DOES group-score and the
+    %%     rulebook does not state the size. F5K (5.5.10), F5L (5.5.12.4) and
+    %%     NZ Class M (3.12, "Man-On-Man (Group scored)"), where the CD chooses
+    %%     at setup and the choice enters the event log (F12).
+    %% Downstream, absent means the draw takes no size constraint from the task
+    %% — the core's "a field smaller than minPerGroup flies as one group"
+    %% invariant simply does not engage — and no group is ever annulled. Since
+    %% a task with no Normalisation reads nothing from its group, neither
+    %% absence can move a score. Adoption rejects a task that has a
+    %% Normalisation and no GroupConstraint: normalisation is defined against
+    %% the best score in the group, so the class must say how groups form.
 
     class Normalisation {
         <<value object>>
@@ -654,12 +706,12 @@ classDiagram
     Task "1" *-- "1" FlightSelection : which flights count
     Task "1" *-- "1..*" ScoreTerm : staged by applyAt
     Task "1" *-- "1" TaskTiming
-    Task "1" *-- "1" GroupConstraint
+    Task "1" *-- "0..1" GroupConstraint
     Task "1" *-- "0..1" Normalisation
     Task "1" *-- "0..1" Predicate : validWhen
     Task "1" *-- "0..1" Predicate : flightValidWhen
     Task "1" *-- "0..1" Rounding : of the raw score
-    MetricDefinition "1" *-- "1" Rounding : capture precision
+    MetricDefinition "1" *-- "0..1" Rounding : capture precision
     Normalisation "1" *-- "0..1" Rounding : of the normalised score
     ScoreTerm "1" *-- "0..*" Band : piecewise
     ScoreTerm "1" *-- "0..*" LookupRow : lookup
@@ -731,9 +783,33 @@ capture → interpret flight → select flights → assemble raw → clamp → r
 ```
 
 Classes disagree about *where* in this sequence things happen, which is why the
-order is explicit: F3J subtracts penalties before normalising, F5J deducts them
-from the final aggregate; F5K truncates the raw score to whole points, then
-normalises, then rounds again.
+order is explicit. A penalty lands at either end of it, and a single clause can
+do both: `5.5.11.10 d` zeroes the round at the raw score while `5.5.11.10 b`,
+two items above it, deducts 100 from the final aggregate, and `5.5.10.12` splits
+the same way (`zeroFlight`/`zeroRound` at the raw score, `deduct 300` from the
+final score). **The pipeline reads that split off `PenaltyEffectSpec.effect`,
+which is the only place it is recorded.** `DeductPoints` and `Disqualify` are
+applied at `apply penalties`, the last stage before `rank`. `ZeroFlight`,
+`ZeroRound` and `ZeroTask` are applied at the raw-score end — before
+`normalise`, and so before `aggregate phase` and `drop` — because that is where
+the flight, round or task they name is still a distinguishable thing to zero.
+The class data does not choose between the two, and no clause in the eleven
+definitions wanted the other pairing: a deduction taken before `normalise`
+would be rescaled by it, which no rule asks for, and a zeroed flight has no
+referent once the aggregate exists.
+
+Rounding disagrees too — F5K truncates the raw score to whole
+points, then normalises, then rounds again (`5.5.10.15`), where F5J rounds
+neither (`5.5.11.12 m`). And NZ Class M adds its landing bonus *after*
+normalising where F5J and F5L add theirs before (F24), which is the `add
+normalised terms` stage below.
+
+The claim previously made here — that F3J subtracts penalties before
+normalising — was wrong and is withdrawn. `F3J.10.10`'s group-winner formula
+reads that way, but `50-f3j.class` rules that the specific clauses govern
+(`F3J.2.4 d`, `F3J.7 d`, `F3J.8.3`, each "from the competitor's final score")
+and puts every F3J penalty at the final aggregate; the "minus penalty points"
+in `F3J.10.10` is the derived −30 overfly deduction (`F3J.10.3`), a score term.
 
 Two stages are skipped rather than parameterised when a class is silent.
 `normalise` is a no-op where the task has no `Normalisation` — the NZ ALES
@@ -788,10 +864,12 @@ capture rather than by class data. See `high-level-architecture.md`.
   default` finds every place its rulebook is silent.
 - **Phases own their scoring rules.** A flyoff is not a shorter preliminary: it
   changes working times, points caps, which tasks are available, and whether
-  penalties carry over. `PhaseDefinition` holds all of it; `FinalRankingRule`
-  says how phases combine, and its three variants exist because the classes
-  genuinely disagree — a single phase, a flyoff replacing preliminary points, or
-  qualifiers and non-qualifiers ranked on different bases.
+  penalties carry over. `PhaseDefinition` holds all of it;
+  `CompetitionClass.finalRanking` says how phases combine, and its three
+  variants exist because the classes genuinely disagree — a single phase, a
+  flyoff replacing preliminary points, or qualifiers and non-qualifiers ranked
+  on different bases. Only the last two have to be written: with one phase the
+  first is the only possibility, so the field is left unset there.
 - **Tasks own everything that varies per task.** The test applied throughout:
   *if it varies between tasks, it belongs on the Task.* F3B settles this on its
   own — within one class its group minima, flight-time precision, landing table
@@ -829,6 +907,18 @@ capture rather than by class data. See `high-level-architecture.md`.
   counts, the final score is the total of all points over three flights". There
   is no normalisation that leaves scores unchanged, so writing one to satisfy a
   multiplicity would have been a fabricated rule, not a harmless default.
+- **Group scoring is optional too, and "no group" is not "a group of one".**
+  `Task *-- 0..1 GroupConstraint`. Absent means the class does not group-score:
+  no pilot's score depends on another's, so there is neither a size to state nor
+  an annulment threshold to state — the NZ ALES classes and Class M's NDC
+  format. A `GroupConstraint` whose `minPerGroup` is a `ParameterRef` says the
+  opposite, that the class *does* group-score and only the size is open (F5K,
+  F5L, NZ Class M). Three NZ definitions wrote `minPerGroup 1` for the first
+  case, which is F25's fabricated value again and misinforms the draw as well:
+  a minimum of one asserts that a group of one is an acceptable split. The test
+  when writing a class is whether one pilot's score reads another's, and the
+  adoption check that guards it is that a `Normalisation` requires a
+  `GroupConstraint`.
 - **A zeroed flight is still a flight.** `Task.flightValidWhen` is the per-flight
   gate — `F3K.9.3`'s late landing, `F3K.11.3`'s launch outside the three-second
   signal, `F3K.7`'s launch before the working time. It zeroes that flight's

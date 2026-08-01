@@ -19,16 +19,18 @@ class NZ-M
   fai      ""                                                    # a national class; no FAI designation
   version  "NZMAA Section 5 Soaring, March 2024"
 
-  param targetTime Number s default 600 boundAt BeforeFlying     # NZ.3.12.1 f "a target time announced by the CD.
+  param targetTime  Number s default 600 boundAt BeforeFlying    # NZ.3.12.1 f "a target time announced by the CD.
                                                                  #   10 minutes is recommended"
                                                                  # NZ.3.12.1 g the CD may change it "based on local
                                                                  #   conditions" — announced at the contestants
                                                                  #   meeting (NZ.2.5.1), hence BeforeFlying
-  param groupSize  Number   no default boundAt CompetitionSetup  # NZ.3.12 states no group size at all (F12)
-  param minRounds  Number   no default boundAt CompetitionSetup  # NZ.3.12 states no round count (F12);
+  param groupSize   Number   no default boundAt CompetitionSetup # NZ.3.12 states no group size at all (F12)
+  param minRounds   Number   no default boundAt CompetitionSetup # NZ.3.12 states no round count (F12);
                                                                  #   only the NDC variant fixes one
+  param minNewGroup Number   no default boundAt CompetitionSetup # NZ.3.12.5 l states no minimum for a
+                                                                 #   re-flight group (F12)
 
-  finalRanking SinglePhase                                       # NZ.3.12 has no fly-off
+  # no finalRanking: one phase, so SinglePhase (NZ.3.12 has no fly-off)
 
   # NZ.3.12.5 l grants the re-flight and stops: nothing about placement or which
   # score counts. That is F5L's case exactly, and it is why F26's NotPermitted
@@ -37,21 +39,21 @@ class NZ-M
   reflight
     entitled     UndefinedRequiresRuling                         # NZ.3.12.5 l
     others       UndefinedRequiresRuling                         # NZ.3.12.5 l
-    minNewGroup  0                                               # not stated
+    minNewGroup  param(minNewGroup)                              # NZ.3.12.5 l states no minimum, so the CD decides at setup (F12)
 
-  penalty "launchOutsideBuzzerWindow" zeroRound at RawScore      # NZ.3.12.1 h "launched before or after the launch
+  penalty "launchOutsideBuzzerWindow" zeroRound                  # NZ.3.12.1 h "launched before or after the launch
                                                                  #   buzzer will receive 0 points for the round"
-  penalty "landedOutsideFieldBounds"  zeroRound at RawScore      # NZ.3.12.4 a "landing beyond the field boundaries
+  penalty "landedOutsideFieldBounds"  zeroRound                  # NZ.3.12.4 a "landing beyond the field boundaries
                                                                  #   will receive 0 points for the round"
-  penalty "launchHeightExceeded"      zeroRound at RawScore      # NZ.2.8.3 — but the rule says the CD "MAY assign a
+  penalty "launchHeightExceeded"      zeroRound                  # NZ.2.8.3 — but the rule says the CD "MAY assign a
                                                                  #   score of zero"; the discretion is not modelled.
                                                                  #   See notation §12, Left open.
 
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds param(minRounds)
-    drop      none                                               # NZ.3.12 states no discard
+    # no drop: NZ.3.12 states no discard
 
     task D "Thermal Duration"
       metric flightTime          Number s Truncate 1             # NZ.3.12.3 a "truncated for scoring purposes"

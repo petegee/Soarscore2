@@ -16,6 +16,7 @@ class F5L
                                                                    # declared once because the fly-off must match it
   param flyoffSize     Number no default boundAt CompetitionSetup  # 5.5.12.4 "the top normalised qualifiers" — number not stated (F12)
   param carryPenalties Flag   no default boundAt CompetitionSetup  # F5L states nothing (F12)
+  param minNewGroup    Number no default boundAt CompetitionSetup  # 5.5.12.9 states no minimum for a re-flight group (F12)
 
   finalRanking SplitByPromotion                                    # 5.5.12.12 qualifiers ranked by the fly-off, non-qualifiers by qualifying
 
@@ -25,7 +26,7 @@ class F5L
   reflight
     entitled     UndefinedRequiresRuling                           # 5.5.12.9
     others       UndefinedRequiresRuling                           # 5.5.12.9
-    minNewGroup  0                                                 # 5.5.12.9 not stated
+    minNewGroup  param(minNewGroup)                                # 5.5.12.9 states no minimum, so the CD decides at setup (F12)
 
   # (no penalty definitions — see the header note)
 
@@ -41,7 +42,7 @@ class F5L
     metric timingDeviationInFavour Flag                            # 5.5.12.4 d helper-timed flight out by > 3 s in the competitor's favour = zero
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                          # 5.5.12.4 "at least 4 qualifying rounds"
@@ -85,7 +86,7 @@ class F5L
           else constant 0
 
   # ========================================================================
-  phase Flyoff optional                                            # 5.5.12.4
+  phase Flyoff                                                     # 5.5.12.4
 
     # "The fly-off group size equals the preliminary group size" is why
     # groupSize is declared once at class level and referenced twice.
@@ -94,7 +95,7 @@ class F5L
                                                                    # 5.5.12.4; F5L is SILENT on carry-over (finding F12)
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 2                                          # 5.5.12.4 "minimum 2 rounds"
-    drop      none
+    # no drop: 5.5.12 states no fly-off discard
 
     # F5L changes nothing about the task in the fly-off — the only class of the
     # six for which that is true.

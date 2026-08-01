@@ -17,28 +17,29 @@ class F3F
                                     # Declared so the CD's choice reaches the event log;
                                     # nothing reads it — notation §11 "Left open".
 
-  finalRanking SinglePhase                                     # F3F has no fly-off
+  # no finalRanking: one phase, so SinglePhase (F3F has no fly-off)
 
   reflight
     entitled     Replacement                                   # F3F.1.5 — the repeat replaces; no better-of provision
     others       UndefinedRequiresRuling                       # F3F.1.5 re-flies one pilot; it says nothing about the rest of the group
-    minNewGroup  0                                             # F3F re-flies into the running order, not into a new group
+    # no minNewGroup: F3F.1.5 re-flies into the running order, not into a
+    #   new group, so the field is inapplicable, not unstated
 
   # F3F.1.10 is the corpus's only clause that both MULTIPLIES a penalty and
   # SUPERSEDES it with a larger one (F23). Crossings accrue per occurrence;
   # the group then keeps the largest accrued contribution, so a person contact
   # takes the whole deduction to 1000.
   penalty "safetyPlaneCrossing"     exclusionGroup "safety" perOccurrence
-    deduct 100  at FinalAggregate                              # F3F.1.10 "penalised by 100 points each"
+    deduct 100                                                 # F3F.1.10 "penalised by 100 points each"
   penalty "safetyAreaObjectContact" exclusionGroup "safety"
-    deduct 100  at FinalAggregate                              # F3F.1.10 "the number of contacts does not matter (maximum one penalty)"
+    deduct 100                                                 # F3F.1.10 "the number of contacts does not matter (maximum one penalty)"
   penalty "safetyAreaPersonContact" exclusionGroup "safety"
-    deduct 1000 at FinalAggregate                              # F3F.1.10 "only 1000 points will be deducted"
+    deduct 1000                                                # F3F.1.10 "only 1000 points will be deducted"
   penalty "prohibitedTelemetry"
-    disqualify at FinalAggregate                               # F3F.1.2 "the competitor will be disqualified from the contest"
+    disqualify                                                 # F3F.1.2 "the competitor will be disqualified from the contest"
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 1                    # F3F.1.7 "the flights are to be performed round by round"; no ceiling stated
     validity  minRounds 4                                      # F3F.1.13 "a minimum of four (4) rounds must be flown"

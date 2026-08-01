@@ -75,16 +75,16 @@ class <ID>
 
   param   <name> <Number|Flag> [<unit>] <default <value> | no default>
                                         [allowed [<v>, …]] boundAt <BindingPoint>
-  finalRanking  <SinglePhase|LastPhaseReplaces|SplitByPromotion>
+  [finalRanking <SinglePhase|LastPhaseReplaces|SplitByPromotion>]
 
   reflight
     entitled     <Replacement|BetterOf|NotPermitted|UndefinedRequiresRuling>
     others       <Replacement|BetterOf|NotPermitted|UndefinedRequiresRuling>
-    minNewGroup  <int>
+    [minNewGroup <int>]
 
   penalty <"infractionType"> [exclusionGroup <"name">] [perOccurrence]
-    <effect> [<points>] at <RawScore|FinalAggregate>
-    <effect> [<points>] at <RawScore|FinalAggregate>   # one or more
+    <effect> [<points>]
+    <effect> [<points>]                                # one or more
 
   phase … (one or more, in order)
 ```
@@ -99,13 +99,59 @@ say "no re-flights are permitted" in as many words (`NZ.3.13.1 h`,
 decide. Writing the first as the second puts a ruling in front of a CD that the
 rules have already made; writing the second as the first invents one.
 
-**Penalties carry one or more effects** (F20). One infraction can act twice, at
-two different points in the pipeline — `F3B.2.2 p` zeroes the flight *and*
-deducts 1000 from the final score; `F3K.4.1` deducts *and* zeroes the round. A
-single-effect penalty is written on one line and is the common case:
+**`minNewGroup` is optional, and absent is not the same as unstated.** One fact
+was previously spelled three ways, all of them `0`. The three cases are
+distinct and each is now written differently:
+
+- **The rules state a minimum** — the number, cited. F3K `4` (`F3K.9.6`), F3J
+  `4` (`F3J.4`), F5K `4` (`5.5.10.13`), F5J `6` (`5.5.11.6`).
+- **The rules are silent** — a `no default` parameter, so the CD chooses at
+  setup and the choice reaches the event log. F3B (`F3B` states no minimum),
+  F5L (`5.5.12.9`) and NZ Class M in both its forms (`NZ.3.12.5 l`) write
+  `minNewGroup param(minNewGroup)`. This is F12 applied here rather than a
+  fabricated zero.
+- **The field is meaningless** — omitted, with a comment saying why. NZ Classes
+  N and P grant no re-flight at all (`NZ.3.13.1 h`, `NZ.3.15.1 h`, F26), and
+  `F3F.1.5` re-flies one pilot into the running order rather than into a new
+  group. The rulebook has answered; the answer makes the field inapplicable.
+
+`0` is never the right value: as a minimum it means "a group of none is
+acceptable", which no rulebook says. **Adoption rejects `minNewGroup` written
+where both selections are `NotPermitted`** — the rules have already ruled out
+the group the number would size.
+
+**`finalRanking` is optional, and a single-phase class omits it.** A class with
+exactly one `phase` can only rank on that phase, so `SinglePhase` restates the
+phase list rather than adding to it; six of the eleven definitions wrote
+`SinglePhase` and now none does, leaving the five multi-phase classes as the
+only ones with a line. The keyword stays because the other two values are real
+choices a multi-phase class must make and neither is derivable —
+`LastPhaseReplaces`
+(`F3K.10`, `5.5.10.16`) and `SplitByPromotion` (`F3J.11`, `5.5.11.13`,
+`5.5.12.12`) differ on exactly what a fly-off does to a non-qualifier's score.
+Both adoption checks are needed, in both directions: **`finalRanking` written
+as `SinglePhase` on a class with more than one phase is rejected**, and **a
+class with more than one phase and no `finalRanking` is rejected too** — the
+default is only available where it is forced.
+
+**Penalties carry one or more effects** (F20), and **the effect is what decides
+where in the pipeline it lands.** `deduct` and `disqualify` act on the final
+aggregate; `zeroFlight`, `zeroRound` and `zeroTask` act on the raw score, which
+is the only stage where a flight or a round still exists as a thing to zero.
+There is no `at` clause, and there never was a class that needed one: across
+the eleven definitions all 24 `deduct`s and the single `disqualify` were
+written at the final aggregate and all 13 `zeroFlight`/`zeroRound`s at the raw
+score, and the opposite pairings are not rules a rulebook could state — zeroing
+a flight at the final aggregate names a flight the aggregate no longer
+distinguishes.
+
+One infraction can still act twice, and it is *because* the two effects differ
+that the two stages do: `F3B.2.2 p` zeroes the flight *and* deducts 1000 from
+the final score; `F3K.4.1` deducts *and* zeroes the round. A single-effect
+penalty is written on one line and is the common case:
 
 ```
-  penalty "safetyPlaneCrossing" deduct 300 at FinalAggregate   # F3B.2.5 h
+  penalty "safetyPlaneCrossing" deduct 300   # F3B.2.5 h
 ```
 
 **`exclusionGroup`** (F20) is how `F3K.4.3` and `F3J`'s "each flight attempt may
@@ -113,7 +159,9 @@ only incur a single penalty, the largest applying" is written. Within one flight
 attempt at most one penalty from a named group is applied. A group may contain
 only `deduct` effects — "largest" has no meaning between a `zeroFlight` and a
 deduction — and that is rejected at adoption rather than resolved by an invented
-ordering.
+ordering. That check is also what keeps the derivation above out of the group's
+way: every member of a group is a deduction, so every member lands at the same
+stage, and which one wins was never a function of the stage.
 
 **`perOccurrence`** (F23) sets `PenaltyDefinition.accrual`. The default,
 `OncePerAttempt`, is what `F3K.4.3` and `F3J.2.4 c` say word for word — "each
@@ -134,6 +182,22 @@ Finding F11 removed five variants no class requires: `LastPhaseOnly`,
 `NormalisedRoundScore`, `ZeroScoreTerm` (with `zeroesTermRef`, which could never
 be populated — `ScoreTerm` has no id), `wholeFieldAsOneGroup` and `DuringRound`.
 Each is readmitted the day a class's rules require it, with the citation.
+
+The same discipline, applied to the eleven definitions once they were all
+written, removed four more — three of them elements the notation had a keyword
+or operand for, so rule 1 removed the keyword with them:
+
+- **`PenaltyApplication` and the `at` clause** — derivable from the effect, as
+  above. Readmission needs a rule that deducts points from something other than
+  the final aggregate, or zeroes a flight after the aggregate exists.
+- **`PenaltyCatalogue`** — a value object with no attributes between the class
+  and its penalty definitions. `CompetitionClass *-- 0..* PenaltyDefinition`
+  says the same thing, and the notation never had a keyword for it. Readmission
+  needs something true of a class's penalties collectively.
+- **`FinalRankingRule`** — a value object holding one enum, now
+  `CompetitionClass.finalRanking`. The keyword is unchanged; only the wrapper
+  went. Readmission needs a second attribute on final ranking.
+- **`PhaseDefinition.mandatory` and the `[mandatory|optional]` token** — see §4.
 
 `wholeFieldAsOneGroup` was re-examined against `F3B.1.8 b` — "a group may consist
 of a minimum of eight competitors **or all competitors**" — and **stays removed**.
@@ -171,6 +235,11 @@ every referenced parameter is bound before the pipeline stage that reads it.
 Widening the list later is additive; narrowing it once seed data depends on a
 slot is not.
 
+Every adoption check stated anywhere in this document is also listed, one line
+each, in `high-level-architecture.md` under "Validated at adoption". That list
+is the exhaustive inventory and the reasoning stays here; adding a check here
+means adding a line there.
+
 **`allowed [<v>, …]`** (F8) sets `Parameter.allowedValues` — the permitted
 bindings, where the rules state them. **`no default`** (F12) leaves
 `Parameter.defaultValue` unset: it marks a value the rules leave *entirely*
@@ -183,16 +252,30 @@ silent.
 ## 4. Phase level
 
 ```
-  phase <Preliminary|Flyoff> [mandatory|optional]
+  phase <Preliminary|Flyoff>
     rounds     <FixedSequence|ChooseFromCatalogue> tasksPerRound <n>
                  [distinctTaskPerRound] [maxRounds <n>]
     validity   minRounds <n> [minTasks <n>]
-    drop       <ByRound|ByTask> <count> [whenRounds >= <n>] [whenResults >= <n>]
-                 … (one or more, in order)                        # or: drop none
+    [drop      <ByRound|ByTask> <count> [whenRounds >= <n>] [whenResults >= <n>]
+                 … (one or more, in order)]                       # optional
     promotion  <TopN <n> | TopPercent <pct>> group <min>..<max>
                  carryPenalties <true|false|param(<name>)>
     task … (one or more — the catalogue available in this phase)
 ```
+
+**A phase does not say whether it is mandatory**, and the reason is more
+interesting than the redundancy that first suggested removing the token. Across
+the eleven definitions the flag was perfectly correlated with `PhaseType` — every
+`Preliminary` mandatory, every `Flyoff` optional — but the correlation was
+achieved by *mis-recording the one real case*. `5.5.10` makes the F5K fly-off
+mandatory for seniors at World and Continental Championships, and `F3K.9.1`'s
+likewise at championships; both definitions wrote `optional` and put the truth
+in a comment, because mandatoriness there is conditional on the **event level**,
+which the model has no notion of. A flag that can only ever be written wrong for
+the case it exists to record is not recording anything, so it went, and the two
+comments stay where they were. Readmission is not a matter of finding a class
+with a mandatory fly-off — F3K and F5K already are that class — but of the model
+gaining an event level for the condition to read.
 
 **`drop` takes two gates, both optional and conjunctive** (F18) — the drop
 applies only when every gate written holds. `F3B.2.8` states both at once:
@@ -226,9 +309,21 @@ one. That is a real hazard rather than a theoretical one, because both orderings
 produce a plausible number, so **adoption rejects a list whose gates are not
 strictly descending**: the writer does not get to rely on remembering.
 
-`drop none` is sugar for a single `ByRound 0` with neither gate — `DropPolicy`
-is mandatory (1..\*) on `PhaseDefinition`, so a phase with no drop still needs
-one.
+**`drop` is optional, and a phase that omits it discards nothing.** The
+reasoning that used to sit here is now reversed. `DropPolicy` was mandatory
+(1..\*) on `PhaseDefinition`, so a phase with no discard still needed one, and
+`drop none` was sugar for a single `ByRound 0` with neither gate. That is F25's
+shape — a mandatory slot satisfied with an invented value — and it was the
+majority case, not the exception: nine of the sixteen phases in `seed-data/`
+have no discard to state, including every fly-off in the corpus and all four NZ
+definitions. Unlike normalisation, discarding nothing does at least *have* an
+identity value, so the fabrication cost no arithmetic; what it cost was the
+claim itself, a `DropPolicy` asserting that the phase's rules contain a discard
+rule when they contain none. `PhaseDefinition *-- 0..* DropPolicy`, and the
+sugar went with the multiplicity. The nine phases keep their citations as
+comments — that `F3K.10`'s and `5.5.11.13`'s discards apply to the *preliminary*
+aggregate is exactly why their fly-offs have none, and that is worth recording;
+it is just not a `DropPolicy`.
 
 **`maxRounds`** (F21) is the ceiling on what may be scheduled, and it is on
 `rounds` rather than on `validity` deliberately: a phase over its ceiling is not
@@ -249,14 +344,14 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
       metric     <name> <Number|Flag> [<unit>] [<Truncate|HalfUp|Ceiling> <precision>] [declared]
       flights    <selection>
       timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n|unlimited>]
-      group      minPerGroup <n> [minValidResults <n>]
+      group      minPerGroup <n> [minValidResults <n>]             # optional
       normalise  <HigherIsBetter|LowerIsBetter> winner <n> [round <mode> <precision>]
                                                                     # optional
       rawScore   round <mode> <precision>                           # optional
       validWhen  <predicate>                                        # optional
       flightValidWhen <predicate>                                   # optional
       reflight                                                      # optional override
-        entitled <…> ; others <…> ; minNewGroup <n>
+        entitled <…> ; others <…> [; minNewGroup <n>]
       score
         <term>
         <term>          # terms are summed
@@ -266,6 +361,45 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
 
 `declared` sets `MetricDefinition.declaredBeforeLaunch` — a value the pilot
 nominates before releasing (a Poker target).
+
+**`group` is optional, and absent is not the same as `param(groupSize)` with no
+default.** The two were previously written almost identically and they state
+different facts:
+
+- **`group` omitted** — *this class does not group-score at all.* NZ Classes N
+  and P and Class M's NDC format total each pilot's own raw points and never
+  compare one pilot against another (`NZ.3.13.1 i`, `NZ.3.15.1 i`,
+  `NZ.3.12.7 c`), so there is no minimum group size to state and no annulment
+  threshold to state, because there is no scoring group. All three used to
+  write `minPerGroup 1` and their own comments called it the degenerate value.
+  `1` is a fabricated rule of exactly F25's kind, and not an inert one:
+  `minPerGroup 1` tells the draw that a group of one is an acceptable split,
+  which is a statement about how the field may be divided, where the truth is
+  that dividing it does not affect anyone's score.
+- **`group minPerGroup param(groupSize)` with a `no default` parameter** — *this
+  class does group-score, and the rulebook does not state the size.* F5K
+  (`5.5.10`), F5L (`5.5.12.4`) and NZ Class M (`NZ.3.12`, "Man-On-Man (Group
+  scored)") are this case: the CD chooses at setup and the choice reaches the
+  event log (F12). The group is load-bearing; only its size is open.
+
+The question that decides it, for anyone writing a new class: *does one pilot's
+score depend on another pilot's score in the same flying group?* If it does,
+write `group` — the number where the rules state one, a `no default` parameter
+where they do not. If it does not, omit `group` entirely.
+
+Absent `group` says two things downstream and both of them are absences. The
+draw takes no size constraint from the task, so the core invariant "a field
+smaller than a task's `minPerGroup` flies as one group"
+(`high-level-architecture.md`) has nothing to engage with and grouping becomes a
+running-order convenience; and no group is ever annulled for want of valid
+results, which is already what an unset `minValidResults` meant inside a written
+`group`. Neither absence can move a score, because a task with no
+`Normalisation` reads nothing from its group in the first place. That is also
+the adoption check the optionality needs: **a task that writes `normalise` and
+no `group` is rejected** — normalisation is defined against the best score in
+the group, so a class that normalises has to say how groups are formed. The
+eleven definitions already agree without exception, every normalising task
+writing a `group` and every non-normalising one omitting it.
 
 **`normalise` is itself optional** (F25). Written, the task normalises and the
 `score` block is what normalisation consumes. Omitted, the task does not
@@ -493,14 +627,18 @@ predicates. It stays statically validatable at adoption.
 
 ## 7. Sugar
 
-Three, all expanding to complete model instances. Sugar is a property of the
+Two, both expanding to complete model instances. Sugar is a property of the
 notation, not of the stored class.
 
 | Sugar | Expands to |
 |---|---|
 | `metricSet <name>` at class scope; `use <name>` in a task | a copy of each `MetricDefinition` into that task |
 | `task <code> "<name>" like <other>` + overrides | a complete `Task` copy with the overrides applied |
-| `drop none` | a one-element list, `[DropPolicy{ByRound, 0, 0}]` |
+
+There were three. `drop none` expanded to a one-element list
+`[DropPolicy{ByRound, 0, 0}]` and existed only to satisfy a mandatory
+multiplicity; with `DropPolicy` optional (§4) an omitted `drop` is the model
+instance, so the sugar had nothing left to expand to.
 
 `like` earns its place on F3K: fourteen tasks that share metrics, timing shape,
 group constraint and normalisation, and differ only in flight selection and cap.
@@ -628,7 +766,7 @@ half of the record:
   all three were answered without widening it (§6). No arithmetic was admitted.
 - **`wholeFieldAsOneGroup` stays removed** (§3). `F3B.1.8 b` looked like it
   required readmitting F11's variant and does not — it is a draw invariant.
-- **`GroupConstraint` and the eleven `ParameterRef` slots are unchanged.**
+- **`GroupConstraint` and the thirteen `ParameterRef` slots are unchanged.**
 
 ---
 
@@ -649,7 +787,7 @@ vocabulary. Two things broke, both structural, both additive.
 
 | # | Extension | Forced by |
 |---|---|---|
-| F22 | Ordered `drop` list — `PhaseDefinition *-- 1..* DropPolicy` | `F3F.1.13` tiers the discard: one round at ≥4, two above 14. A single `DropPolicy` writes only the first tier |
+| F22 | Ordered `drop` list — `PhaseDefinition *-- 0..* DropPolicy` | `F3F.1.13` tiers the discard: one round at ≥4, two above 14. A single `DropPolicy` writes only the first tier |
 | F23 | `perOccurrence` — `PenaltyDefinition.accrual`, and "largest in group" comparing accrued contributions | `F3F.1.10` deducts 100 points per safety-plane crossing, while a person contact's 1000 still supersedes the lot |
 
 F22 is the one that matters. Without it F3F is not merely inexpressible but
@@ -770,8 +908,13 @@ contain, so the multiplicity was wrong rather than the classes.
   model. Worth recording because the opposite was assumed at the outset.
 - **The evaluation boundary held a third time.** Nothing in the three classes
   needed a term to see beyond the flight being scored.
-- **`GroupConstraint`, `TaskTiming`, `DropPolicy` and the penalty machinery are
-  unchanged.**
+- **`TaskTiming` and the penalty machinery are unchanged.** `GroupConstraint`
+  and `DropPolicy` kept their shape but not their multiplicity, and the NZ
+  classes are why: all three had to write a degenerate `minPerGroup 1` and a
+  `drop none` to satisfy mandatory slots their rulebook says nothing to fill.
+  That is F25's shape a second and a third time, and both were later resolved
+  the same way — the multiplicity was wrong, not the classes (§4, §5). Neither
+  value object itself was touched.
 
 ### Left open
 

@@ -23,9 +23,9 @@ class F3J
     others       BetterOf                                          # F3J.4
     minNewGroup  4                                                 # F3J.4
 
-  penalty "towlineNotClearedWithin30s" deduct 100  at FinalAggregate  # F3J.8.3
-  penalty "nonConformingWinch"         deduct 1000 at FinalAggregate  # F3J.8.2 p
-  penalty "unauthorisedTransmission"   deduct 300  at FinalAggregate  # F3J.7 d
+  penalty "towlineNotClearedWithin30s" deduct 100                     # F3J.8.3
+  penalty "nonConformingWinch"         deduct 1000                    # F3J.8.2 p
+  penalty "unauthorisedTransmission"   deduct 300                     # F3J.7 d
   # F3J.2.4 c "for each attempt only one penalty can be given, if a person and
   # at the same attempt an object is touched the 1000 points penalty is
   # applied" — one exclusion group, largest wins (F20). Previously recorded
@@ -34,11 +34,11 @@ class F3J
   # the whole clause, so d) joins the group. The rule does not say so in as
   # many words; nothing else in F3J.2.4 suggests d) stands apart.
   penalty "safetyAreaObjectContact"    exclusionGroup "safetyRules"
-    deduct 300  at FinalAggregate                                     # F3J.2.4 a
+    deduct 300                                                        # F3J.2.4 a
   penalty "safetyAreaPersonContact"    exclusionGroup "safetyRules"
-    deduct 1000 at FinalAggregate                                     # F3J.2.4 b
+    deduct 1000                                                       # F3J.2.4 b
   penalty "safetySpaceNotLeft"         exclusionGroup "safetyRules"
-    deduct 300  at FinalAggregate                                     # F3J.2.4 d
+    deduct 300                                                        # F3J.2.4 d
 
   metricSet f3jFlight
     metric flightTime          Number s HalfUp 0.1                 # F3J.10.2 "recorded to one decimal place" — the MODE is not
@@ -49,7 +49,7 @@ class F3J
     metric touchedByCompetitor Flag                                # F3J.10.8
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                          # F3J.3.1 a
@@ -86,7 +86,7 @@ class F3J
           else constant 0
 
   # ========================================================================
-  phase Flyoff optional                                            # F3J.11
+  phase Flyoff                                                     # F3J.11
 
     promotion TopN param(flyoffSize) group 9..unlimited
                 carryPenalties param(carryPenalties)               # F3J.11 top >= 9, a single group;
@@ -94,7 +94,7 @@ class F3J
                                                                    # at setup and the choice is logged (F12)
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds param(flyoffMinRounds)                     # not stated for F3J (F12)
-    drop      none                                                 # F3J.3.1 a the discard applies to the qualifying aggregate
+    # no drop: F3J.3.1 a's discard applies to the qualifying aggregate
 
     task D "Duration (fly-off)" like Preliminary.D
       timing  Fixed 900 s maxLaunches unlimited                    # F3J.6 15 minutes for the fly-off

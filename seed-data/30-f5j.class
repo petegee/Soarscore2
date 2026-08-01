@@ -19,18 +19,20 @@ class F5J
     others       BetterOf                                           # 5.5.11.6
     minNewGroup  6                                                  # 5.5.11.6 — 6, not the 4 used by F3J/F3K/F5K
 
-  penalty "wrongLaunchDirection"      deduct 100  at FinalAggregate # 5.5.11.10 b
-  penalty "motorBeforeStartSignal"    deduct 100  at FinalAggregate # 5.5.11.10 c
-  penalty "launchNotStraightAhead3s"  deduct 100  at FinalAggregate # 5.5.11.10 e
-  penalty "launchOutsideCorridor"     zeroRound   at RawScore       # 5.5.11.10 d — a zero score, NOT a 100-point deduction
-  penalty "propellerTurningAfterRun"  zeroFlight  at RawScore       # 5.5.11.7 g
-  penalty "safetyAreaInfringement"    deduct 300  at FinalAggregate # 5.5.11.4 c
-  penalty "restsInAccessCorridor"     deduct 300  at FinalAggregate # 5.5.11.4 d
-  penalty "contactInAccessCorridor"   deduct 1000 at FinalAggregate # 5.5.11.4 e
+  penalty "wrongLaunchDirection"      deduct 100                    # 5.5.11.10 b
+  penalty "motorBeforeStartSignal"    deduct 100                    # 5.5.11.10 c
+  penalty "launchNotStraightAhead3s"  deduct 100                    # 5.5.11.10 e
+  penalty "launchOutsideCorridor"     zeroRound                     # 5.5.11.10 d — a zero score, NOT a 100-point deduction
+  penalty "propellerTurningAfterRun"  zeroFlight                    # 5.5.11.7 g
+  penalty "safetyAreaInfringement"    deduct 300                    # 5.5.11.4 c
+  penalty "restsInAccessCorridor"     deduct 300                    # 5.5.11.4 d
+  penalty "contactInAccessCorridor"   deduct 1000                   # 5.5.11.4 e
   # 5.5.11.4 a: all safety penalties are deducted from the final score and
-  # listed on the round's score sheet — hence FinalAggregate throughout.
-                                                                    # 5.5.11.12 n: all penalties cumulative, deducted at the end
-                                                                    # of the preliminary rounds → PenaltyApplication.FinalAggregate
+  # listed on the round's score sheet; 5.5.11.12 n makes them cumulative and
+  # deducted at the end of the preliminary rounds. Both are `deduct`, and a
+  # deduction lands at the final aggregate by definition — F5J is where that
+  # rule is most explicitly stated, and 5.5.11.10 d is the counter-case: it
+  # zeroes the round, which can only happen at the raw score.
 
   metricSet f5jFlight
     metric flightTime          Number s Truncate 1                  # 5.5.11.12 b truncated to the nearest second
@@ -43,7 +45,7 @@ class F5J
     metric touchedByCompetitor Flag                                 # 5.5.11.12 j
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds 4                                           # 5.5.11.13
@@ -80,7 +82,7 @@ class F5J
           else constant 0
 
   # ========================================================================
-  phase Flyoff optional                                              # 5.5.11.13
+  phase Flyoff                                                       # 5.5.11.13
 
     promotion TopPercent 30 group 6..param(flyoffMaxGroup)
                 carryPenalties false                                 # 5.5.11.12 n — F5J is the one class that STATES it
@@ -88,7 +90,7 @@ class F5J
                                                                      # 5.5.11.12 n penalties are not carried into the fly-off
     rounds    FixedSequence tasksPerRound 1
     validity  minRounds param(flyoffMinRounds)                       # not stated for F5J (F12)
-    drop      none                                                   # 5.5.11.13 the discard applies to the qualifying aggregate
+    # no drop: 5.5.11.13's discard applies to the qualifying aggregate
 
     # Same task; two numbers change, and both live on the task, which is why
     # the fly-off restates it rather than inheriting it.

@@ -21,21 +21,22 @@ class NZ-P
                                                                  #   the number of competitors, weather conditions
                                                                  #   etc. For example each round could be 1 hour" (F12)
 
-  finalRanking SinglePhase
+  # no finalRanking: one phase, so SinglePhase (NZ.3.15 has no fly-off)
 
   reflight
     entitled     NotPermitted                                    # NZ.3.15.1 h "no re-flights are permitted"
     others       NotPermitted                                    # NZ.3.15.1 h
-    minNewGroup  0                                               # no new group is ever formed
+    # no minNewGroup: NZ.3.15.1 h permits no re-flight, so no new group is
+    #   ever formed and the field is inapplicable, not unstated (F26)
 
   # (no penalty definitions — every consequence in NZ.3.15 is derived from
   #  something measured)
 
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    FixedSequence tasksPerRound 1 maxRounds 3          # NZ.3.15 "three 7 minutes flights over 3 rounds"
     validity  minRounds 3                                        # NZ.3.15
-    drop      none                                               # NZ.3.15.1 i "each flight counts"
+    # no drop: NZ.3.15.1 i "each flight counts"
 
     task D "Duration"
       metric flightTime         Number s Truncate 1              # NZ.3.15.1 f; no precision stated (F12 residual)
@@ -46,7 +47,8 @@ class NZ-P
 
       flights   last                                             # NZ.1.6 one official flight per round
       timing    Fixed param(roundDuration) maxLaunches 1         # NZ.3.15.1 k
-      group     minPerGroup 1                                    # individual scoring; see the note at the foot
+      # no group: individual scoring, so there is no scoring group; a
+      #   group-scored Class P is not writable — see the note at the foot
 
       # NO `normalise` (F25). NZ.3.15.1 i: "the final score is the total of all
       # points over three flights". This is the NDC-eligible form of the class.

@@ -31,27 +31,27 @@ class F3K
     others       BetterOf                                             # F3K.9.6
     minNewGroup  4                                                    # F3K.9.6
 
-  penalty "unsignedScoreCard"            zeroRound       at RawScore       # F3K.1.2 "if the result is not signed by the
+  penalty "unsignedScoreCard"            zeroRound                         # F3K.1.2 "if the result is not signed by the
                                                                            #   competitor, the score for the round will be 0"
-  penalty "flewOutsideTestingWindow"     deduct 100      at FinalAggregate # F3K.9.5
+  penalty "flewOutsideTestingWindow"     deduct 100                        # F3K.9.5
 
   # F3K.4.3 "each flight attempt may only incur a single penalty … only the
   # highest penalty will be applied" — one exclusion group, largest wins (F20).
   # All three effects are deductions, which is what the group requires.
   penalty "safetyAreaObjectContact"      exclusionGroup "safetyInfraction"
-    deduct 100      at FinalAggregate                                      # F3K.4.3 1) an object, including the ground, inside the safety area
+    deduct 100                                                             # F3K.4.3 1) an object, including the ground, inside the safety area
   penalty "safetyAreaPersonContact"      exclusionGroup "safetyInfraction"
-    deduct 300      at FinalAggregate                                      # F3K.4.3 2) airborne contact with a person inside the safety area
+    deduct 300                                                             # F3K.4.3 2) airborne contact with a person inside the safety area
   penalty "personContactOutsideSafetyArea" exclusionGroup "safetyInfraction"
-    deduct 100      at FinalAggregate                                      # F3K.4.3 3) airborne contact with a person anywhere outside it
+    deduct 100                                                             # F3K.4.3 3) airborne contact with a person anywhere outside it
   penalty "landedInSafetyArea"           exclusionGroup "safetyInfraction"
-    deduct 100      at FinalAggregate                                      # F3K.4.3
+    deduct 100                                                             # F3K.4.3
 
   # F3K.4.1 does two things at two points in the pipeline (F20): the deduction
   # comes from F3K.4.3, and the round zero is additional.
   penalty "personContactAtLaunch"
-    deduct 300      at FinalAggregate                                      # F3K.4.1 "a penalty according to paragraph F3K.4.3"
-    zeroRound       at RawScore                                            # F3K.4.1 "in addition … a zero score for the whole round"
+    deduct 300                                                             # F3K.4.1 "a penalty according to paragraph F3K.4.3"
+    zeroRound                                                              # F3K.4.1 "in addition … a zero score for the whole round"
 
   # ---- shared metrics ----------------------------------------------------
   metricSet f3kFlight
@@ -60,7 +60,7 @@ class F3K
     metric launchedInWorkingTime Flag                                 # F3K.7 "launched before the beginning of the working time … zero score"
 
   # ========================================================================
-  phase Preliminary mandatory
+  phase Preliminary
 
     rounds    ChooseFromCatalogue tasksPerRound 1 distinctTaskPerRound  # F3K.10 five rounds, each a different task
     validity  minRounds 5                                               # F3K.10
@@ -198,10 +198,13 @@ class F3K
         rate flightTime 1 pt/s cap 599 s
 
   # ========================================================================
-  # Mandatory at World / Continental Championships; if fewer than 3 fly-off
-  # rounds complete, the preliminary results stand — which is `validity`
-  # plus FinalRankingKind.LastPhaseReplaces, not a separate rule.
-  phase Flyoff optional                                               # F3K.9.1
+  # Mandatory at World / Continental Championships and at the organiser's
+  # discretion elsewhere — conditional on the event level, which the model has
+  # no notion of, so nothing on the phase records it (see F5K, which states the
+  # same thing). If fewer than 3 fly-off rounds complete, the preliminary
+  # results stand — which is `validity` plus
+  # FinalRankingKind.LastPhaseReplaces, not a separate rule.
+  phase Flyoff                                                        # F3K.9.1
 
     promotion TopN param(flyoffSize) group 5..unlimited
                 carryPenalties param(carryPenalties)                  # F3K.9.1; F3K states nothing about carry-over (F12)
@@ -210,7 +213,8 @@ class F3K
                                                                       #   scheduled, which is why it is not on `validity`
     validity  minRounds 3                                             # F3K.10.3 "if less than three (3) fly-off rounds can be completed,
                                                                       #   the result of the preliminary rounds determine the final ranking"
-    drop      none                                                    # F3K.10 discard applies to the preliminary aggregate only
+    # no drop: F3K.10's discard applies to the preliminary aggregate only,
+    #   so the fly-off has no discard rule to state
 
     task A like Preliminary.A ; task B like Preliminary.B ; task C like Preliminary.C
     task D like Preliminary.D ; task E like Preliminary.E ; task F like Preliminary.F
