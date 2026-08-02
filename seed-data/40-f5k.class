@@ -40,6 +40,34 @@ class F5K
     metric landedOnField         Flag                                # 5.5.10.12 flight penalty b — landing off the field = 0 for that flight
     metric overflewLandingWindow Flag                                # 5.5.10.12 flight penalty a
 
+  # Launch points relative to the announced NLH. 5.5.10.4 is one clause and one
+  # table, and every task in the catalogue scores against it — so the bands are
+  # declared once at class scope and used by A, B, C and E (§7.1). Written out
+  # in each task they were four hand-maintained copies of a scoring table, which
+  # is the F22/F24 failure shape: one drifted rate still adopts, still runs and
+  # still produces a plausible number. What varies across the catalogue is the
+  # GUARD, not the bands: A, B and C gate on `flightTime >= 30` alone while E
+  # adds 5.5.10.2's target-achieved condition and has no `else` at all. The
+  # guard stays written out at each task, where the difference is the point —
+  # which is also why the reusable unit is the band list and not the whole score
+  # term (§7.1). The first band is the bonus: a NEGATIVE rate over a NEGATIVE
+  # portion of the measurement, which is how each metre below the NLH adds
+  # points.
+  bands f5kLaunch                                                    # 5.5.10.4
+    any..0   @ -0.5 pt/m
+    0..10    @ -1.0 pt/m
+    10..any  @ -3.0 pt/m
+
+  # 5.5.10.4 again — "there will be no bonus points for flights shorter than 30
+  # seconds, penalty points still apply" — which is the same table with the
+  # bonus band removed. It repeats two rows of the list above and there is no
+  # way to write "those bands less the first"; inventing one would be notation
+  # surface no second class needs, so the repetition is left visible here rather
+  # than hidden behind a construct.
+  bands f5kLaunchPenaltyOnly                                         # 5.5.10.4
+    0..10    @ -1.0 pt/m
+    10..any  @ -3.0 pt/m
+
   # ========================================================================
   phase Preliminary
 
@@ -70,18 +98,12 @@ class F5K
                                                                      # 5.5.10.2 "maximum total flight time used for scoring:
                                                                      #   9.59 min" caps the SUM (F4a, adopted). Not a cap on the
                                                                      #   raw score: the launch bonus below is added after it.
-        # Launch points relative to the announced NLH. Cumulative bands read
-        # from an origin: at NLH+15 the deduction is 10×1.0 + 5×3.0 = 25.
-        # The below-NLH band has a NEGATIVE rate over a NEGATIVE portion,
-        # which is what makes it a bonus.
+        # Launch points relative to the announced NLH, from the class-scope band
+        # lists. Cumulative bands read from an origin (F5, adopted): at NLH+15
+        # the deduction is 10×1.0 + 5×3.0 = 25.
         when flightTime >= 30                                        # 5.5.10.4 no bonus for flights shorter than 30 s
-          then piecewise launchAltitude from param(nlh)              # origin (F5, adopted)
-                 any..0   @ -0.5 pt/m                                # 5.5.10.4 each metre below NLH: +0.5 bonus
-                 0..10    @ -1.0 pt/m                                # 5.5.10.4
-                 10..any  @ -3.0 pt/m                                # 5.5.10.4
-          else piecewise launchAltitude from param(nlh)              # penalties still apply under 30 s
-                 0..10    @ -1.0 pt/m
-                 10..any  @ -3.0 pt/m
+          then piecewise launchAltitude from param(nlh) use f5kLaunch
+          else piecewise launchAltitude from param(nlh) use f5kLaunchPenaltyOnly
         when landedInPilotArea == false
           then constant -10                                          # 5.5.10.15 −10 per landing outside the Pilot Area
         when overflewLandingWindow == true
@@ -99,12 +121,11 @@ class F5K
       score
         rate flightTime 1 pt/s cap 300 s                             # 5.5.10.2 maximum flight time 5 minutes
         when flightTime >= 30
-          then piecewise launchAltitude from param(nlh)
-                 any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
-          else piecewise launchAltitude from param(nlh)
-                 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m
+          then piecewise launchAltitude from param(nlh) use f5kLaunch
+          else piecewise launchAltitude from param(nlh) use f5kLaunchPenaltyOnly
         lookup flight.sequence                                       # intrinsic ref (F6, adopted)
-          <= 1 ->   0 ;  <= 2 -> -10 ;  any -> -20                   # 5.5.10.2 Task B launch penalties (cumulative on the last flight)
+          <= 1 ->   0 ;  <= 2 -> -10 ;  any -> -20                   # 5.5.10.2 Task B launch penalties: cumulative on the
+                                                                     #   last flight, −20 total over three launches
         when landedInPilotArea == false then constant -10            # 5.5.10.15
         when overflewLandingWindow == true then constant -100        # 5.5.10.12 flight penalty a
 
@@ -115,10 +136,8 @@ class F5K
       score
         rate flightTime 1 pt/s cap 240 s                             # 5.5.10.2 maximum measured flight time 4 minutes
         when flightTime >= 30
-          then piecewise launchAltitude from param(nlh)
-                 any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
-          else piecewise launchAltitude from param(nlh)
-                 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m
+          then piecewise launchAltitude from param(nlh) use f5kLaunch
+          else piecewise launchAltitude from param(nlh) use f5kLaunchPenaltyOnly
         when landedInPilotArea == false then constant -10
         when overflewLandingWindow == true then constant -100
 
@@ -128,7 +147,11 @@ class F5K
       timing    Fixed 600 s prep 300 s maxLaunches 3
       # D restates no `score` and no `rawScore`, so both come whole from A —
       # including the `cap 599 perTask` on the flight-time term, which D needs
-      # for the same reason A does: 180+180+240 = 600 s. 5.5.10.2.
+      # for the same reason A does: 180+180+240 = 600 s. 5.5.10.2. A's two band
+      # references come with it — `like` copies the task as written, `use`
+      # included — and because a fragment is class-scoped and `like` never
+      # leaves the class, expanding before or after the copy gives the same
+      # bands (§7.1). The five fly-off tasks below inherit the same way.
 
     # -- E ---------------------------------------------------------------
     # Poker. Unlike F3K's, the launch cost applies to every launch made, so the
@@ -147,10 +170,18 @@ class F5K
         # 5.5.10.2: "the launch altitude bonus or penalty only applies where
         # the target time is achieved" — a second guard F5K's other tasks lack.
         when all(flightTime >= targetTime, flightTime >= 30)
-          then piecewise launchAltitude from param(nlh)
-                 any..0 @ -0.5 pt/m ; 0..10 @ -1.0 pt/m ; 10..any @ -3.0 pt/m   # 5.5.10.4
+          then piecewise launchAltitude from param(nlh) use f5kLaunch
+        # These three rows are character-identical to Task B's above and are
+        # deliberately NOT declared as one class-scope `rows` list. They are two
+        # different statements of 5.5.10.2 that happen to agree: B selects only
+        # the last flight, so its rows are the CUMULATIVE cost at that flight's
+        # sequence number and come to −20 over three launches; E selects every
+        # flight, so its rows are the per-launch INCREMENT and come to −30. The
+        # rule states the two totals separately. Naming them one table would
+        # assert an agreement the rulebook does not make.
         lookup flight.sequence                                       # intrinsic ref (F6, adopted)
-          <= 1 ->   0 ;  <= 2 -> -10 ;  any -> -20                   # 5.5.10.2 Task E: 2nd launch −10, 3rd a further −20
+          <= 1 ->   0 ;  <= 2 -> -10 ;  any -> -20                   # 5.5.10.2 Task E: 2nd launch −10, 3rd a further −20,
+                                                                     #   −30 total over three launches
         when landedInPilotArea == false then constant -10
         when overflewLandingWindow == true then constant -100
 

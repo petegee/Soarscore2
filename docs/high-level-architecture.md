@@ -140,41 +140,48 @@ that reasoning is the valuable half and flattening it into a list would lose it.
    parameter is bound before the pipeline stage that reads it — notation §3.
 4. A `ParameterRef` occurs only in the thirteen slots that permit one, and
    nowhere a numeric literal would otherwise sit — notation §3, diagram §2.
+5. Every `use` names a declared class-scope group of the kind its site requires
+   — a `metricSet` in a task, a `rows` list on a `lookup`, a `bands` list on a
+   `piecewise` — notation §7.1. The groups are notation sugar and are expanded
+   away before the rest of this list runs, so checks 8 and 9 below see the
+   copied rows and need no variant for a shared list.
+6. Every declared class-scope group is named by at least one `use` — notation
+   §7.1. An orphan is a cited scoring table the class no longer scores against.
 
 *Structures are well formed.*
 
-5. Adjacent piecewise bands meet: where one band's `to` and the next band's
+7. Adjacent piecewise bands meet: where one band's `to` and the next band's
    `from` are both `ParameterRef`s, they name the *same* parameter (F27) —
    notation §3, diagram §2. A gap or an overlap is a silent mis-score.
-6. `lookup` rows ascend, at most one row is unbounded, and an unbounded row is
+8. `lookup` rows ascend, at most one row is unbounded, and an unbounded row is
    last (F9) — notation §5, diagram §3.
-7. Exactly one of {leaf comparison, `allOf`} is populated on a `Predicate` —
+9. Exactly one of {leaf comparison, `allOf`} is populated on a `Predicate` —
    notation §5, diagram §3.
-8. A phase's ordered `DropPolicy` list has strictly descending gates (F22) —
-   notation §4. Both orderings produce a plausible number, so the writer does
-   not get to rely on remembering.
+10. A phase's ordered `DropPolicy` list has strictly descending gates (F22) —
+    notation §4. Both orderings produce a plausible number, so the writer does
+    not get to rely on remembering.
 
 *A slot's presence agrees with the rest of the definition.* These are the checks
 optional multiplicities buy: where a slot may be absent, something has to reject
 the combinations absence makes incoherent.
 
-9. `finalRanking` written as `SinglePhase` on a class with more than one
-   `PhaseDefinition` is rejected — notation §3, diagram §2.
-10. A class with more than one `PhaseDefinition` and no `finalRanking` is
+11. `finalRanking` written as `SinglePhase` on a class with more than one
+    `PhaseDefinition` is rejected — notation §3, diagram §2.
+12. A class with more than one `PhaseDefinition` and no `finalRanking` is
     rejected — notation §3, diagram §2. The omission is available only where the
     phase list forces the value.
-11. `ReflightRule.minNewGroupSize` populated while both selections are
+13. `ReflightRule.minNewGroupSize` populated while both selections are
     `NotPermitted` is rejected — notation §3, diagram §2. The rules have already
     ruled out the group the number would size.
-12. A `ScoreTerm` with `applyAt = Normalised` on a task with no `Normalisation`
+14. A `ScoreTerm` with `applyAt = Normalised` on a task with no `Normalisation`
     is rejected (F24) — notation §5, diagram §3. There is no stage for it to
     land at.
-13. A task whose terms are *all* `Normalised` is rejected (F24) — notation §5,
+15. A task whose terms are *all* `Normalised` is rejected (F24) — notation §5,
     diagram §3. Nothing is left for normalisation to consume.
-14. A task with a `Normalisation` and no `GroupConstraint` is rejected —
+16. A task with a `Normalisation` and no `GroupConstraint` is rejected —
     notation §5, diagram §3. Normalisation is defined against the best score in
     the group, so a class that normalises has to say how groups are formed.
-15. A `PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects —
+17. A `PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects —
     notation §3, diagram §2, since "the largest applies" is undefined across
     effect kinds.
 

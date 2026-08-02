@@ -48,6 +48,20 @@ class F3J
     metric overflySeconds      Number s Truncate 1                 # F3J.10.3, 10.4 — seconds flown past the end of working time
     metric touchedByCompetitor Flag                                # F3J.10.8
 
+  # The landing table of F3J.10.5, declared once at class scope and used by
+  # both phases (§7.1). One rulebook clause, one table: the fly-off scores
+  # against exactly the preliminary's twenty-four rows and differs only in the
+  # working time and the flight-points cap. Written out twice it was a
+  # hand-maintained duplicate — the F22/F24 failure shape, where one drifted
+  # row still adopts, still runs and still produces a plausible number.
+  rows f3jLanding                                                  # F3J.10.5
+    <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
+    <= 1.0 ->  96 ;  <= 1.2 -> 95 ;  <= 1.4 -> 94 ;  <= 1.6 -> 93
+    <= 1.8 ->  92 ;  <= 2.0 -> 91 ;  <= 3.0 -> 90 ;  <= 4.0 -> 85
+    <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
+    <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
+    <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
+
   # ========================================================================
   phase Preliminary
 
@@ -74,13 +88,7 @@ class F3J
           then constant -30                                        # F3J.10.3
         when all(overflySeconds == 0,                              # F3J.10.9
                  touchedByCompetitor == false)                     # F3J.10.8
-          then lookup landingDistance                              # F3J.10.5
-                 <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
-                 <= 1.0 ->  96 ;  <= 1.2 -> 95 ;  <= 1.4 -> 94 ;  <= 1.6 -> 93
-                 <= 1.8 ->  92 ;  <= 2.0 -> 91 ;  <= 3.0 -> 90 ;  <= 4.0 -> 85
-                 <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
-                 <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
-                 <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
+          then lookup landingDistance use f3jLanding
 
   # ========================================================================
   phase Flyoff                                                     # F3J.11
@@ -94,20 +102,16 @@ class F3J
 
     # Two numbers change, the working time and the flight-points cap;
     # `flightValidWhen` and everything else comes with `like`. The `score` block
-    # is restated whole because a restated block replaces the parent's entirely.
+    # is restated whole because a restated block replaces the parent's entirely
+    # — but the twenty-four landing rows are named at class scope, so restating
+    # the block no longer re-transcribes them.
     task D "Duration (fly-off)" like Preliminary.D
       timing  Fixed 900 s                                          # F3J.6 15 minutes for the fly-off
       score
         rate flightTime 1 pt/s cap 900 s
         when overflySeconds > 0 then constant -30                  # F3J.10.3
         when all(overflySeconds == 0, touchedByCompetitor == false)
-          then lookup landingDistance                              # F3J.10.5
-                 <= 0.2 -> 100 ;  <= 0.4 -> 99 ;  <= 0.6 -> 98 ;  <= 0.8 -> 97
-                 <= 1.0 ->  96 ;  <= 1.2 -> 95 ;  <= 1.4 -> 94 ;  <= 1.6 -> 93
-                 <= 1.8 ->  92 ;  <= 2.0 -> 91 ;  <= 3.0 -> 90 ;  <= 4.0 -> 85
-                 <=   5 ->  80 ;  <=   6 -> 75 ;  <=   7 -> 70 ;  <=   8 -> 65
-                 <=   9 ->  60 ;  <=  10 -> 55 ;  <=  11 -> 50 ;  <=  12 -> 45
-                 <=  13 ->  40 ;  <=  14 -> 35 ;  <=  15 -> 30 ;  any    ->  0
+          then lookup landingDistance use f3jLanding
 
 # ---- unresolved for F3J --------------------------------------------------
 # Fly-off ties broken by qualifying position (F3J.11). Not writable. Finding F15.

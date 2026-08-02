@@ -44,6 +44,22 @@ class F5J
     metric overflySeconds      Number s Truncate 1                  # 5.5.11.12 g, k — seconds flown past the end of working time
     metric touchedByCompetitor Flag                                 # 5.5.11.12 j
 
+  # The two scoring tables of 5.5.11.12, declared once at class scope and used
+  # by both phases (§7.1). One rulebook clause, one table: the fly-off scores
+  # against the same start-height bands and the same landing table as the
+  # preliminary, and only the working time and the flight-points cap differ.
+  # Written out in each phase they were a hand-maintained duplicate — the
+  # F22/F24 failure shape, where a drifted row still adopts, still runs and
+  # still produces a plausible number.
+  bands f5jStartHeight                                              # 5.5.11.12 e
+    0..200    @ -0.5 pt/m
+    200..any  @ -3   pt/m
+
+  rows f5jLanding                                                   # 5.5.11.12 h
+    <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
+    <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
+    <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
+
   # ========================================================================
   phase Preliminary
 
@@ -68,16 +84,11 @@ class F5J
         rate flightTime 1 pt/s cap 600 s                             # 5.5.11.12 c 1 pt per full second, max 600 points
         # Start-height deduction. Cumulative bands: 0.5/m for the first 200 m
         # and 3/m thereafter, so 220 m deducts 100 + 60 = 160, not 660.
-        piecewise startHeight                                        # 5.5.11.12 e
-          0..200    @ -0.5 pt/m
-          200..any  @ -3   pt/m
+        piecewise startHeight use f5jStartHeight
         # Landing bonus — the coarser 50→0 table, forfeited two ways.
         when all(overflySeconds == 0,                                # 5.5.11.12 k
                  touchedByCompetitor == false)                       # 5.5.11.12 j
-          then lookup landingDistance                                # 5.5.11.12 h
-                 <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
-                 <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
-                 <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
+          then lookup landingDistance use f5jLanding
 
   # ========================================================================
   phase Flyoff                                                       # 5.5.11.13
@@ -90,21 +101,19 @@ class F5J
     # no drop: 5.5.11.13's discard applies to the qualifying aggregate
 
     # Same task; two numbers change — the working time and the flight-points
-    # cap. `use`, `flights`, `group`, `normalise` and `flightValidWhen` all come
-    # with `like`. The whole `score` block is restated only because one term in
-    # it moved: a restated block replaces the parent's entire block.
+    # cap. `use f5jFlight`, `flights`, `group`, `normalise` and
+    # `flightValidWhen` all come with `like`. The whole `score` block is
+    # restated only because one term in it moved: a restated block replaces the
+    # parent's entire block. What the restatement no longer re-transcribes is
+    # the two scoring tables — both are named at class scope, so the fly-off
+    # cannot drift from the preliminary.
     task D "Duration (fly-off)" like Preliminary.D
       timing  Fixed 900 s                                            # 5.5.11.8 15 minutes
       score
         rate flightTime 1 pt/s cap 900 s                             # 5.5.11.12 c 900 points for the fly-off rounds
-        piecewise startHeight
-          0..200    @ -0.5 pt/m                                      # 5.5.11.12 e
-          200..any  @ -3   pt/m
+        piecewise startHeight use f5jStartHeight
         when all(overflySeconds == 0, touchedByCompetitor == false)
-          then lookup landingDistance                                # 5.5.11.12 h
-                 <=  1 -> 50 ;  <=  2 -> 45 ;  <=  3 -> 40 ;  <=  4 -> 35
-                 <=  5 -> 30 ;  <=  6 -> 25 ;  <=  7 -> 20 ;  <=  8 -> 15
-                 <=  9 -> 10 ;  <= 10 ->  5 ;  any   ->  0
+          then lookup landingDistance use f5jLanding
 
 # ---- unresolved for F5J --------------------------------------------------
 # Fly-off ties are broken by qualifying position (5.5.11.13) — a comparison

@@ -86,6 +86,13 @@ class <ID>
     <effect> [<points>]
     <effect> [<points>]                                # one or more
 
+  metricSet <name>                                   # class-scope reusable
+    <metric …>                                       #   groups: zero or more
+  rows <name>                                        #   of each, each named by
+    <lookup row …>                                   #   a `use` at its site.
+  bands <name>                                       #   §7.1 sugar.
+    <band …>
+
   phase … (one or more, in order)
 ```
 
@@ -342,6 +349,8 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
 
 ```
     task <code> "<name>"
+      use        <name>                                             # a class-scope
+                                                                    #   `metricSet`, §7.1
       metric     <name> <Number|Flag> [<unit>] [<Truncate|HalfUp|Ceiling> <precision>] [declared]
       flights    <selection>
       timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n>]
@@ -525,9 +534,11 @@ rate       <metric> <r> pt/<unit> [cap <v> [<unit>] [perTask]]
 lookup     <metric>
              <= <v>  -> <pts>
              any     -> <pts>
+lookup     <metric> use <name>                                        # §7.1 sugar
 piecewise  <metric> [from <origin>]
              <a>..<b>    @ <r> pt/<unit>
              <b>..any    @ <r> pt/<unit>
+piecewise  <metric> [from <origin>] use <name>                        # §7.1 sugar
 constant   <v>
 when <predicate>
   then <term>
@@ -559,6 +570,11 @@ when <predicate>
   nullable (F9), legal only as the last row.
 - **`constant`** is a signed literal; negative constants are how a flat derived
   deduction is written (F3J's −30 overfly).
+- **`use <name>`** on a `lookup` or a `piecewise` names a class-scope `rows` or
+  `bands` list in place of the inline one. It is sugar (§7.1): the rows are
+  copied into the term before adoption, so the stored `ScoreTerm` is exactly
+  the one the long form writes, and nothing in the model records that the list
+  was shared. A term writes the list or the `use`, never both.
 
 ### Metric references
 
@@ -641,14 +657,29 @@ instance, never the abbreviation.
 
 ### 7.1 Sugar
 
-Two, both expanding to complete model instances.
+Three, all expanding to complete model instances.
 
 | Sugar | Expands to |
 |---|---|
 | `metricSet <name>` at class scope; `use <name>` in a task | a copy of each `MetricDefinition` into that task |
+| `rows <name>` / `bands <name>` at class scope; `lookup <metric> use <name>` / `piecewise <metric> [from …] use <name>` in a term | a copy of each `LookupRow` / `Band` into that `ScoreTerm` |
 | `task <code> "<name>" like <other>` + overrides | a complete `Task` copy with the overrides applied |
 
-There were three. `drop none` expanded to a one-element list
+The middle row is **one sugar written with two keywords**, and rule 1 is why:
+`LookupRow` and `Band` are two model elements, so each takes its own declaration
+keyword and each `use` site accepts only its own kind. The scoping, the
+expansion and the checks are identical for both.
+
+All three are **scoped to one class definition** and none of them survives
+expansion. There is deliberately no library across definitions: a `rows` list
+declared in `30-f5j.class` is invisible to `80-nz-m-ales200.class`, which writes
+the same eleven rows out again, and `85-nz-p-radian.class` still re-transcribes
+Class N in full. Each definition stays an independent test of the model, which
+is what `seed-data/` is for, and the duplication between definitions stays on
+the page as an honest record of what that discipline costs.
+
+The table's previous third row was `drop none`, and the middle row replaces it
+rather than joining it. `drop none` expanded to a one-element list
 `[DropPolicy{ByRound, 0, 0}]` and existed only to satisfy a mandatory
 multiplicity; with `DropPolicy` optional (§4) an omitted `drop` is the model
 instance, so the sugar had nothing left to expand to.
@@ -671,8 +702,8 @@ barely visible. On a **multi-line block it is the whole of the story**:
 
 - **`score`** — restating it replaces the parent's *entire* term list. F5K Task
   D restates no `score` at all and so inherits A's four terms, `cap 599 perTask`
-  included; F5K Task B needs one different cap and must therefore re-transcribe
-  the launch-altitude `piecewise` and the −10 / −100 terms it did not want to
+  included; F5K Task B needs one different cap and must therefore restate the
+  launch-altitude `piecewise` and the −10 / −100 terms it did not want to
   change. `score` and `score normalised` are two blocks, replaced independently.
 - **`flightValidWhen`** (and `validWhen`) — the predicate is one term,
   `all(…)` and all. A derived task adding a third condition writes all three, as
@@ -686,20 +717,175 @@ barely visible. On a **multi-line block it is the whole of the story**:
   E each add one metric to a parent that declares none, so both readings agree
   there; the rule above is what settles the case the corpus does not yet have.
 
-**The cost of "replaces entirely" is real, and is recorded here rather than
-glossed.** Because a `score` block cannot be partly overridden, a derived task
-that needs to change one term re-transcribes all of them. F5K Tasks B and C
-carry a verbatim copy of the launch-altitude bands, and F5J's and F3J's fly-off
-tasks each carry a verbatim copy of their preliminary's landing table — 11 rows
-and 24 rows — in every case only because one cap moved. A hand-maintained duplicate of a scoring table
-is the F22/F24 failure shape — it adopts, it runs, and it produces a plausible
-number — so these duplicates are a standing liability, not a tidiness
-complaint. Removing them needs either a reusable score fragment or a term-level
-override, both of which are open questions and neither of which this section
-pre-empts. What stating the granularity does buy immediately is the ability to
-tell a load-bearing restatement from a no-op one: a restatement that reproduces
-what `like` already supplies changes nothing and has been deleted from the
-corpus.
+**The cost of "replaces entirely" is real, and most of it has now been paid
+off.** Because a `score` block cannot be partly overridden, a derived task that
+needs to change one term restates all of them. F5J's and F3J's fly-off tasks
+restate their whole `score` block because one cap moved; F5K's Tasks B, C and E
+restate theirs because a cap or a guard moved. What that used to mean was a
+verbatim second copy of a scoring **table** — 24 rows in F3J, 11 rows plus a
+band list in F5J, and a three-band launch-altitude list four times over in F5K.
+A hand-maintained duplicate of a scoring table is the F22/F24 failure shape: one
+drifted row still adopts, still runs, and still produces a plausible number, so
+that was a standing liability and not a tidiness complaint. The tables are now
+declared once and referenced — `rows` and `bands`, below — and the restatements
+no longer carry them.
+
+**What remains is the restatement itself**, and it is a smaller thing. F5K Tasks
+B and C still re-transcribe A's launch conditional — now three lines, two of
+them a `use` — along with the `−10` pilot-area and `−100` overfly terms, and
+F3J's fly-off still re-transcribes its `−30` overfly term, because a `score`
+block is still all-or-nothing. Those are one-line terms carrying one number or
+one name each, where a divergence is visible on the page rather than buried in
+row nineteen of twenty-four — a different order of risk from the same cause,
+and the tables behind the names can no longer drift at all. Closing
+it needs a term-level override, which re-opens F11's reasoning that a
+`ScoreTerm` has no id, and this section does not pre-empt that question.
+Stating the granularity buys one thing either way: it tells a load-bearing
+restatement from a no-op one, and a restatement that reproduces what `like`
+already supplies changes nothing and has been deleted from the corpus.
+
+**`rows` and `bands` — the unit of reuse, and why it is the row list.**
+A `rows` declaration names an ordered `LookupRow` list and a `bands`
+declaration an ordered `Band` list, both at class scope beside `metricSet`,
+both referenced by `use` where the list would otherwise be written out.
+
+**The expansion, in full.** The `use` is replaced by a copy of the declared
+list, in order, and nothing else about the term changes:
+
+```
+  bands f5kLaunch                                     # 5.5.10.4
+    any..0   @ -0.5 pt/m
+    0..10    @ -1.0 pt/m
+    10..any  @ -3.0 pt/m
+  …
+          then piecewise launchAltitude from param(nlh) use f5kLaunch
+```
+
+expands to exactly what the long form writes, and to nothing else:
+
+```
+          then piecewise launchAltitude from param(nlh)
+                 any..0   @ -0.5 pt/m                 # 5.5.10.4
+                 0..10    @ -1.0 pt/m
+                 10..any  @ -3.0 pt/m
+```
+
+The stored `ScoreTerm` has the same kind, metric, origin and cap it had before,
+and three `Band`s of the same bounds and rates in the same order. No class,
+attribute, multiplicity or enum moved to make this possible, and the fragment's
+name is not stored anywhere: `AdoptedRules` snapshots the second form, and a
+class that declared one list used four times is indistinguishable, once
+adopted, from one that wrote the list out four times. That is the point — the
+guarantee is that the four *cannot differ*, not that the model records that they
+came from one place.
+
+The unit was picked against the corpus rather than picked and then justified:
+every list written more than once in `seed-data/` was extracted and compared.
+
+| Duplicated list | Copies | Where | Declared as |
+|---|---|---|---|
+| 24-row landing table (`F3J.10.5`) | 2 | F3J preliminary and fly-off | `rows f3jLanding` |
+| 11-row landing table (`5.5.11.12 h`) | 2 | F5J preliminary and fly-off | `rows f5jLanding` |
+| 2-band start-height list (`5.5.11.12 e`) | 2 | F5J preliminary and fly-off | `bands f5jStartHeight` |
+| 3-band launch-altitude list (`5.5.10.4`) | 4 | F5K Tasks A, B, C, E | `bands f5kLaunch` |
+| 2-band penalty-only list (`5.5.10.4`) | 3 | F5K Tasks A, B, C | `bands f5kLaunchPenaltyOnly` |
+| 3-row `flight.sequence` list (`5.5.10.2`) | 2 | F5K Tasks B and E | **nothing** — see below |
+
+Three things fall out of that table, and only the first was expected.
+
+**The row list, not the score term.** A whole-`ScoreTerm` unit was the obvious
+alternative and it very nearly fits: F3J's and F5J's landing conditionals are
+identical guard and all, F5J's two start-height terms are identical, and F5K
+Tasks A, B and C carry a `when flightTime >= 30 / then … / else …` conditional
+that is identical between the three, cap and origin included. It fails on the
+fourth site. F5K Task E scores the *same bands* under a *different* guard —
+`5.5.10.2` adds a target-achieved condition and there is no `else` — so a
+term-level unit reaches three of that list's four uses and leaves E writing the
+bands out again, while the row-list unit reaches all four. That is a difference
+on fit, and it points the same way as the two other grounds.
+
+The row list is the smaller surface, and it names something the model already
+treats as a whole: `ScoreTerm *-- 0..* Band` and `*-- 0..* LookupRow` are
+ordered collections, so a name for one is a name for a thing that already exists
+as a thing. Naming a `ScoreTerm` is not that. It is the term-level override
+question wearing a different hat — F11's "`ScoreTerm` has no id" being re-opened
+— which is a decision with its own consequences and is not one to take as a side
+effect of removing a duplicated table. What the row list leaves behind is
+recorded above: F5K Tasks B and C still restate that three-line conditional and
+their `−10` and `−100` terms verbatim, and nothing here forecloses fixing that.
+
+**The criterion is one rulebook clause, not one character match.** F5K Tasks B
+and E carry three `flight.sequence` rows that are character-identical, and they
+are deliberately left as two lists. `5.5.10.2` states the two launch penalties
+separately and they are not the same statement: Task B selects only the last
+flight, so its rows are the *cumulative* cost at that flight's sequence number
+and total −20 over three launches, while Task E selects every flight, so its
+rows are the per-launch *increment* and total −30. The rule states both totals.
+Naming them one table would assert an agreement the rulebook does not make, and
+would make a future amendment to one of them silently amend the other. Where the
+fragments *were* taken, the opposite is true: `5.5.10.4` is one clause and one
+table that every F5K task scores against, `F3J.10.5` and `5.5.11.12 h` are each
+one clause governing both of their class's phases. One clause, one list.
+
+**Single use is not reuse.** The 11-row landing table also appears once in
+NZ-M and once in NZ-M-NDC, the 24-row table once in F5L, and the 3-row
+`NZ.3.13.1 e` table once each in NZ-N and NZ-P. None of those is a fragment: a
+class-scoped name for a list used once in that class is worse than the list,
+because the reader now has to look somewhere else to find three rows. The
+duplication those five represent is *between* definitions, which the scoping
+rule above declines to solve.
+
+**`like` and `use` compose. `like` copies the parent task as-written, `use`
+included, and the two orders of expansion agree anyway.** A derived task may
+restate a block containing a `use` or inherit one, and both occur in the corpus:
+F5J's and F3J's fly-off tasks restate a `score` block and write their own `use`,
+while F5K's Task D and all five of its fly-off tasks restate no `score` at all
+and inherit A's, its two `bands` references included.
+
+The normative reading is the as-written one — `like` is a copy of the notation,
+and the copy is expanded afterwards along with everything else — because it is
+the one that keeps §7.2's precedence rules stating a property of the *notation*
+rather than of a half-expanded intermediate. Expanding `use` first and copying
+the resulting rows gives the identical result, for one reason: a fragment is
+scoped to the class definition and `like` never leaves the class, so the parent
+and the derived task resolve the same name against the same declaration. There
+is no shadowing — a name is declared once per definition — so no site can
+distinguish the two orders, and every `like` in the eleven definitions was
+checked against both. Nothing rests on picking one; the pick is so that the
+question has an answer.
+
+That equivalence is contingent on the scoping and is worth recording as such: a
+cross-definition library would make the order observable, because a name could
+then resolve to different rows in the two places, and the as-written reading
+would become load-bearing rather than merely tidier.
+
+**Two adoption checks, in both directions.** A `use` must name a **declared**
+class-scope group, and one of the kind its site requires: a `metricSet` in a
+task, a `rows` list on a `lookup`, a `bands` list on a `piecewise`. And a
+declared group that no `use` names is **rejected** rather than ignored.
+
+The second is the one worth arguing, because it catches nothing the first does
+not when a name is *mistyped* — a typo produces an unresolved `use` and an
+orphan declaration together, and the first check fires. What it catches on its
+own is the declaration left behind when the last `use` of it is deleted, and
+that leftover is a cited scoring table sitting in a class definition that
+nothing scores against. Rule 3 makes every constant carry its source ref; an
+orphan fragment is the inverse defect — a ref carrying constants the class no
+longer uses — and a reader checking the definition against `5.5.10.4` would find
+the table present and correct while the tasks scored against something else.
+Rejecting costs a definition nothing it should have wanted.
+
+The check counts zero uses against one or more, and deliberately not one against
+many. `like` multiplies a single written `use` across a whole catalogue, which
+is exactly what F3K's `metricSet` does — written once in Task A and reaching all
+fourteen tasks — so a use count of one is evidence of nothing. Whether a
+once-used list should have been written inline instead is the judgement made
+above, and it is a judgement, not a well-formedness question.
+
+The existing structural checks — that lookup rows ascend with at most one
+unbounded row last, and that adjacent piecewise bands meet — run on the expanded
+term, which is the only form that exists by adoption time, so sharing a list
+neither weakens them nor needs a variant of them.
 
 ### 7.2 Defaults
 
