@@ -106,6 +106,13 @@ classDiagram
         +ReflightRole role
     }
 
+    class Annulment {
+        <<value object>>
+        +string reason
+        +string by
+        +timestamp at
+    }
+
     class Flight {
         +int sequence
         +timestamp launchAt
@@ -202,6 +209,7 @@ classDiagram
     Flight "1" *-- "1..*" Measurement : captures
     Measurement "1" *-- "1" MeasuredValue
     Measurement "1" *-- "0..*" Amendment : corrected by
+    Entry "1" *-- "0..1" Annulment : voided by ruling
     Entry "1" *-- "0..*" Penalty : flight / entry scope
 
     Competitor "*" --> "1" Person : registration of
@@ -377,7 +385,7 @@ classDiagram
 
     class PenaltyDefinition {
         +string infractionType
-        +string exclusionGroup
+        +string[] exclusionGroups
         +PenaltyAccrual accrual
     }
     %% accrual defaults to OncePerAttempt, which is what F3K.4.3 and F3J.2.4 c
@@ -407,15 +415,29 @@ classDiagram
     %% points, precisely because the effects differ: F3B.2.2 p zeroes the flight
     %% AND deducts 1000 from the final score; F3K.4.1 deducts AND zeroes the
     %% whole round.
-    %% exclusionGroup is nullable. Within one flight attempt at most one penalty
-    %% from a group applies, the largest winning (F3K.4.3, F3J). A group may
-    %% contain only DeductPoints effects — "largest" is undefined across effect
-    %% kinds — and that is validated at adoption.
+    %% exclusionGroups is a list and may be EMPTY. Within one flight attempt at
+    %% most one penalty from a group applies, the largest winning (F3K.4.3,
+    %% F3J). A group may contain only DeductPoints effects — "largest" is
+    %% undefined across effect kinds — and that is validated at adoption.
     %% "Largest" compares each definition's accrued contribution, not its
     %% points: two PerOccurrence crossings contribute 200, and F3F.1.10's 1000
     %% point person-contact still supersedes them. With every member
     %% OncePerAttempt the contribution IS the points, so F3K and F3J are
     %% unchanged by the refinement.
+    %% The list is a list because exclusion is PAIRWISE, not an equivalence
+    %% class (F28). F3F.1.10 excludes {crossing, person} and {object contact,
+    %% person}, but a crossing is "an additional penalty" alongside an object
+    %% contact and the two ADD. One group per definition can state any two of
+    %% those three facts and never all three; membership of two groups states
+    %% all three — crossing {safetyMax}, object {contact}, person {contact,
+    %% safetyMax}. Ten of the eleven definitions name one group or none.
+    %% Suppression is computed in ONE PASS from the recorded infractions, not
+    %% iteratively from the survivors: a definition is suppressed if any group
+    %% it belongs to holds a larger accrued contribution, and every definition
+    %% that survives is applied exactly once however many groups it is in.
+    %% Iterating would make the result depend on evaluation order — a
+    %% suppressed member could otherwise un-suppress a third — and no rule asks
+    %% for that.
 
     class CompositionKind {
         <<enumeration>>
@@ -952,6 +974,11 @@ every flight already), `F3K.9.3` by a captured flag read through
 `Task.flightValidWhen`, and `F3K.7`'s per-task sum limit by a core invariant on
 capture rather than by class data. See `high-level-architecture.md`.
 
+`select flights` is also where an **annulled Entry** drops out: it yields no
+result, exactly as a task failing `validWhen` does, and is ignored when finding
+the group winner. That is a ruling the Entry carries, not class data, so no
+stage reads anything new from `AdoptedRules` for it.
+
 ---
 
 ## Modelling notes
@@ -1076,9 +1103,12 @@ capture rather than by class data. See `high-level-architecture.md`.
   outcomes in the rules and none of them is a point deduction. It carries
   *several*, because one infraction can do two things at two points in the
   pipeline: `F3B.2.2 p` zeroes the flight and deducts 1000 from the final score,
-  `F3K.4.1` deducts and zeroes the whole round. `exclusionGroup` is the other
+  `F3K.4.1` deducts and zeroes the whole round. `exclusionGroups` is the other
   half — `F3K.4.3` and `F3J` both say a flight attempt may incur only one
-  penalty, the largest applying, so penalties do not simply sum. `accrual` is
+  penalty, the largest applying, so penalties do not simply sum. It is a *list*
+  because exclusion is pairwise (F28): `F3F.1.10` excludes a safety-plane
+  crossing against a person contact and an object contact against a person
+  contact, while the crossing and the object contact add. `accrual` is
   the third: those two rules mean it *literally* ("each flight attempt may only
   incur a single penalty"), but `F3F.1.10` deducts 100 points per safety-plane
   crossing, so how many times an infraction counts is class data rather than a
@@ -1104,6 +1134,20 @@ capture rather than by class data. See `high-level-architecture.md`.
   revision; nothing is overwritten.
 - **Round completion is derived** from the state of its TaskRounds, so partial
   annulment is handled by filtering rather than by mutating a completion flag.
+- **An Entry can be annulled by a ruling, and that is the only way a flown
+  attempt stops counting.** `F3F.1.5`'s *provisional re-flight* is the case that
+  forced it: under protest the competitor re-flies, and the jury afterwards
+  decides whether the original score or the provisional one counts. A re-flight
+  is a second Entry and `ReflightSelection` decides between the pair, so
+  `Replacement` — F3F's rule, and the right one for an ordinary re-flight —
+  would silently keep the provisional attempt and leave the jury nothing to
+  decide with. An `Annulment` carries the reason, who ruled and when, exactly as
+  an `Amendment` does; an annulled Entry has no result and is skipped at `select
+  flights`. Nothing about this is class data: a fifth `ReflightSelection` value
+  would state at the class level a decision the rules put in the jury's hands
+  one instance at a time. The grain is the Entry rather than the Flight because
+  that is what a re-flight is, and because Entry is a root — a Flight-level
+  marker would be a second way to say the same thing.
 - **Predicates combine, but only by conjunction.** `Predicate.allOf` exists
   because several rules gate one outcome on many observations at once — F5L
   voids its landing bonus on any of seven. There is deliberately no `anyOf`:

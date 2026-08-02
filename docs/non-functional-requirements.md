@@ -49,6 +49,15 @@ the right place. They come from a rulebook by a different body and they needed
 (F24–F27), every one of them additive and none of them altering a score any FAI
 class produces. Novel *shapes* have not appeared; novel *pipeline stages* have.
 
+F28 is the one exception to "none of them altering a score", and it is an
+exception worth keeping in view: re-reading `F3F.1.10` showed penalty exclusion
+had been modelled as an equivalence class where the rule states a pairwise
+relation, so F3F under-deducted. The change was still additive — a `0..1` became
+a `0..*` and no other definition moved — but the error it corrected had been
+live in a class that adopted, validated and scored cleanly. Additive
+extensibility protects the classes already written; it does not by itself tell
+you a class is *right*.
+
 This is deliberate. The alternative — an open expression language, so no core
 change is ever needed — would satisfy the letter of this requirement while
 destroying two things this system needs more: complete *static validation* of a

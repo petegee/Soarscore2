@@ -119,7 +119,7 @@ classDiagram
     }
     class PenaltyDefinition {
         +string infractionType
-        +string exclusionGroup
+        +string[] exclusionGroups
     }
 
     CompetitionClass "1" *-- "1..*" PhaseDefinition
@@ -342,6 +342,14 @@ A reflight is simply a second Entry pointing at whichever Group flew it, and
 **entitled** competitor's new attempt is official even if worse, while every
 other pilot flying it — the **fillers** drawn in to make up the group — takes
 the better of their two. One event, two rules, discriminated by role.
+
+An Entry may also carry an **`Annulment`** — a ruling that this attempt does not
+count, with the reason, who ruled and when. `F3F.1.5`'s provisional re-flight is
+why it exists: the competitor re-flies under protest and the jury afterwards
+decides which of the two attempts stands, which `ReflightSelection` cannot
+express because it states one rule for the whole class. Annulling is a write to
+the Entry root, appended like everything else here, and scoring reads it by
+skipping the Entry at `select flights`.
 `competitorRef` identifies the Competitor registration inside the Competition
 aggregate — the record that carries the competitor number the scorers name/id
 captures with, and the link back to the Person. Referencing an internal entity
@@ -357,6 +365,12 @@ classDiagram
         +groupId groupRef
         +competitorId competitorRef
         +ReflightRole role
+    }
+    class Annulment {
+        <<value object>>
+        +string reason
+        +string by
+        +timestamp at
     }
     class Flight {
         +int sequence
@@ -390,6 +404,7 @@ classDiagram
         <<Competition aggregate>>
     }
 
+    Entry "1" *-- "0..1" Annulment
     Entry "1" *-- "1..*" Flight
     Flight "1" *-- "1..*" Measurement
     Measurement "1" *-- "1" MeasuredValue

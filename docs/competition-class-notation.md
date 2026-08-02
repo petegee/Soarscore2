@@ -45,6 +45,10 @@ Three of the four are structural and one of them, F24, would have mis-scored a
 class that adopted and ran cleanly. The FAI corpus could not have found them:
 all seven FAI classes agree on two things the NZ classes do not.
 
+Re-reading `F3F.1` against the F3F definition it had already produced found one
+more (F28, §13), and that one had been mis-scoring: penalty exclusion was
+modelled as an equivalence class where `F3F.1.10` states a pairwise relation.
+
 ---
 
 ## 2. Shape
@@ -82,7 +86,7 @@ class <ID>
     others       <Replacement|BetterOf|NotPermitted|UndefinedRequiresRuling>
     [minNewGroup <int>]
 
-  penalty <"infractionType"> [exclusionGroup <"name">] [perOccurrence]
+  penalty <"infractionType"> [exclusionGroup <"name">]… [perOccurrence]
     <effect> [<points>]
     <effect> [<points>]                                # one or more
 
@@ -171,6 +175,30 @@ ordering. That check is also what keeps the derivation above out of the group's
 way: every member of a group is a deduction, so every member lands at the same
 stage, and which one wins was never a function of the stage.
 
+**The keyword repeats** (F28), because exclusion is a *pairwise* relation and
+not an equivalence class. `F3F.1.10` is the rule that shows the difference: a
+person contact supersedes both a safety-plane crossing and an object contact,
+but the crossing is "an **additional** penalty of 100 points" alongside the
+object contact and the two add. One group per penalty writes any two of those
+three facts and never all three; two groups write all three:
+
+```
+  penalty "safetyPlaneCrossing"     exclusionGroup "safetyMax" perOccurrence
+    deduct 100
+  penalty "safetyAreaObjectContact" exclusionGroup "contact"
+    deduct 100
+  penalty "safetyAreaPersonContact" exclusionGroup "contact" exclusionGroup "safetyMax"
+    deduct 1000
+```
+
+Two crossings and an object contact deduct 300; a person contact with either or
+both deducts 1000 and nothing more. Suppression is computed **in one pass from
+the recorded infractions**: a penalty is suppressed if any group it names holds
+a larger accrued contribution, and a penalty that survives is applied once
+however many groups it names. Iterating over the survivors instead would let a
+suppressed penalty un-suppress a third and make the total depend on evaluation
+order. Ten of the eleven definitions name one group or none and are unaffected.
+
 **`perOccurrence`** (F23) sets `PenaltyDefinition.accrual`. The default,
 `OncePerAttempt`, is what `F3K.4.3` and `F3J.2.4 c` say word for word — "each
 flight attempt may only incur a single penalty" — and it is what all six
@@ -254,6 +282,18 @@ bindings, where the rules state them. **`no default`** (F12) leaves
 open, so the CD must choose at setup and the choice is recorded in the event
 log. Grepping the definitions for `no default` finds every place a rulebook is
 silent.
+
+**A `Parameter` no `ParameterRef` names is legal, and deliberately so.** The
+resolution check runs one way only — every ref resolves to a declared parameter,
+never the reverse — because a rulebook can require a choice that no scoring
+stage reads. `F3F.1.5` makes the organiser fix and announce how many pilots
+later a re-flight is flown; it moves the running order and never a score, and
+`70-f3f.class` declares it so the choice reaches the event log. There is
+therefore **no `Parameter` analogue of the orphan check on `metricSet`, `rows`
+and `bands`** (check 6), and the asymmetry is the point: an unused scoring table
+is a table the class no longer scores against, where an unread parameter is a
+decision the rules demand of the CD regardless. Adding a `ParameterRef` slot for
+one is additive whenever a stage — here, the draw — grows a use for it.
 
 **A mandatory slot the rules leave open takes a `no default` parameter, and the
 case against that was examined once and rejected.** Four phases declare one
@@ -666,6 +706,14 @@ predicates. It stays statically validatable at adoption.
   a one-task tie-break flyoff) and F3F (`F3F.1.13`, "classification rounds" flown
   until the tie breaks, then the discarded round decides) all need it and none is
   writable. See finding F15 — three of seven classes now.
+- **No team classification.** Every FAI class defines one — `F3F.1.14` adds the
+  final scores of a national team's best three — and no definition in
+  `seed-data/` says a word about it. That is a scope decision, not an oversight:
+  `docs/users.md` describes club events run by a small NZ group, where there are
+  no national teams to rank. It is recorded here because it is otherwise a
+  silence indistinguishable from a gap, and the next class written will meet the
+  clause again. Should it ever be wanted it is additive and it is a *reporting*
+  rule — it reads final scores and groups them, and needs nothing from a Task.
 - **No exceptions to a score term.** `F3B.2.3 b` and `F3B.2.4 f` zero a flight
   that misses the landing area *"except in the case of midair collision"*. A
   predicate over measurements cannot reach it; it is a contest official's ruling,
@@ -1171,14 +1219,15 @@ rounds, so this is an ordinary Saturday, not a corner case.
 
 ### What held, which is the more useful half
 
-- **`exclusionGroup` semantics are unchanged, and the first proposed fix was
-  wrong.** The obvious reading of `F3F.1.10` — sum repeats of one infraction,
-  exclude between infractions — was checked against `F3K.4.3` and `F3J.2.4 c`
-  and contradicts both: each says a flight attempt may incur *one* penalty, full
-  stop, so two object contacts in one F3K attempt cost 100 and not 200.
-  Accrual therefore had to become per-definition class data (F23) rather than a
-  redefinition of the group. Recorded because the wrong fix is cheap to
-  re-derive and expensive to adopt.
+- **`exclusionGroup` semantics were held unchanged here, and the first proposed
+  fix was wrong.** The obvious reading of `F3F.1.10` — sum repeats of one
+  infraction, exclude between infractions — was checked against `F3K.4.3` and
+  `F3J.2.4 c` and contradicts both: each says a flight attempt may incur *one*
+  penalty, full stop, so two object contacts in one F3K attempt cost 100 and not
+  200. Accrual therefore had to become per-definition class data (F23) rather
+  than a redefinition of the group. Recorded because the wrong fix is cheap to
+  re-derive and expensive to adopt. **The group's *membership* was the part this
+  pass got wrong** — see F28, §13.
 - **`validWhen` versus a zero score term paid off a second time.** `F3F.1.6`
   lists nine conditions under which a flight is "official but gets a zero score",
   in an inverted task where a raw zero is the *fastest* time in the group. All
@@ -1320,3 +1369,80 @@ contain, so the multiplicity was wrong rather than the classes.
   inherited.
 - **Tie-break: all three state none** — consistent with F15, now three of ten
   classes needing one and none able to write it.
+
+---
+
+## 13. Finding F28 — the F3F re-check
+
+F22 and F23 came from writing F3F against the notation. This section comes from
+reading `F3F.1` verbatim a second time, against the definition that resulted —
+the same discipline §10 applied to F3K and F3B. One finding, and it mis-scores.
+
+| # | Extension | Forced by |
+|---|---|---|
+| F28 | `exclusionGroup` repeats — `PenaltyDefinition.exclusionGroups : string[]` | `F3F.1.10` excludes a safety-plane crossing and an object contact against a person contact, but the crossing is "an *additional* penalty" alongside the object contact and the two add |
+
+`70-f3f.class` put all three safety penalties in one group `"safety"`, which
+reads the clause's supersession correctly and its addition not at all:
+
+| infractions in one attempt | `F3F.1.10` | one group |
+|---|---|---|
+| crossing + object contact | 200 | **100** |
+| two crossings + object contact | 300 | **200** |
+| crossing + person contact | 1000 | 1000 |
+| object + person contact | 1000 | 1000 |
+
+The evidence for the first two rows is the clause's own last sentence — "*if
+there was an **additional** penalty of 100 points because of crossing the safety
+plane only 1000 points will be deducted*". "Additional" is only meaningful if a
+crossing normally adds to a contact penalty; the sentence exists to carve the
+1000 case out of that addition. So the exclusions are `{crossing, person}` and
+`{object, person}` while `{crossing, object}` add, and **a single group name per
+penalty can state any two of those three facts and never all three**. That is
+the shape of the error: exclusion had been modelled as an equivalence class when
+the rule states a pairwise relation.
+
+The fix is a multiplicity, `0..1` to `0..*` (§3). Every other definition in
+`seed-data/` names one group or none, so nothing else moves, and adoption check
+16 applies per group unchanged. The one piece of new semantics is that
+suppression is single-pass over the recorded infractions rather than iterative
+over the survivors — without that a suppressed penalty could un-suppress a
+third, and the total would depend on evaluation order. It never binds in F3F,
+where the person contact is the largest member of both its groups.
+
+### What this pass held
+
+- **Under-deduction is the failure mode a class definition hides best.** F22 was
+  found because a fifteen-round F3F discards the wrong number of rounds; F28
+  because a crossing plus an object contact deducts 100 instead of 200. Both
+  produce a complete, plausible score sheet. Neither is findable by running the
+  class — only by reading the clause against the definition, which is why §10's
+  discipline is worth repeating on classes already written.
+- **`DeductPoints` after `drop` is right, and F3F is the sharpest test of it.**
+  `F3F.1.10` deducts "from the competitor's final score" while recording the
+  penalty "on the score sheet of the round in which the penalty was applied". A
+  penalty incurred in a round that is later discarded still bites, which is what
+  the pipeline does and what the clause means.
+- **`validWhen` versus a zero term held a third time**, and the near-miss is
+  worth naming: `F3F.1.6 i` zeroes a flight "not seen entering the course by the
+  Judge at Base A", which is about *visibility*, not about `F3F.1.7`'s
+  thirty-second course-entry window. A model that enters late has a valid, slow
+  time. The definition's `seenEnteringCourse` flag reads the clause correctly.
+- **`F3F.1.5 d` and `F3F.1.6 h` are the same observation with opposite
+  outcomes** — failing to clear the horizontal plane within five seconds is a
+  re-flight if the cause was beyond the competitor's control and duly witnessed,
+  and a zero otherwise. The split is an official's ruling, and the model is right
+  to grant the re-flight by ruling rather than to derive it from
+  `clearedPlaneWithin5s`.
+
+### Left open
+
+- **Tie-break, unchanged** (F15). `F3F.1.13`'s first half — "classification
+  rounds are flown until the ties are broken" — needs nothing new, since a CD
+  can already schedule further rounds and F3F states no `maxRounds`; note that
+  doing so can carry a fourteen-round contest over the `>= 15` gate and change
+  the discard for the whole field, which is what the rule says. The second half,
+  the discarded round deciding, still reads a score the drop has removed.
+- **Re-flight scheduling, unchanged.** `F3F.1.5`'s "after a fixed number of
+  pilots" remains a `param` nothing reads — now legal by statement rather than by
+  omission (§3).

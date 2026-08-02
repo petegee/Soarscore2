@@ -119,6 +119,13 @@ Holding this line is what keeps a class definition statically validatable at
 adoption, so it is a constraint on the scoring implementation and not just a
 description of it.
 
+**An Entry annulled by ruling has no result.**
+Applied at `select flights`, alongside the class's own `validWhen`. Every class
+can produce an attempt that a ruling voids — `F3F.1.5`'s provisional re-flight,
+flown under protest with the jury deciding afterwards which of the two attempts
+counts, is the case that needed it — and no rulebook makes it class data. See
+the Entry aggregate in `aggregate-roots.md` §4.
+
 **Validated at adoption, before a Competition may hold a rulebook.**
 
 A class definition is checked once, on adoption, and a Competition cannot come
@@ -138,6 +145,9 @@ that reasoning is the valuable half and flattening it into a list would lose it.
    diagram §3.
 3. Every `ParameterRef` resolves to a declared `Parameter`, and every referenced
    parameter is bound before the pipeline stage that reads it — notation §3.
+   One way only: a declared `Parameter` no ref names is legal, because a
+   rulebook can require a CD choice no scoring stage reads (`F3F.1.5`). There is
+   deliberately no `Parameter` analogue of check 6 — notation §3.
 4. A `ParameterRef` occurs only in the thirteen slots that permit one, and
    nowhere a numeric literal would otherwise sit — notation §3, diagram §2.
 5. Every `use` names a declared class-scope group of the kind its site requires
@@ -188,9 +198,10 @@ the combinations absence makes incoherent.
 15. A task with a `Normalisation` and no `GroupConstraint` is rejected —
     notation §5, diagram §3. Normalisation is defined against the best score in
     the group, so a class that normalises has to say how groups are formed.
-16. A `PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects —
-    notation §3, diagram §2, since "the largest applies" is undefined across
-    effect kinds.
+16. Each group named in a `PenaltyDefinition.exclusionGroups` contains only
+    `DeductPoints` effects — notation §3, diagram §2, since "the largest
+    applies" is undefined across effect kinds. A penalty may name several groups
+    (F28); the check is per group.
 
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in
