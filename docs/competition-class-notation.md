@@ -223,8 +223,8 @@ exactly thirteen slots, and rejected at adoption anywhere else.
 |---|---|
 | `TaskTiming.workingTime` | `timing Fixed param(workingTime.A)` |
 | `TaskTiming.maxLaunches` | `timing … maxLaunches param(launches.C)` |
-| `ScoreTerm.cap` | `rate flightTime 1 pt/s cap param(maxFlight.B)` |
-| `ScoreTerm.origin` | `piecewise launchAltitude from param(nlh)` |
+| `RateTerm.cap` | `rate flightTime 1 pt/s cap param(maxFlight.B)` |
+| `PiecewiseTerm.origin` | `piecewise launchAltitude from param(nlh)` |
 | `Band.from` / `Band.to` (F27) | `0..param(targetTime) @ 1 pt/s` |
 | `GroupConstraint.minPerGroup` | `group minPerGroup param(groupSize)` |
 | `ValidityRule.minRounds` | `validity minRounds param(minRounds)` |
@@ -518,16 +518,16 @@ override:
 
 ### Flight selection
 
-| Notation | `SelectionKind` | Meaning |
+| Notation | Model type | Meaning |
 |---|---|---|
-| `flights last` | `Last` | only the last flight |
-| `flights lastN <n>` | `LastN` | the final *n* flights |
-| `flights bestN <n>` | `BestN` | the *n* highest-scoring flights |
-| `flights all` | `All` | every flight |
+| `flights last` | `LastFlight` | only the last flight |
+| `flights lastN <n>` | `LastNFlights` | the final *n* flights |
+| `flights bestN <n>` | `BestNFlights` | the *n* highest-scoring flights |
+| `flights all` | `AllFlights` | every flight |
 | `flights exactlyN <n> targets inOrder [<v>…]` | `ExactlyNInOrder` | flights 1..n take targets 1..n |
-| `flights bestN <n> rankBy <metric> targets anyOrder [<v>…]` | `BestN` + `TargetAssignment.AnyOrder` | longest flight takes the largest target, and so down |
+| `flights bestN <n> rankBy <metric> targets anyOrder [<v>…]` | `BestNFlights` + `TargetAssignment.AnyOrder` | longest flight takes the largest target, and so down |
 
-**`rankBy`** (F16) sets `FlightSelection.rankByMetric` and is meaningful only to
+**`rankBy`** (F16) sets `BestNFlights.rankByMetric` and is meaningful only to
 `bestN`. Omitted, the candidate flights are ranked **by score** — which is what
 Poker needs, because `F3K.11.5` credits an achieved *target* rather than the
 flight time, so the longest flight is often not the best one. Written, they are
@@ -575,7 +575,7 @@ when <predicate>
   minutes maximum)" (`5.5.11.12 c`) as if they were the same thing. They are not
   at F5L's 2 pt/s, so the notation fixes the meaning and writes the cap with its
   unit.
-- **`cap … perTask`** (F4a) sets `ScoreTerm.capScope` to `PerTask`: the cap
+- **`cap … perTask`** (F4a) sets `RateTerm.capScope` to `PerTask`: the cap
   applies to that term's contributions **summed across the selected flights**,
   before the other terms are added. The default, `PerFlight`, is today's
   meaning. Only F5K Tasks A and D need it — `5.5.10.2` caps *total flight time
@@ -584,7 +584,7 @@ when <predicate>
 - **`piecewise` bands are cumulative** — each band's rate applies to the portion
   of the measurement lying inside it. `0..600 @ 1 pt/s` then `600..any @ -1 pt/s`
   scores 599 at 601 s.
-- **`piecewise … from <origin>`** (F5) sets `ScoreTerm.origin`, default 0: bands
+- **`piecewise … from <origin>`** (F5) sets `PiecewiseTerm.origin`, default 0: bands
   are evaluated over `metric − origin`. Required by F5K, whose launch points are
   per metre *relative to the announced Nominal Launch Height* — `5.5.10.4`,
   "always calculated with reference to the announced NLH". A negative rate over
@@ -1125,7 +1125,7 @@ the verbatim source text. Each names the rule that forced it.
 
 | # | Extension | Forced by |
 |---|---|---|
-| F16 | `rankBy <metric>` on `bestN` — `FlightSelection.rankByMetric` | `F3K.11.8` assigns targets to the four longest *flights*; ranking by score is circular, and `F3K.11.5` needs the opposite |
+| F16 | `rankBy <metric>` on `bestN` — `BestNFlights.rankByMetric` | `F3K.11.8` assigns targets to the four longest *flights*; ranking by score is circular, and `F3K.11.5` needs the opposite |
 | F17 | `flightValidWhen` — `Task.flightValidWhen : Predicate` | `F3K.9.3` (landing window), `F3K.11.3` (launch signal), `F3K.7` (launch before working time) all zero a flight that is still selected |
 | F18 | `drop … whenRounds >= <n> whenResults >= <n>` — two nullable gates on `DropPolicy` | `F3B.2.8` states both; they diverge when a group is annulled under `F3B.1.8 c` |
 | F19 | `reflight` on a task — `Task *-- 0..1 ReflightRule` | `F3B.1.5 e` scopes its rule to Tasks A and B and leaves Task C unstated |

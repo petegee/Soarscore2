@@ -48,7 +48,12 @@ group-score.
 that identify each class are shown, and the value objects that add nothing to
 the *boundary* picture — `RoundComposition`, `ValidityRule`, `TaskTiming`,
 `GroupConstraint`, `Rounding`, `Band`, `LookupRow`, `Predicate`,
-`PenaltyEffectSpec` — are left out for legibility. What *is* drawn must match
+`PenaltyEffectSpec` — are left out for legibility. `ScoreTerm` and
+`FlightSelection` are drawn as the abstract types they are, and their subtypes
+are left out on the same grounds: the boundary picture needs to know a Task owns
+its terms, not which five shapes a term comes in. That is also why the
+`then`/`else` recursion is not drawn here — it belongs to `ConditionalTerm`, one
+of those subtypes. What *is* drawn must match
 [soaring-domain-class-diagram.md](soaring-domain-class-diagram.md) §2–§3
 exactly, multiplicity for multiplicity; that document is the authority whenever
 the two differ.
@@ -83,8 +88,8 @@ classDiagram
         +string name
     }
     class ScoreTerm {
-        +ScoreTermKind kind
-        +string metricRef
+        <<abstract>>
+        +ScoreStage applyAt
     }
     class MetricDefinition {
         +string name
@@ -92,9 +97,7 @@ classDiagram
         +bool declaredBeforeLaunch
     }
     class FlightSelection {
-        <<value object>>
-        +SelectionKind kind
-        +int count
+        <<abstract>>
     }
     class Normalisation {
         <<value object>>
@@ -131,7 +134,6 @@ classDiagram
     Task "1" *-- "1" FlightSelection
     Task "1" *-- "0..1" Normalisation
     Task "1" *-- "0..1" ReflightRule : overrides the class default
-    ScoreTerm "1" *-- "0..2" ScoreTerm : then / else
 
     classDef root fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     cssClass "CompetitionClass" root

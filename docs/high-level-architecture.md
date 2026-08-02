@@ -134,7 +134,7 @@ that reasoning is the valuable half and flattening it into a list would lose it.
 
 1. Every metric named by a `ScoreTerm` or a `Predicate` resolves to a
    `MetricDefinition` declared on that task — notation §9.
-2. `FlightSelection.rankByMetric` resolves to a metric declared on that task —
+2. `BestNFlights.rankByMetric` resolves to a metric declared on that task —
    diagram §3.
 3. Every `ParameterRef` resolves to a declared `Parameter`, and every referenced
    parameter is bound before the pipeline stage that reads it — notation §3.
@@ -143,7 +143,7 @@ that reasoning is the valuable half and flattening it into a list would lose it.
 5. Every `use` names a declared class-scope group of the kind its site requires
    — a `metricSet` in a task, a `rows` list on a `lookup`, a `bands` list on a
    `piecewise` — notation §7.1. The groups are notation sugar and are expanded
-   away before the rest of this list runs, so checks 8 and 9 below see the
+   away before the rest of this list runs, so checks 7 and 8 below see the
    copied rows and need no variant for a shared list.
 6. Every declared class-scope group is named by at least one `use` — notation
    §7.1. An orphan is a cited scoring table the class no longer scores against.
@@ -155,33 +155,40 @@ that reasoning is the valuable half and flattening it into a list would lose it.
    notation §3, diagram §2. A gap or an overlap is a silent mis-score.
 8. `lookup` rows ascend, at most one row is unbounded, and an unbounded row is
    last (F9) — notation §5, diagram §3.
-9. Exactly one of {leaf comparison, `allOf`} is populated on a `Predicate` —
-   notation §5, diagram §3.
-10. A phase's ordered `DropPolicy` list has strictly descending gates (F22) —
-    notation §4. Both orderings produce a plausible number, so the writer does
-    not get to rely on remembering.
+9. A phase's ordered `DropPolicy` list has strictly descending gates (F22) —
+   notation §4. Both orderings produce a plausible number, so the writer does
+   not get to rely on remembering.
+
+One check *left* this list rather than being added to it. "Exactly one of {leaf
+comparison, `allOf`} is populated on a `Predicate`" was checkable only at
+adoption while both lived on one class; `Comparison` and `AllOf` are now two
+subtypes (diagram §3), so the combination it rejected has become unrepresentable
+and there is nothing left to check. A constraint a type states is better than a
+constraint this list states, and the same reasoning retired the `ScoreTerm` and
+`FlightSelection` "exactly one of" invariants before either was ever written
+down here.
 
 *A slot's presence agrees with the rest of the definition.* These are the checks
 optional multiplicities buy: where a slot may be absent, something has to reject
 the combinations absence makes incoherent.
 
-11. `finalRanking` written as `SinglePhase` on a class with more than one
+10. `finalRanking` written as `SinglePhase` on a class with more than one
     `PhaseDefinition` is rejected — notation §3, diagram §2.
-12. A class with more than one `PhaseDefinition` and no `finalRanking` is
+11. A class with more than one `PhaseDefinition` and no `finalRanking` is
     rejected — notation §3, diagram §2. The omission is available only where the
     phase list forces the value.
-13. `ReflightRule.minNewGroupSize` populated while both selections are
+12. `ReflightRule.minNewGroupSize` populated while both selections are
     `NotPermitted` is rejected — notation §3, diagram §2. The rules have already
     ruled out the group the number would size.
-14. A `ScoreTerm` with `applyAt = Normalised` on a task with no `Normalisation`
+13. A `ScoreTerm` with `applyAt = Normalised` on a task with no `Normalisation`
     is rejected (F24) — notation §5, diagram §3. There is no stage for it to
     land at.
-15. A task whose terms are *all* `Normalised` is rejected (F24) — notation §5,
+14. A task whose terms are *all* `Normalised` is rejected (F24) — notation §5,
     diagram §3. Nothing is left for normalisation to consume.
-16. A task with a `Normalisation` and no `GroupConstraint` is rejected —
+15. A task with a `Normalisation` and no `GroupConstraint` is rejected —
     notation §5, diagram §3. Normalisation is defined against the best score in
     the group, so a class that normalises has to say how groups are formed.
-17. A `PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects —
+16. A `PenaltyDefinition.exclusionGroup` contains only `DeductPoints` effects —
     notation §3, diagram §2, since "the largest applies" is undefined across
     effect kinds.
 

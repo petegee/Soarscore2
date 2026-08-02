@@ -268,7 +268,7 @@ classDiagram
     %% A ParameterRef may stand in for a literal in exactly these thirteen slots,
     %% and nowhere else (validated at adoption):
     %%   TaskTiming.workingTime, TaskTiming.maxLaunches
-    %%   ScoreTerm.cap, ScoreTerm.origin
+    %%   RateTerm.cap, PiecewiseTerm.origin
     %%   Band.from, Band.to
     %%   GroupConstraint.minPerGroup
     %%   ValidityRule.minRounds
@@ -347,6 +347,17 @@ classDiagram
         +int maxGroupSize
         +bool carryPenalties
     }
+    %% topN and topPercent are a two-way choice and exactly one is populated,
+    %% per kind. Splitting PromotionRule into two subtypes was considered and
+    %% declined: the divergence is one scalar on each side against three shared
+    %% attributes, so a hierarchy would buy one sentence's worth of precision at
+    %% the cost of two classes carrying an integer and a decimal. That is the
+    %% same call MeasuredValue's number/flag pair already makes. PromotionKind
+    %% therefore stays — it is the discriminator, and there is no subtype to
+    %% take the job off it.
+    %% minGroupSize, maxGroupSize and carryPenalties are common to both kinds
+    %% and are unaffected either way; all three remain ParameterRef slots under
+    %% PromotionRule's own name.
 
     class ReflightRule {
         <<value object>>
@@ -515,33 +526,74 @@ classDiagram
     %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 i).
 
     class FlightSelection {
+        <<abstract>>
+    }
+    %% Five kinds, and the kind IS the type. What each may hold is a table
+    %% rather than a sentence — `count` says nothing to Last or All,
+    %% `rankByMetric` nothing to four of the five, `targets`/`targetValues`
+    %% nothing to three — so the table is drawn instead of written. Fourteen of
+    %% the corpus's thirty selections are `last` or `all` and carry no operand
+    %% at all. The SelectionKind enum went with the split: a subtype and a tag
+    %% naming that subtype are two records of one fact, and only one of them
+    %% can be wrong.
+
+    class LastFlight {
         <<value object>>
-        +SelectionKind kind
+    }
+
+    class AllFlights {
+        <<value object>>
+    }
+
+    class LastNFlights {
+        <<value object>>
+        +int count
+    }
+
+    class BestNFlights {
+        <<value object>>
         +int count
         +string rankByMetric
+        +TargetAssignment targets
+        +decimal[] targetValues
+    }
+
+    class ExactlyNInOrder {
+        <<value object>>
+        +int count
         +TargetAssignment targets
         +decimal[] targetValues
     }
     %% targetValues are in the UNITS OF THE METRIC the task's scoring term
     %% consumes, not in points. Each selected flight's metric is clamped to its
     %% assigned target, then scored.
-    %% rankByMetric is nullable and only meaningful to BestN. Null ranks the
-    %% candidate flights by score (F3K.11.5, Poker: an achieved target credits
-    %% the target, so score is the only ordering that means anything). Set,
-    %% it ranks by that metric's raw value — F3K.11.8 assigns targets to the
-    %% four longest FLIGHTS, and no flight has a score until a target has been
-    %% assigned to it, so ranking by score there is circular.
+    %% rankByMetric is nullable and only meaningful to BestN, which is why it is
+    %% on BestNFlights and nowhere else. Null ranks the candidate flights by
+    %% score (F3K.11.5, Poker: an achieved target credits the target, so score
+    %% is the only ordering that means anything). Set, it ranks by that metric's
+    %% raw value — F3K.11.8 assigns targets to the four longest FLIGHTS, and no
+    %% flight has a score until a target has been assigned to it, so ranking by
+    %% score there is circular.
+    %% One residual: ExactlyNInOrder's `targets` can only ever be InOrder, since
+    %% the subtype's name is that statement. It stays because the notation
+    %% writes `targets inOrder` and rule 1 requires the operand to name a model
+    %% element; removing it is a notation change, not a diagram one.
 
     class ScoreTerm {
-        +ScoreTermKind kind
-        +string metricRef
-        +decimal rate
-        +decimal cap
-        +CapScope capScope
-        +decimal origin
-        +decimal value
+        <<abstract>>
         +ScoreStage applyAt
     }
+    %% Five kinds with disjoint payloads, drawn as five subtypes. Nothing but
+    %% applyAt is common to all of them: a cap and a capScope belong to a rate
+    %% and only ever appear on one (17 sites in seed-data/, all `rate`); an
+    %% origin belongs to a piecewise (F5) and only ever appears on one; a value
+    %% belongs to a constant; a metricRef means nothing to a constant or a
+    %% conditional, neither of which reads a measurement. Held on one class
+    %% these were six attributes and four associations of which any instance
+    %% populated two or three, with nothing in the model saying which — the
+    %% diagram admitted a Rate carrying a Band list, which the notation has
+    %% never been able to write. ScoreTermKind is gone for the same reason
+    %% SelectionKind is.
     %% applyAt defaults to RawScore: the term contributes to the value that
     %% normalisation consumes, which is what all seven FAI classes want — F5J
     %% and F5L normalise their landing bonus along with the flight time.
@@ -554,13 +606,44 @@ classDiagram
     %% task whose ONLY terms are Normalised has no raw score to normalise.
     %% Both are rejected at adoption.
 
+    class RateTerm {
+        +string metricRef
+        +decimal rate
+        +decimal cap
+        +CapScope capScope
+    }
+    %% cap clamps the METRIC consumed, not the points produced, and capScope
+    %% says whether it clamps each flight or their sum (F4a). Both are nullable:
+    %% an uncapped rate is the ordinary case.
+
+    class LookupTerm {
+        +string metricRef
+    }
+
+    class PiecewiseTerm {
+        +string metricRef
+        +decimal origin
+    }
+    %% origin is nullable and means 0 — bands are evaluated over
+    %% (metric - origin). F5K's launch points are per metre relative to an
+    %% announced height, which is the whole of F5.
+
+    class ConstantTerm {
+        +decimal value
+    }
+
+    class ConditionalTerm {
+    }
+    %% No attributes of its own: a conditional is its predicate and its
+    %% branches, and both are associations below.
+
     class Band {
         <<value object>>
         +decimal from
         +decimal to
         +decimal ratePerUnit
     }
-    %% Bands are cumulative and are evaluated over (metric - ScoreTerm.origin).
+    %% Bands are cumulative and are evaluated over (metric - PiecewiseTerm.origin).
     %% from and to accept a ParameterRef (F27).
 
     class LookupRow {
@@ -572,15 +655,34 @@ classDiagram
     %% adoption (rows ascending, at most one unbounded, and it must be last).
 
     class Predicate {
+        <<abstract>>
+    }
+    %% "Exactly one of {leaf comparison, allOf} is populated" was the only one of
+    %% these constraints the model ever wrote down, and the only one that had to
+    %% be checked at adoption. Two subtypes state it instead, so the check is
+    %% gone from the inventory in high-level-architecture.md rather than moved.
+    %% There is still no anyOf: every multi-condition site in the eleven
+    %% definitions is a conjunction, and disjunction is readmitted with the
+    %% first rule that cites it.
+
+    class Comparison {
         <<value object>>
         +string leftMetricRef
         +Comparator op
         +string rightMetricRef
         +decimal rightValue
-        +Predicate[] allOf
     }
-    %% Exactly one of {leaf comparison, allOf} is populated. There is no anyOf:
-    %% every multi-condition site in the six FAI classes is a conjunction.
+    %% The right-hand side is a metric or a literal and exactly one is
+    %% populated. That one is deliberately NOT split further: it is a choice of
+    %% VALUE, not of structure, and the model already carries that idiom in
+    %% MeasuredValue's number/flag pair. Two leaf types to hold one operand
+    %% would cost more than the sentence.
+
+    class AllOf {
+        <<value object>>
+    }
+    %% 2..* children, because a one-element conjunction is a wrapper around its
+    %% own child and the notation's `all(<p>, <p>, …)` cannot write one.
 
     class TaskTiming {
         <<value object>>
@@ -589,6 +691,14 @@ classDiagram
         +duration preparationTime
         +int maxLaunches
     }
+    %% workingTime is populated if and only if kind is Fixed; under
+    %% UntilAllFlightsComplete the working time is not a class datum at all —
+    %% the round ends when the last flight does (F3K.9.3, F3F.1.7, NZ.3.12.1 h).
+    %% Drawing that as two subtypes was considered and declined: it is one
+    %% sentence about one nullable field, where ScoreTerm's and
+    %% FlightSelection's constraints are tables, and two classes carrying one
+    %% duration between them read worse than the sentence. WorkingTimeKind
+    %% stays for the same reason — here the enum is still doing the work.
     %% maxLaunches is nullable, and unset means the task limits launches not at
     %% all — half the corpus. The notation writes nothing rather than a word for
     %% "unlimited"; a limit the rules leave to the CD is a ParameterRef instead.
@@ -640,15 +750,6 @@ classDiagram
         +decimal precision
     }
 
-    class SelectionKind {
-        <<enumeration>>
-        Last
-        LastN
-        BestN
-        All
-        ExactlyNInOrder
-    }
-
     class TargetAssignment {
         <<enumeration>>
         None
@@ -660,15 +761,6 @@ classDiagram
         <<enumeration>>
         PerFlight
         PerTask
-    }
-
-    class ScoreTermKind {
-        <<enumeration>>
-        Rate
-        Lookup
-        Piecewise
-        Constant
-        Conditional
     }
 
     class ScoreStage {
@@ -705,6 +797,21 @@ classDiagram
         Ceiling
     }
 
+    FlightSelection <|-- LastFlight
+    FlightSelection <|-- LastNFlights
+    FlightSelection <|-- BestNFlights
+    FlightSelection <|-- AllFlights
+    FlightSelection <|-- ExactlyNInOrder
+
+    ScoreTerm <|-- RateTerm
+    ScoreTerm <|-- LookupTerm
+    ScoreTerm <|-- PiecewiseTerm
+    ScoreTerm <|-- ConstantTerm
+    ScoreTerm <|-- ConditionalTerm
+
+    Predicate <|-- Comparison
+    Predicate <|-- AllOf
+
     Task "1" *-- "1..*" MetricDefinition : records
     Task "1" *-- "1" FlightSelection : which flights count
     Task "1" *-- "1..*" ScoreTerm : staged by applyAt
@@ -716,19 +823,28 @@ classDiagram
     Task "1" *-- "0..1" Rounding : of the raw score
     MetricDefinition "1" *-- "0..1" Rounding : capture precision
     Normalisation "1" *-- "0..1" Rounding : of the normalised score
-    ScoreTerm "1" *-- "0..*" Band : piecewise
-    ScoreTerm "1" *-- "0..*" LookupRow : lookup
-    ScoreTerm "1" *-- "0..1" Predicate : conditional
-    ScoreTerm "1" *-- "0..2" ScoreTerm : then / else
-    %% A Conditional with one child has only a `then`: the unmatched branch
+    PiecewiseTerm "1" *-- "1..*" Band : cumulative, ordered
+    LookupTerm "1" *-- "1..*" LookupRow : ascending, ordered
+    AllOf "1" *-- "2..*" Predicate : conjunction
+    ConditionalTerm "1" *-- "1" Predicate : when
+    ConditionalTerm "1" *-- "1..2" ScoreTerm : then / else
+    %% Each of these five multiplicities was 0..* or 0..1 or 0..2 while every
+    %% term was one class, because a Constant has no bands and a Rate has no
+    %% predicate. On the subtype the lower bound is what the construct actually
+    %% requires: a piecewise with no bands, a lookup with no rows and a
+    %% conditional with no `when` are all unwritable in the notation and are now
+    %% unstorable too.
+    %% A ConditionalTerm with one child has only a `then`: the unmatched branch
     %% contributes 0 to the sum, which is why the notation need not write it.
     %% A non-zero fallback is a real second child — F5K's launch-altitude term
     %% keeps its `else`, because under 30 s the height penalties still apply
     %% while the bonus does not (5.5.10.4).
-    ScoreTerm ..> MetricDefinition : reads
-    Predicate ..> MetricDefinition : compares
+    RateTerm ..> MetricDefinition : reads
+    LookupTerm ..> MetricDefinition : reads
+    PiecewiseTerm ..> MetricDefinition : reads
+    Comparison ..> MetricDefinition : compares
 
-    note for ScoreTerm "A landing table and a launch-height penalty are the same term reading different metrics."
+    note for ScoreTerm "No subtype is named for a discipline concept: a landing table is a LookupTerm over a distance metric, a launch-height penalty a PiecewiseTerm over a height metric."
     note for Band "Bands are cumulative: 1 pt/s to 600 s then -1 pt/s scores 599 at 601 s."
     note for Normalisation "Direction is per task: F3B Speed inverts, because the lowest time wins."
     note for Predicate "Two gates, different outcomes: validWhen decides whether the TASK has a result at all; flightValidWhen zeroes one flight while leaving it selectable."
@@ -831,7 +947,7 @@ is named separately rather than folded into `assemble raw`.
 task-level values, and never arithmetic between them. `select flights` is the
 first stage that sees the whole `Entry`, and it is the only one that needs to.
 Three FAI rules push on that boundary and all three are answered without moving
-it: `F3K.11.8` by `FlightSelection.rankByMetric` (selection legitimately sees
+it: `F3K.11.8` by `BestNFlights.rankByMetric` (selection legitimately sees
 every flight already), `F3K.9.3` by a captured flag read through
 `Task.flightValidWhen`, and `F3K.7`'s per-task sum limit by a core invariant on
 capture rather than by class data. See `high-level-architecture.md`.
@@ -893,7 +1009,7 @@ capture rather than by class data. See `high-level-architecture.md`.
 - **Bands are cumulative.** A piecewise term applies each band's rate to the
   portion of the measurement falling inside it. This is what lets one term type
   express both F3B's overtime deduction and F5J's two-slope height penalty.
-  Bands are measured from `ScoreTerm.origin`, which defaults to zero: F5K's
+  Bands are measured from `PiecewiseTerm.origin`, which defaults to zero: F5K's
   launch points are per metre *relative to an announced height*, so its bands
   read from a parameter rather than from nothing. A band *bound* may also read a
   parameter: NZ Class M's +1/−1 turning point is the target time the CD
