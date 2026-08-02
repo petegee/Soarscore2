@@ -255,6 +255,30 @@ open, so the CD must choose at setup and the choice is recorded in the event
 log. Grepping the definitions for `no default` finds every place a rulebook is
 silent.
 
+**A mandatory slot the rules leave open takes a `no default` parameter, and the
+case against that was examined once and rejected.** Four phases declare one
+solely to fill `ValidityRule.minRounds` — F5K's preliminary, NZ Class M, and the
+F5J and F3J fly-offs. (F3B's `minRounds` is *not* one of them: `F3B.1.8 b`
+states 1 normally and 5 at World and Continental Championships, so its parameter
+carries a default and an `allowed` list.) Making `ValidityRule` optional and
+letting those four omit it looks obviously right — unlike `Normalisation`,
+`minRounds` has an identity value, so "the rules state no minimum" and "no
+minimum applies" appear to be the same statement, which is exactly the reasoning
+F25 used to make normalisation optional. It was rejected on two grounds:
+
+- **It costs the inventory.** Four rulebook silences would survive only as
+  comments, and the grep above stops finding them. That inventory is the reason
+  `no default` exists rather than a sensible default.
+- **Phase validity has teeth on a fly-off.** Omission means one round is a valid
+  phase, and under `LastPhaseReplaces` a single fly-off round would then replace
+  the preliminary scores — which is precisely why F3K and F5K *do* state 3.
+  Where a rulebook is silent about that, making the CD choose is the right
+  outcome, not a silent "no minimum".
+
+Four parameters is the price and it is worth paying. Recorded here because the
+argument for the change is the more obvious one and will otherwise be
+re-derived.
+
 ---
 
 ## 4. Phase level
