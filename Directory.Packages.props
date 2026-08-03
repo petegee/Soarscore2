@@ -1,0 +1,15 @@
+<Project>
+
+  <!-- LADR-0003, "Package management": Central Package Management, all versions
+       pinned, given how many .NET staples relicensed in 2024-25. Nothing here
+       yet — the Domain has zero PackageReference by design, and the seed-data
+       tool needs nothing System.Text.Json does not already give it in-box. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+
+</Project>

@@ -32,7 +32,8 @@ Working time: **10 minutes** (qualifying) / **15 minutes** (fly-off).
 | **Flight time** | Recorded to **0.1 second** (`F3J.10.2`). Timed from release-from-launch-device to first ground/object contact or end of working time. |
 | **Landing distance** | Nose-to-spot, → landing-bonus table below (`F3J.10.5`). |
 | **Overfly** | Flying past end of working time: **−30 pts** for up to 1 minute over; **score 0** if over by more than 1 minute. **No landing bonus** if the model overflies the working time. |
-| **Penalties** | e.g. towline not cleared within 30 s −100; non-conforming winch −1000; unauthorised transmission −300. Listed on the round score sheet. |
+| **Flight cancelled, zero** | Non-conforming model (`F3J.5.1 a`); part lost during launch or flight (`F3J.5.1 b`); piloted by anyone other than the competitor (`F3J.5.1 d`); **during landing, some part of the model does not come to rest within 75 metres of the centre of the designated landing circle** (`F3J.5.1 e`); launched outside the launch corridor (`F3J.8.1`); launching device comes loose, with no further attempt (`F3J.8.5`). |
+| **Penalties** | See the schedule below. Listed on the round score sheet. |
 
 **Landing-bonus table** (`F3J.10.5`):
 
@@ -53,7 +54,28 @@ Working time: **10 minutes** (qualifying) / **15 minutes** (fly-off).
 | — | — | 15 | 30 |
 | — | — | over 15 | 0 |
 
+### Penalty schedule
+
+| Infraction | Effect | Ref |
+|---|---|---|
+| Towline not cleared within 30 s | **−100** | `F3J.8.3 b` |
+| Non-conforming winch | **−1000** | `F3J.8.2 p` |
+| Unauthorised transmission | **−300**, and **disqualification from the whole competition** if it causes injury or property damage | `F3J.7 d` |
+| Contact with an object inside the safety area | **−300** | `F3J.2.4 a` |
+| Contact with a **person** inside the safety area | **−1000** | `F3J.2.4 b` |
+| Safety space not left | **−300** | `F3J.2.4 d` |
+| Early start | **score cancelled for that round** | `F3J.8.6` |
+
+**Only one penalty per attempt** (`F3J.2.4 c`): "for each attempt only one penalty can
+be given, if a person and at the same attempt an object is touched the 1000 points
+penalty is applied." The clause's illustration names only a) and b); whether d) falls
+inside the same exclusion is a **reading**, not something the rule states.
+
 Raw score = **flight points (1 pt/s) + landing bonus − penalties**.
+
+The **1 pt/s** rate is not stated in `F3J.10` — the clause defines timing, recording,
+overfly and the group formula but never a points-per-second rate. It is the universal
+reading of F3J and is carried here as convention, not as a citation.
 
 ---
 

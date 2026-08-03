@@ -1,0 +1,725 @@
+{
+  "name": "RC Electric Thermal Gliders, RES",
+  "faiDesignation": "F5L",
+  "version": "FAI F5 Electric 2026 ed.2",
+  "finalRanking": "SplitByPromotion",
+  "parameters": [
+    {
+      "name": "groupSize",
+      "kind": "Number",
+      "allowedValues": [],
+      "boundAt": "CompetitionSetup"
+    },
+    {
+      "name": "flyoffSize",
+      "kind": "Number",
+      "allowedValues": [],
+      "boundAt": "CompetitionSetup"
+    },
+    {
+      "name": "carryPenalties",
+      "kind": "Flag",
+      "allowedValues": [],
+      "boundAt": "CompetitionSetup"
+    },
+    {
+      "name": "minNewGroup",
+      "kind": "Number",
+      "allowedValues": [],
+      "boundAt": "CompetitionSetup"
+    }
+  ],
+  "reflight": {
+    "entitledScores": "UndefinedRequiresRuling",
+    "othersScore": "UndefinedRequiresRuling",
+    "minNewGroupSize": {
+      "param": "minNewGroup"
+    }
+  },
+  "penalties": [],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 4
+      },
+      "drops": [
+        {
+          "dimension": "ByRound",
+          "dropCount": 1,
+          "applyWhenRoundsCompletedAtLeast": 6
+        }
+      ],
+      "tasks": [
+        {
+          "code": "D",
+          "name": "Duration",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landingDistance",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 0.1
+              }
+            },
+            {
+              "name": "overflySeconds",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInLandingArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "lostPart",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "touchedByCompetitor",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "touchedBeforeMeasuring",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "amrtPresetsCorrect",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "timingDeviationInFavour",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 540
+          },
+          "group": {
+            "minPerGroup": {
+              "param": "groupSize"
+            }
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000
+          },
+          "score": [
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "allOf",
+                "children": [
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "landedInLandingArea",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "overflySeconds",
+                    "op": "LessOrEqual",
+                    "rightValue": {
+                      "kind": "Number",
+                      "number": 30
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "amrtPresetsCorrect",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "timingDeviationInFavour",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "flightTime",
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 390,
+                    "ratePerUnit": 2
+                  },
+                  {
+                    "from": 390,
+                    "ratePerUnit": -2
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "allOf",
+                "children": [
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "landedInLandingArea",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "amrtPresetsCorrect",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "timingDeviationInFavour",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "overflySeconds",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Number",
+                      "number": 0
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "lostPart",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "touchedByCompetitor",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "touchedBeforeMeasuring",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$kind": "lookup",
+                "metricRef": "landingDistance",
+                "rows": [
+                  {
+                    "upTo": 0.2,
+                    "points": 100
+                  },
+                  {
+                    "upTo": 0.4,
+                    "points": 99
+                  },
+                  {
+                    "upTo": 0.6,
+                    "points": 98
+                  },
+                  {
+                    "upTo": 0.8,
+                    "points": 97
+                  },
+                  {
+                    "upTo": 1.0,
+                    "points": 96
+                  },
+                  {
+                    "upTo": 1.2,
+                    "points": 95
+                  },
+                  {
+                    "upTo": 1.4,
+                    "points": 94
+                  },
+                  {
+                    "upTo": 1.6,
+                    "points": 93
+                  },
+                  {
+                    "upTo": 1.8,
+                    "points": 92
+                  },
+                  {
+                    "upTo": 2.0,
+                    "points": 91
+                  },
+                  {
+                    "upTo": 3.0,
+                    "points": 90
+                  },
+                  {
+                    "upTo": 4.0,
+                    "points": 85
+                  },
+                  {
+                    "upTo": 5,
+                    "points": 80
+                  },
+                  {
+                    "upTo": 6,
+                    "points": 75
+                  },
+                  {
+                    "upTo": 7,
+                    "points": 70
+                  },
+                  {
+                    "upTo": 8,
+                    "points": 65
+                  },
+                  {
+                    "upTo": 9,
+                    "points": 60
+                  },
+                  {
+                    "upTo": 10,
+                    "points": 55
+                  },
+                  {
+                    "upTo": 11,
+                    "points": 50
+                  },
+                  {
+                    "upTo": 12,
+                    "points": 45
+                  },
+                  {
+                    "upTo": 13,
+                    "points": 40
+                  },
+                  {
+                    "upTo": 14,
+                    "points": 35
+                  },
+                  {
+                    "upTo": 15,
+                    "points": 30
+                  },
+                  {
+                    "points": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "scoreNormalised": []
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "type": "Flyoff",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 2
+      },
+      "drops": [],
+      "promotion": {
+        "kind": "TopN",
+        "topN": {
+          "param": "flyoffSize"
+        },
+        "minGroupSize": {
+          "param": "groupSize"
+        },
+        "maxGroupSize": {
+          "param": "groupSize"
+        },
+        "carryPenalties": {
+          "param": "carryPenalties"
+        }
+      },
+      "tasks": [
+        {
+          "code": "D",
+          "name": "Duration (fly-off)",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landingDistance",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 0.1
+              }
+            },
+            {
+              "name": "overflySeconds",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInLandingArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "lostPart",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "touchedByCompetitor",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "touchedBeforeMeasuring",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "amrtPresetsCorrect",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "timingDeviationInFavour",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 540
+          },
+          "group": {
+            "minPerGroup": {
+              "param": "groupSize"
+            }
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000
+          },
+          "score": [
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "allOf",
+                "children": [
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "landedInLandingArea",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "overflySeconds",
+                    "op": "LessOrEqual",
+                    "rightValue": {
+                      "kind": "Number",
+                      "number": 30
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "amrtPresetsCorrect",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "timingDeviationInFavour",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "flightTime",
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 390,
+                    "ratePerUnit": 2
+                  },
+                  {
+                    "from": 390,
+                    "ratePerUnit": -2
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "allOf",
+                "children": [
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "landedInLandingArea",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "amrtPresetsCorrect",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "timingDeviationInFavour",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "overflySeconds",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Number",
+                      "number": 0
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "lostPart",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "touchedByCompetitor",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "touchedBeforeMeasuring",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$kind": "lookup",
+                "metricRef": "landingDistance",
+                "rows": [
+                  {
+                    "upTo": 0.2,
+                    "points": 100
+                  },
+                  {
+                    "upTo": 0.4,
+                    "points": 99
+                  },
+                  {
+                    "upTo": 0.6,
+                    "points": 98
+                  },
+                  {
+                    "upTo": 0.8,
+                    "points": 97
+                  },
+                  {
+                    "upTo": 1.0,
+                    "points": 96
+                  },
+                  {
+                    "upTo": 1.2,
+                    "points": 95
+                  },
+                  {
+                    "upTo": 1.4,
+                    "points": 94
+                  },
+                  {
+                    "upTo": 1.6,
+                    "points": 93
+                  },
+                  {
+                    "upTo": 1.8,
+                    "points": 92
+                  },
+                  {
+                    "upTo": 2.0,
+                    "points": 91
+                  },
+                  {
+                    "upTo": 3.0,
+                    "points": 90
+                  },
+                  {
+                    "upTo": 4.0,
+                    "points": 85
+                  },
+                  {
+                    "upTo": 5,
+                    "points": 80
+                  },
+                  {
+                    "upTo": 6,
+                    "points": 75
+                  },
+                  {
+                    "upTo": 7,
+                    "points": 70
+                  },
+                  {
+                    "upTo": 8,
+                    "points": 65
+                  },
+                  {
+                    "upTo": 9,
+                    "points": 60
+                  },
+                  {
+                    "upTo": 10,
+                    "points": 55
+                  },
+                  {
+                    "upTo": 11,
+                    "points": 50
+                  },
+                  {
+                    "upTo": 12,
+                    "points": 45
+                  },
+                  {
+                    "upTo": 13,
+                    "points": 40
+                  },
+                  {
+                    "upTo": 14,
+                    "points": 35
+                  },
+                  {
+                    "upTo": 15,
+                    "points": 30
+                  },
+                  {
+                    "points": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "scoreNormalised": []
+        }
+      ]
+    }
+  ]
+}

@@ -264,10 +264,20 @@ classDiagram
     class Parameter {
         +string name
         +MeasuredKind kind
+        +string unit
         +MeasuredValue defaultValue
         +MeasuredValue[] allowedValues
         +ParameterBindingPoint boundAt
     }
+    %% unit is nullable — a Flag parameter has no unit, and all four in the
+    %% corpus are carryPenalties. It is the same fact MetricDefinition.unit
+    %% records about the same kind of declared quantity: the notation's §3
+    %% grammar writes it, `param workingTime.A s default 600`, and defaultValue
+    %% and allowedValues are stated in it. Most parameters could derive it from
+    %% the slot that consumes them, but a Parameter no ParameterRef names is
+    %% legal and deliberate (70-f3f.class declares one), and that one derives
+    %% from nothing. Where a ParameterRef consumes a parameter in a slot that
+    %% has its own unit the two must agree; checked at adoption.
 
     class ParameterRef {
         <<value object>>
@@ -603,10 +613,9 @@ classDiagram
 
     class ScoreTerm {
         <<abstract>>
-        +ScoreStage applyAt
     }
-    %% Five kinds with disjoint payloads, drawn as five subtypes. Nothing but
-    %% applyAt is common to all of them: a cap and a capScope belong to a rate
+    %% Five kinds with disjoint payloads, drawn as five subtypes. Nothing at all
+    %% is common to all of them: a cap and a capScope belong to a rate
     %% and only ever appear on one (17 sites in seed-data/, all `rate`); an
     %% origin belongs to a piecewise (F5) and only ever appears on one; a value
     %% belongs to a constant; a metricRef means nothing to a constant or a
@@ -616,17 +625,12 @@ classDiagram
     %% diagram admitted a Rate carrying a Band list, which the notation has
     %% never been able to write. ScoreTermKind is gone for the same reason
     %% SelectionKind is.
-    %% applyAt defaults to RawScore: the term contributes to the value that
-    %% normalisation consumes, which is what all seven FAI classes want — F5J
-    %% and F5L normalise their landing bonus along with the flight time.
-    %% Normalised terms are added AFTER normalisation and are not scaled by it
-    %% (F24). NZ Class M 3.12.1 e states it outright: "landing points will be
-    %% added to the normalized flight score". The two orders give different
-    %% scores and, in a close group, a different ORDER — so this is not a
-    %% rounding difference.
-    %% A Normalised term is meaningless on a task with no Normalisation, and a
-    %% task whose ONLY terms are Normalised has no raw score to normalise.
-    %% Both are rejected at adoption.
+    %% The base is attribute-free, as ConditionalTerm is: the stage a term lands
+    %% at is a property of the LIST that holds it, not of the term — see the two
+    %% Task associations below. It was an applyAt on this class; a nested
+    %% then/else branch then carried a stage it could not vary independently of
+    %% its parent (40 of F5K's 84 sites), which is a second record of a stage
+    %% where only one can be read.
 
     class RateTerm {
         +string metricRef
@@ -785,11 +789,12 @@ classDiagram
         PerTask
     }
 
-    class ScoreStage {
-        <<enumeration>>
-        RawScore
-        Normalised
-    }
+    %% ScoreStage was an enumeration here, typing ScoreTerm.applyAt. With the
+    %% stage moved onto the two Task term lists no attribute is typed by it, and
+    %% an enum nothing holds is a second name for a distinction the model already
+    %% draws structurally — the same reasoning that removed ScoreTermKind and
+    %% SelectionKind. The two stages keep their names in §4, where the pipeline
+    %% reads them.
 
     class Comparator {
         <<enumeration>>
@@ -836,7 +841,21 @@ classDiagram
 
     Task "1" *-- "1..*" MetricDefinition : records
     Task "1" *-- "1" FlightSelection : which flights count
-    Task "1" *-- "1..*" ScoreTerm : staged by applyAt
+    Task "1" *-- "1..*" ScoreTerm : raw score terms
+    Task "1" *-- "0..*" ScoreTerm : normalised score terms (F24)
+    %% Two lists, not one list of staged terms. The raw terms build the value
+    %% normalisation consumes, which is what all seven FAI classes want — F5J
+    %% and F5L normalise their landing bonus along with the flight time. The
+    %% normalised terms are added AFTER normalisation and are not scaled by it
+    %% (F24). NZ Class M 3.12.1 e states it outright: "landing points will be
+    %% added to the normalized flight score". The two orders give different
+    %% scores and, in a close group, a different ORDER — so this is not a
+    %% rounding difference.
+    %% The multiplicities carry what were two adoption checks: a task must have
+    %% at least one raw term, so a class cannot normalise nothing, and the
+    %% second list is absent by default rather than defaulted to a stage. A
+    %% normalised list on a task with no Normalisation remains an adoption
+    %% check, since no multiplicity can state it.
     Task "1" *-- "1" TaskTiming
     Task "1" *-- "0..1" GroupConstraint
     Task "1" *-- "0..1" Normalisation
@@ -959,9 +978,9 @@ in `F3J.10.10` is the derived −30 overfly deduction (`F3J.10.3`), a score term
 
 Two stages are skipped rather than parameterised when a class is silent.
 `normalise` is a no-op where the task has no `Normalisation` — the NZ ALES
-classes aggregate raw points — and `add normalised terms` is a no-op wherever no
-term sets `applyAt Normalised`, which is every FAI class. NZ Class M is the only
-definition in `seed-data/` that uses the stage, and it is the reason the stage
+classes aggregate raw points — and `add normalised terms` is a no-op wherever a
+task writes no normalised term list, which is every FAI class. NZ Class M is the
+only definition in `seed-data/` that uses the stage, and it is the reason the stage
 is named separately rather than folded into `assemble raw`.
 
 **Every stage is flight-local or later.** `interpret flight` sees one `Flight`'s
@@ -1041,10 +1060,11 @@ stage reads anything new from `AdoptedRules` for it.
   read from a parameter rather than from nothing. A band *bound* may also read a
   parameter: NZ Class M's +1/−1 turning point is the target time the CD
   announces on the day, not a rule constant.
-- **A score term names the stage it lands at.** `ScoreTerm.applyAt` is
-  `RawScore` by default — the term feeds the value normalisation consumes, and
-  that is what every FAI class wants, including F5J and F5L, which deliberately
-  normalise their landing bonus along with the flight time. NZ Class M states
+- **The list a score term sits in names the stage it lands at.** A task has a
+  raw term list and an optional normalised one. The raw terms feed the value
+  normalisation consumes, and that is what every FAI class wants, including F5J
+  and F5L, which deliberately normalise their landing bonus along with the
+  flight time — they write no second list at all. NZ Class M states
   the other order: "landing points will be added to the *normalized* flight
   score". The distinction is not cosmetic. Two pilots in one group, target 600 s
   — A flies 600 s and lands 9 m out (bonus 10), B flies 500 s and lands 1 m out

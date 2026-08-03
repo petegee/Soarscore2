@@ -30,7 +30,7 @@ a 60 s no-fly period precede each working time (organisational; not scored).
 | **Number of launches / flights** | Per task: how many launches were made and which flight(s) count (last, last-two, best-N, etc.). |
 | **Target-time calls** | Poker / ladder tasks: the target time nominated **before** each launch (announced to, and written by, the timekeeper); whether it was achieved. "End of working time" call = single attempt. |
 | **Scored time per flight** | Capped at the task's target/maximum single-flight time. |
-| **Penalties** | e.g. flying outside the assigned window −100. Listed on the round score sheet; **retained even if that round is later dropped.** |
+| **Penalties** | See the schedule below. Listed on the round score sheet; **retained even if that round is later dropped.** |
 | **Landing height** | **None** — hand launch, no AMRT. |
 
 **Score-card sign-off:** competitor **and** timekeeper sign the round result; **an
@@ -38,6 +38,28 @@ unsigned card scores 0 for the round** (`F3K.1.2`).
 
 **Raw task score** = sum of the **scored** flight seconds under the task's rule (no
 landing bonus in F3K).
+
+### Penalty schedule
+
+| Infraction | Effect | Ref |
+|---|---|---|
+| Unsigned score card | **0 for the round** | `F3K.1.2` |
+| Flying outside the assigned testing window | **−100** | `F3K.9.5` |
+| Contact with an object, **including the ground**, inside a defined safety area | **−100** | `F3K.4.3` 1) |
+| Airborne contact with a person **inside** a defined safety area | **−300** | `F3K.4.3` 2) |
+| Airborne contact with a person **anywhere outside** a defined safety area | **−100** | `F3K.4.3` 3) |
+| Person contact **on the start and landing field** during preparation/working time or the landing window | penalty **per `F3K.4.3`**, and **additionally 0 for the whole round** if the contact happened at the launch | `F3K.4.1` |
+
+**Safety areas are defined *outside* the start and landing field** (`F3K.4.3`), so an
+`F3K.4.1` contact on the field is never "inside a safety area" — it takes limb 3's
+**−100**, not limb 2's −300. The round zero is additional to it.
+
+**Only one penalty per flight attempt** (`F3K.4.3`): where several safety infractions
+occur in the same attempt, **only the highest applies** — the rule's own example is a
+person *and* an object inside the safety area giving 300, not 400.
+
+**Mid-air collisions in free flight earn no penalty** (`F3K.4.2`) — an exemption no
+predicate over measurements can express.
 
 ### Task catalogue (`F3K.11`)
 

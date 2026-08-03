@@ -89,7 +89,6 @@ classDiagram
     }
     class ScoreTerm {
         <<abstract>>
-        +ScoreStage applyAt
     }
     class MetricDefinition {
         +string name

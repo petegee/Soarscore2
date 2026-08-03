@@ -1,0 +1,21 @@
+<Project>
+
+  <!-- LADR-0003, "Build discipline": C# has no non-nullable guarantee, and
+       warnings-as-errors is the substitute. Set once, for every project. -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- LADR-0003 names .NET 10 LTS / C# 14. The installed SDK is 9.0.115, so the
+       target framework is net9.0 and LangVersion is `latest` rather than 14.
+       Nothing transcribed here uses a C# 14 or .NET 10 feature; the two options
+       the corpus depends on (AllowOutOfOrderMetadataProperties, source-generated
+       polymorphism) are .NET 9. Retarget when the SDK lands. -->
+  <PropertyGroup>
+    <SoarscoreTargetFramework>net9.0</SoarscoreTargetFramework>
+  </PropertyGroup>
+
+</Project>

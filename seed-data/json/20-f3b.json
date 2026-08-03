@@ -1,0 +1,429 @@
+{
+  "name": "RC Multi-Task Gliders",
+  "faiDesignation": "F3B",
+  "version": "FAI F3 Soaring 2025 ed.2",
+  "parameters": [
+    {
+      "name": "minRounds",
+      "kind": "Number",
+      "defaultValue": {
+        "kind": "Number",
+        "number": 1
+      },
+      "allowedValues": [
+        {
+          "kind": "Number",
+          "number": 1
+        },
+        {
+          "kind": "Number",
+          "number": 5
+        }
+      ],
+      "boundAt": "CompetitionSetup"
+    },
+    {
+      "name": "minNewGroup",
+      "kind": "Number",
+      "allowedValues": [],
+      "boundAt": "CompetitionSetup"
+    }
+  ],
+  "reflight": {
+    "entitledScores": "Replacement",
+    "othersScore": "BetterOf",
+    "minNewGroupSize": {
+      "param": "minNewGroup"
+    }
+  },
+  "penalties": [
+    {
+      "infractionType": "safetyPlaneCrossing",
+      "exclusionGroups": [],
+      "accrual": "OncePerAttempt",
+      "effects": [
+        {
+          "effect": "DeductPoints",
+          "points": 300
+        }
+      ]
+    },
+    {
+      "infractionType": "nonConformingWinch",
+      "exclusionGroups": [],
+      "accrual": "OncePerAttempt",
+      "effects": [
+        {
+          "effect": "ZeroFlight"
+        },
+        {
+          "effect": "DeductPoints",
+          "points": 1000
+        }
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 3,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": {
+          "param": "minRounds"
+        },
+        "minTasks": 1
+      },
+      "drops": [
+        {
+          "dimension": "ByTask",
+          "dropCount": 1,
+          "applyWhenRoundsCompletedAtLeast": 6,
+          "applyWhenResultsAtLeast": 6
+        }
+      ],
+      "tasks": [
+        {
+          "code": "A",
+          "name": "Duration",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landingDistance",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Ceiling",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInDefinedArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "atRestBy12Min",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "touchedByCompetitor",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 720
+          },
+          "group": {
+            "minPerGroup": 5,
+            "minValidResults": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000
+          },
+          "score": [
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInDefinedArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "flightTime",
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 600,
+                    "ratePerUnit": 1
+                  },
+                  {
+                    "from": 600,
+                    "ratePerUnit": -1
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "allOf",
+                "children": [
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "landedInDefinedArea",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "flightTime",
+                    "op": "LessOrEqual",
+                    "rightValue": {
+                      "kind": "Number",
+                      "number": 630
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "atRestBy12Min",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": true
+                    }
+                  },
+                  {
+                    "$kind": "comparison",
+                    "leftMetricRef": "touchedByCompetitor",
+                    "op": "EqualTo",
+                    "rightValue": {
+                      "kind": "Flag",
+                      "flag": false
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$kind": "lookup",
+                "metricRef": "landingDistance",
+                "rows": [
+                  {
+                    "upTo": 1,
+                    "points": 100
+                  },
+                  {
+                    "upTo": 2,
+                    "points": 95
+                  },
+                  {
+                    "upTo": 3,
+                    "points": 90
+                  },
+                  {
+                    "upTo": 4,
+                    "points": 85
+                  },
+                  {
+                    "upTo": 5,
+                    "points": 80
+                  },
+                  {
+                    "upTo": 6,
+                    "points": 75
+                  },
+                  {
+                    "upTo": 7,
+                    "points": 70
+                  },
+                  {
+                    "upTo": 8,
+                    "points": 65
+                  },
+                  {
+                    "upTo": 9,
+                    "points": 60
+                  },
+                  {
+                    "upTo": 10,
+                    "points": 55
+                  },
+                  {
+                    "upTo": 11,
+                    "points": 50
+                  },
+                  {
+                    "upTo": 12,
+                    "points": 45
+                  },
+                  {
+                    "upTo": 13,
+                    "points": 40
+                  },
+                  {
+                    "upTo": 14,
+                    "points": 35
+                  },
+                  {
+                    "upTo": 15,
+                    "points": 30
+                  },
+                  {
+                    "points": 0
+                  }
+                ]
+              }
+            }
+          ],
+          "scoreNormalised": []
+        },
+        {
+          "code": "B",
+          "name": "Distance",
+          "metrics": [
+            {
+              "name": "legs",
+              "kind": "Number",
+              "unit": "legs",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInDefinedArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 420
+          },
+          "group": {
+            "minPerGroup": 3,
+            "minValidResults": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000
+          },
+          "score": [
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInDefinedArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              "then": {
+                "$kind": "rate",
+                "metricRef": "legs",
+                "rate": 1,
+                "capScope": "PerFlight"
+              }
+            }
+          ],
+          "scoreNormalised": []
+        },
+        {
+          "code": "C",
+          "name": "Speed",
+          "metrics": [
+            {
+              "name": "courseTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 0.01
+              }
+            },
+            {
+              "name": "courseCompleted",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "landedInDefinedArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 240
+          },
+          "group": {
+            "minPerGroup": 8,
+            "minValidResults": 2
+          },
+          "normalise": {
+            "direction": "LowerIsBetter",
+            "winnerScore": 1000
+          },
+          "validWhen": {
+            "$kind": "allOf",
+            "children": [
+              {
+                "$kind": "comparison",
+                "leftMetricRef": "courseCompleted",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInDefinedArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              }
+            ]
+          },
+          "reflight": {
+            "entitledScores": "UndefinedRequiresRuling",
+            "othersScore": "UndefinedRequiresRuling",
+            "minNewGroupSize": {
+              "param": "minNewGroup"
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "courseTime",
+              "rate": 1,
+              "capScope": "PerFlight"
+            }
+          ],
+          "scoreNormalised": []
+        }
+      ]
+    }
+  ]
+}

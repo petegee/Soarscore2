@@ -84,7 +84,7 @@ class NZ-M
                                                                  #   the score will be decreased by 1 point/second"
 
       # Landing points, added AFTER normalising (F24). This is the whole reason
-      # ScoreTerm.applyAt exists — NZ.3.12.1 e "landing points will be added to
+      # the second term list exists — NZ.3.12.1 e "landing points will be added to
       # the normalized flight score", NZ.3.12.3 d "the sum of the pilot's
       # normalized flight score and the landing score".
       score normalised

@@ -271,6 +271,17 @@ every referenced parameter is bound before the pipeline stage that reads it.
 Widening the list later is additive; narrowing it once seed data depends on a
 slot is not.
 
+**The `<unit>` a `param` declaration writes is stored**, on `Parameter.unit`,
+the same way `metric` writes `MetricDefinition.unit`. Most parameters could
+derive it from the slot consuming them — `TaskTiming.workingTime` is seconds
+because working times are — but a declared `Parameter` no ref names is legal
+(`F3F.1.5`, above), and that one derives from nothing. Because the unit is
+written in one place and implied in another, **adoption requires a `param`
+consumed by a slot that has a unit to state that same unit**. A slot that has
+none — `maxLaunches`, `minPerGroup`, `topN`, `minRounds` — needs none written,
+and a `Flag` parameter has none to write; all four in the corpus are
+`carryPenalties`.
+
 Every adoption check stated anywhere in this document is also listed, one line
 each, in `high-level-architecture.md` under "Validated at adoption". That list
 is the exhaustive inventory and the reasoning stays here; adding a check here
@@ -492,17 +503,18 @@ normalisation that leaves scores unchanged, so there was no honest way to write
 these classes with a mandatory `Normalisation`; a `winner 1000` put there to
 satisfy a multiplicity is a fabricated rule.
 
-**`score normalised`** (F24) is the second, optional term list —
-`ScoreTerm.applyAt = Normalised`. Its terms are evaluated per the same
+**`score normalised`** (F24) is the second, optional term list — the Task's
+`normalised score terms`. Its terms are evaluated per the same
 vocabulary but added *after* the `normalise` stage, so normalisation does not
 scale them. `NZ.3.12.1 e` states it outright: "landing points will be added to
 the **normalized** flight score". Every FAI class wants the other order and so
 writes only the plain `score` block — F5J and F5L normalise their landing bonus
 along with the flight time deliberately, and nothing about them changes.
 
-Two adoption checks: a `score normalised` block on a task with no `normalise` is
-rejected (there is no stage for it to land at), and so is a task that has *only*
-a `score normalised` block (nothing for normalisation to consume). See §12 for
+One adoption check: a `score normalised` block on a task with no `normalise` is
+rejected — there is no stage for it to land at. A task that writes *only* a
+`score normalised` block needs no check, because the plain `score` list is
+`1..*` in the model and the task is unstorable. See §12 for
 the worked example showing that the two orders reorder a group, which is why
 this is a stage rather than a formatting choice.
 
@@ -1274,7 +1286,7 @@ the expected result. It was not the result.
 
 | # | Extension | Forced by |
 |---|---|---|
-| F24 | `score normalised` — `ScoreTerm.applyAt : ScoreStage` | `NZ.3.12.1 e`, `NZ.3.12.3 d`: Class M adds landing points to the *normalised* flight score, not to the raw score |
+| F24 | `score normalised` — a second `Task *-- 0..* ScoreTerm` list | `NZ.3.12.1 e`, `NZ.3.12.3 d`: Class M adds landing points to the *normalised* flight score, not to the raw score |
 | F25 | `normalise` optional — `Task *-- 0..1 Normalisation` | `NZ.3.13.1 i`, `NZ.3.15.1 i`: Classes N and P do not normalise; rounds aggregate raw points |
 | F26 | `NotPermitted` — a fourth `ReflightSelection` | `NZ.3.13.1 h`, `NZ.3.15.1 h`: "no re-flights are permitted" is a definite rule, not a silence |
 | F27 | `param()` on `Band.from` / `Band.to` | `NZ.3.12.1 f, g`: Class M's +1/−1 turning point is the target time the CD announces on the day |

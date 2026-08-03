@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.SeedData</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- ADR-0002 §2: the seed classes are authored as C# records that emit the
+       canonical JSON at build time. The JSON is checked in; THIS PROJECT NEVER
+       SHIPS. It is the authoring and review surface — the one that answers "does
+       this match the rulebook?" — and the emitted JSON is the other, which
+       answers "is this what a user would POST, and does it still say what it
+       said?" (ADR-0002 §7). -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Soarscore.Domain/Soarscore.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

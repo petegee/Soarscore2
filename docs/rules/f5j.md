@@ -30,10 +30,11 @@ Working time: **10 minutes** (qualifying) / **15 minutes** (fly-off).
 | Field | Precision / rule |
 |---|---|
 | **Flight time** | **Truncated to the whole second** (`5.5.11.12 b`). Timed from **motor ON** to first ground/object contact or end of working time. |
-| **Start height** | Read from the **AMRT**, **truncated to the whole metre** (`5.5.11.12 d`). AMRT initialised on the ground before launch, observed by the timekeeper. Flight = 0 if the AMRT records no start height. |
+| **Start height** | Read from the **AMRT**, **truncated to the whole metre** (`5.5.11.12 d`). AMRT initialised on the ground before launch, observed by the timekeeper. Flight = 0 if the AMRT records no start height (`5.5.11.7 e` — the zeroing rule is not in `5.5.11.12 d`). |
 | **Landing distance** | Nose-to-spot, → landing-bonus table below (`5.5.11.12 h`). |
 | **Motor run** | AMRT-limited; the flight is **zeroed** if the propeller keeps turning after the 30-second motor-run period (`5.5.11.7 g`). |
-| **Penalties** | e.g. wrong launch direction / motor before start signal / launch not straight-ahead for 3 s −100 each (`5.5.11.10 b, c, e`); safety-area −300; contact in access corridor −1000. Launch outside the ±2 m corridor is a **zero score**, not a −100 penalty (`5.5.11.10 d`). Listed on the round score sheet. |
+| **Penalties** | Wrong launch direction / motor before start signal / launch not straight-ahead for 3 s **−100 each** (`5.5.11.10 b, c, e`); wrong **final-approach direction −100** (`5.5.11.11 b`); safety-area infringement **−300** (`5.5.11.4 c`); resting in the access corridor **−300** (`5.5.11.4 d`); contact in the access corridor **−1000** (`5.5.11.4 e`). Launch outside the ±2 m corridor annuls the **attempt** — "an attempt is annulled and recorded as zero" (`5.5.11.10 d`) — as does launching before the group's working time (`5.5.11.10 f`); neither is a −100 penalty. Listed on the round score sheet. |
+| **Flight cancelled, zero (`5.5.11.7`)** | Non-conforming model (a); part lost during launch or flight (b); piloted by anyone other than the competitor (c); **nose not at rest within 75 m of the designated landing spot** (d); AMRT records no start height (e); flown in the wrong group or launched from the wrong starting point (f); propeller still turning after the 30-second motor run (g). |
 
 **Overfly:** score 0 if the model overflies the end of working time by more than 1
 minute; no landing bonus if it overflies at all.
@@ -84,11 +85,13 @@ Round score = the normalised group score.
 
 ## 5. Final classification (`5.5.11.13`)
 
-- Minimum **4** qualifying rounds for a valid contest.
+- Minimum **4** qualifying rounds for a valid contest (`5.5.11.5 a`).
 - **Qualifying aggregate:** if **4 or fewer** rounds, sum all; if **more than 4**, the
   **lowest round score is dropped**.
 - Top **30 %** → fly-off; fly-off scored as above; **final placing = fly-off aggregate
   only**, qualifying position breaks ties.
+- **Fly-off round count (`5.5.11.13 d`):** minimum **three (3)**, maximum **four (4)**;
+  the CD may exceptionally reduce to **two (2)** for bad weather or poor visibility.
 - Penalties are cumulative, deducted at the end of the qualifying rounds, and are
   **not** carried into the fly-off.
 - Team classification as in the parent.

@@ -26,7 +26,7 @@ Common draw rules per parents, plus F3B specifics (`F3B.1.8`):
 - Flying order of groups is also set by the draw; a different starting order is used
   each round.
 - A **group result is annulled if only one competitor** in it has a valid result.
-- **Minimum for a valid competition (`F3B.1.8 b`):** **one (1) round and one (1)
+- **Minimum for a valid competition (`F3B.2.1 b`):** **one (1) round and one (1)
   task**. A World/Continental Championship result is valid at **five (5) complete
   rounds**.
 
@@ -37,10 +37,10 @@ Common draw rules per parents, plus F3B specifics (`F3B.1.8`):
 | Task | Field | Precision / rule |
 |---|---|---|
 | **A Duration** | Flight time | Whole seconds; 1 pt per full second, from release-from-tow to rest. Max 600 pts (600 s); **−1 pt per second over 600 s**; whole flight = 0 if not landed on the defined area. |
-| **A Duration** | Landing distance | Nose-to-spot, **rounded up to the nearest metre**, → landing-bonus table below. **No landing bonus if flight time > 630 s.** Task capped at 12 min total incl. tow. |
+| **A Duration** | Landing distance | Nose-to-spot, **rounded up to the nearest metre**, → landing-bonus table below. **No landing bonus if flight time > 630 s** (`F3B.2.3 d`), if the model is not at rest by 12 min (`F3B.2.3 e`), or if **the model touches the competitor or his helper during the landing manoeuvre** (`F3B.1.7 d`). Task capped at 12 min total incl. tow. |
 | **B Distance** | Completed legs | Integer count of full **150 m** legs, Base A↔B, within a 4-minute flight window (7-minute task). Partial legs not counted. Flight = 0 if not landed on defined area. |
 | **C Speed** | Elapsed time | Time to fly **4 × 150 m** legs, recorded to **at least 1/100 second**. Model that fails to complete, or lands early, scores **0**. |
-| all | Penalties | e.g. safety-plane crossing (Task C) −300; non-conforming winch −1000. Listed on the round score sheet. |
+| all | Penalties | See the schedule below. Listed on the round score sheet. |
 
 **Task A landing-bonus table** (`F3B.2.3 d`):
 
@@ -54,6 +54,22 @@ Common draw rules per parents, plus F3B specifics (`F3B.1.8`):
 | 6 | 75 | 14 | 35 |
 | 7 | 70 | 15 | 30 |
 | 8 | 65 | over 15 | 0 |
+
+### Penalty schedule
+
+| Infraction | Effect | Ref |
+|---|---|---|
+| Model loses any part during launch or flight | **−100** on the flight in progress | `F3B.1.7 b` |
+| Model in flight controlled by anyone other than the competitor | **disqualified** | `F3B.1.7 c` |
+| Upwind pulley comes loose / turnaround device torn out of the ground | **−1000** | `F3B.1.7 e` |
+| Winch torn out of the ground, or rotating parts separated | **−1000** on the flight | `F3B.1.7 f` |
+| Contact with any object (earth, car, stick, plant, tow-line…) inside the safety area | **−300** | `F3B.1.10 b` |
+| Contact with a **person** inside the safety area | **−1000** | `F3B.1.10 b` |
+| Safety-plane crossing (Task C) | **−300** | `F3B.2.5 h` |
+| Non-conforming winch on the resistance test | flight **= 0** *and* **−1000** | `F3B.2.2 p` |
+
+`F3B.1.10 b`: **maximum one penalty per attempt** — the number of contacts during one
+attempt does not matter.
 
 ---
 

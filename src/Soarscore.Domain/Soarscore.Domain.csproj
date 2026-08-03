@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <!-- LADR-0003: the Domain has ZERO PackageReference, and that emptiness is the
+       enforcement of "the Domain layer must have NO dependencies" (HLA, DDD).
+       The [JsonPolymorphic] discriminators below are System.Text.Json, which is
+       in the shared framework rather than a package, and they are here because
+       ADR-0002 §1 makes the canonical JSON the definition itself: the wire shape
+       is a property of the model, not of an adapter over it. -->
+
+</Project>
