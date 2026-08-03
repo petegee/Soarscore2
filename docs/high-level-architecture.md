@@ -15,6 +15,7 @@
  - Commands and Queries only
  - Core-owned invariants
  - Functional-Like as a Core Princple
+ - Lightweight
 
  ### Headless
 The system must be headless in nature. It must not offer a UI or alternative interaction.
@@ -89,6 +90,18 @@ The mechanisms to do queries must be separate from the mechanism which does stat
 ### Commands and Queries only
 The application layer only supports either Commands or Queries. These are dispatched via a 
 mediator pattern. This dove-tails nicely with intent-based APIs.
+
+### Lightweight  
+This application will be open source for people to host their own instances, as well as 
+myself hosting a shared instance in a cloud (TBC). A Competition will likely never have 
+more than 30-40 competitorsover two days but more likley less. Entries are in real-time 
+as the competition progresses. It is anticipated an extremely low transaction/sec rate 
+even at its highest load. The application must remain as lightweight as possible and
+not be over-engineered to handle large load (this will never happen).
+
+### Open Source 
+This application must be open source and its dependencies be open source so people 
+can freely use, fork, extend this application as they wish.
 
 ### Core-owned invariants
 

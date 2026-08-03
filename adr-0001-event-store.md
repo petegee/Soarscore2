@@ -1,0 +1,153 @@
+# ADR-0001 — Event store: PostgreSQL + Marten
+
+**Status:** Accepted · **Date:** 2026-08-03
+
+## Decision
+
+The event store is **Marten on PostgreSQL**. It is the only adapter we build.
+
+The architecture keeps a **SQLite adapter viable for a third party to write**, but we
+do not write one, do not test one, and do not accept design cost to keep the option
+open beyond the constraints listed in §4. "Swappable" here means *the domain does not
+have to change*, not *the swap is free*.
+
+## 1. Why Marten
+
+- **MIT.** Marten 9.22.x, targets `net10.0` (net8.0 dropped), PostgreSQL 13 minimum,
+  15+ recommended. Actively released. Satisfies the open-source constraint.
+- **We write no store code.** The hand-rolled SQLite alternative was costed at
+  ~1,400 LOC / 7–10 focused days, plus a long tail of SQLite-specific footguns
+  (deferred-transaction lock upgrade, WAL checkpoint starvation, decimal type
+  affinity, timestamp lexical ordering).
+- **`Live` aggregation is our architecture's rule expressed in Marten's vocabulary.**
+  `high-level-architecture.md` mandates that query-by-aggregate-ID folds the stream.
+  That is `Live`, exactly, with no storage and no daemon.
+- **Ordering correctness comes for free.** On PostgreSQL, `bigserial` allocates at
+  INSERT, not commit, so a naive `WHERE seq > @checkpoint` projector can permanently
+  skip an event that commits late. Marten's high-water-mark agent exists for this.
+  A hand-rolled Postgres store would have to solve it; a hand-rolled *SQLite* store
+  does not have the problem at all (single writer ⇒ commit order == position order),
+  which is precisely why SQLite code cannot be lifted to Postgres unexamined.
+
+The counter-case, recorded because it is real: at ≤40 pilots, ≤8 rounds/day, and the
+read-model inventory in §3, we use roughly 15% of Marten. The deciding factor is not
+capability — it is that "install Docker, run a Postgres container" is an acceptable
+ask of self-hosters, and writing a store is not an acceptable use of the schedule.
+
+## 2. What we use, and what we deliberately do not
+
+| Marten feature | Use? | Why |
+|---|---|---|
+| `Live` projections | **Yes** | The by-ID path. Fold the stream, always. |
+| `Inline` projections | **Yes** | The four cross-stream indexes (§3), in the append transaction. |
+| `Async` daemon | **No** | No external subscribers, no message bus, four tiny indexes. Never started. |
+| Snapshots / `Inline` single-stream aggregates | **No — permanently** | Entry streams are 20–60 events; Competition streams low hundreds. Folding is sub-millisecond. A snapshot taken before an upcaster is a correctness liability, not an optimisation. |
+| Document store (`mt_doc_*` for domain objects) | **No** | Events are the state. Documents only as projection storage. |
+| Multi-tenancy, archival, partitioning | **No** | Not at this scale. |
+
+Inline, not async, is **required** rather than merely convenient: `aggregate-roots.md`
+enforces Person email uniqueness at the unique-index level. On an async projection
+that guarantee is false — two concurrent registrations both succeed at the write side
+and the projection fails afterwards with no way to reject either. Inline also gives
+read-your-own-writes, which the POST-command-then-GET-query API shape needs.
+
+## 3. Read models — the complete inventory
+
+Projections are an index of *which streams exist where*. They are never a source of
+truth and are always fully rebuildable from the log.
+
+| Read model | Why it must exist |
+|---|---|
+| `people` | Query by email/name; **unique index on email is a real invariant**. |
+| `competitions` | List by date, class, state. |
+| `class_library` | The library adopted from. |
+| `entry_index` | Entry → competition, task-round, group, competitor. ≤640 rows per competition. |
+
+Everything else loads a stream. The draw is **not** a read model — it lives inside the
+Competition aggregate.
+
+**Scores are never projected.** `ScoringService` derives results from `AdoptedRules`
+plus raw Entry data. Materialising a leaderboard would re-implement the Competition
+Class model outside its one place — a breach of the core architectural law and NFR-1.
+A leaderboard query resolves `entry_index` to a set of stream ids, loads them, and
+scores. Group membership resolves through the same index.
+
+## 4. Constraints that keep a SQLite adapter possible
+
+These are binding on our code regardless, because most of them are also just correct.
+
+1. **The port is narrow and total.** `AppendAsync(streamId, expectedVersion, events)`,
+   `ReadStreamAsync(streamId, fromVersion)`, `ReadAllAsync(fromPosition, batchSize)`.
+   No `IQueryable`, no Marten types above `Infrastructure`.
+2. **Read access is via one query interface per read model**, defined in `Application`,
+   implemented in `Infrastructure`. `IDocumentSession` does not appear in `Application`
+   — this follows from hexagonal dependencies pointing inward, independently of
+   portability.
+3. **Projection fold logic is plain functions** in `Application`, wired into Marten
+   `IProjection` shims by the adapter. The shim is portable ballast; the fold is not.
+4. **Optimistic concurrency is the `(stream_id, version)` uniqueness constraint** —
+   never read-check-write. Read-check-write is accidentally safe under SQLite's single
+   writer and unsafe under MVCC; making the constraint the sole arbiter is what makes
+   the append semantics identical on both.
+5. **Never query into event JSON from SQL.** Payloads are opaque to the store. This
+   single rule neutralises the whole SQLite-JSON vs `jsonb` divergence.
+6. **Decimals are serialised as strings or scaled integers inside event JSON**, never
+   as JSON numbers, never in a typed SQL column. Defends against JavaScript consumers
+   parsing as `double` (this is a REST API for external integrators), `jsonb` numeric
+   normalisation, and SQLite's NUMERIC type affinity silently converting a `decimal`
+   to a `double` when the first 15 significant digits round-trip. Scores are derived
+   and not stored; the exposure is `MeasuredValue.number` and `DeclaredResult.aggregate`.
+7. **Domain-meaningful timestamps live inside the event payload**, not in a store
+   column. Launch time and the working-time window are domain facts;
+   `mt_events.timestamp` is an infrastructure fact. Also insulates us from whether a
+   given Marten version preserves original timestamps on append during a replay.
+8. **Logical event-type names and an explicit event schema version, from event #1.**
+   Never persist CLR type names — Marten's `mt_dotnet_type` exists for compatibility,
+   not as a good idea. Register via `StoreOptions.Events.MapEventType`. The upcaster
+   chain itself can wait; the naming registry and version discriminator cannot, because
+   retrofitting them means rewriting an immutable log.
+9. **IDs are `Guid.CreateVersion7()`.** Time-ordered, good index locality.
+10. **Read models are dropped and replayed, never migrated.** Change the shape, replay.
+    There is no read-model migration tooling and there will not be.
+
+## 5. What a swap would actually cost
+
+Honest accounting, so nobody reads "swappable" as "free".
+
+**Discarded:** the Marten adapter and its projection shims, the schema, and the
+operational story. Marten's `mt_streams` / `mt_events` layout is not our layout, so
+none of it transfers. Call it 1,000–1,200 LOC to rebuild against SQLite.
+
+**Kept:** the domain layer, event contracts, all fold and apply logic, upcasters,
+projection definitions, read-model shapes, the query interfaces, and the test suite
+re-pointed at the new adapter. This is the hexagonal dividend and it is the part that
+represents the actual investment.
+
+**The migration itself is a replay** — read events in order, append through the new
+adapter, rebuild projections — and it is *verifiable* in a way a CRUD migration never
+is: re-derive every score on the target and diff against the source and against the
+captured `DeclaredResult` aggregates. That comparison mechanism already exists for
+other reasons.
+
+**One trap, written down now:** a SQLite adapter may use a naive `position > checkpoint`
+cursor because single-writer SQLite guarantees commit order equals position order.
+That guarantee is a property of SQLite, not of event sourcing. Carrying such a cursor
+back to PostgreSQL causes silent, permanent event loss.
+
+## 6. When to revisit
+
+- **More than one writer process** — rolling deploys, HA, horizontal scale. This is
+  SQLite's hard ceiling (one writer per file; WAL does not work over network
+  filesystems) and the reason a SQLite adapter is a self-hoster's single-process
+  convenience, not a path we can follow.
+- Marten moving a feature we depend on behind a commercial licence. The cores are
+  open source and CritterWatch is the paid add-on; re-verify at each major upgrade.
+- Full projection rebuild exceeding a few seconds on the shared instance.
+
+## 7. Not decided here
+
+The representation of a Competition Class definition — external notation, C# records,
+fluent internal DSL, or JSON — is open and is the subject of the next ADR. Note that
+§4.6 (decimals) and §4.8 (event versioning) apply to the adopted-rulebook payload
+whatever that decision is, and that a class definition must be **data at rest** in the
+adoption event for replay determinism to hold.
