@@ -1,6 +1,6 @@
-# ADR-0002 — Competition Class definition: representation, ingestion and identity
+# LADR-0002 — Competition Class definition: representation, ingestion and identity
 
-**Status:** Accepted · **Date:** 2026-08-03 · **Follows:** ADR-0001
+**Status:** Accepted · **Date:** 2026-08-03 · **Follows:** LADR-0001
 
 ## Decision
 
@@ -94,7 +94,7 @@ Required because the input is untrusted:
   class ever gets.
 - **Input limits**: payload size, nesting depth, band/row/term/parameter/task counts.
   Cheap, and the absence of them is the obvious denial-of-service surface.
-- **No code execution, ever.** The definition is data. This is settled by ADR-0001's
+- **No code execution, ever.** The definition is data. This is settled by LADR-0001's
   replay-determinism argument and by the trust model — the deployment is unauthenticated.
 
 Deserialisation into sealed subtypes is what enforces the closed vocabulary (notation

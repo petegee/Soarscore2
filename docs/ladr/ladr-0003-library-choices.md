@@ -1,9 +1,9 @@
 # LADR-0003 — Library choices
 
-**Status:** Accepted · **Date:** 2026-08-03 · **Follows:** ADR-0002
+**Status:** Accepted · **Date:** 2026-08-03 · **Follows:** LADR-0002
 
-Settled elsewhere, not re-argued here: event store = Marten/PostgreSQL (ADR-0001);
-class definitions = canonical JSON, C# records at build time, no code execution (ADR-0002).
+Settled elsewhere, not re-argued here: event store = Marten/PostgreSQL (LADR-0001);
+class definitions = canonical JSON, C# records at build time, no code execution (LADR-0002).
 
 ## Choices
 
@@ -16,7 +16,7 @@ class definitions = canonical JSON, C# records at build time, no code execution 
 | Query binding | `[AsParameters]` record structs | Query-string binding is explicit, not conventional | request bodies on GET |
 | Errors | `ProblemDetails` (RFC 9457) via `IProblemDetailsService` | In-box | — |
 | Command/query dispatch | **Hand-rolled** `ICommandHandler`/`IQueryHandler` + `IDispatcher` over `IServiceProvider`, ~60 LOC | Zero licence risk, more inspectable than a behaviour pipeline | **MediatR — commercial licence v12+**; Wolverine (see Open) |
-| Event store + persistence | Marten 9.22.x / PostgreSQL 15+ — **MIT** (verified 9.22.2, 31 Jul 2026) | ADR-0001 | EventStoreDB/Kurrent (relicensed off OSI terms); hand-rolled SQLite (ADR-0001 §1) |
+| Event store + persistence | Marten 9.22.x / PostgreSQL 15+ — **MIT** (verified 9.22.2, 31 Jul 2026) | LADR-0001 | EventStoreDB/Kurrent (relicensed off OSI terms); hand-rolled SQLite (LADR-0001 §1) |
 | Serialisation | `System.Text.Json` + source generation (`GenerationMode = Metadata`); hand-written `[JsonPolymorphic]` discriminators under **`$kind`**, `AllowOutOfOrderMetadataProperties` on ingestion | A namespace rename must never orphan historical events; the two options are the spike's, below | `Newtonsoft.Json`, `TypeNameHandling`, CLR-type-derived discriminators, custom converters for the term hierarchies |
 | Validation | Hand-written `Validate()` → `IReadOnlyList<Defect>`, total, non-throwing, one method per numbered check | The 16 checks are graph-wide and cross-referential; per-property fluent validators are the wrong shape and invite class-specific rules into a validator | **FluentValidation — licence shift v12** and wrong shape; JSON Schema as the adoption gate (shape only) |
 | Authoring aid | JSON Schema generated from the model | Editor completion for class authors; not a validation gate | — |
@@ -46,10 +46,10 @@ class definitions = canonical JSON, C# records at build time, no code execution 
 - **AutoMapper** — commercial licence, and layer-crossing mapping is explicit by hand here.
 - **EF Core / any ORM** — events are the state; nothing to map.
 - **Rules engine** (NRules, RulesEngine, Roslyn/Lua scripting) — an open expression language destroys static validation (NFR-2).
-- **Marten async projection daemon** — never started; Inline is required by the Person-email uniqueness invariant (ADR-0001 §2).
+- **Marten async projection daemon** — never started; Inline is required by the Person-email uniqueness invariant (LADR-0001 §2).
 - **Marten document store for aggregates** — would reintroduce state storage.
 - **IoC-heavy / opinionated frameworks** (.NET Aspire, FastEndpoints, clean-architecture scaffolds) — conventions leak into the domain.
-- **Snapshots** — streams are 20–60 events; folding is sub-millisecond (ADR-0001 §2).
+- **Snapshots** — streams are 20–60 events; folding is sub-millisecond (LADR-0001 §2).
 
 ## Open
 
@@ -70,10 +70,10 @@ Spiked in `spike/ClassJsonSpike/` (F3K and F5K transcribed and round-tripped;
 byte-identically, source generation agreeing with reflection in both directions.
 
 The question was posed as converter vs hand-written `$type` throughout the seed
-JSON, and half of it had already dissolved: ADR-0002 §1–2 make the seed JSON
+JSON, and half of it had already dissolved: LADR-0002 §1–2 make the seed JSON
 *machine-emitted from C# records*, so nobody hand-writes a discriminator and the
 verbosity was never a cost anyone pays. Its stated fallback — a small parser for
-`competition-class-notation.md` — is separately closed by ADR-0002 §3.
+`competition-class-notation.md` — is separately closed by LADR-0002 §3.
 
 Three amendments the spike forced, two of them silent failures:
 
@@ -90,7 +90,7 @@ Three amendments the spike forced, two of them silent failures:
   `{"metricRef": …, "$kind": "rate"}`. Canonical order is provably recoverable
   once the option is set.
 - **Round-trip tests compare bytes, not records.** `ImmutableArray<T>.Equals` is
-  reference-based, so ADR-0002 §6's test fails on every definition for a reason
+  reference-based, so LADR-0002 §6's test fails on every definition for a reason
   unrelated to serialisation. Consistent with §5 making the content hash the
   identity.
 
@@ -99,7 +99,7 @@ generation composes with the polymorphic hierarchies **only** under
 `GenerationMode = Metadata` and with every derived type given its own
 `[JsonSerializable]` (the generator does not walk `[JsonDerivedType]`, and the
 omission fails at run time, not at build); and deserialisation does enforce the
-closed vocabulary on untrusted input as ADR-0002 §4 claims — unknown and missing
+closed vocabulary on untrusted input as LADR-0002 §4 claims — unknown and missing
 discriminators, missing `required` members and over-deep payloads are all
 rejected. It does not catch a `ParameterRef` in a non-admitted slot, which is
 type-correct and belongs to `Validate()`.

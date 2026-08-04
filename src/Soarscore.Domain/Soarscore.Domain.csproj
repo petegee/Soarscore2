@@ -12,4 +12,8 @@
        ADR-0002 §1 makes the canonical JSON the definition itself: the wire shape
        is a property of the model, not of an adapter over it. -->
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Soarscore.Domain.Tests" />
+  </ItemGroup>
+
 </Project>

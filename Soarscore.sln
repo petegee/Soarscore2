@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{66AA7A19
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soarscore.SeedData", "tools\Soarscore.SeedData\Soarscore.SeedData.csproj", "{CCE1FCF2-332C-4A13-80FE-2DB22603DB6F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1D55DED2-8329-4917-A077-37B53C358887}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soarscore.Domain.Tests", "tests\Soarscore.Domain.Tests\Soarscore.Domain.Tests.csproj", "{71BBB294-0BB8-4B61-8FA7-3B9962A8DA41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +32,14 @@ Global
 		{CCE1FCF2-332C-4A13-80FE-2DB22603DB6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCE1FCF2-332C-4A13-80FE-2DB22603DB6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCE1FCF2-332C-4A13-80FE-2DB22603DB6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71BBB294-0BB8-4B61-8FA7-3B9962A8DA41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71BBB294-0BB8-4B61-8FA7-3B9962A8DA41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71BBB294-0BB8-4B61-8FA7-3B9962A8DA41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71BBB294-0BB8-4B61-8FA7-3B9962A8DA41}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{558E6B11-834F-4FC6-9A91-7B4635723404} = {B78D7BAC-DD9D-4C00-8756-940697A06114}
 		{CCE1FCF2-332C-4A13-80FE-2DB22603DB6F} = {66AA7A19-7298-486B-BA27-96B4A3E3A6EE}
+		{71BBB294-0BB8-4B61-8FA7-3B9962A8DA41} = {1D55DED2-8329-4917-A077-37B53C358887}
 	EndGlobalSection
 EndGlobal

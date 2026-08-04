@@ -1,4 +1,4 @@
-# ADR-0001 — Event store: PostgreSQL + Marten
+# LADR-0001 — Event store: PostgreSQL + Marten
 
 **Status:** Accepted · **Date:** 2026-08-03
 
