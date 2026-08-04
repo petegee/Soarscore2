@@ -154,7 +154,7 @@ group. No other class has this.
 # NZ national classes (NZMAA Section 5: Soaring, March 2024)
 
 A **separate rulebook by a separate body**, not FAI variations. Refs are written
-`NZ.<clause>`. Docs live in `docs/rules/nz/`; definitions in `seed-data/80–85`.
+`NZ.<clause>`. Docs live in `docs/rules/nz/`; definitions in `tools/Soarscore.SeedData/`.
 
 **Do not read the FAI tables above across to these classes.** The differences are
 structural, not numeric — see the warning table in `SKILL.md`.
@@ -194,7 +194,7 @@ Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.m
 
 - **`NZ.3.12.7` (Class M NDC) is a different pipeline, not a different number** —
   four rounds, raw sum, no normalisation. Modelled as its own class definition
-  (`81-nz-m-ndc.class`). Its stated maxima (650/round, 2600 total) are a useful
+  (`SeedNzMNdc.cs`). Its stated maxima (650/round, 2600 total) are a useful
   arithmetic check.
 - **`NZ.3.12.7 b` cross-references §3.13.1 and §3.13.7 c where it means §3.12.1
   and §3.12.7 c** — stale numbering from the Jan 2013 revision.

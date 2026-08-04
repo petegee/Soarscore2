@@ -1,8 +1,6 @@
 // F3J — RC Thermal Duration Gliders
 // Rule refs: FAI Sporting Code Volume F3 Soaring 2025 ed.2 (F3J.x)
 //
-// Transcribed from seed-data/50-f3j.class.
-//
 // Penalty application point: F3J contradicts itself. Each penalty clause says
 // "deduction from the competitor's final score" (F3J.2.4 d, F3J.7 d, F3J.8.3),
 // while F3J.10.10's group-winner formula puts penalties inside the group total.

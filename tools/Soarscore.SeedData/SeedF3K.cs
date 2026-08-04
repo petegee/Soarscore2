@@ -1,7 +1,7 @@
 // F3K — RC Hand-Launch Gliders
 // Rule refs: FAI Sporting Code Volume F3 Soaring 2025 ed.2 (F3K.x)
 //
-// Transcribed from seed-data/10-f3k.class. 14 authored tasks become 27 fully
+// 14 authored tasks become 27 fully
 // written ones under expansion — the corpus's hardest test of `like`, five of
 // the six selection kinds, both target-assignment orders, and its only
 // UntilAllFlightsComplete.

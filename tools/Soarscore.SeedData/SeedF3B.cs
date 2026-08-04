@@ -1,7 +1,7 @@
 // F3B — RC Multi-Task Gliders
 // Rule refs: FAI Sporting Code Volume F3 Soaring 2025 ed.2 (F3B.x)
 //
-// Transcribed from seed-data/20-f3b.class. The structural outlier, and the
+// The structural outlier, and the
 // reason a Task owns normalisation, group constraints, rounding and flight-time
 // precision rather than the class or the round: every one of those differs
 // between A, B and C inside this one definition.

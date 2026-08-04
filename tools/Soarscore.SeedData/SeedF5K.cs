@@ -1,7 +1,7 @@
 // F5K — RC Electric Thermal Duration, Multiple-Task (provisional class)
 // Rule refs: FAI Sporting Code Volume F5 Electric 2026 ed.2 (5.5.10.x)
 //
-// Transcribed from seed-data/40-f5k.class. The class that pushes hardest on the
+// The class that pushes hardest on the
 // model: launch points measured relative to a parameter (F5), a per-launch cost
 // that must read the flight's own sequence number (F6), and a task-total cap and
 // a raw-score rounding with nowhere else to live (F4a, F4b). It also carries the

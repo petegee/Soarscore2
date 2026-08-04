@@ -10,7 +10,7 @@ a bonus for landing. Launch height is limited to 123m (400ft) and motor run time
 to 20 seconds."
 
 The whole class is eleven lettered clauses. It is the simplest definition in
-`seed-data/`, and it still found two model gaps.
+`tools/Soarscore.SeedData/`, and it still found two model gaps.
 
 ---
 

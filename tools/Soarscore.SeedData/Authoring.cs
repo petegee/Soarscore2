@@ -10,7 +10,7 @@
 //   P.All  — AllOf's 2..* multiplicity, carried by the signature.
 //
 // M and Params are plainer: they carry no check, and exist so a `metric` or a
-// `param` line in seed-data/*.class transcribes to one line here. That matters
+// `param` line in the notation transcribes to one line here. That matters
 // for ADR-0002 §6's review, which reads each class against the RULE REFS.
 //
 // Everything else is object initialisers and `with`. `with` IS `like`: C# record

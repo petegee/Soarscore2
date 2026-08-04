@@ -2,7 +2,7 @@
 // Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.15, plus
 //            NZ.2.4.6, NZ.2.8, NZ.1.6)
 //
-// Transcribed from seed-data/85-nz-p-radian.class. Class N's shape with a 7
+// Class N's shape with a 7
 // minute target and a 200 m limit, written out in full rather than derived from
 // Class N: `like` is a task-level shortcut within ONE class definition and these
 // are two classes. That is a real cost of PhaseDefinition owning its tasks, and

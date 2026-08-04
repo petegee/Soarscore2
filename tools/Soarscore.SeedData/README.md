@@ -1,15 +1,11 @@
 # Seed classes — the authoring source
 
-The eleven Competition Class definitions, authored as C# records per ADR-0002 §2
-and emitting the canonical JSON in `seed-data/json/` at run time.
+The eleven Competition Class definitions, authored as C# records per ADR-0002 §2.
+The C# is the sole source of truth; the canonical JSON is generated on demand
+and is not checked in.
 
-**This project never ships.** It is one of the two review surfaces ADR-0002 §7
-distinguishes, and they are not interchangeable:
-
-| Surface | Checked in | Ships | Answers |
-|---|---|---|---|
-| this project, `#` citations carried across as comments | yes | no | *Does this match the rulebook?* |
-| `seed-data/json/` | yes | yes | *Is this what a user would POST, and does it still say what it said?* |
+**This project never ships.** The review surface is the C# itself — rule citations
+carried across as comments — answering *Does this match the rulebook?*
 
 Rule references stop at the repository boundary (ADR-0002 §7). They are an
 authoring-side property and do not enter the model, the wire format, the stored
@@ -21,7 +17,7 @@ definition or `AdoptedRules`.
 dotnet run --project tools/Soarscore.SeedData
 ```
 
-Emits `seed-data/json/*.json` and checks four things: the round trip
+Generates `json/*.json` (gitignored) and checks four things: the round trip
 JSON → records → JSON is byte-identical, the source-generated context agrees with
 reflection in both directions, the deepest path stays inside the ingestion depth
 limit, and each definition's content hash is printed (ADR-0002 §5 — not a
@@ -51,8 +47,8 @@ constructing a fresh value object and leaving a member unset does.
 ## Status of the transcription
 
 ADR-0002 §6 requires each class to be reviewed **against the rule refs**, class by
-class, not against the `.class` file — re-deriving from the source is what catches
-an error the `.class` file and the C# now share. That review has **not** happened.
+class, not against the notation — re-deriving from the source is what catches
+an error the notation file and the C# now share. That review has **not** happened.
 Until it has, treat the eleven definitions as untranscribed-but-plausible, and
 check F3K Tasks E and H against the worked examples in the rule text
 (`F3K.11.5` → 142 s, `F3K.11.8` → 569 s) rather than against each other — the

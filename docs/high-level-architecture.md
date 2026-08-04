@@ -225,7 +225,7 @@ the combinations absence makes incoherent.
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in
 the group. Notation §11 records it as a candidate and no definition in
-`seed-data/` needs it enforced; it joins the list with the first class that
+`tools/Soarscore.SeedData/` needs it enforced; it joins the list with the first class that
 does.
 
 ### Functional-Like as a Core Princple

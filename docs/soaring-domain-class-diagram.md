@@ -275,7 +275,7 @@ classDiagram
     %% grammar writes it, `param workingTime.A s default 600`, and defaultValue
     %% and allowedValues are stated in it. Most parameters could derive it from
     %% the slot that consumes them, but a Parameter no ParameterRef names is
-    %% legal and deliberate (70-f3f.class declares one), and that one derives
+    %% legal and deliberate (SeedF3F.cs declares one), and that one derives
     %% from nothing. Where a ParameterRef consumes a parameter in a slot that
     %% has its own unit the two must agree; checked at adoption.
 
@@ -344,7 +344,7 @@ classDiagram
     %% and the notation carried a `drop none` sugar expanding to a single
     %% {ByRound, 0} so that a phase with no discard could satisfy it — the same
     %% mistake F25 found on Normalisation, and here the majority case: nine of
-    %% the sixteen phases in seed-data/ have no discard, every fly-off among
+    %% the sixteen phases in tools/Soarscore.SeedData/ have no discard, every fly-off among
     %% them. Discarding nothing does have an identity value, so nothing was
     %% mis-scored; what was wrong was recording a discard rule for a phase
     %% whose rules state none. F3K.10 and 5.5.11.13 apply their discards to the
@@ -553,7 +553,7 @@ classDiagram
         +bool declaredBeforeLaunch
     }
     %% Capture precision is 0..1, not 1: a Flag metric has nothing to round, so
-    %% no Flag in seed-data/ writes one. Where a Number metric's rules state no
+    %% no Flag in tools/Soarscore.SeedData/ writes one. Where a Number metric's rules state no
     %% capture precision the definition still chooses one and says so — that is
     %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 i).
 
@@ -616,7 +616,7 @@ classDiagram
     }
     %% Five kinds with disjoint payloads, drawn as five subtypes. Nothing at all
     %% is common to all of them: a cap and a capScope belong to a rate
-    %% and only ever appear on one (17 sites in seed-data/, all `rate`); an
+    %% and only ever appear on one (17 sites in tools/Soarscore.SeedData/, all `rate`); an
     %% origin belongs to a piecewise (F5) and only ever appears on one; a value
     %% belongs to a constant; a metricRef means nothing to a constant or a
     %% conditional, neither of which reads a measurement. Held on one class
@@ -971,7 +971,7 @@ normalised terms` stage below.
 
 The claim previously made here — that F3J subtracts penalties before
 normalising — was wrong and is withdrawn. `F3J.10.10`'s group-winner formula
-reads that way, but `50-f3j.class` rules that the specific clauses govern
+reads that way, but `SeedF3J.cs` rules that the specific clauses govern
 (`F3J.2.4 d`, `F3J.7 d`, `F3J.8.3`, each "from the competitor's final score")
 and puts every F3J penalty at the final aggregate; the "minus penalty points"
 in `F3J.10.10` is the derived −30 overfly deduction (`F3J.10.3`), a score term.
@@ -980,7 +980,7 @@ Two stages are skipped rather than parameterised when a class is silent.
 `normalise` is a no-op where the task has no `Normalisation` — the NZ ALES
 classes aggregate raw points — and `add normalised terms` is a no-op wherever a
 task writes no normalised term list, which is every FAI class. NZ Class M is the
-only definition in `seed-data/` that uses the stage, and it is the reason the stage
+only definition in `tools/Soarscore.SeedData/` that uses the stage, and it is the reason the stage
 is named separately rather than folded into `assemble raw`.
 
 **Every stage is flight-local or later.** `interpret flight` sees one `Flight`'s
@@ -1187,7 +1187,7 @@ stage reads anything new from `AdoptedRules` for it.
   boundary above refuses it: the timekeeper records the next attempt's flag
   directly, so the system honours a judgement rather than deriving one.
 - **The notation is the model's test.** `docs/competition-class-notation.md`
-  defines a hand-writing notation for a class definition, and `seed-data/`
+  defines a hand-writing notation for a class definition, and `tools/Soarscore.SeedData/`
   holds seven FAI classes and three NZ national classes written in it. The
   notation is deliberately isomorphic to this diagram — one keyword per model
   element, no keyword that is not one — so anything a class cannot express is a

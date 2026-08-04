@@ -15,7 +15,7 @@
 > directory is derived from `source-docs/` and is **read-only to the software
 > process**. It tracks the sport, not the product.
 
-Source refs in this directory and in `seed-data/` are written `NZ.<clause>` —
+Source refs in this directory and in the seed definitions are written `NZ.<clause>` —
 `NZ.3.12.3 c` — to keep them unambiguous against FAI refs, which share the same
 numeric shape.
 
@@ -27,14 +27,14 @@ numeric shape.
 which are governed by the FAI Sporting Code with the NZ variations in the
 PREFACE and the NDC formats in §0.0 — those are **not** modelled here.
 
-Three NZ classes are currently modelled in `seed-data/`, all in the ALES
+Three NZ classes are currently modelled in `tools/Soarscore.SeedData/`, all in the ALES
 (Altitude Limited Electric Soaring) family:
 
 | Class | Name | Doc | Definition |
 |---|---|---|---|
-| M | ALES 200 | [class-m-ales200.md](class-m-ales200.md) | `80-nz-m-ales200.class`, `81-nz-m-ndc.class` |
-| N | ALES 123 Open | [class-n-ales123.md](class-n-ales123.md) | `83-nz-n-ales123.class` |
-| P | ALES Radian | [class-p-radian.md](class-p-radian.md) | `85-nz-p-radian.class` |
+| M | ALES 200 | [class-m-ales200.md](class-m-ales200.md) | `SeedNzMAles200.cs`, `SeedNzMNdc.cs` |
+| N | ALES 123 Open | [class-n-ales123.md](class-n-ales123.md) | `SeedNzNAles123.cs` |
+| P | ALES Radian | [class-p-radian.md](class-p-radian.md) | `SeedNzPRadian.cs` |
 
 Their common ground is in
 [nz-ales-general-rules.md](nz-ales-general-rules.md).

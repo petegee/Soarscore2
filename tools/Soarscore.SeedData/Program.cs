@@ -1,7 +1,7 @@
 // Emits the canonical JSON for the eleven seed definitions and checks the four
 // things ADR-0002 §6 asks for before a transcription can be trusted:
 //
-//   1. SNAPSHOT      — the canonical JSON is written to seed-data/json/. From
+//   1. SNAPSHOT      — the canonical JSON is written to json/. From
 //                      here on, any change to a definition or to the emitter is a
 //                      visible diff and the transcription is frozen.
 //   2. ROUND TRIP    — JSON -> records -> JSON is BYTE-IDENTICAL. It must be a
@@ -25,7 +25,7 @@ using Soarscore.Domain.CompetitionClasses;
 using Soarscore.SeedData;
 
 var repoRoot = args.Length > 0 ? args[0] : FindRepoRoot();
-var outputDirectory = Path.Combine(repoRoot, "seed-data", "json");
+var outputDirectory = Path.Combine(repoRoot, "tools", "Soarscore.SeedData", "json");
 Directory.CreateDirectory(outputDirectory);
 
 var failures = new List<string>();
@@ -104,7 +104,7 @@ static int Depth(JsonElement element) => element.ValueKind switch
 static string FindRepoRoot()
 {
     var directory = new DirectoryInfo(AppContext.BaseDirectory);
-    while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "seed-data")))
+    while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
         directory = directory.Parent;
     return directory?.FullName
            ?? throw new InvalidOperationException("Could not find the repository root; pass it as the first argument.");

@@ -29,7 +29,7 @@ variant the rulebook gives no separate clause numbering to split them on.
 > **This is not currently expressible.** Whether the task normalises would have
 > to be a bound parameter, and `Normalisation` is a value object, so no
 > `ParameterRef` slot reaches it — the same residual that finding F12 hit on
-> `Rounding`. `85-nz-p-radian.class` writes the **individual** form, which is the
+> `Rounding`. `SeedNzPRadian.cs` writes the **individual** form, which is the
 > one eligible for NDC and records. **A group-scored Class P contest cannot be
 > scored by that definition.** Recorded in `competition-class-notation.md` §12,
 > Left open.
@@ -123,7 +123,7 @@ Class N clause `NZ.3.13.1 j` states the sensible rule and the opposite one:
 > "If the model is still airborne at the end of the round the flight time stops
 > at that point as well as no landing points awarded."
 
-`85-nz-p-radian.class` follows Class N and flags the reading in the file.
+`SeedNzPRadian.cs` follows Class N and flags the reading in the file.
 
 **Per house-keeping rule 1 this document has not been altered to match, and must
 not be.** It tracks the sport. The reading should be confirmed with the NZMAA

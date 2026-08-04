@@ -14,7 +14,7 @@
 > remains authoritative.
 >
 > Classes M, N and P (§3.12, §3.13, §3.15) are the ones currently modelled in
-> `seed-data/`; the remainder of the document is kept because the general
+> `tools/Soarscore.SeedData/`; the remainder of the document is kept because the general
 > clauses they depend on (§1.6, §2.4, §2.8) are interleaved with it and because
 > the other NZ classes are the obvious next candidates.
 

@@ -2,7 +2,7 @@
 // Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.12, plus
 //            NZ.2.4.5 electric landing table, NZ.2.4.6, NZ.2.8, NZ.1.6)
 //
-// Transcribed from seed-data/80-nz-m-ales200.class. The first non-FAI class in
+// The first non-FAI class in
 // the corpus, and the class that found F24: it adds its landing bonus to the
 // NORMALISED flight score, where F5J and F5L add theirs to the raw score and
 // normalise the sum. Both are coherent rules; the model could express only F5J's

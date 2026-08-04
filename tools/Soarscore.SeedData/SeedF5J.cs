@@ -1,7 +1,7 @@
 // F5J — RC Electric Powered Thermal Duration Gliders
 // Rule refs: FAI Sporting Code Volume F5 Electric 2026 ed.2 (5.5.11.x)
 //
-// Transcribed from seed-data/30-f5j.class. The class that shows why a
+// The class that shows why a
 // PhaseDefinition owns its tasks: the fly-off is the same task with a different
 // working time and a different points cap.
 

@@ -1,3 +1,8 @@
 bin/
 obj/
 *.user
+
+tools/Soarscore.SeedData/deep.sh
+
+# Generated seed JSON — run `dotnet run --project tools/Soarscore.SeedData` to regenerate
+tools/Soarscore.SeedData/json/

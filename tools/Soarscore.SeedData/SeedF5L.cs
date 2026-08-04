@@ -1,7 +1,7 @@
 // F5L — RC Electric Thermal Gliders, RES (provisional class)
 // Rule refs: FAI Sporting Code Volume F5 Electric 2026 ed.2 (5.5.12.x)
 //
-// Transcribed from seed-data/60-f5l.class. Two things make F5L worth writing
+// Two things make F5L worth writing
 // even though it is the simplest class:
 //   - its penalty catalogue is EMPTY. Every consequence in the F5L rules is
 //     derived from something measured, so all of them are score terms.

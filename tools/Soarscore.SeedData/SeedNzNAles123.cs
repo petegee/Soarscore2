@@ -2,7 +2,7 @@
 // Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.13, plus
 //            NZ.2.4.6, NZ.2.8, NZ.1.6)
 //
-// Transcribed from seed-data/83-nz-n-ales123.class. One of the two classes that
+// One of the two classes that
 // found F25: it does not normalise. NZ.3.13.1 i — "each flight counts. The final
 // score is the total of all points over three flights" — is raw points summed
 // across rounds, and there is no normalisation that leaves scores unchanged, so

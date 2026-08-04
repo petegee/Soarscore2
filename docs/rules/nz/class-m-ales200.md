@@ -133,7 +133,7 @@ The National Decentralized Contest format of the same class:
   = **650 per round**; **max NDC score 2600**.
 
 Because this changes the *pipeline* and not a number, it is modelled as a second
-class definition (`81-nz-m-ndc.class`) rather than a parameter binding. The
+class definition (`SeedNzMNdc.cs`) rather than a parameter binding. The
 stated 650/2600 maxima make a useful arithmetic check on any evaluator.
 
 > Note: `NZ.3.12.7 b` cross-references "3.13.1" and "3.13.7.c" where it means

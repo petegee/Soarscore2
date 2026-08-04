@@ -1,4 +1,4 @@
-// The eleven seed definitions, in the order seed-data/ numbers them.
+// The eleven seed definitions, in file-name order.
 //
 // Seven FAI classes and four NZ national ones. The NZ classes are here because
 // they are a DIFFERENT rulebook — they found four things the FAI corpus could
@@ -10,7 +10,7 @@ using Soarscore.Domain.CompetitionClasses;
 
 namespace Soarscore.SeedData;
 
-/// <param name="FileName">The stem of the seed-data/*.class file this was transcribed from.</param>
+/// <param name="FileName">The definition's file-name stem.</param>
 public sealed record SeedClass(string FileName, ClassDefinition Definition);
 
 public static class Corpus

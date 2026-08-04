@@ -5,7 +5,7 @@ pseudo-code — the host language is not yet chosen, and §9 states exactly whic
 host-language features it assumes.
 
 Seven FAI classes and three NZ national classes are written in it in
-`seed-data/`. They are the notation's test and the model's: because the notation
+`tools/Soarscore.SeedData/`. They are the notation's test and the model's: because the notation
 is isomorphic to `soaring-domain-class-diagram.md`, anything they cannot express
 is a gap in the model rather than in the notation.
 
@@ -299,7 +299,7 @@ resolution check runs one way only — every ref resolves to a declared paramete
 never the reverse — because a rulebook can require a choice that no scoring
 stage reads. `F3F.1.5` makes the organiser fix and announce how many pilots
 later a re-flight is flown; it moves the running order and never a score, and
-`70-f3f.class` declares it so the choice reaches the event log. There is
+`SeedF3F.cs` declares it so the choice reaches the event log. There is
 therefore **no `Parameter` analogue of the orphan check on `metricSet`, `rows`
 and `bands`** (check 6), and the asymmetry is the point: an unused scoring table
 is a table the class no longer scores against, where an unread parameter is a
@@ -397,7 +397,7 @@ reasoning that used to sit here is now reversed. `DropPolicy` was mandatory
 (1..\*) on `PhaseDefinition`, so a phase with no discard still needed one, and
 `drop none` was sugar for a single `ByRound 0` with neither gate. That is F25's
 shape — a mandatory slot satisfied with an invented value — and it was the
-majority case, not the exception: nine of the sixteen phases in `seed-data/`
+majority case, not the exception: nine of the sixteen phases in `tools/Soarscore.SeedData/`
 have no discard to state, including every fly-off in the corpus and all four NZ
 definitions. Unlike normalisation, discarding nothing does at least *have* an
 identity value, so the fabrication cost no arithmetic; what it cost was the
@@ -709,7 +709,7 @@ predicates. It stays statically validatable at adoption.
   times within an entry cannot exceed the entry's working time — is a core
   invariant instead (`high-level-architecture.md`), and the one-second-per-flight
   of slack is an accepted deviation, not an oversight.
-- **No discipline vocabulary.** Grep every definition in `seed-data/` for
+- **No discipline vocabulary.** Grep every definition in `tools/Soarscore.SeedData/` for
   `landing`, `height`, `motor`, `lap` and every hit is a *metric name* or a
   *comment* — never a keyword. That is the CLAUDE.md test, mechanised, and it
   still holds across a second rulebook.
@@ -720,7 +720,7 @@ predicates. It stays statically validatable at adoption.
   writable. See finding F15 — three of seven classes now.
 - **No team classification.** Every FAI class defines one — `F3F.1.14` adds the
   final scores of a national team's best three — and no definition in
-  `seed-data/` says a word about it. That is a scope decision, not an oversight:
+  `tools/Soarscore.SeedData/` says a word about it. That is a scope decision, not an oversight:
   `docs/users.md` describes club events run by a small NZ group, where there are
   no national teams to rank. It is recorded here because it is otherwise a
   silence indistinguishable from a gap, and the next class written will meet the
@@ -756,10 +756,10 @@ expansion and the checks are identical for both.
 
 All three are **scoped to one class definition** and none of them survives
 expansion. There is deliberately no library across definitions: a `rows` list
-declared in `30-f5j.class` is invisible to `80-nz-m-ales200.class`, which writes
-the same eleven rows out again, and `85-nz-p-radian.class` still re-transcribes
+declared in `SeedF5J.cs` is invisible to `SeedNzMAles200.cs`, which writes
+the same eleven rows out again, and `SeedNzPRadian.cs` still re-transcribes
 Class N in full. Each definition stays an independent test of the model, which
-is what `seed-data/` is for, and the duplication between definitions stays on
+is what `tools/Soarscore.SeedData/` is for, and the duplication between definitions stays on
 the page as an honest record of what that discipline costs.
 
 The table's previous third row was `drop none`, and the middle row replaces it
@@ -864,7 +864,7 @@ guarantee is that the four *cannot differ*, not that the model records that they
 came from one place.
 
 The unit was picked against the corpus rather than picked and then justified:
-every list written more than once in `seed-data/` was extracted and compared.
+every list written more than once in `tools/Soarscore.SeedData/` was extracted and compared.
 
 | Duplicated list | Copies | Where | Declared as |
 |---|---|---|---|
@@ -1377,7 +1377,7 @@ contain, so the multiplicity was wrong rather than the classes.
   the parallel Class N clause `NZ.3.13.1 j` says the opposite — still airborne at
   the end of the round means the time stops there and no landing points. The
   seed definition follows Class N. **This is a question for the NZMAA, not a
-  model gap**, and it is flagged in `85-nz-p-radian.class` so it is not silently
+  model gap**, and it is flagged in `SeedNzPRadian.cs` so it is not silently
   inherited.
 - **Tie-break: all three state none** — consistent with F15, now three of ten
   classes needing one and none able to write it.
@@ -1394,7 +1394,7 @@ the same discipline §10 applied to F3K and F3B. One finding, and it mis-scores.
 |---|---|---|
 | F28 | `exclusionGroup` repeats — `PenaltyDefinition.exclusionGroups : string[]` | `F3F.1.10` excludes a safety-plane crossing and an object contact against a person contact, but the crossing is "an *additional* penalty" alongside the object contact and the two add |
 
-`70-f3f.class` put all three safety penalties in one group `"safety"`, which
+`SeedF3F.cs` put all three safety penalties in one group `"safety"`, which
 reads the clause's supersession correctly and its addition not at all:
 
 | infractions in one attempt | `F3F.1.10` | one group |
@@ -1415,7 +1415,7 @@ the shape of the error: exclusion had been modelled as an equivalence class when
 the rule states a pairwise relation.
 
 The fix is a multiplicity, `0..1` to `0..*` (§3). Every other definition in
-`seed-data/` names one group or none, so nothing else moves, and adoption check
+`tools/Soarscore.SeedData/` names one group or none, so nothing else moves, and adoption check
 16 applies per group unchanged. The one piece of new semantics is that
 suppression is single-pass over the recorded infractions rather than iterative
 over the survivors — without that a suppressed penalty could un-suppress a

@@ -1,7 +1,7 @@
 // F3F — RC Slope Soaring Gliders
 // Rule refs: FAI Sporting Code Volume F3 Soaring 2025 (F3F.x)
 //
-// Transcribed from seed-data/70-f3f.class. The seventh class, and the first the
+// The seventh class, and the first the
 // notation was not designed against (notation §11). Structurally the simplest in
 // the corpus — one phase, one task, one flight, one metric — and shape-identical
 // to F3B Task C. It is interesting only for the three things it broke (F22, F23,

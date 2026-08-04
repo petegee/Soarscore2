@@ -35,10 +35,11 @@ No application code yet.
   the domain concepts and their relationships. Approval required to change.
 - `docs/competition-class-notation.md` — the notation for writing a Competition
   Class by hand, isomorphic to the class diagram.
-- `seed-data/` — seven FAI classes and the NZ national ALES classes written in
-  that notation. They are the model's test: anything they cannot express is a
-  gap in the model. The NZ classes are there because they are a *different*
-  rulebook — they found four gaps the FAI corpus could not.
+- `tools/Soarscore.SeedData/` — seven FAI classes and the NZ national ALES
+  classes, authored in C#. They are the model's test: anything they cannot
+  express is a gap in the model. The NZ classes are there because they are a
+  *different* rulebook — they found four gaps the FAI corpus could not.
+  Canonical JSON is emitted into `tools/Soarscore.SeedData/json/`.
 - `docs/high-level-architecture.md`, `docs/aggregate-roots.md` — intended shape
   of the system.
 - `docs/non-functional-requirements.md` — NFR-1 … NFR-3.

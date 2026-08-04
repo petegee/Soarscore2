@@ -2,7 +2,7 @@
 // Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.12.7,
 //            which incorporates NZ.3.12.1-3.12.6 except for the scoring)
 //
-// Transcribed from seed-data/81-nz-m-ndc.class. NZ.3.12.7 is the National
+// NZ.3.12.7 is the National
 // Decentralized Contest format of the same rulebook class as ALES 200. It fixes
 // the round count at four, fixes the target time at ten minutes, and — the reason
 // it cannot be a parameter binding on the parent — scores "the sum of the four

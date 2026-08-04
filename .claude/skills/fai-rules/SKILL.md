@@ -36,7 +36,7 @@ docs/rules/
     source-docs/             verbatim NZMAA text — same read-only discipline
 ```
 
-F3F is written in `seed-data/70-f3f.class` from the F3 volume but has no
+F3F is written in `SeedF3F.cs` from the F3 volume but has no
 condensed doc yet; go to `source-docs/f3-soaring-2025.md` via the script for it.
 
 ## Retrieval ladder — stop at the first rung that answers the question
