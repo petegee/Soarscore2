@@ -100,8 +100,8 @@ mediator pattern. This dove-tails nicely with intent-based APIs.
 
 ### Lightweight  
 This application will be open source for people to host their own instances, as well as 
-myself hosting a shared instance in a cloud (TBC). A Competition will likely never have 
-more than 30-40 competitorsover two days but more likley less. Entries are in real-time 
+a maintainer-hosted shared instance in the cloud (TBC). A Competition will likely never have 
+more than 30-40 competitors over two days but more likely less. Entries are in real-time 
 as the competition progresses. It is anticipated an extremely low transaction/sec rate 
 even at its highest load. The application must remain as lightweight as possible and
 not be over-engineered to handle large load (this will never happen).
@@ -235,7 +235,7 @@ the combinations absence makes incoherent.
 
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in
-the group. Notation §11 records it as a candidate and no definition in
+the group. Notation §12 records it as a candidate and no definition in
 `tools/Soarscore.SeedData/` needs it enforced; it joins the list with the first class that
 does.
 

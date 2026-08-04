@@ -7,25 +7,24 @@ other roots, or entities that live inside another aggregate. Nothing inside one
 aggregate holds a direct object reference into another — across a boundary you
 reference by id only.
 
-## A note on how many roots there are
+## Why there are four roots, not three
 
-You marked three roots: **CompetitionClass**, **Competition**, **Competitor**
-(the last has since been reworked: the system-wide root is now **Person**, and
-*Competitor* names a person's registration inside a Competition).
-Drawing them per-aggregate exposes a problem the whole-model diagram hides: the
-composition spine is ten deep, and if all of it lives inside **Competition**,
-then the entire event — every flight, every raw measurement — is one aggregate.
-Its lower half (**Entry → Flight → Measurement → Amendment**) is written *live*
-by the scorers, at high concurrency. Keeping that inside
-Competition means every score update must load and lock the whole event.
+The obvious split is three roots: **CompetitionClass**, **Competition**, and a
+per-person root — now **Person**, with **Competitor** naming a person's
+registration inside a Competition. Drawing them per-aggregate exposes a problem
+the whole-model diagram hides: the composition spine is ten deep, and if all of
+it lives inside **Competition**, then the entire event — every flight, every raw
+measurement — is one aggregate. Its lower half (**Entry → Flight → Measurement →
+Amendment**) is written *live* by the scorers, at high concurrency. Keeping that
+inside Competition means every score update must load and lock the whole event.
 
 So the model pushes toward a **fourth root: Entry** — the unit of live capture.
 Split out and referenced from Group by id, each pilot's working-time record
 becomes independent, which is what a real-time capture system needs. This is the
-standard "small aggregates, reference across boundaries by id" pattern. The
-diagrams below assume this split. If you'd rather keep one large Competition
-aggregate for simplicity, fold Entry back in and accept the write-contention
-cost — but for live hardware capture I'd keep them separate.
+standard "small aggregates, reference across boundaries by id" pattern, and the
+diagrams below assume this split. Folding Entry back into one large Competition
+aggregate would trade it for write contention on every score update — the wrong
+trade for live hardware capture.
 
 The penalty scope enum maps cleanly onto the boundary: **Flight** and **Entry**
 scoped penalties live in the Entry aggregate; **TaskRound** and **Competition**
@@ -65,8 +64,7 @@ plus any a club authors — so editing or retiring one here cannot disturb a
 running or finished event.
 
 **In code, this one concept is two types**, added when the event-sourcing
-model was built (`docs/plans/domain-fold-refactor-plan.md`): `ClassDefinition`
-is the rulebook itself — the pure value object this diagram draws, with no
+model was built: `ClassDefinition` is the rulebook itself — the pure value object this diagram draws, with no
 identity of its own — and `PublishedClassDefinition` is the actual aggregate
 root: it wraps a `ClassDefinition` with the content-hash identity (ADR-0002
 §5), publish/retire timestamps, and the events/fold logic Marten streams

@@ -30,23 +30,23 @@ extending the model, and the extensions are in the class diagram:
 `piecewise … from` and the `flight.sequence` intrinsic.
 
 Re-checking the notation against the two hardest rulebooks afterwards found six
-more (F16–F21, §10): `rankBy`, `flightValidWhen`, the two-gate `drop`, a
+more (F16–F21, §11): `rankBy`, `flightValidWhen`, the two-gate `drop`, a
 per-task `reflight` override, multi-effect penalties with `exclusionGroup`, and
 `maxRounds`.
 
 Writing a *seventh* class the notation was never designed against — F3F, RC
-slope soaring — found two more (F22–F23, §11) and confirmed the rest. That is
-the extensibility claim of NFR-2 being tested rather than asserted, so §11
+slope soaring — found two more (F22–F23, §12) and confirmed the rest. That is
+the extensibility claim of NFR-2 being tested rather than asserted, so §12
 records what held as carefully as what did not.
 
 Pointing it at a **different rulebook entirely** — three NZ national classes
-from NZMAA Section 5, not FAI classes at all — found four more (F24–F27, §12).
+from NZMAA Section 5, not FAI classes at all — found four more (F24–F27, §13).
 Three of the four are structural and one of them, F24, would have mis-scored a
 class that adopted and ran cleanly. The FAI corpus could not have found them:
 all seven FAI classes agree on two things the NZ classes do not.
 
 Re-reading `F3F.1` against the F3F definition it had already produced found one
-more (F28, §13), and that one had been mis-scoring: penalty exclusion was
+more (F28, §14), and that one had been mis-scoring: penalty exclusion was
 modelled as an equivalence class where `F3F.1.10` states a pairwise relation.
 
 ---
@@ -514,7 +514,7 @@ along with the flight time deliberately, and nothing about them changes.
 One adoption check: a `score normalised` block on a task with no `normalise` is
 rejected — there is no stage for it to land at. A task that writes *only* a
 `score normalised` block needs no check, because the plain `score` list is
-`1..*` in the model and the task is unstorable. See §12 for
+`1..*` in the model and the task is unstorable. See §13 for
 the worked example showing that the two orders reorder a group, which is why
 this is a stage rather than a formatting choice.
 
@@ -1177,7 +1177,37 @@ custom operators; in a host without them they are ordinary calls —
 
 ---
 
-## 10. Findings F16–F21
+## 10. Findings F1–F15
+
+F1–F15 came from writing the six original classes (F3B, F3J, F3K, F5J, F5K, F5L)
+against the notation. Unlike the findings from §11 on, they were never collected
+into one table as they were made — this section repairs that, from what the rest
+of this document already states about each. Nothing below is new.
+
+| # | Extension | Forced by |
+|---|---|---|
+| F1 | `param(<name>)` — a parameter reference (`ParameterRef`), legal in exactly thirteen slots and rejected at adoption anywhere else | rules that leave a value for the Contest Director to set rather than stating it — F5K's announced NLH (`5.5.10.4`), F3K's per-task launch limit |
+| F2 | `validWhen` — `Task.validWhen : Predicate` | F3B Task C: a non-completion "scores zero", and zero seconds is the fastest time in an inverted group — without it `NoResult` is unreachable from class data |
+| F3 | `all(…)` — `Predicate.allOf`, a conjunction | several rules gate one outcome on many observations at once — F5L voids its landing bonus on any of seven |
+| F4a | `cap … perTask` — `RateTerm.capScope = PerTask` | F5K Tasks A and D: `5.5.10.2` caps total flight time used for scoring at 9:59, not a per-flight cap |
+| F4b | `rawScore round` — `Task.rawScore : Rounding`, before normalising | F5K only: `5.5.10.15` |
+| F5 | `piecewise … from <origin>` — `PiecewiseTerm.origin` | F5K: launch points are per metre relative to the announced Nominal Launch Height, `5.5.10.4` |
+| F6 | `flight.sequence` — the one intrinsic flight fact | F5K's launch penalties, `5.5.10.2`: Task B selects only the last flight, so the cost of earlier launches can be read nowhere else |
+| F8 | `allowed [<v>, …]` — `Parameter.allowedValues` | F3B `minRounds`: `F3B.1.8 b` states 1 normally and 5 at World and Continental Championships |
+| F9 | `LookupRow.upTo` nullable, legal only on the last row | lookup tables in the corpus needing an unbounded final row — the landing-distance tables in F3J and F5J |
+| F11 | Five variants removed: `LastPhaseOnly`, `NormalisedRoundScore`, `ZeroScoreTerm`, `wholeFieldAsOneGroup`, `DuringRound` | no class in the six required them; each is readmitted the day one does, with the citation |
+| F12 | `no default` — `Parameter.defaultValue` left unset | rules that state no default at all — F3B's group minimum, F5L's `5.5.12.9`, NZ Class M's `NZ.3.12.5 l` |
+| F14 | Target values are written in the units of the metric scored, not in points | the model did not originally say whether `FlightSelection.targetValues` were metric units or points |
+| F15 | Tie-breaking left deliberately unmodelled | F3B (`F3B.2.8`), F3K/F5K (`F3K.10`) and, later, F3F (`F3F.1.13`) all need one and none is writable |
+
+`F7`, `F10` and `F13` do not appear anywhere else in this document, and no earlier
+draft naming them survives in git history. They are treated as retired — findings
+made and then subsumed or dropped before this table existed to record them — not
+as gaps still to fill.
+
+---
+
+## 11. Findings F16–F21
 
 F1–F15 came from writing the six classes. These six came from re-checking the
 notation against the two hardest rulebooks, F3K and F3B, clause by clause against
@@ -1204,7 +1234,7 @@ half of the record:
 
 ---
 
-## 11. Findings F22–F23 — the F3F probe
+## 12. Findings F22–F23 — the F3F probe
 
 F1–F21 came from the six classes the notation was built against, which makes
 them a poor test of NFR-2: a notation shaped by six rulebooks will fit those six.
@@ -1239,7 +1269,7 @@ rounds, so this is an ordinary Saturday, not a corner case.
   200. Accrual therefore had to become per-definition class data (F23) rather
   than a redefinition of the group. Recorded because the wrong fix is cheap to
   re-derive and expensive to adopt. **The group's *membership* was the part this
-  pass got wrong** — see F28, §13.
+  pass got wrong** — see F28, §14.
 - **`validWhen` versus a zero score term paid off a second time.** `F3F.1.6`
   lists nine conditions under which a flight is "official but gets a zero score",
   in an inverted task where a raw zero is the *fastest* time in the group. All
@@ -1270,7 +1300,7 @@ running order, never a score, so it is recorded rather than fixed; a
 
 ---
 
-## 12. Findings F24–F27 — the NZ probe
+## 13. Findings F24–F27 — the NZ probe
 
 F1–F23 all came from FAI rulebooks. That is a narrower test than it looks:
 seven classes drafted by one body over decades share drafting habits, and a
@@ -1384,11 +1414,11 @@ contain, so the multiplicity was wrong rather than the classes.
 
 ---
 
-## 13. Finding F28 — the F3F re-check
+## 14. Finding F28 — the F3F re-check
 
 F22 and F23 came from writing F3F against the notation. This section comes from
 reading `F3F.1` verbatim a second time, against the definition that resulted —
-the same discipline §10 applied to F3K and F3B. One finding, and it mis-scores.
+the same discipline §11 applied to F3K and F3B. One finding, and it mis-scores.
 
 | # | Extension | Forced by |
 |---|---|---|
@@ -1428,7 +1458,7 @@ where the person contact is the largest member of both its groups.
   found because a fifteen-round F3F discards the wrong number of rounds; F28
   because a crossing plus an object contact deducts 100 instead of 200. Both
   produce a complete, plausible score sheet. Neither is findable by running the
-  class — only by reading the clause against the definition, which is why §10's
+  class — only by reading the clause against the definition, which is why §11's
   discipline is worth repeating on classes already written.
 - **`DeductPoints` after `drop` is right, and F3F is the sharpest test of it.**
   `F3F.1.10` deducts "from the competitor's final score" while recording the
