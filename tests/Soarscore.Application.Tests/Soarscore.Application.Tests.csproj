@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Application.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
+    <!-- Reuses the eleven seed ClassDefinitions as realistic fixtures for the
+         CompetitionClass/Competition fold tests, matching Soarscore.Domain.Tests'
+         own precedent for referencing the seed-authoring tool. -->
+    <ProjectReference Include="..\..\tools\Soarscore.SeedData\Soarscore.SeedData.csproj" />
+  </ItemGroup>
+
+</Project>

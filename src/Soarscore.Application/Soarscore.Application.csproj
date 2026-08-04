@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Application</RootNamespace>
+  </PropertyGroup>
+
+  <!-- HLA "Hexagonal architecture": Application exposes ports, contains domain
+       services, use cases and state management (the fold/projection logic for
+       each aggregate). LADR-0001 §4.1-3: it depends on Domain only — no Marten
+       types here. The Marten IProjection shims that wire these plain fold
+       functions into the store live in Soarscore.Infrastructure. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Soarscore.Domain\Soarscore.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Soarscore.Application.Tests" />
+  </ItemGroup>
+
+</Project>

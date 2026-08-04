@@ -11,8 +11,36 @@
 
 using System.Collections.Immutable;
 using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.People;
 
 namespace Soarscore.Domain.Competitions;
+
+public readonly record struct CompetitionId(Guid Value)
+{
+    public static CompetitionId New() => new(Guid.CreateVersion7());
+
+    public override string ToString() => Value.ToString();
+}
+
+/// <summary>An entity inside this aggregate; referenced by id from the Entry aggregate.</summary>
+public readonly record struct CompetitorId(Guid Value)
+{
+    public static CompetitorId New() => new(Guid.CreateVersion7());
+
+    public override string ToString() => Value.ToString();
+}
+
+/// <summary>
+/// An entity inside this aggregate; referenced by id from the Entry aggregate.
+/// Group membership is not stored on the Group itself — it is the set of
+/// Entries whose GroupRef points at it (aggregate-roots.md §3).
+/// </summary>
+public readonly record struct GroupId(Guid Value)
+{
+    public static GroupId New() => new(Guid.CreateVersion7());
+
+    public override string ToString() => Value.ToString();
+}
 
 public enum FinalisationScope { Phase, Competition }
 
@@ -239,4 +267,154 @@ public sealed record Competition
 
     /// <summary>TaskRound / Competition scope only — Flight / Entry scoped penalties live on the Entry aggregate.</summary>
     public ImmutableArray<Penalty> Penalties { get; init; } = [];
+
+    /// <summary>The creation event. Every stream begins with exactly one of these.</summary>
+    public static Competition Create(CompetitionCreated @event) =>
+        new()
+        {
+            Id = @event.Id,
+            Name = @event.Name,
+            Location = @event.Location,
+            StartDate = @event.StartDate,
+            EndDate = @event.EndDate,
+            EvaluatorVersion = @event.EvaluatorVersion,
+            Competitors = [],
+            Phases = [],
+            AdoptedRules = @event.AdoptedRules,
+            RulesAmendments = [],
+            ParameterBindings = [],
+            Finalisations = [],
+            Penalties = [],
+        };
+
+    // One overload per non-creation event — both the domain's own fold-by-type
+    // API *and*, unchanged from today's Infrastructure shim, exactly what
+    // Marten's conventional-method discovery on SingleStreamProjection<TDoc,TId>
+    // matches on.
+    public Competition Apply(CompetitorRegistered @event) =>
+        this with { Competitors = Competitors.Add(@event.Competitor) };
+
+    public Competition Apply(CompetitorWithdrawn @event)
+    {
+        var competitors = Competitors
+            .Select(c => c.Id == @event.CompetitorRef ? c with { WithdrawnAt = @event.At } : c)
+            .ToImmutableArray();
+
+        return this with { Competitors = competitors };
+    }
+
+    public Competition Apply(PhaseDrawn @event)
+    {
+        var phase = new Phase
+        {
+            Type = @event.Type,
+            Ordinal = @event.PhaseOrdinal,
+            Draw = @event.Draw,
+            Rounds = @event.Rounds,
+        };
+
+        return this with { Phases = Phases.Add(phase) };
+    }
+
+    public Competition Apply(ReflightGroupAppended @event) =>
+        ReplaceTaskRound(
+            @event.PhaseOrdinal,
+            @event.RoundOrdinal,
+            @event.TaskRoundOrdinal,
+            taskRound => taskRound with { Groups = taskRound.Groups.Add(@event.Group) });
+
+    public Competition Apply(TaskRoundCompleted @event) =>
+        ReplaceTaskRound(
+            @event.PhaseOrdinal,
+            @event.RoundOrdinal,
+            @event.TaskRoundOrdinal,
+            taskRound => taskRound with { State = TaskRoundState.Complete });
+
+    public Competition Apply(TaskRoundAnnulled @event) =>
+        ReplaceTaskRound(
+            @event.PhaseOrdinal,
+            @event.RoundOrdinal,
+            @event.TaskRoundOrdinal,
+            taskRound => taskRound with { State = TaskRoundState.Annulled });
+
+    public Competition Apply(RulesAmended @event) =>
+        this with { RulesAmendments = RulesAmendments.Add(@event.Amendment) };
+
+    public Competition Apply(ParameterBound @event) =>
+        this with { ParameterBindings = ParameterBindings.Add(@event.Binding) };
+
+    public Competition Apply(Finalised @event) =>
+        this with { Finalisations = Finalisations.Add(@event.Finalisation) };
+
+    public Competition Apply(PenaltyRecorded @event) =>
+        this with { Penalties = Penalties.Add(@event.Penalty) };
+
+    /// <summary>
+    /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted and
+    /// TaskRoundAnnulled: find the Phase/Round/TaskRound by ordinal — never by
+    /// array index — rebuild the three containing arrays with the mutated
+    /// TaskRound in place, and leave everything else untouched.
+    /// </summary>
+    private Competition ReplaceTaskRound(
+        int phaseOrdinal,
+        int roundOrdinal,
+        int taskRoundOrdinal,
+        Func<TaskRound, TaskRound> mutate)
+    {
+        var phases = Phases
+            .Select(phase =>
+            {
+                if (phase.Ordinal != phaseOrdinal)
+                {
+                    return phase;
+                }
+
+                var rounds = phase.Rounds
+                    .Select(round =>
+                    {
+                        if (round.Ordinal != roundOrdinal)
+                        {
+                            return round;
+                        }
+
+                        var taskRounds = round.TaskRounds
+                            .Select(taskRound => taskRound.Ordinal == taskRoundOrdinal ? mutate(taskRound) : taskRound)
+                            .ToImmutableArray();
+
+                        return round with { TaskRounds = taskRounds };
+                    })
+                    .ToImmutableArray();
+
+                return phase with { Rounds = rounds };
+            })
+            .ToImmutableArray();
+
+        return this with { Phases = phases };
+    }
+
+    /// <summary>
+    /// Generic replay entry point, folding a closed <see cref="CompetitionEvent"/>
+    /// union rather than requiring callers to hold the concrete event type. Not
+    /// what Marten calls (Marten calls the typed overloads above via its own
+    /// conventional-method discovery); this is for generic replay code and tests.
+    /// </summary>
+    public static Competition? Apply(Competition? current, CompetitionEvent @event) =>
+        @event switch
+        {
+            CompetitionCreated created => Create(created),
+            CompetitorRegistered e => Require(current, e).Apply(e),
+            CompetitorWithdrawn e => Require(current, e).Apply(e),
+            PhaseDrawn e => Require(current, e).Apply(e),
+            ReflightGroupAppended e => Require(current, e).Apply(e),
+            TaskRoundCompleted e => Require(current, e).Apply(e),
+            TaskRoundAnnulled e => Require(current, e).Apply(e),
+            RulesAmended e => Require(current, e).Apply(e),
+            ParameterBound e => Require(current, e).Apply(e),
+            Finalised e => Require(current, e).Apply(e),
+            PenaltyRecorded e => Require(current, e).Apply(e),
+            _ => throw new ArgumentException($"Unknown CompetitionEvent subtype: {@event.GetType().Name}"),
+        };
+
+    private static Competition Require(Competition? current, CompetitionEvent @event) =>
+        current ?? throw new ArgumentException($"{@event.GetType().Name} folded with no current projection — a Competition must begin with CompetitionCreated.");
 }

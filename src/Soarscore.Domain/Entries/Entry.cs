@@ -13,8 +13,16 @@
 
 using System.Collections.Immutable;
 using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Domain.Entries;
+
+public readonly record struct EntryId(Guid Value)
+{
+    public static EntryId New() => new(Guid.CreateVersion7());
+
+    public override string ToString() => Value.ToString();
+}
 
 /// <summary>
 /// The working-time window a competitor flies within. Not expanded in either
@@ -145,4 +153,99 @@ public sealed record Entry
 
     /// <summary>Flight/Entry-scoped penalties; TaskRound/Competition-scoped ones live on Competition instead.</summary>
     public ImmutableArray<Penalty> Penalties { get; init; } = [];
+
+    /// <summary>The creation event. Every stream begins with exactly one of these.</summary>
+    public static Entry Create(EntryOpened @event) => new()
+    {
+        Id = @event.Id,
+        WorkingTime = @event.WorkingTime,
+        GroupRef = @event.GroupRef,
+        CompetitorRef = @event.CompetitorRef,
+        Role = @event.Role,
+        Annulment = null,
+        Flights = [],
+        Penalties = [],
+    };
+
+    /// <summary>Appends a new, initially empty Flight at the event's sequence.</summary>
+    public Entry Apply(FlightOpened @event)
+    {
+        var flight = new Flight
+        {
+            Sequence = @event.Sequence,
+            LaunchAt = @event.LaunchAt,
+            Measurements = [],
+        };
+
+        return this with { Flights = Flights.Add(flight) };
+    }
+
+    /// <summary>Appends a raw Measurement to the Flight matching <see cref="MeasurementCaptured.FlightSequence"/>.</summary>
+    public Entry Apply(MeasurementCaptured @event) =>
+        this with
+        {
+            Flights = ReplaceFlight(
+                Flights,
+                @event.FlightSequence,
+                flight => flight with { Measurements = flight.Measurements.Add(@event.Measurement) }),
+        };
+
+    /// <summary>Appends an Amendment to the Measurement matching <see cref="MeasurementAmended.Metric"/> within the matching Flight.</summary>
+    public Entry Apply(MeasurementAmended @event) =>
+        this with
+        {
+            Flights = ReplaceFlight(
+                Flights,
+                @event.FlightSequence,
+                flight => flight with
+                {
+                    Measurements = ReplaceMeasurement(
+                        flight.Measurements,
+                        @event.Metric,
+                        measurement => measurement with { Amendments = measurement.Amendments.Add(@event.Amendment) }),
+                }),
+        };
+
+    /// <summary>Records a ruling that this Entry does not count.</summary>
+    public Entry Apply(EntryAnnulled @event) => this with { Annulment = @event.Annulment };
+
+    /// <summary>Appends a Flight/Entry-scoped Penalty.</summary>
+    public Entry Apply(PenaltyRecorded @event) => this with { Penalties = Penalties.Add(@event.Penalty) };
+
+    /// <summary>Finds the Flight matching <paramref name="sequence"/> and replaces it via <paramref name="update"/>.</summary>
+    private static ImmutableArray<Flight> ReplaceFlight(
+        ImmutableArray<Flight> flights,
+        int sequence,
+        Func<Flight, Flight> update) =>
+        flights.Select(flight => flight.Sequence == sequence ? update(flight) : flight).ToImmutableArray();
+
+    /// <summary>Finds the Measurement matching <paramref name="metric"/> and replaces it via <paramref name="update"/>.</summary>
+    private static ImmutableArray<Measurement> ReplaceMeasurement(
+        ImmutableArray<Measurement> measurements,
+        string metric,
+        Func<Measurement, Measurement> update) =>
+        measurements.Select(measurement => measurement.Metric == metric ? update(measurement) : measurement).ToImmutableArray();
+
+    /// <summary>
+    /// Generic replay entry point — same signature <c>EntryProjection.Apply</c>
+    /// had, so <c>stream.Events.Aggregate(...)</c>-style callers barely change.
+    /// Not what Marten calls (Marten calls the typed overloads above via its own
+    /// conventional-method discovery); this is for code that only has the closed
+    /// union type, not the concrete event type.
+    /// </summary>
+    public static Entry? Apply(Entry? current, EntryEvent @event) =>
+        @event switch
+        {
+            EntryOpened opened => Create(opened),
+            FlightOpened e => Require(current, e).Apply(e),
+            MeasurementCaptured e => Require(current, e).Apply(e),
+            MeasurementAmended e => Require(current, e).Apply(e),
+            EntryAnnulled e => Require(current, e).Apply(e),
+            PenaltyRecorded e => Require(current, e).Apply(e),
+            _ => throw new ArgumentException($"Unknown EntryEvent subtype: {@event.GetType().Name}"),
+        };
+
+    private static Entry Require(Entry? current, EntryEvent @event) =>
+        current ?? throw new ArgumentException(
+            $"{@event.GetType().Name} folded with no current Entry — every stream must begin with EntryOpened.");
 }

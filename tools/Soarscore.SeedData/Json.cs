@@ -12,7 +12,9 @@
 //     ADR-0002 §4's input limit sits at 24 with room for a class nobody has
 //     written yet.
 //
-// The two hand-written converters are NOT required for correctness — the tagged
+// The two hand-written converters (NumberOrParamConverter, FlagOrParamConverter,
+// now in Soarscore.Domain.CompetitionClasses — moved once Application's event
+// contracts needed them too) are NOT required for correctness — the tagged
 // form round-trips identically. They collapse thirteen slots' worth of
 // {"kind":"literal","value":599} to 599, which is 9-19% of the artefact and
 // rather more of its readability. A presentation decision about the reviewable
@@ -62,77 +64,6 @@ public static class SoarscoreJson
         var options = Build(indented: true, lenient: false);
         options.TypeInfoResolver = ClassDefinitionContext.Default;
         return options;
-    }
-}
-
-/// <summary>A number, or <c>{"param":"name"}</c>. Twelve of the thirteen slots.</summary>
-public sealed class NumberOrParamConverter : JsonConverter<NumberOrParam>
-{
-    public override NumberOrParam Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        reader.TokenType switch
-        {
-            JsonTokenType.Number => new NumberOrParam.Literal(reader.GetDecimal()),
-            JsonTokenType.StartObject => new NumberOrParam.Ref(ReadParamObject(ref reader)),
-            _ => throw new JsonException($"Expected a number or a parameter reference, found {reader.TokenType}."),
-        };
-
-    public override void Write(Utf8JsonWriter writer, NumberOrParam value, JsonSerializerOptions options)
-    {
-        switch (value)
-        {
-            case NumberOrParam.Literal literal:
-                writer.WriteNumberValue(literal.Value);
-                break;
-            case NumberOrParam.Ref reference:
-                WriteParamObject(writer, reference.ParameterName);
-                break;
-        }
-    }
-
-    internal static string ReadParamObject(ref Utf8JsonReader reader)
-    {
-        // The reader is on StartObject.
-        if (!reader.Read() || reader.TokenType != JsonTokenType.PropertyName || reader.GetString() != "param")
-            throw new JsonException("A parameter reference is an object with exactly one property, \"param\".");
-        if (!reader.Read() || reader.TokenType != JsonTokenType.String)
-            throw new JsonException("\"param\" takes a parameter name.");
-        var name = reader.GetString()!;
-        if (!reader.Read() || reader.TokenType != JsonTokenType.EndObject)
-            throw new JsonException("A parameter reference carries no other properties.");
-        return name;
-    }
-
-    internal static void WriteParamObject(Utf8JsonWriter writer, string name)
-    {
-        writer.WriteStartObject();
-        writer.WriteString("param", name);
-        writer.WriteEndObject();
-    }
-}
-
-/// <summary>A boolean, or <c>{"param":"name"}</c>. PromotionRule.carryPenalties only.</summary>
-public sealed class FlagOrParamConverter : JsonConverter<FlagOrParam>
-{
-    public override FlagOrParam Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        reader.TokenType switch
-        {
-            JsonTokenType.True => new FlagOrParam.Literal(true),
-            JsonTokenType.False => new FlagOrParam.Literal(false),
-            JsonTokenType.StartObject => new FlagOrParam.Ref(NumberOrParamConverter.ReadParamObject(ref reader)),
-            _ => throw new JsonException($"Expected a boolean or a parameter reference, found {reader.TokenType}."),
-        };
-
-    public override void Write(Utf8JsonWriter writer, FlagOrParam value, JsonSerializerOptions options)
-    {
-        switch (value)
-        {
-            case FlagOrParam.Literal literal:
-                writer.WriteBooleanValue(literal.Value);
-                break;
-            case FlagOrParam.Ref reference:
-                NumberOrParamConverter.WriteParamObject(writer, reference.ParameterName);
-                break;
-        }
     }
 }
 

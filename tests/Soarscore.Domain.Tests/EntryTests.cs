@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
-using Soarscore.Domain;
 using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Xunit;
 

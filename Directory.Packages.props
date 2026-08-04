@@ -1,9 +1,9 @@
 <Project>
 
   <!-- LADR-0003, "Package management": Central Package Management, all versions
-       pinned, given how many .NET staples relicensed in 2024-25. Nothing here
-       yet — the Domain has zero PackageReference by design, and the seed-data
-       tool needs nothing System.Text.Json does not already give it in-box. -->
+       pinned, given how many .NET staples relicensed in 2024-25. The Domain has
+       zero PackageReference by design; Marten is pinned here but referenced only
+       from Soarscore.Infrastructure (LADR-0001 §4.1-3). -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="CsCheck" Version="4.7.0" />
+    <PackageVersion Include="Marten" Version="9.22.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1" />

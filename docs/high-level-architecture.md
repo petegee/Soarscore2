@@ -26,8 +26,10 @@ The system must be headless in nature. It must not offer a UI or alternative int
 At its simplest form, the application should be onion layered with dependencies pointing inwards only.
 The layers should be:
  1, API: an http adapter, 
- 2, Application: exposes Ports, contains domain services, and use cases, state management
- 3, Domain: Contains the aggregate roots, and their entities/value objects
+ 2, Application: exposes Ports, contains domain services, use cases, read-models, cross-aggregate orchestration,
+    commands and query handlers.
+ 3, Domain: Contains the aggregate roots and their entities/value objects, domain events, business 
+    operations on aggregates, aggregate root event fold logic.
 
 ### SOLID
 It should try to maintain SOLID principes, but we care more about (SLID): 
@@ -39,7 +41,10 @@ It should try to maintain SOLID principes, but we care more about (SLID):
 ### Domain Driven Design
 Domain-Driven Design (DDD) is a software development approach that aligns code structure with 
 real business needs by modeling software around a specific domain using a shared vocabulary. The 
-Domain layer must have **NO** dependencies.
+Domain layer:
+ - Must have **NO** dependencies
+ - Should Contain and abstract business operations on that aggregate.
+ - Should not be an anemic domain
 
 ### Lean and Focused
 This system is to be as light weight and as un-opinionated as possible to allow maximum 
