@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
 using Soarscore.Domain.Scoring;
 using Xunit;
 

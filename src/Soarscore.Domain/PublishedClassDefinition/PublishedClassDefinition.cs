@@ -1,6 +1,6 @@
 // The CompetitionClass aggregate root — docs/aggregate-roots.md §1, LADR-0002 §5.
 
-namespace Soarscore.Domain.CompetitionClasses;
+namespace Soarscore.Domain.PublishedClassDefinition;
 
 /// <summary>
 /// The published, library-tracked state of one <see cref="ClassDefinition"/>:

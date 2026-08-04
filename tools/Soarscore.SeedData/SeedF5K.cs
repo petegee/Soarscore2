@@ -8,7 +8,7 @@
 // corpus's deepest term nesting and its only load-bearing `else` clauses.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

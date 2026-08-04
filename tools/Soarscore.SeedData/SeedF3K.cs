@@ -7,7 +7,7 @@
 // UntilAllFlightsComplete.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

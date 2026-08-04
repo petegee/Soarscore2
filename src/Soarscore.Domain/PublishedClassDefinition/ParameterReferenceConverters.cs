@@ -19,7 +19,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Soarscore.Domain.CompetitionClasses;
+namespace Soarscore.Domain.PublishedClassDefinition;
 
 /// <summary>A number, or <c>{"param":"name"}</c>. Twelve of the thirteen slots.</summary>
 public sealed class NumberOrParamConverter : JsonConverter<NumberOrParam>

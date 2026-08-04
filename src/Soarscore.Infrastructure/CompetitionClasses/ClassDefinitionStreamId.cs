@@ -19,7 +19,7 @@
 // string, never this Guid. Nothing outside Infrastructure should need to know
 // this derivation exists.
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Infrastructure.CompetitionClasses;
 

@@ -1,4 +1,4 @@
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
 
@@ -20,7 +20,7 @@ public class ClassDefinitionFoldTests
         var hash = SampleHash;
         var @event = new ClassDefinitionPublished(hash, SampleDefinition, publishedAt);
 
-        var projection = PublishedClassDefinition.Apply(null, @event);
+        var projection = PublishedClassDefinition.PublishedClassDefinition.Apply(null, @event);
 
         Assert.NotNull(projection);
         Assert.Equal(hash, projection!.ContentHash);
@@ -33,10 +33,10 @@ public class ClassDefinitionFoldTests
     public void Retired_sets_RetiredAt_and_leaves_everything_else_untouched()
     {
         var hash = SampleHash;
-        var published = PublishedClassDefinition.Apply(null, new ClassDefinitionPublished(hash, SampleDefinition, DateTimeOffset.UtcNow));
+        var published = PublishedClassDefinition.PublishedClassDefinition.Apply(null, new ClassDefinitionPublished(hash, SampleDefinition, DateTimeOffset.UtcNow));
         var retiredAt = DateTimeOffset.UtcNow.AddDays(1);
 
-        var retired = PublishedClassDefinition.Apply(published, new ClassDefinitionRetired("superseded", retiredAt));
+        var retired = PublishedClassDefinition.PublishedClassDefinition.Apply(published, new ClassDefinitionRetired("superseded", retiredAt));
 
         Assert.NotNull(retired);
         Assert.Equal(retiredAt, retired!.RetiredAt);
@@ -47,7 +47,7 @@ public class ClassDefinitionFoldTests
     [Fact]
     public void Retired_against_no_current_projection_folds_to_null()
     {
-        var result = PublishedClassDefinition.Apply(null, new ClassDefinitionRetired("n/a", DateTimeOffset.UtcNow));
+        var result = PublishedClassDefinition.PublishedClassDefinition.Apply(null, new ClassDefinitionRetired("n/a", DateTimeOffset.UtcNow));
 
         Assert.Null(result);
     }
@@ -65,7 +65,7 @@ public class ClassDefinitionFoldTests
             new ClassDefinitionRetired("library cleanup", retiredAt),
         ];
 
-        var final = stream.Aggregate((PublishedClassDefinition?)null, PublishedClassDefinition.Apply);
+        var final = stream.Aggregate((PublishedClassDefinition.PublishedClassDefinition?)null, PublishedClassDefinition.PublishedClassDefinition.Apply);
 
         Assert.NotNull(final);
         Assert.Equal(hash, final!.ContentHash);

@@ -6,7 +6,7 @@
 // working time and a different points cap.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

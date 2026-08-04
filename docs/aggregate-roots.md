@@ -64,6 +64,16 @@ CompetitionClass is the library you adopt *from* — seed data for the FAI class
 plus any a club authors — so editing or retiring one here cannot disturb a
 running or finished event.
 
+**In code, this one concept is two types**, added when the event-sourcing
+model was built (`docs/plans/domain-fold-refactor-plan.md`): `ClassDefinition`
+is the rulebook itself — the pure value object this diagram draws, with no
+identity of its own — and `PublishedClassDefinition` is the actual aggregate
+root: it wraps a `ClassDefinition` with the content-hash identity (ADR-0002
+§5), publish/retire timestamps, and the events/fold logic Marten streams
+against. The diagram's `+id id` is `PublishedClassDefinition`'s content hash,
+not a field `ClassDefinition` carries. This is a code-level split of one
+domain concept, not two — nothing here changes the glossary.
+
 ```mermaid
 classDiagram
     direction TB

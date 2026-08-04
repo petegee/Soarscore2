@@ -7,7 +7,7 @@
 // TargetValues[n-1-i] (Issue #3).
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
 

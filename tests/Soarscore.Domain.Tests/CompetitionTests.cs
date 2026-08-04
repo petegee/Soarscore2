@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
 
@@ -41,7 +42,7 @@ public class CompetitionTests
 
         var phase = new Phase
         {
-            Type = Soarscore.Domain.CompetitionClasses.PhaseType.Preliminary,
+            Type = PhaseType.Preliminary,
             Ordinal = 1,
             Draw = new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "Accepted" },
             Rounds = [round],

@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using CsCheck;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Xunit;
 

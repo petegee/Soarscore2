@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
-using Soarscore.Domain.CompetitionClasses;
 using Soarscore.Domain.People;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
 

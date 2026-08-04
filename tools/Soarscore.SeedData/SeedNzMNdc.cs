@@ -13,7 +13,7 @@
 // is recorded in notation §12: nothing in the model says these two definitions
 // are one class in the rulebook.
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

@@ -12,7 +12,7 @@
 // makes group scoring a CD choice, and no ParameterRef slot can reach a
 // Normalisation. See the foot of this file.
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

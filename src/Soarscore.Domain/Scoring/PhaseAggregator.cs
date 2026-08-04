@@ -5,7 +5,7 @@
 // The Drops list is ordered — first matching policy wins (F22).
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
 

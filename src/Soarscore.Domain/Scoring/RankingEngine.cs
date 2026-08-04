@@ -4,7 +4,7 @@
 // kinds and ties. Disqualified competitors are excluded from placings.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
 

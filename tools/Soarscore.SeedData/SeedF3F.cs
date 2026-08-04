@@ -7,7 +7,7 @@
 // to F3B Task C. It is interesting only for the three things it broke (F22, F23,
 // F28) and the one it still cannot say.
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

@@ -8,7 +8,7 @@
 // means the DERIVED −30 overfly deduction (F3J.10.3), which is a score term.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

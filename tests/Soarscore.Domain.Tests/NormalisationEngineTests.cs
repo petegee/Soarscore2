@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 using Xunit;

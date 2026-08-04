@@ -12,7 +12,7 @@
 
 using System.Collections.Immutable;
 
-namespace Soarscore.Domain.CompetitionClasses;
+namespace Soarscore.Domain.PublishedClassDefinition;
 
 public sealed record Parameter
 {
@@ -218,10 +218,14 @@ public sealed record PhaseDefinition
 }
 
 /// <summary>
-/// The aggregate root. No versioning semantics (ADR-0002 §5): the Competition's
-/// copy in AdoptedRules is the only thing that matters, `version` is a free-text
-/// human label that nothing resolves, and identity is a content hash over the
-/// canonical serialisation.
+/// The rulebook itself — a value object, not the aggregate root. The
+/// aggregate root is <see cref="PublishedClassDefinition"/>, which wraps one
+/// of these with its content-hash identity, publish/retire history and
+/// events; this type carries none of that, deliberately (Shared.cs / WI-0
+/// finding: "there is no ClassDefinitionId to mint"). No versioning semantics
+/// either way (ADR-0002 §5): the Competition's copy in AdoptedRules is the
+/// only thing that matters, and `version` is a free-text human label that
+/// nothing resolves.
 /// </summary>
 public sealed record ClassDefinition
 {

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
+using Soarscore.Domain.PublishedClassDefinition;
 using Xunit;
 
 namespace Soarscore.Domain.Tests;

@@ -5,7 +5,7 @@
 // consume ResolvedTask — they never need to resolve parameter refs themselves.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
 

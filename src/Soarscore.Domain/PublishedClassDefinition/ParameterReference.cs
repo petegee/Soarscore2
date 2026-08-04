@@ -19,7 +19,7 @@
 // is untrusted and a document naming a parameter in a decimal slot is a type
 // error there, not here.
 
-namespace Soarscore.Domain.CompetitionClasses;
+namespace Soarscore.Domain.PublishedClassDefinition;
 
 // NOTE (LADR-0003, spike finding 1). Neither union carries [JsonPolymorphic],
 // and neither can: System.Text.Json throws NotSupportedException at

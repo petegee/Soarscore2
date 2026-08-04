@@ -10,8 +10,8 @@
 // this root.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
 using Soarscore.Domain.People;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Competitions;
 

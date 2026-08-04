@@ -23,7 +23,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Soarscore.Domain.CompetitionClasses;
+namespace Soarscore.Domain.PublishedClassDefinition;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$kind")]
 [JsonDerivedType(typeof(ClassDefinitionPublished), "classDefinitionPublished")]

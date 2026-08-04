@@ -12,8 +12,8 @@
 // nothing here holds a direct reference to a Group or a Competitor.
 
 using System.Collections.Immutable;
-using Soarscore.Domain.CompetitionClasses;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Entries;
 

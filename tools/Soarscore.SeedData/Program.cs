@@ -21,7 +21,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 
 var repoRoot = args.Length > 0 ? args[0] : FindRepoRoot();

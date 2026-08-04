@@ -13,7 +13,7 @@
 //
 // The NDC variant of this class scores raw and is a separate definition.
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

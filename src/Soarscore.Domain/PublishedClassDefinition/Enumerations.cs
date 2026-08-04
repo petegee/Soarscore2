@@ -12,7 +12,7 @@
 // holder into subtypes was considered and declined and the enum is still doing
 // the discriminating work.
 
-namespace Soarscore.Domain.CompetitionClasses;
+namespace Soarscore.Domain.PublishedClassDefinition;
 
 public enum MeasuredKind { Number, Flag }
 

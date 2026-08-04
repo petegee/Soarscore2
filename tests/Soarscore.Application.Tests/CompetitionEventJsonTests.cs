@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Soarscore.Domain.Competitions;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
 

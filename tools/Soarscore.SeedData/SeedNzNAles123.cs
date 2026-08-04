@@ -12,7 +12,7 @@
 // It also found F26 with NZ.3.13.1 h: "no re-flights are permitted" is a definite
 // rule, not a rulebook silence.
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.SeedData;
 

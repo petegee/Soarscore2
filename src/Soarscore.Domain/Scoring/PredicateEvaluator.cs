@@ -4,7 +4,7 @@
 // measurements. Used by FlightInterpreter (flightValidWhen, score-term
 // conditionals) and FlightSelector (validWhen).
 
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
 

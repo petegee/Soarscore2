@@ -15,7 +15,7 @@
 
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
-using Soarscore.Domain.CompetitionClasses;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Competitions;
 
