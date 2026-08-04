@@ -56,7 +56,7 @@ public static class FlightSelector
             foreach (var flight in withTargets)
             {
                 if (!PredicateEvaluator.Evaluate(task.ValidWhen,
-                        flight.Result.Measurements.Metrics))
+                        flight.Metrics))
                 {
                     allPass = false;
                     break;
@@ -128,7 +128,7 @@ public static class FlightSelector
         {
             ranked = flights.OrderByDescending(f =>
             {
-                var m = f.Result.Measurements.Metrics;
+                var m = f.Metrics;
                 return m.TryGetValue(spec.RankByMetric, out var v) && v.Number.HasValue
                     ? v.Number.Value
                     : 0m;
@@ -242,7 +242,7 @@ public static class FlightSelector
         decimal target,
         ImmutableArray<ScoreTerm> scoreTerms)
     {
-        var metrics = flight.Result.Measurements.Metrics;
+        var metrics = flight.Metrics;
 
         if (!metrics.TryGetValue(targetMetric, out var originalValue)
             || originalValue.Kind != MeasuredKind.Number

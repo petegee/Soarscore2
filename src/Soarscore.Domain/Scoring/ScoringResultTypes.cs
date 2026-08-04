@@ -54,7 +54,11 @@ public sealed record InterpretedFlight(
     /// FlightSelector needs this for CapScope.PerTask rate terms.
     /// </summary>
     IReadOnlyDictionary<int, TermContribution> TermContributions
-);
+)
+{
+    /// <summary>Pass-through so callers need not know Result holds Measurements holds Metrics.</summary>
+    public IReadOnlyDictionary<string, MeasuredValue> Metrics => Result.Measurements.Metrics;
+}
 
 // --------------------------------------------------------------- flight selection
 

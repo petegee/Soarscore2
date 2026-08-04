@@ -120,7 +120,7 @@ public static class NormalisationEngine
                     foreach (var term in task.ScoreNormalised)
                     {
                         var contrib = FlightInterpreter.EvaluateTerm(
-                            term, flight.Result.Measurements.Metrics);
+                            term, flight.Metrics);
                         normalised += contrib.Points;
                     }
                 }

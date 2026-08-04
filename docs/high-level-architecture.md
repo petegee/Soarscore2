@@ -16,6 +16,8 @@
  - Core-owned invariants
  - Functional-Like as a Core Princple
  - Lightweight
+ - Law of Demiter
+ - Open Source
 
  ### Headless
 The system must be headless in nature. It must not offer a UI or alternative interaction.
@@ -98,6 +100,10 @@ more than 30-40 competitorsover two days but more likley less. Entries are in re
 as the competition progresses. It is anticipated an extremely low transaction/sec rate 
 even at its highest load. The application must remain as lightweight as possible and
 not be over-engineered to handle large load (this will never happen).
+
+### Law of Demiter
+The Law of Demeter is a software design guideline summarized by the motto "only talk to 
+your immediate friends" and the principle of least knowledge.
 
 ### Open Source 
 This application must be open source and its dependencies be open source so people 
