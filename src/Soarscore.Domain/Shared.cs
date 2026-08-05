@@ -15,6 +15,16 @@
 namespace Soarscore.Domain;
 
 /// <summary>
+/// Marker implemented by the four event-union bases (PersonEvent,
+/// CompetitionEvent, EntryEvent, ClassDefinitionEvent) so that
+/// <c>IEventStore</c> (Soarscore.Application, WI-3) has a typed signature
+/// instead of <see cref="object"/>. No members: it exists only to close the
+/// port's generic surface over "one of our event types", and touches none of
+/// the `[JsonPolymorphic]`/`$kind` machinery those four bases already carry.
+/// </summary>
+public interface IDomainEvent;
+
+/// <summary>
 /// A recorded infraction, not a derived deduction (high-level-architecture.md,
 /// "Penalties are recorded infractions only"). The same shape is held on
 /// Competition, scoped to TaskRound/Competition, and on Entry, scoped to

@@ -31,7 +31,7 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(ParameterBound), "parameterBound")]
 [JsonDerivedType(typeof(Finalised), "finalised")]
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
-public abstract record CompetitionEvent
+public abstract record CompetitionEvent : IDomainEvent
 {
     private protected CompetitionEvent() { }
 }

@@ -33,7 +33,7 @@ namespace Soarscore.Domain.Entries;
 [JsonDerivedType(typeof(MeasurementAmended), "measurementAmended")]
 [JsonDerivedType(typeof(EntryAnnulled), "entryAnnulled")]
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
-public abstract record EntryEvent
+public abstract record EntryEvent : IDomainEvent
 {
     private protected EntryEvent() { }
 }

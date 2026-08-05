@@ -17,7 +17,7 @@ namespace Soarscore.Domain.People;
 [JsonDerivedType(typeof(ContactDetailsChanged), "contactDetailsChanged")]
 [JsonDerivedType(typeof(ClubAffiliationChanged), "clubAffiliationChanged")]
 [JsonDerivedType(typeof(PersonRenamed), "personRenamed")]
-public abstract record PersonEvent
+public abstract record PersonEvent : IDomainEvent
 {
     private protected PersonEvent() { }
 }

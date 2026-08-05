@@ -28,7 +28,7 @@ namespace Soarscore.Domain.PublishedClassDefinition;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$kind")]
 [JsonDerivedType(typeof(ClassDefinitionPublished), "classDefinitionPublished")]
 [JsonDerivedType(typeof(ClassDefinitionRetired), "classDefinitionRetired")]
-public abstract record ClassDefinitionEvent
+public abstract record ClassDefinitionEvent : IDomainEvent
 {
     private protected ClassDefinitionEvent() { }
 }
