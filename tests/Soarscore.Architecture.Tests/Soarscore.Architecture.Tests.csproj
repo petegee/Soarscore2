@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Architecture.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- References every production project so the rules below can see the whole
+       graph. Soarscore.Api does not exist yet (WI-8); the route-shape reflection
+       test and the "Infrastructure does not depend on Api" rule are added then. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
