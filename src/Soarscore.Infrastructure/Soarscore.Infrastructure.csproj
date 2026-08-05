@@ -13,6 +13,11 @@
 
   <ItemGroup>
     <PackageReference Include="Marten" />
+    <!-- Transitive via Marten -> Weasel.Postgresql; declared explicitly because
+         MartenEventStore.cs catches Npgsql.PostgresException directly (WI-7's
+         error-translation rule: nothing Marten-shaped escapes this project, but
+         the Postgres SqlState underneath it is the stable signal). -->
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
   <ItemGroup>
