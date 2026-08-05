@@ -3,12 +3,15 @@
 // exists for. Not GetPerson: that goes through IEventStore and folds
 // (GetPerson.cs) per high-level-architecture.md's "querying by ID loads the
 // stream" rule.
+//
+// A record struct, not a record class — see GetPerson.cs: WI-8 binds this
+// directly from the query string via [AsParameters], no separate Api-layer DTO.
 
 using Soarscore.Domain;
 
 namespace Soarscore.Application.People;
 
-public sealed record FindPeople(string? Email, string? Name) : IQuery<IReadOnlyList<PersonSummary>>;
+public readonly record struct FindPeople(string? Email, string? Name) : IQuery<IReadOnlyList<PersonSummary>>;
 
 public sealed class FindPeopleHandler(IPeopleQuery peopleQuery) : IQueryHandler<FindPeople, IReadOnlyList<PersonSummary>>
 {

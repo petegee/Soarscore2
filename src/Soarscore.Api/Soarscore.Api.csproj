@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Api</RootNamespace>
+  </PropertyGroup>
+
+  <!-- LADR-0003 "Web / API host": ASP.NET Core Minimal APIs, MapCommand/MapQuery
+       helpers as the only routing surface (Routing/EndpointRouteBuilderExtensions.cs).
+       The composition root — the only project that references both Application
+       (for IDispatcher) and Infrastructure (for AddSoarscoreInfrastructure). -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Soarscore.Application\Soarscore.Application.csproj" />
+    <ProjectReference Include="..\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

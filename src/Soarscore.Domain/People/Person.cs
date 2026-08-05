@@ -9,9 +9,28 @@
 
 namespace Soarscore.Domain.People;
 
-public readonly record struct PersonId(Guid Value)
+/// <summary>
+/// <see cref="IParsable{TSelf}"/> so ASP.NET's Minimal API parameter binding
+/// (WI-8, <c>[AsParameters]</c> query records) can bind this straight from a
+/// query-string value — no Api-layer converter needed.
+/// </summary>
+public readonly record struct PersonId(Guid Value) : IParsable<PersonId>
 {
     public static PersonId New() => new(Guid.CreateVersion7());
+
+    public static PersonId Parse(string s, IFormatProvider? provider) => new(Guid.Parse(s, provider));
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out PersonId result)
+    {
+        if (Guid.TryParse(s, provider, out var value))
+        {
+            result = new PersonId(value);
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
 
     public override string ToString() => Value.ToString();
 }

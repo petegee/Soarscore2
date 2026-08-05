@@ -15,6 +15,14 @@
 //    the new events land (current version + events.Count), not before. Get
 //    this backwards and every mutation after the first silently asserts the
 //    wrong version and either always succeeds or always fails.
+//  - Guid.Empty is not just "a stream that doesn't exist" to Marten: Append
+//    throws ArgumentOutOfRangeException for it, but FetchStreamAsync silently
+//    drops the stream-id filter entirely and returns every event across every
+//    stream in the log, unfiltered — confirmed empirically (WI-8 smoke test:
+//    GET /person?id=00000000-… returned another person's data, folded
+//    together with the Tombstone event from an unrelated stream). Both
+//    AppendAsync and ReadStreamAsync reject Guid.Empty before calling Marten
+//    at all, rather than leaning on that inconsistency.
 //
 // ExpectedVersion.Exact(v) here always means "the stream currently has v
 // events" (PersonLoader.cs's convention — v is events.Count from a prior
@@ -36,6 +44,11 @@ public sealed class MartenEventStore(IDocumentStore store) : IEventStore
         IReadOnlyList<IDomainEvent> events,
         CancellationToken cancellationToken = default)
     {
+        if (streamId == Guid.Empty)
+        {
+            return RejectEmptyStreamId<long>();
+        }
+
         await using var session = store.LightweightSession();
 
         if (expected.IsNoStream)
@@ -83,10 +96,21 @@ public sealed class MartenEventStore(IDocumentStore store) : IEventStore
         long fromVersion,
         CancellationToken cancellationToken = default)
     {
+        if (streamId == Guid.Empty)
+        {
+            return RejectEmptyStreamId<IReadOnlyList<IDomainEvent>>();
+        }
+
         await using var session = store.QuerySession();
         var events = await session.Events.FetchStreamAsync(streamId, fromVersion: fromVersion, token: cancellationToken);
 
-        IReadOnlyList<IDomainEvent> result = events.Select(e => (IDomainEvent)e.Data).ToList();
+        // Same Tombstone-filtering rule as ReadAllAsync below — Marten's
+        // high-water-mark agent can interleave its marker event into a real
+        // stream's row set, and it must not reach the Application layer.
+        IReadOnlyList<IDomainEvent> result = events
+            .Where(e => e.Data is IDomainEvent)
+            .Select(e => (IDomainEvent)e.Data)
+            .ToList();
         return Result<IReadOnlyList<IDomainEvent>>.Success(result);
     }
 
@@ -111,6 +135,10 @@ public sealed class MartenEventStore(IDocumentStore store) : IEventStore
             .ToList();
         return Result<IReadOnlyList<RecordedEvent>>.Success(result);
     }
+
+    /// <summary>See the class comment's Guid.Empty note — rejected before Marten ever sees it.</summary>
+    private static Result<T> RejectEmptyStreamId<T>() =>
+        Result<T>.Failure("eventStore.emptyStreamId", "A stream id must not be Guid.Empty.");
 
     /// <summary>
     /// Walks the exception chain for a Postgres unique-violation (SqlState 23505). Marten

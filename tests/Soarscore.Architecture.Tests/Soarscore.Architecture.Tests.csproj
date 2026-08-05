@@ -20,12 +20,12 @@
   </ItemGroup>
 
   <!-- References every production project so the rules below can see the whole
-       graph. Soarscore.Api does not exist yet (WI-8); the route-shape reflection
-       test and the "Infrastructure does not depend on Api" rule are added then. -->
+       graph, including Soarscore.Api (WI-8) for the route-shape reflection test. -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
     <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
     <ProjectReference Include="..\..\src\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Api\Soarscore.Api.csproj" />
   </ItemGroup>
 
 </Project>

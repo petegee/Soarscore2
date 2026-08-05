@@ -14,10 +14,12 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 namespace Soarscore.ArchitectureTests;
 
 // WI-2 (docs/plans/command-side-steel-thread-plan.md): guards the hexagonal
-// layering CLAUDE.md and LADR-0001 §4.2 state in prose. Soarscore.Api does not
-// exist yet (WI-8) so it is not loaded here; the Infrastructure-does-not-depend-
-// on-Api rule below matches on an assembly-name pattern rather than a project
-// reference, so it already holds and keeps holding once WI-8 lands.
+// layering CLAUDE.md and LADR-0001 §4.2 state in prose. Soarscore.Api (WI-8) is
+// not loaded into the Architecture below — the rules here only constrain
+// Domain/Application/Infrastructure's outbound dependencies, and the
+// Infrastructure-does-not-depend-on-Api rule matches on an assembly-name
+// pattern rather than a project reference, so it holds without loading Api.
+// RouteShapeTests.cs is the rule that exercises Soarscore.Api itself.
 public sealed class LayerRuleTests
 {
     private static readonly ArchUnitNET.Domain.Architecture Architecture = new ArchLoader()

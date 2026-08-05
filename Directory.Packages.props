@@ -13,7 +13,14 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
     <PackageVersion Include="CsCheck" Version="4.8.0" />
     <PackageVersion Include="Marten" Version="9.22.2" />
+    <!-- Pinned to the AspNetCore.App runtime installed alongside the 10.0.110 SDK
+         (LADR-0003 "API documentation": in-box, spec emitted as a build artefact). -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <!-- Transitive via Microsoft.AspNetCore.OpenApi, which pins 2.0.0 — GHSA-v5pm-xwqc-g5wc
+         (stack overflow parsing a circular-reference OpenAPI document), patched at 2.7.5.
+         Overridden explicitly rather than left floating (CentralPackageTransitivePinningEnabled). -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
     <!-- Transitive via Marten -> Weasel.Postgresql, pinned to match rather than
          float independently (LADR-0003 "all versions pinned"). -->
     <PackageVersion Include="Npgsql" Version="9.0.4" />
