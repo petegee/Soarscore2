@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Infrastructure.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <!-- WI-9 (docs/plans/command-side-steel-thread-plan.md): the only suite that
+       proves the LADR-0001 §2 Inline-vs-async decision against a real Postgres,
+       rather than the FakeEventStore/FakePeopleQuery doubles WI-6 uses. -->
+
+  <ItemGroup>
+    <PackageReference Include="AwesomeAssertions" />
+    <!-- Not a layering violation (WI-2's ArchUnit rules scope to the src/ assemblies
+         only): test 4 (read-model rebuild) needs IDocumentStore.Advanced directly,
+         which is not something the IEventStore/IPeopleQuery ports expose. -->
+    <PackageReference Include="Marten" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
