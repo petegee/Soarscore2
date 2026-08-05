@@ -110,3 +110,6 @@ Backing detail: [NFR-1](docs/non-functional-requirements.md#nfr-1--one-centralis
 - "Who needs this / why" → `docs/users.md`.
 - "What's the actual rule / number" → the `fai-rules` skill (class doc first,
   then family, then general; verbatim source text on demand).
+- "What's the actual API / current syntax" for a chosen library (Marten,
+  xunit.v3, CsCheck, ArchUnitNET, AwesomeAssertions) → the `context7` MCP
+  server, rather than answering from training memory.
