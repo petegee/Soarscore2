@@ -22,8 +22,31 @@ and no existing real data that needs to be preserved, or migrated.
 
 ## Repository map
 
-No application code yet.
-
+- `src/Soarscore.Domain` — the aggregates as immutable state + `Apply` folds
+  (`Person`, `Competition`, `Entry`, `PublishedClassDefinition`), decide
+  functions returning `Result<T>`, and the scoring engine. No dependency
+  outside the BCL — enforced at build by `Soarscore.Architecture.Tests`.
+- `src/Soarscore.Application` — the hexagonal core: `IDispatcher`,
+  `ICommand`/`IQuery` handlers, the `IEventStore` / `IPeopleQuery` / `IClock`
+  ports, and read-model projection functions (e.g. `PeopleProjection`).
+  Depends on Domain only — never Marten.
+- `src/Soarscore.Infrastructure` — the only project allowed to reference
+  Marten: `MartenEventStore` (event append/read plus Inline projections over
+  PostgreSQL, never the async daemon — see `docs/ladr/ladr-0001-event-store.md`)
+  and the `AddSoarscoreInfrastructure` DI wiring.
+- `src/Soarscore.Api` — ASP.NET Core Minimal API front door.
+  `MapCommand`/`MapQuery` are the only routing surface — verbs, never nouns.
+- `tests/Soarscore.Domain.Tests`, `tests/Soarscore.Application.Tests` — unit
+  and property-based (CsCheck) tests driven through fakes; no store, no HTTP.
+- `tests/Soarscore.Architecture.Tests` — ArchUnitNET layer rules plus the
+  route-shape reflection test (endpoints must be GET/POST only).
+- `tests/Soarscore.Infrastructure.Tests` — store-backed tests against a real
+  PostgreSQL via Testcontainers, tagged `Trait("Category", "Storage")` so a
+  fast local loop can filter them out.
+- `docs/plans/` — implementation plans for a work thread (e.g.
+  `command-side-steel-thread-plan.md`), cited from code as `WI-n`.
+- `docs/ladr/` — architecture decision records binding the choices above
+  (`ladr-0001-event-store.md`, `ladr-0003-library-choices.md`).
 - `docs/rules/` — the rule knowledge base. `source-docs/` is the verbatim
   official text; the files above it are condensed, software-relevant summaries.
   See House-keeping rule 1.
