@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.SeedData;
 using Xunit;
@@ -13,8 +14,8 @@ public class ClassDefinitionHashingTests
         var hashAAgain = ClassDefinitionHashing.ComputeContentHash(Corpus.All[0].Definition);
         var hashB = ClassDefinitionHashing.ComputeContentHash(Corpus.All[1].Definition);
 
-        Assert.Equal(hashA, hashAAgain);
-        Assert.NotEqual(hashA, hashB);
-        Assert.Equal(64, hashA.Length); // full SHA-256 hex digest, not the seed tool's 16-char console truncation
+        hashAAgain.Should().Be(hashA);
+        hashB.Should().NotBe(hashA);
+        hashA.Length.Should().Be(64); // full SHA-256 hex digest, not the seed tool's 16-char console truncation
     }
 }

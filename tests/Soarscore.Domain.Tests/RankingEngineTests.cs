@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.Scoring;
 using Xunit;
 
@@ -24,9 +25,9 @@ public class RankingEngineTests
 
         var result = RankingEngine.Rank(scores, null, null);
 
-        Assert.Equal(1, result.Placings["A"]);
-        Assert.Equal(2, result.Placings["B"]);
-        Assert.Equal(3, result.Placings["C"]);
+        result.Placings["A"].Should().Be(1);
+        result.Placings["B"].Should().Be(2);
+        result.Placings["C"].Should().Be(3);
     }
 
     // ------------------------------------------------------ Ties
@@ -44,10 +45,10 @@ public class RankingEngineTests
 
         var result = RankingEngine.Rank(scores, null, null);
 
-        Assert.Equal(1, result.Placings["A"]);
-        Assert.Equal(2, result.Placings["B"]);
-        Assert.Equal(2, result.Placings["C"]);
-        Assert.Equal(4, result.Placings["D"]); // skips 3
+        result.Placings["A"].Should().Be(1);
+        result.Placings["B"].Should().Be(2);
+        result.Placings["C"].Should().Be(2);
+        result.Placings["D"].Should().Be(4); // skips 3
     }
 
     // ------------------------------------------------------ Disqualified
@@ -64,9 +65,9 @@ public class RankingEngineTests
 
         var result = RankingEngine.Rank(scores, null, null);
 
-        Assert.Equal(1, result.Placings["A"]);
-        Assert.False(result.Placings.ContainsKey("B"));
-        Assert.Equal(2, result.Placings["C"]);
+        result.Placings["A"].Should().Be(1);
+        result.Placings.ContainsKey("B").Should().BeFalse();
+        result.Placings["C"].Should().Be(2);
     }
 
     // ------------------------------------------------------ Empty input
@@ -77,7 +78,7 @@ public class RankingEngineTests
         var result = RankingEngine.Rank(
             ImmutableArray<FinalCompetitorScore>.Empty, null, null);
 
-        Assert.Empty(result.Placings);
+        result.Placings.Should().BeEmpty();
     }
 
     // ------------------------------------------------------ All disqualified
@@ -93,6 +94,6 @@ public class RankingEngineTests
 
         var result = RankingEngine.Rank(scores, null, null);
 
-        Assert.Empty(result.Placings);
+        result.Placings.Should().BeEmpty();
     }
 }

@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Soarscore.Domain.People;
 using Xunit;
 
@@ -26,14 +27,14 @@ public class PersonTests
             },
         };
 
-        Assert.Equal(id, person.Id);
-        Assert.Equal("Alex Pilot", person.Name);
-        Assert.Equal("alex@example.com", person.Contact.Email);
-        Assert.Equal("021 555 1234", person.Contact.Phone);
-        Assert.Equal("Auckland", person.Contact.HomeCity);
-        Assert.NotNull(person.Club);
-        Assert.Equal("Auckland Soaring Club", person.Club!.ClubName);
-        Assert.Equal("ASC-42", person.Club!.MembershipNumber);
+        person.Id.Should().Be(id);
+        person.Name.Should().Be("Alex Pilot");
+        person.Contact.Email.Should().Be("alex@example.com");
+        person.Contact.Phone.Should().Be("021 555 1234");
+        person.Contact.HomeCity.Should().Be("Auckland");
+        person.Club.Should().NotBeNull();
+        person.Club!.ClubName.Should().Be("Auckland Soaring Club");
+        person.Club!.MembershipNumber.Should().Be("ASC-42");
     }
 
     [Fact]
@@ -46,7 +47,7 @@ public class PersonTests
             Contact = new ContactDetails { Email = "jordan@example.com" },
         };
 
-        Assert.Null(person.Club);
+        person.Club.Should().BeNull();
     }
 
     [Fact]
@@ -54,9 +55,9 @@ public class PersonTests
     {
         var contact = new ContactDetails { Email = "min@example.com" };
 
-        Assert.Equal("min@example.com", contact.Email);
-        Assert.Null(contact.Phone);
-        Assert.Null(contact.HomeCity);
+        contact.Email.Should().Be("min@example.com");
+        contact.Phone.Should().BeNull();
+        contact.HomeCity.Should().BeNull();
     }
 
     [Fact]
@@ -68,6 +69,6 @@ public class PersonTests
         var first = new Person { Id = id, Name = "Same Person", Contact = contact };
         var second = new Person { Id = id, Name = "Same Person", Contact = contact };
 
-        Assert.Equal(first, second);
+        second.Should().Be(first);
     }
 }

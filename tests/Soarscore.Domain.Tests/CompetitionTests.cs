@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -69,15 +70,15 @@ public class CompetitionTests
             AdoptedRules = adoptedRules,
         };
 
-        Assert.Equal(2, competition.Competitors.Length);
-        Assert.Single(competition.Phases);
-        Assert.Equal("A", competition.Phases[0].Rounds[0].TaskRounds[0].TaskRef);
-        Assert.Equal("RC Hand-Launch Gliders", competition.AdoptedRules.Definition.Name);
-        Assert.Equal(adoptedRules.SourceVersion, competition.AdoptedRules.Definition.Version);
-        Assert.Empty(competition.RulesAmendments);
-        Assert.Empty(competition.ParameterBindings);
-        Assert.Empty(competition.Finalisations);
-        Assert.Empty(competition.Penalties);
+        competition.Competitors.Length.Should().Be(2);
+        competition.Phases.Should().ContainSingle();
+        competition.Phases[0].Rounds[0].TaskRounds[0].TaskRef.Should().Be("A");
+        competition.AdoptedRules.Definition.Name.Should().Be("RC Hand-Launch Gliders");
+        competition.AdoptedRules.Definition.Version.Should().Be(adoptedRules.SourceVersion);
+        competition.RulesAmendments.Should().BeEmpty();
+        competition.ParameterBindings.Should().BeEmpty();
+        competition.Finalisations.Should().BeEmpty();
+        competition.Penalties.Should().BeEmpty();
     }
 
     [Fact]
@@ -103,10 +104,10 @@ public class CompetitionTests
             ],
         };
 
-        Assert.Equal(FinalisationScope.Phase, finalisation.Scope);
-        Assert.Single(finalisation.DeclaredResults);
-        Assert.Equal(competitorId, finalisation.DeclaredResults[0].CompetitorRef);
-        Assert.True(finalisation.DeclaredResults[0].Promoted);
+        finalisation.Scope.Should().Be(FinalisationScope.Phase);
+        finalisation.DeclaredResults.Should().ContainSingle();
+        finalisation.DeclaredResults[0].CompetitorRef.Should().Be(competitorId);
+        finalisation.DeclaredResults[0].Promoted.Should().BeTrue();
     }
 
     [Theory]
@@ -131,6 +132,6 @@ public class CompetitionTests
             ],
         };
 
-        Assert.Equal(expectedComplete, round.IsComplete);
+        round.IsComplete.Should().Be(expectedComplete);
     }
 }

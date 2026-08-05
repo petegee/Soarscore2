@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Soarscore.Domain.People;
 using Xunit;
 
@@ -27,11 +28,11 @@ public class PersonFoldTests
 
         var person = Person.Create(@event);
 
-        Assert.NotNull(person);
-        Assert.Equal(id, person.Id);
-        Assert.Equal("Alex Pilot", person.Name);
-        Assert.Equal(SampleContact, person.Contact);
-        Assert.Equal(SampleClub, person.Club);
+        person.Should().NotBeNull();
+        person.Id.Should().Be(id);
+        person.Name.Should().Be("Alex Pilot");
+        person.Contact.Should().Be(SampleContact);
+        person.Club.Should().Be(SampleClub);
     }
 
     [Fact]
@@ -43,10 +44,10 @@ public class PersonFoldTests
 
         var changed = registered.Apply(new ContactDetailsChanged(newContact, DateTimeOffset.UtcNow));
 
-        Assert.Equal(newContact, changed.Contact);
-        Assert.Equal(registered.Id, changed.Id);
-        Assert.Equal(registered.Name, changed.Name);
-        Assert.Equal(registered.Club, changed.Club);
+        changed.Contact.Should().Be(newContact);
+        changed.Id.Should().Be(registered.Id);
+        changed.Name.Should().Be(registered.Name);
+        changed.Club.Should().Be(registered.Club);
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public class PersonFoldTests
 
         var cleared = registered.Apply(new ClubAffiliationChanged(null, DateTimeOffset.UtcNow));
 
-        Assert.Null(cleared.Club);
+        cleared.Club.Should().BeNull();
     }
 
     [Fact]
@@ -68,28 +69,31 @@ public class PersonFoldTests
 
         var renamed = registered.Apply(new PersonRenamed("Alexandra Pilot", DateTimeOffset.UtcNow));
 
-        Assert.Equal("Alexandra Pilot", renamed.Name);
+        renamed.Name.Should().Be("Alexandra Pilot");
     }
 
     [Fact]
     public void ContactDetailsChanged_against_no_current_projection_throws()
     {
-        Assert.Throws<ArgumentException>(() =>
-            Person.Apply(null, new ContactDetailsChanged(SampleContact, DateTimeOffset.UtcNow)));
+        FluentActions.Invoking(() =>
+            Person.Apply(null, new ContactDetailsChanged(SampleContact, DateTimeOffset.UtcNow)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void ClubAffiliationChanged_against_no_current_projection_throws()
     {
-        Assert.Throws<ArgumentException>(() =>
-            Person.Apply(null, new ClubAffiliationChanged(SampleClub, DateTimeOffset.UtcNow)));
+        FluentActions.Invoking(() =>
+            Person.Apply(null, new ClubAffiliationChanged(SampleClub, DateTimeOffset.UtcNow)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void PersonRenamed_against_no_current_projection_throws()
     {
-        Assert.Throws<ArgumentException>(() =>
-            Person.Apply(null, new PersonRenamed("Alexandra Pilot", DateTimeOffset.UtcNow)));
+        FluentActions.Invoking(() =>
+            Person.Apply(null, new PersonRenamed("Alexandra Pilot", DateTimeOffset.UtcNow)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -112,10 +116,10 @@ public class PersonFoldTests
 
         var final = stream.Aggregate((Person?)null, Person.Apply);
 
-        Assert.NotNull(final);
-        Assert.Equal(id, final!.Id);
-        Assert.Equal("Alexandra Pilot", final.Name);
-        Assert.Equal(newContact, final.Contact);
-        Assert.Null(final.Club);
+        final.Should().NotBeNull();
+        final!.Id.Should().Be(id);
+        final.Name.Should().Be("Alexandra Pilot");
+        final.Contact.Should().Be(newContact);
+        final.Club.Should().BeNull();
     }
 }

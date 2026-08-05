@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -69,11 +70,11 @@ public class EntryTests
             ),
         };
 
-        Assert.Equal(2, entry.Flights.Length);
-        Assert.Equal(1, entry.Flights[0].Sequence);
-        Assert.Equal(2, entry.Flights[0].Measurements.Length);
-        Assert.Null(entry.Annulment);
-        Assert.Empty(entry.Penalties);
+        entry.Flights.Length.Should().Be(2);
+        entry.Flights[0].Sequence.Should().Be(1);
+        entry.Flights[0].Measurements.Length.Should().Be(2);
+        entry.Annulment.Should().BeNull();
+        entry.Penalties.Should().BeEmpty();
     }
 
     [Fact]
@@ -95,9 +96,9 @@ public class EntryTests
             ),
         };
 
-        Assert.Equal(180m, measurement.Value.Number);
-        Assert.Single(measurement.Amendments);
-        Assert.Equal(182m, measurement.Amendments[0].NewValue.Number);
+        measurement.Value.Number.Should().Be(180m);
+        measurement.Amendments.Should().ContainSingle();
+        measurement.Amendments[0].NewValue.Number.Should().Be(182m);
     }
 
     [Fact]
@@ -133,8 +134,8 @@ public class EntryTests
             ),
         };
 
-        Assert.NotNull(entry.Annulment);
-        Assert.Equal("Jury", entry.Annulment!.By);
+        entry.Annulment.Should().NotBeNull();
+        entry.Annulment!.By.Should().Be("Jury");
     }
 
     [Fact]
@@ -168,10 +169,10 @@ public class EntryTests
             Role = ReflightRole.Filler,
         };
 
-        Assert.Equal(ReflightRole.Entitled, entitled.Role);
-        Assert.Equal(ReflightRole.Filler, filler.Role);
-        Assert.Equal(entitled.GroupRef, filler.GroupRef);
-        Assert.NotEqual(entitled.CompetitorRef, filler.CompetitorRef);
+        entitled.Role.Should().Be(ReflightRole.Entitled);
+        filler.Role.Should().Be(ReflightRole.Filler);
+        filler.GroupRef.Should().Be(entitled.GroupRef);
+        filler.CompetitorRef.Should().NotBe(entitled.CompetitorRef);
     }
 
     [Fact]
@@ -203,6 +204,6 @@ public class EntryTests
             Role = ReflightRole.Original, Flights = flights,
         };
 
-        Assert.Equal(a, b);
+        b.Should().Be(a);
     }
 }

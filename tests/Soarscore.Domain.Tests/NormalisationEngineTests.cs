@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
@@ -29,10 +30,10 @@ public class NormalisationEngineTests
         var group = NormalisationEngine.Normalise(
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
-        Assert.Equal("A", group.WinnerRef);
-        Assert.Equal(2, group.ValidCount);
-        Assert.Equal(1000m, group.Results["A"].RawScore);
-        Assert.Equal(833m, Math.Floor(group.Results["B"].RawScore));
+        group.WinnerRef.Should().Be("A");
+        group.ValidCount.Should().Be(2);
+        group.Results["A"].RawScore.Should().Be(1000m);
+        Math.Floor(group.Results["B"].RawScore).Should().Be(833m);
     }
 
     // ------------------------------------------------------ LowerIsBetter
@@ -51,10 +52,10 @@ public class NormalisationEngineTests
         var group = NormalisationEngine.Normalise(
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
-        Assert.Equal("A", group.WinnerRef);
-        Assert.Equal(2, group.ValidCount);
-        Assert.Equal(1000m, group.Results["A"].RawScore);
-        Assert.Equal(750m, group.Results["B"].RawScore);
+        group.WinnerRef.Should().Be("A");
+        group.ValidCount.Should().Be(2);
+        group.Results["A"].RawScore.Should().Be(1000m);
+        group.Results["B"].RawScore.Should().Be(750m);
     }
 
     // ------------------------------------------------------ No normalisation pass-through
@@ -72,10 +73,10 @@ public class NormalisationEngineTests
         var group = NormalisationEngine.Normalise(
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
-        Assert.Null(group.WinnerRef);
-        Assert.Equal(2, group.ValidCount);
-        Assert.Equal(600m, group.Results["A"].RawScore);
-        Assert.Equal(500m, group.Results["B"].RawScore);
+        group.WinnerRef.Should().BeNull();
+        group.ValidCount.Should().Be(2);
+        group.Results["A"].RawScore.Should().Be(600m);
+        group.Results["B"].RawScore.Should().Be(500m);
     }
 
     // ------------------------------------------------------ NoResult exclusion
@@ -94,9 +95,9 @@ public class NormalisationEngineTests
         var group = NormalisationEngine.Normalise(
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
-        Assert.Equal("A", group.WinnerRef);
-        Assert.Equal(2, group.ValidCount);
-        Assert.Equal(0m, group.Results["C"].RawScore);
+        group.WinnerRef.Should().Be("A");
+        group.ValidCount.Should().Be(2);
+        group.Results["C"].RawScore.Should().Be(0m);
     }
 
     // ------------------------------------------------------ All NoResult
@@ -114,10 +115,10 @@ public class NormalisationEngineTests
         var group = NormalisationEngine.Normalise(
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
-        Assert.Null(group.WinnerRef);
-        Assert.Equal(0, group.ValidCount);
-        Assert.Equal(0m, group.Results["A"].RawScore);
-        Assert.Equal(0m, group.Results["B"].RawScore);
+        group.WinnerRef.Should().BeNull();
+        group.ValidCount.Should().Be(0);
+        group.Results["A"].RawScore.Should().Be(0m);
+        group.Results["B"].RawScore.Should().Be(0m);
     }
 
     // ------------------------------------------------------ Rounding
@@ -144,7 +145,7 @@ public class NormalisationEngineTests
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
         // B = 1000 × 333 / 400 = 832.5 → HalfUp to 0.1 = 832.5
-        Assert.Equal(832.5m, group.Results["B"].RawScore);
+        group.Results["B"].RawScore.Should().Be(832.5m);
     }
 
     // ------------------------------------------------------ Group annulment
@@ -167,8 +168,8 @@ public class NormalisationEngineTests
         var group = NormalisationEngine.Normalise(
             "G1", results.ToImmutableDictionary(), task, EmptyBindings());
 
-        Assert.True(group.IsAnnulled);
-        Assert.Equal(2, group.ValidCount);
+        group.IsAnnulled.Should().BeTrue();
+        group.ValidCount.Should().Be(2);
     }
 
     // ------------------------------------------------------ helpers

@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
@@ -29,15 +30,15 @@ public class EntryFoldTests
 
         var entry = Entry.Create(@event);
 
-        Assert.NotNull(entry);
-        Assert.Equal(SampleId, entry.Id);
-        Assert.Equal(SampleWorkingTime, entry.WorkingTime);
-        Assert.Equal(SampleGroup, entry.GroupRef);
-        Assert.Equal(SampleCompetitor, entry.CompetitorRef);
-        Assert.Equal(ReflightRole.Original, entry.Role);
-        Assert.Null(entry.Annulment);
-        Assert.Empty(entry.Flights);
-        Assert.Empty(entry.Penalties);
+        entry.Should().NotBeNull();
+        entry.Id.Should().Be(SampleId);
+        entry.WorkingTime.Should().Be(SampleWorkingTime);
+        entry.GroupRef.Should().Be(SampleGroup);
+        entry.CompetitorRef.Should().Be(SampleCompetitor);
+        entry.Role.Should().Be(ReflightRole.Original);
+        entry.Annulment.Should().BeNull();
+        entry.Flights.Should().BeEmpty();
+        entry.Penalties.Should().BeEmpty();
     }
 
     [Fact]
@@ -48,17 +49,18 @@ public class EntryFoldTests
 
         var updated = entry.Apply(new FlightOpened(1, launchAt, DateTimeOffset.UtcNow));
 
-        var flight = Assert.Single(updated.Flights);
-        Assert.Equal(1, flight.Sequence);
-        Assert.Equal(launchAt, flight.LaunchAt);
-        Assert.Empty(flight.Measurements);
+        var flight = updated.Flights.Should().ContainSingle().Which;
+        flight.Sequence.Should().Be(1);
+        flight.LaunchAt.Should().Be(launchAt);
+        flight.Measurements.Should().BeEmpty();
     }
 
     [Fact]
     public void FlightOpened_against_no_current_entry_throws()
     {
-        Assert.Throws<ArgumentException>(() =>
-            Entry.Apply(null, new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)));
+        FluentActions.Invoking(() =>
+            Entry.Apply(null, new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -79,9 +81,9 @@ public class EntryFoldTests
 
         var flightOne = updated.Flights.Single(f => f.Sequence == 1);
         var flightTwo = updated.Flights.Single(f => f.Sequence == 2);
-        Assert.Empty(flightOne.Measurements);
-        var captured = Assert.Single(flightTwo.Measurements);
-        Assert.Equal(measurement, captured);
+        flightOne.Measurements.Should().BeEmpty();
+        var captured = flightTwo.Measurements.Should().ContainSingle().Which;
+        captured.Should().Be(measurement);
     }
 
     [Fact]
@@ -94,8 +96,9 @@ public class EntryFoldTests
             CapturedAt = DateTimeOffset.UtcNow,
         };
 
-        Assert.Throws<ArgumentException>(() =>
-            Entry.Apply(null, new MeasurementCaptured(1, measurement)));
+        FluentActions.Invoking(() =>
+            Entry.Apply(null, new MeasurementCaptured(1, measurement)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -133,10 +136,10 @@ public class EntryFoldTests
         var amendedMeasurement = flight.Measurements.Single(m => m.Metric == "flightTime");
         var untouchedMeasurement = flight.Measurements.Single(m => m.Metric == "landingBonus");
 
-        var appendedAmendment = Assert.Single(amendedMeasurement.Amendments);
-        Assert.Equal(amendment, appendedAmendment);
-        Assert.Equal(MeasuredValue.Of(100m), amendedMeasurement.Value); // original value untouched, correction appended
-        Assert.Empty(untouchedMeasurement.Amendments);
+        var appendedAmendment = amendedMeasurement.Amendments.Should().ContainSingle().Which;
+        appendedAmendment.Should().Be(amendment);
+        amendedMeasurement.Value.Should().Be(MeasuredValue.Of(100m)); // original value untouched, correction appended
+        untouchedMeasurement.Amendments.Should().BeEmpty();
     }
 
     [Fact]
@@ -150,8 +153,9 @@ public class EntryFoldTests
             At = DateTimeOffset.UtcNow,
         };
 
-        Assert.Throws<ArgumentException>(() =>
-            Entry.Apply(null, new MeasurementAmended(1, "flightTime", amendment)));
+        FluentActions.Invoking(() =>
+            Entry.Apply(null, new MeasurementAmended(1, "flightTime", amendment)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -167,7 +171,7 @@ public class EntryFoldTests
 
         var updated = entry.Apply(new EntryAnnulled(annulment));
 
-        Assert.Equal(annulment, updated.Annulment);
+        updated.Annulment.Should().Be(annulment);
     }
 
     [Fact]
@@ -175,7 +179,8 @@ public class EntryFoldTests
     {
         var annulment = new Annulment { Reason = "n/a", By = "n/a", At = DateTimeOffset.UtcNow };
 
-        Assert.Throws<ArgumentException>(() => Entry.Apply(null, new EntryAnnulled(annulment)));
+        FluentActions.Invoking(() => Entry.Apply(null, new EntryAnnulled(annulment)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -186,8 +191,8 @@ public class EntryFoldTests
 
         var updated = entry.Apply(new Entries.PenaltyRecorded(penalty));
 
-        var recorded = Assert.Single(updated.Penalties);
-        Assert.Equal(penalty, recorded);
+        var recorded = updated.Penalties.Should().ContainSingle().Which;
+        recorded.Should().Be(penalty);
     }
 
     [Fact]
@@ -195,7 +200,8 @@ public class EntryFoldTests
     {
         var penalty = new Penalty { InfractionType = "n/a", Scope = PenaltyScope.Entry };
 
-        Assert.Throws<ArgumentException>(() => Entry.Apply(null, new Entries.PenaltyRecorded(penalty)));
+        FluentActions.Invoking(() => Entry.Apply(null, new Entries.PenaltyRecorded(penalty)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -213,7 +219,7 @@ public class EntryFoldTests
 
         foreach (var @event in mutationEvents)
         {
-            Assert.Throws<ArgumentException>(() => Entry.Apply(null, @event));
+            FluentActions.Invoking(() => Entry.Apply(null, @event)).Should().Throw<ArgumentException>();
         }
     }
 
@@ -243,17 +249,17 @@ public class EntryFoldTests
 
         var final = stream.Aggregate((Entry?)null, Entry.Apply);
 
-        Assert.NotNull(final);
-        Assert.Equal(SampleId, final!.Id);
-        var flight = Assert.Single(final.Flights);
-        Assert.Equal(1, flight.Sequence);
-        var finalMeasurement = Assert.Single(flight.Measurements);
-        Assert.Equal("flightTime", finalMeasurement.Metric);
-        Assert.Equal(MeasuredValue.Of(240m), finalMeasurement.Value);
-        var finalAmendment = Assert.Single(finalMeasurement.Amendments);
-        Assert.Equal(amendment, finalAmendment);
-        var finalPenalty = Assert.Single(final.Penalties);
-        Assert.Equal(penalty, finalPenalty);
-        Assert.Equal(annulment, final.Annulment);
+        final.Should().NotBeNull();
+        final!.Id.Should().Be(SampleId);
+        var flight = final.Flights.Should().ContainSingle().Which;
+        flight.Sequence.Should().Be(1);
+        var finalMeasurement = flight.Measurements.Should().ContainSingle().Which;
+        finalMeasurement.Metric.Should().Be("flightTime");
+        finalMeasurement.Value.Should().Be(MeasuredValue.Of(240m));
+        var finalAmendment = finalMeasurement.Amendments.Should().ContainSingle().Which;
+        finalAmendment.Should().Be(amendment);
+        var finalPenalty = final.Penalties.Should().ContainSingle().Which;
+        finalPenalty.Should().Be(penalty);
+        final.Annulment.Should().Be(annulment);
     }
 }

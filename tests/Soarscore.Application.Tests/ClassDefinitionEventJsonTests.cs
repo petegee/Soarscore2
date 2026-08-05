@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AwesomeAssertions;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
@@ -20,8 +21,8 @@ public class ClassDefinitionEventJsonTests
         var reread = JsonSerializer.Deserialize<ClassDefinitionEvent>(json, SoarscoreEventJson.Options);
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
 
-        Assert.Equal(json, reemitted);
-        Assert.IsType<ClassDefinitionPublished>(reread);
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<ClassDefinitionPublished>();
     }
 
     [Fact]
@@ -32,10 +33,10 @@ public class ClassDefinitionEventJsonTests
         // string token — never a JSON number a JS client could parse as `double`.
         var json = JsonSerializer.Serialize(599.9999999m, SoarscoreEventJson.Options);
 
-        Assert.Equal("\"599.9999999\"", json);
+        json.Should().Be("\"599.9999999\"");
 
         var reread = JsonSerializer.Deserialize<decimal>(json, SoarscoreEventJson.Options);
-        Assert.Equal(599.9999999m, reread);
+        reread.Should().Be(599.9999999m);
     }
 
     [Fact]
@@ -46,6 +47,6 @@ public class ClassDefinitionEventJsonTests
 
         var json = JsonSerializer.Serialize(published, SoarscoreEventJson.Options);
 
-        Assert.Contains("\"$kind\":\"classDefinitionPublished\"", json);
+        json.Should().Contain("\"$kind\":\"classDefinitionPublished\"");
     }
 }

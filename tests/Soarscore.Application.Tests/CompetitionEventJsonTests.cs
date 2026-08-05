@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
@@ -39,8 +40,8 @@ public class CompetitionEventJsonTests
         var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
 
-        Assert.Equal(json, reemitted);
-        Assert.IsType<CompetitionCreated>(reread);
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<CompetitionCreated>();
     }
 
     [Fact]
@@ -50,7 +51,7 @@ public class CompetitionEventJsonTests
 
         var json = JsonSerializer.Serialize(created, SoarscoreEventJson.Options);
 
-        Assert.Contains("\"$kind\":\"competitionCreated\"", json);
+        json.Should().Contain("\"$kind\":\"competitionCreated\"");
     }
 
     [Fact]
@@ -77,10 +78,10 @@ public class CompetitionEventJsonTests
 
         var json = JsonSerializer.Serialize(finalised, SoarscoreEventJson.Options);
 
-        Assert.Contains("\"aggregate\":\"599.9999999\"", json);
+        json.Should().Contain("\"aggregate\":\"599.9999999\"");
 
         var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
-        Assert.Equal(json, reemitted);
+        reemitted.Should().Be(json);
     }
 }

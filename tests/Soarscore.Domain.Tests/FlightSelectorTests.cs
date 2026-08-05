@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
@@ -23,10 +24,10 @@ public class FlightSelectorTests
         var result = FlightSelector.SelectAndScore(
             null, task, new Dictionary<string, MeasuredValue>(), flights);
 
-        Assert.Equal(TaskResultState.Valid, result.State);
-        Assert.Equal(300m, result.RawScore);
-        Assert.NotNull(result.Selection);
-        Assert.Single(result.Selection!.Flights);
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be(300m);
+        result.Selection.Should().NotBeNull();
+        result.Selection!.Flights.Should().ContainSingle();
     }
 
     // ------------------------------------------------------ LastNFlights
@@ -40,8 +41,8 @@ public class FlightSelectorTests
         var result = FlightSelector.SelectAndScore(
             null, task, new Dictionary<string, MeasuredValue>(), flights);
 
-        Assert.Equal(TaskResultState.Valid, result.State);
-        Assert.Equal(700m, result.RawScore); // 300 + 400
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be(700m); // 300 + 400
     }
 
     // ------------------------------------------------------ AllFlights
@@ -55,8 +56,8 @@ public class FlightSelectorTests
         var result = FlightSelector.SelectAndScore(
             null, task, new Dictionary<string, MeasuredValue>(), flights);
 
-        Assert.Equal(TaskResultState.Valid, result.State);
-        Assert.Equal(600m, result.RawScore); // 100 + 200 + 300
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be(600m); // 100 + 200 + 300
     }
 
     // ------------------------------------------------------ BestNFlights by score
@@ -70,9 +71,9 @@ public class FlightSelectorTests
         var result = FlightSelector.SelectAndScore(
             null, task, new Dictionary<string, MeasuredValue>(), flights);
 
-        Assert.Equal(TaskResultState.Valid, result.State);
+        result.State.Should().Be(TaskResultState.Valid);
         // Best 3 by score: 200, 150, 100 = 450
-        Assert.Equal(450m, result.RawScore);
+        result.RawScore.Should().Be(450m);
     }
 
     // ------------------------------------------------------ F3K Task E Poker
@@ -98,8 +99,8 @@ public class FlightSelectorTests
         var result = FlightSelector.SelectAndScore(
             null, task, new Dictionary<string, MeasuredValue>(), flights.ToImmutableArray());
 
-        Assert.Equal(TaskResultState.Valid, result.State);
-        Assert.Equal(142m, result.RawScore);
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be(142m);
     }
 
     // ------------------------------------------------------ validWhen
@@ -119,9 +120,9 @@ public class FlightSelectorTests
         var result = FlightSelector.SelectAndScore(
             null, task, new Dictionary<string, MeasuredValue>(), flights.ToImmutableArray());
 
-        Assert.Equal(TaskResultState.NoResult, result.State);
-        Assert.Equal(0m, result.RawScore);
-        Assert.Null(result.Selection);
+        result.State.Should().Be(TaskResultState.NoResult);
+        result.RawScore.Should().Be(0m);
+        result.Selection.Should().BeNull();
     }
 
     // ------------------------------------------------------ Empty flights
@@ -135,8 +136,8 @@ public class FlightSelectorTests
             null, task, new Dictionary<string, MeasuredValue>(),
             ImmutableArray<InterpretedFlight>.Empty);
 
-        Assert.Equal(TaskResultState.NoResult, result.State);
-        Assert.Equal(0m, result.RawScore);
+        result.State.Should().Be(TaskResultState.NoResult);
+        result.RawScore.Should().Be(0m);
     }
 
     // ------------------------------------------------------ helpers
@@ -241,8 +242,8 @@ public class FlightSelectorTests
             flights.ToImmutableArray());
 
         // 4 × 150 = 600, PerTask cap 599 → reduction (600-599)*1 = 1 → 599
-        Assert.Equal(TaskResultState.Valid, result.State);
-        Assert.Equal(599m, result.RawScore);
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be(599m);
     }
 
     private static ResolvedTask MakePerTaskCappedTask()

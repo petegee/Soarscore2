@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Xunit;
@@ -32,9 +33,9 @@ public class PenaltyEngineTests
 
         var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
 
-        Assert.Equal(TaskResultState.NoResult, applied.State);
-        Assert.Equal(0m, applied.RawScore);
-        Assert.Null(applied.Selection);
+        applied.State.Should().Be(TaskResultState.NoResult);
+        applied.RawScore.Should().Be(0m);
+        applied.Selection.Should().BeNull();
     }
 
     // ------------------------------------------------------ No raw penalties
@@ -51,8 +52,8 @@ public class PenaltyEngineTests
             result, ImmutableArray<RecordedPenalty>.Empty,
             ImmutableArray<PenaltyDefinition>.Empty);
 
-        Assert.Equal(TaskResultState.Valid, applied.State);
-        Assert.Equal(500m, applied.RawScore);
+        applied.State.Should().Be(TaskResultState.Valid);
+        applied.RawScore.Should().Be(500m);
     }
 
     // ------------------------------------------------------ DeductPoints
@@ -69,8 +70,8 @@ public class PenaltyEngineTests
 
         var result = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
 
-        Assert.Equal(300m, result.Deduction);
-        Assert.False(result.Disqualified);
+        result.Deduction.Should().Be(300m);
+        result.Disqualified.Should().BeFalse();
     }
 
     // ------------------------------------------------------ Disqualify
@@ -87,8 +88,8 @@ public class PenaltyEngineTests
 
         var result = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
 
-        Assert.True(result.Disqualified);
-        Assert.Equal(0m, result.Deduction);
+        result.Disqualified.Should().BeTrue();
+        result.Deduction.Should().Be(0m);
     }
 
     // ------------------------------------------------------ PerOccurrence accrual
@@ -109,7 +110,7 @@ public class PenaltyEngineTests
 
         var result = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
 
-        Assert.Equal(200m, result.Deduction); // 2 × 100
+        result.Deduction.Should().Be(200m); // 2 × 100
     }
 
     // ------------------------------------------------------ Exclusion group suppression
@@ -142,7 +143,7 @@ public class PenaltyEngineTests
 
         var result = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
 
-        Assert.Equal(300m, result.Deduction);
+        result.Deduction.Should().Be(300m);
     }
 
     // ------------------------------------------------------ Single-pass suppression
@@ -186,7 +187,7 @@ public class PenaltyEngineTests
         var result = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
 
         // A=500 (survives), C=400 (survives, B suppressed in Y), B=300 (suppressed)
-        Assert.Equal(900m, result.Deduction);
+        result.Deduction.Should().Be(900m);
     }
 
     // ------------------------------------------------------ Both effects in one penalty
@@ -216,13 +217,13 @@ public class PenaltyEngineTests
             RawScore: 500m);
 
         var raw = PenaltyEngine.ApplyRawPenalties(taskResult, penalties, definitions);
-        Assert.Equal(TaskResultState.NoResult, raw.State);
-        Assert.Equal(0m, raw.RawScore);
+        raw.State.Should().Be(TaskResultState.NoResult);
+        raw.RawScore.Should().Be(0m);
 
         // Aggregate stage
         var agg = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
-        Assert.Equal(1000m, agg.Deduction);
-        Assert.False(agg.Disqualified);
+        agg.Deduction.Should().Be(1000m);
+        agg.Disqualified.Should().BeFalse();
     }
 
     // ------------------------------------------------------ Untracked penalty
@@ -239,7 +240,7 @@ public class PenaltyEngineTests
 
         var result = PenaltyEngine.ApplyAggregatePenalties(1000m, penalties, definitions);
 
-        Assert.Equal(0m, result.Deduction);
-        Assert.False(result.Disqualified);
+        result.Deduction.Should().Be(0m);
+        result.Disqualified.Should().BeFalse();
     }
 }

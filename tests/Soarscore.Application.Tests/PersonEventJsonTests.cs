@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AwesomeAssertions;
 using Soarscore.Domain.People;
 using Xunit;
 
@@ -28,8 +29,8 @@ public class PersonEventJsonTests
         var reread = JsonSerializer.Deserialize<PersonEvent>(json, SoarscoreEventJson.Options);
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
 
-        Assert.Equal(json, reemitted);
-        Assert.IsType<PersonRegistered>(reread);
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<PersonRegistered>();
     }
 
     [Fact]
@@ -39,6 +40,6 @@ public class PersonEventJsonTests
 
         var json = JsonSerializer.Serialize(registered, SoarscoreEventJson.Options);
 
-        Assert.Contains("\"$kind\":\"personRegistered\"", json);
+        json.Should().Contain("\"$kind\":\"personRegistered\"");
     }
 }

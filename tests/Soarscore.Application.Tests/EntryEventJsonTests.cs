@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -30,8 +31,8 @@ public class EntryEventJsonTests
         var reread = JsonSerializer.Deserialize<EntryEvent>(json, SoarscoreEventJson.Options);
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
 
-        Assert.Equal(json, reemitted);
-        Assert.IsType<EntryOpened>(reread);
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<EntryOpened>();
     }
 
     [Fact]
@@ -43,12 +44,12 @@ public class EntryEventJsonTests
 
         var json = JsonSerializer.Serialize(captured, SoarscoreEventJson.Options);
 
-        Assert.Contains("\"$kind\":\"measurementCaptured\"", json);
+        json.Should().Contain("\"$kind\":\"measurementCaptured\"");
         // LADR-0001 §4 item 6: decimals inside event JSON are strings, never numbers.
-        Assert.Contains("\"123.4500000\"", json);
+        json.Should().Contain("\"123.4500000\"");
 
         var reread = JsonSerializer.Deserialize<EntryEvent>(json, SoarscoreEventJson.Options);
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
-        Assert.Equal(json, reemitted);
+        reemitted.Should().Be(json);
     }
 }

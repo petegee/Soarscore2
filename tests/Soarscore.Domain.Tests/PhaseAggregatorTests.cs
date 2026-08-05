@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Xunit;
@@ -23,9 +24,9 @@ public class PhaseAggregatorTests
 
         var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
 
-        Assert.Equal(1500m, result.Aggregate);
-        Assert.Empty(result.DroppedScores);
-        Assert.Equal(5, result.AllScores.Length);
+        result.Aggregate.Should().Be(1500m);
+        result.DroppedScores.Should().BeEmpty();
+        result.AllScores.Length.Should().Be(5);
     }
 
     // ------------------------------------------------------ ByRound drop
@@ -40,8 +41,8 @@ public class PhaseAggregatorTests
         var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
 
         // Drop lowest round: 100 → remaining: 200+300+400+500 = 1400
-        Assert.Equal(1400m, result.Aggregate);
-        Assert.Single(result.DroppedScores);
+        result.Aggregate.Should().Be(1400m);
+        result.DroppedScores.Should().ContainSingle();
     }
 
     [Fact]
@@ -54,8 +55,8 @@ public class PhaseAggregatorTests
         var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
 
         // Gate fails: 3 rounds < 6 → no drop. Sum = 600
-        Assert.Equal(600m, result.Aggregate);
-        Assert.Empty(result.DroppedScores);
+        result.Aggregate.Should().Be(600m);
+        result.DroppedScores.Should().BeEmpty();
     }
 
     // ------------------------------------------------------ Two-tier drops (F3F)
@@ -77,8 +78,8 @@ public class PhaseAggregatorTests
         var result15 = PhaseAggregator.Aggregate("C1", phase, rounds15, allScores15);
 
         // Sum all = 12000, drop 2 lowest = 100+200=300 → 11700
-        Assert.Equal(11700m, result15.Aggregate);
-        Assert.Equal(2, result15.DroppedScores.Length);
+        result15.Aggregate.Should().Be(11700m);
+        result15.DroppedScores.Length.Should().Be(2);
 
         // 5 rounds → second policy matches (first gate fails)
         var rounds5 = MakeRounds(5, taskCode: "A");
@@ -88,8 +89,8 @@ public class PhaseAggregatorTests
         var result5 = PhaseAggregator.Aggregate("C1", phase, rounds5, allScores5);
 
         // Sum = 1500, drop 1 lowest = 100 → 1400
-        Assert.Equal(1400m, result5.Aggregate);
-        Assert.Single(result5.DroppedScores);
+        result5.Aggregate.Should().Be(1400m);
+        result5.DroppedScores.Should().ContainSingle();
     }
 
     // ------------------------------------------------------ ByTask drop
@@ -123,8 +124,8 @@ public class PhaseAggregatorTests
         var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
 
         // Drop lowest A (600) and lowest B (750). Remaining: 800+700+900+850 = 3250
-        Assert.Equal(3250m, result.Aggregate);
-        Assert.Equal(2, result.DroppedScores.Length);
+        result.Aggregate.Should().Be(3250m);
+        result.DroppedScores.Length.Should().Be(2);
     }
 
     // ------------------------------------------------------ Empty drops
@@ -138,8 +139,8 @@ public class PhaseAggregatorTests
 
         var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
 
-        Assert.Equal(1500m, result.Aggregate);
-        Assert.Empty(result.DroppedScores);
+        result.Aggregate.Should().Be(1500m);
+        result.DroppedScores.Should().BeEmpty();
     }
 
     // ------------------------------------------------------ Annulled task-rounds
@@ -164,7 +165,7 @@ public class PhaseAggregatorTests
 
         var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
 
-        Assert.Equal(900m, result.Aggregate); // 500 + 0 + 400
+        result.Aggregate.Should().Be(900m); // 500 + 0 + 400
     }
 
     // ------------------------------------------------------ helpers

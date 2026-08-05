@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
@@ -34,11 +35,11 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
+        result.Result.State.Should().Be(FlightResultState.Valid);
         // 601s: piecewise 600×1 + 1×(−1) = 599. Landing bonus: 601 ≤ 630, so
         // landing bonus applies: 100 points. Total: 699. This confirms the
         // piecewise bands are cumulative (600 not 601 for the first band).
-        Assert.Equal(699m, result.Score);
+        result.Score.Should().Be(699m);
     }
 
     [Fact]
@@ -57,8 +58,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.Equal(0m, result.Score);
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(0m);
     }
 
     [Fact]
@@ -79,8 +80,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.Equal(640m, result.Score);
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(640m);
     }
 
     // ------------------------------------------------------ F3K Task A
@@ -100,8 +101,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.Equal(200m, result.Score);
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(200m);
     }
 
     [Fact]
@@ -120,8 +121,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.Equal(0m, result.Score);
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(0m);
     }
 
     // ------------------------------------------------------ F3K Task E (Poker)
@@ -143,8 +144,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.Equal(45m, result.Score);
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(45m);
     }
 
     [Fact]
@@ -164,8 +165,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.Equal(0m, result.Score);
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(0m);
     }
 
     // ------------------------------------------------------ F5K Task A
@@ -190,9 +191,9 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
+        result.Result.State.Should().Be(FlightResultState.Valid);
         // flightTime=180, launchAltitude at NLH+15 → -25. No land/pilot/overfly deductions.
-        Assert.Equal(155m, result.Score);
+        result.Score.Should().Be(155m);
     }
 
     [Fact]
@@ -212,9 +213,9 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
+        result.Result.State.Should().Be(FlightResultState.Valid);
         // flightTime=180, launch at NLH → 0, pilot area → -10. Total: 170
-        Assert.Equal(170m, result.Score);
+        result.Score.Should().Be(170m);
     }
 
     // ------------------------------------------------------ flight.sequence intrinsic
@@ -237,8 +238,8 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(FlightResultState.Valid, result.Result.State);
-        Assert.True(result.Result.Measurements.Metrics.ContainsKey("flight.sequence"));
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Result.Measurements.Metrics.ContainsKey("flight.sequence").Should().BeTrue();
     }
 
     // ------------------------------------------------------ LookupTerm
@@ -277,7 +278,7 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(20m, result.Score);
+        result.Score.Should().Be(20m);
     }
 
     // ------------------------------------------------------ PiecewiseTerm unbounded
@@ -314,7 +315,7 @@ public class FlightInterpreterTests
 
         var result = FlightInterpreter.Interpret(null, task, 1, metrics);
 
-        Assert.Equal(200m, result.Score);
+        result.Score.Should().Be(200m);
     }
 
     // ------------------------------------------------------ PredicateEvaluator
@@ -338,7 +339,7 @@ public class FlightInterpreterTests
             ["b"] = MeasuredValue.Of(15m),
         };
 
-        Assert.True(PredicateEvaluator.Evaluate(pred, metrics));
+        PredicateEvaluator.Evaluate(pred, metrics).Should().BeTrue();
     }
 
     [Fact]
@@ -360,7 +361,7 @@ public class FlightInterpreterTests
             ["b"] = MeasuredValue.Of(5m),
         };
 
-        Assert.False(PredicateEvaluator.Evaluate(pred, metrics));
+        PredicateEvaluator.Evaluate(pred, metrics).Should().BeFalse();
     }
 
     [Fact]
@@ -378,7 +379,8 @@ public class FlightInterpreterTests
             ["f"] = MeasuredValue.Of(true),
         };
 
-        Assert.Throws<ArgumentException>(() => PredicateEvaluator.Evaluate(pred, metrics));
+        FluentActions.Invoking(() => PredicateEvaluator.Evaluate(pred, metrics))
+            .Should().Throw<ArgumentException>();
     }
 
     // ------------------------------------------------------ helpers

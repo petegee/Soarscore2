@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
@@ -39,20 +40,20 @@ public class CompetitionFoldTests
 
         var competition = Competition.Create(@event);
 
-        Assert.NotNull(competition);
-        Assert.Equal(@event.Id, competition.Id);
-        Assert.Equal(@event.Name, competition.Name);
-        Assert.Equal(@event.Location, competition.Location);
-        Assert.Equal(@event.StartDate, competition.StartDate);
-        Assert.Equal(@event.EndDate, competition.EndDate);
-        Assert.Equal(@event.EvaluatorVersion, competition.EvaluatorVersion);
-        Assert.Same(@event.AdoptedRules, competition.AdoptedRules);
-        Assert.Empty(competition.Competitors);
-        Assert.Empty(competition.Phases);
-        Assert.Empty(competition.RulesAmendments);
-        Assert.Empty(competition.ParameterBindings);
-        Assert.Empty(competition.Finalisations);
-        Assert.Empty(competition.Penalties);
+        competition.Should().NotBeNull();
+        competition.Id.Should().Be(@event.Id);
+        competition.Name.Should().Be(@event.Name);
+        competition.Location.Should().Be(@event.Location);
+        competition.StartDate.Should().Be(@event.StartDate);
+        competition.EndDate.Should().Be(@event.EndDate);
+        competition.EvaluatorVersion.Should().Be(@event.EvaluatorVersion);
+        competition.AdoptedRules.Should().BeSameAs(@event.AdoptedRules);
+        competition.Competitors.Should().BeEmpty();
+        competition.Phases.Should().BeEmpty();
+        competition.RulesAmendments.Should().BeEmpty();
+        competition.ParameterBindings.Should().BeEmpty();
+        competition.Finalisations.Should().BeEmpty();
+        competition.Penalties.Should().BeEmpty();
     }
 
     [Fact]
@@ -69,9 +70,9 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new CompetitorRegistered(competitor, DateTimeOffset.UtcNow));
 
-        Assert.Single(updated.Competitors);
-        Assert.Equal(competitor.Id, updated.Competitors[0].Id);
-        Assert.Null(updated.Competitors[0].WithdrawnAt);
+        updated.Competitors.Should().ContainSingle();
+        updated.Competitors[0].Id.Should().Be(competitor.Id);
+        updated.Competitors[0].WithdrawnAt.Should().BeNull();
     }
 
     [Fact]
@@ -85,8 +86,9 @@ public class CompetitionFoldTests
             RegisteredAt = DateTimeOffset.UtcNow,
         };
 
-        Assert.Throws<ArgumentException>(() =>
-            Competition.Apply(null, new CompetitorRegistered(competitor, DateTimeOffset.UtcNow)));
+        FluentActions.Invoking(() =>
+            Competition.Apply(null, new CompetitorRegistered(competitor, DateTimeOffset.UtcNow)))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -114,11 +116,11 @@ public class CompetitionFoldTests
         var withdrawnAt = DateTimeOffset.UtcNow.AddMinutes(5);
         var updated = competition.Apply(new CompetitorWithdrawn(competitorA.Id, withdrawnAt));
 
-        Assert.Equal(2, updated.Competitors.Length);
+        updated.Competitors.Length.Should().Be(2);
         var updatedA = updated.Competitors.Single(c => c.Id == competitorA.Id);
         var updatedB = updated.Competitors.Single(c => c.Id == competitorB.Id);
-        Assert.Equal(withdrawnAt, updatedA.WithdrawnAt);
-        Assert.Null(updatedB.WithdrawnAt);
+        updatedA.WithdrawnAt.Should().Be(withdrawnAt);
+        updatedB.WithdrawnAt.Should().BeNull();
     }
 
     [Fact]
@@ -132,10 +134,10 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new PhaseDrawn(1, PhaseType.Preliminary, draw, [round], DateTimeOffset.UtcNow));
 
-        Assert.Single(updated.Phases);
-        Assert.Equal(1, updated.Phases[0].Ordinal);
-        Assert.Equal(PhaseType.Preliminary, updated.Phases[0].Type);
-        Assert.Equal("A", updated.Phases[0].Rounds[0].TaskRounds[0].TaskRef);
+        updated.Phases.Should().ContainSingle();
+        updated.Phases[0].Ordinal.Should().Be(1);
+        updated.Phases[0].Type.Should().Be(PhaseType.Preliminary);
+        updated.Phases[0].Rounds[0].TaskRounds[0].TaskRef.Should().Be("A");
     }
 
     private static Competition CompetitionWithOneTaskRound()
@@ -158,8 +160,8 @@ public class CompetitionFoldTests
         var updated = competition.Apply(new ReflightGroupAppended(1, 1, 1, newGroup, DateTimeOffset.UtcNow));
 
         var taskRound = updated.Phases[0].Rounds[0].TaskRounds[0];
-        Assert.Equal(2, taskRound.Groups.Length);
-        Assert.Contains(taskRound.Groups, g => g.Id == newGroup.Id);
+        taskRound.Groups.Length.Should().Be(2);
+        taskRound.Groups.Should().Contain(g => g.Id == newGroup.Id);
     }
 
     [Fact]
@@ -176,8 +178,8 @@ public class CompetitionFoldTests
         var updated = competition.Apply(new TaskRoundCompleted(1, 1, 1, DateTimeOffset.UtcNow));
 
         var updatedRound = updated.Phases[0].Rounds[0];
-        Assert.Equal(TaskRoundState.Complete, updatedRound.TaskRounds[0].State);
-        Assert.Equal(TaskRoundState.Drawn, updatedRound.TaskRounds[1].State);
+        updatedRound.TaskRounds[0].State.Should().Be(TaskRoundState.Complete);
+        updatedRound.TaskRounds[1].State.Should().Be(TaskRoundState.Drawn);
     }
 
     [Fact]
@@ -187,7 +189,7 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new TaskRoundAnnulled(1, 1, 1, "wind out of limits", DateTimeOffset.UtcNow));
 
-        Assert.Equal(TaskRoundState.Annulled, updated.Phases[0].Rounds[0].TaskRounds[0].State);
+        updated.Phases[0].Rounds[0].TaskRounds[0].State.Should().Be(TaskRoundState.Annulled);
     }
 
     [Fact]
@@ -204,8 +206,8 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new RulesAmended(amendment));
 
-        Assert.Single(updated.RulesAmendments);
-        Assert.Same(amendment, updated.RulesAmendments[0]);
+        updated.RulesAmendments.Should().ContainSingle();
+        updated.RulesAmendments[0].Should().BeSameAs(amendment);
     }
 
     [Fact]
@@ -222,8 +224,8 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new ParameterBound(binding));
 
-        Assert.Single(updated.ParameterBindings);
-        Assert.Same(binding, updated.ParameterBindings[0]);
+        updated.ParameterBindings.Should().ContainSingle();
+        updated.ParameterBindings[0].Should().BeSameAs(binding);
     }
 
     [Fact]
@@ -250,8 +252,8 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new Finalised(finalisation));
 
-        Assert.Single(updated.Finalisations);
-        Assert.Same(finalisation, updated.Finalisations[0]);
+        updated.Finalisations.Should().ContainSingle();
+        updated.Finalisations[0].Should().BeSameAs(finalisation);
     }
 
     [Fact]
@@ -262,17 +264,19 @@ public class CompetitionFoldTests
 
         var updated = competition.Apply(new PenaltyRecorded(penalty));
 
-        Assert.Single(updated.Penalties);
-        Assert.Same(penalty, updated.Penalties[0]);
+        updated.Penalties.Should().ContainSingle();
+        updated.Penalties[0].Should().BeSameAs(penalty);
     }
 
     [Fact]
     public void Non_creation_events_against_no_current_projection_throw()
     {
-        Assert.Throws<ArgumentException>(() =>
-            Competition.Apply(null, new TaskRoundCompleted(1, 1, 1, DateTimeOffset.UtcNow)));
-        Assert.Throws<ArgumentException>(() =>
-            Competition.Apply(null, new PenaltyRecorded(new Penalty { InfractionType = "x", Scope = PenaltyScope.Competition })));
+        FluentActions.Invoking(() =>
+            Competition.Apply(null, new TaskRoundCompleted(1, 1, 1, DateTimeOffset.UtcNow)))
+            .Should().Throw<ArgumentException>();
+        FluentActions.Invoking(() =>
+            Competition.Apply(null, new PenaltyRecorded(new Penalty { InfractionType = "x", Scope = PenaltyScope.Competition })))
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -307,14 +311,14 @@ public class CompetitionFoldTests
 
         var final = stream.Aggregate((Competition?)null, Competition.Apply);
 
-        Assert.NotNull(final);
-        Assert.Equal(created.Id, final.Id);
-        Assert.Single(final.Competitors);
-        Assert.Equal(createdAt.AddHours(1), final.Competitors[0].WithdrawnAt);
-        Assert.Single(final.Phases);
+        final.Should().NotBeNull();
+        final.Id.Should().Be(created.Id);
+        final.Competitors.Should().ContainSingle();
+        final.Competitors[0].WithdrawnAt.Should().Be(createdAt.AddHours(1));
+        final.Phases.Should().ContainSingle();
         var finalTaskRound = final.Phases[0].Rounds[0].TaskRounds[0];
-        Assert.Equal(2, finalTaskRound.Groups.Length);
-        Assert.Equal(TaskRoundState.Complete, finalTaskRound.State);
-        Assert.Single(final.Penalties);
+        finalTaskRound.Groups.Length.Should().Be(2);
+        finalTaskRound.State.Should().Be(TaskRoundState.Complete);
+        final.Penalties.Should().ContainSingle();
     }
 }

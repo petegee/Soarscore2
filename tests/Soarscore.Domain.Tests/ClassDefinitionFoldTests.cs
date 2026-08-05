@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
@@ -22,11 +23,11 @@ public class ClassDefinitionFoldTests
 
         var projection = PublishedClassDefinition.PublishedClassDefinition.Apply(null, @event);
 
-        Assert.NotNull(projection);
-        Assert.Equal(hash, projection!.ContentHash);
-        Assert.Same(SampleDefinition, projection.Definition);
-        Assert.Equal(publishedAt, projection.PublishedAt);
-        Assert.Null(projection.RetiredAt);
+        projection.Should().NotBeNull();
+        projection!.ContentHash.Should().Be(hash);
+        projection.Definition.Should().BeSameAs(SampleDefinition);
+        projection.PublishedAt.Should().Be(publishedAt);
+        projection.RetiredAt.Should().BeNull();
     }
 
     [Fact]
@@ -38,10 +39,10 @@ public class ClassDefinitionFoldTests
 
         var retired = PublishedClassDefinition.PublishedClassDefinition.Apply(published, new ClassDefinitionRetired("superseded", retiredAt));
 
-        Assert.NotNull(retired);
-        Assert.Equal(retiredAt, retired!.RetiredAt);
-        Assert.Equal(published!.ContentHash, retired.ContentHash);
-        Assert.Equal(published.PublishedAt, retired.PublishedAt);
+        retired.Should().NotBeNull();
+        retired!.RetiredAt.Should().Be(retiredAt);
+        retired.ContentHash.Should().Be(published!.ContentHash);
+        retired.PublishedAt.Should().Be(published.PublishedAt);
     }
 
     [Fact]
@@ -49,7 +50,7 @@ public class ClassDefinitionFoldTests
     {
         var result = PublishedClassDefinition.PublishedClassDefinition.Apply(null, new ClassDefinitionRetired("n/a", DateTimeOffset.UtcNow));
 
-        Assert.Null(result);
+        result.Should().BeNull();
     }
 
     [Fact]
@@ -67,8 +68,8 @@ public class ClassDefinitionFoldTests
 
         var final = stream.Aggregate((PublishedClassDefinition.PublishedClassDefinition?)null, PublishedClassDefinition.PublishedClassDefinition.Apply);
 
-        Assert.NotNull(final);
-        Assert.Equal(hash, final!.ContentHash);
-        Assert.Equal(retiredAt, final.RetiredAt);
+        final.Should().NotBeNull();
+        final!.ContentHash.Should().Be(hash);
+        final.RetiredAt.Should().Be(retiredAt);
     }
 }
