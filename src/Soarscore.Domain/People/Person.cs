@@ -156,10 +156,15 @@ public sealed record Person
             ? new Defect("person.name.blank", "$.name", "Name must not be blank.")
             : null;
 
-    private static Defect? ValidateContact(ContactDetails contact) =>
-        IsPlausibleEmail(contact.Email)
-            ? null
-            : new Defect("person.email.invalid", "$.contact.email", "Email must be non-blank and structurally plausible.");
+    // Accepts null despite the non-nullable parameter type on Register/ChangeContactDetails:
+    // nullable reference annotations are compile-time only, and a client that omits "contact"
+    // from the request JSON binds one straight through to null here.
+    private static Defect? ValidateContact(ContactDetails? contact) =>
+        contact is null
+            ? new Defect("person.contact.missing", "$.contact", "Contact details are required.")
+            : IsPlausibleEmail(contact.Email)
+                ? null
+                : new Defect("person.email.invalid", "$.contact.email", "Email must be non-blank and structurally plausible.");
 
     /// <summary>
     /// Not full RFC 5322 validation — one '@', a non-blank local part, a

@@ -74,6 +74,18 @@ public class PersonDecideTests
     }
 
     [Fact]
+    public void Register_with_a_null_contact_fails_with_a_stable_code()
+    {
+        // Reference-type non-null parameters are only a compile-time hint — a
+        // client that omits "contact" from the JSON body binds one straight
+        // through to null, so the domain must reject it rather than NRE.
+        var result = Person.Register(PersonId.New(), "Alex Pilot", null!, null, DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("person.contact.missing");
+    }
+
+    [Fact]
     public void Rename_with_a_valid_name_succeeds_with_the_expected_event()
     {
         var person = Registered();
@@ -114,6 +126,15 @@ public class PersonDecideTests
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("person.email.invalid");
+    }
+
+    [Fact]
+    public void ChangeContactDetails_with_a_null_contact_fails_with_a_stable_code()
+    {
+        var result = Registered().ChangeContactDetails(null!, DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("person.contact.missing");
     }
 
     [Fact]
