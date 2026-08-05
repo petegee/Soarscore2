@@ -96,4 +96,71 @@ public sealed record Person
 
     private static Person Require(Person? current, PersonEvent @event) =>
         current ?? throw new ArgumentException($"{@event.GetType().Name} folded with no current projection — a change event can never be first in the stream.");
+
+    // Decide functions — WI-4 (docs/plans/command-side-steel-thread-plan.md).
+    // They return the event to append; they never mutate this instance and
+    // never append it themselves (that is the handler's job, WI-6). Email
+    // uniqueness is deliberately not checked here — see the ContactDetails
+    // remark above; it is the sole reason the unique index in the Inline
+    // projection exists.
+
+    public static Result<PersonRegistered> Register(
+        PersonId id, string name, ContactDetails contact, ClubAffiliation? club, DateTimeOffset at)
+    {
+        var defect = ValidateName(name) ?? ValidateContact(contact);
+        return defect is not null
+            ? Result<PersonRegistered>.Failure(defect.Code, defect.Message)
+            : Result<PersonRegistered>.Success(new PersonRegistered(id, name, contact, club, at));
+    }
+
+    public Result<PersonRenamed> Rename(string name, DateTimeOffset at)
+    {
+        var defect = ValidateName(name);
+        return defect is not null
+            ? Result<PersonRenamed>.Failure(defect.Code, defect.Message)
+            : Result<PersonRenamed>.Success(new PersonRenamed(name, at));
+    }
+
+    public Result<ContactDetailsChanged> ChangeContactDetails(ContactDetails contact, DateTimeOffset at)
+    {
+        var defect = ValidateContact(contact);
+        return defect is not null
+            ? Result<ContactDetailsChanged>.Failure(defect.Code, defect.Message)
+            : Result<ContactDetailsChanged>.Success(new ContactDetailsChanged(contact, at));
+    }
+
+    public Result<ClubAffiliationChanged> ChangeClubAffiliation(ClubAffiliation? club, DateTimeOffset at) =>
+        Result<ClubAffiliationChanged>.Success(new ClubAffiliationChanged(club, at));
+
+    private static Defect? ValidateName(string name) =>
+        string.IsNullOrWhiteSpace(name)
+            ? new Defect("person.name.blank", "$.name", "Name must not be blank.")
+            : null;
+
+    private static Defect? ValidateContact(ContactDetails contact) =>
+        IsPlausibleEmail(contact.Email)
+            ? null
+            : new Defect("person.email.invalid", "$.contact.email", "Email must be non-blank and structurally plausible.");
+
+    /// <summary>
+    /// Not full RFC 5322 validation — one '@', a non-blank local part, a
+    /// domain part containing at least one '.', and no whitespace anywhere.
+    /// Deliberately loose: the only thing this aggregate can check about an
+    /// email is its shape, not whether it is real (that is what registration
+    /// itself is for).
+    /// </summary>
+    private static bool IsPlausibleEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || email.Any(char.IsWhiteSpace))
+        {
+            return false;
+        }
+
+        var parts = email.Split('@');
+        return parts.Length == 2
+            && parts[0].Length > 0
+            && parts[1].Contains('.')
+            && !parts[1].StartsWith('.')
+            && !parts[1].EndsWith('.');
+    }
 }
