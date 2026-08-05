@@ -1,6 +1,6 @@
 # Plan — Command-side steel thread: Person end-to-end
 
-**Status:** Approved, not started · **Date:** 2026-08-05
+**Status:** Complete — WI-1 through WI-11 all landed and verified · **Date:** 2026-08-05
 
 Work items are numbered `WI-n` and the numbers are stable — cite them from code
 comments the way `People/Person.cs` and `Entries/Entry.cs` already cite WI-0 and

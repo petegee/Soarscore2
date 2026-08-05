@@ -3,7 +3,8 @@
 // and enumerate its EndpointDataSource without starting Kestrel or opening an
 // HTTP client — "driven without HTTP testing tools" (LADR-0003).
 
-using Soarscore.Api.Routing;
+using Soarscore.Api.Commands;
+using Soarscore.Api.Queries;
 using Soarscore.Application;
 using Soarscore.Application.People;
 using Soarscore.Domain.People;
@@ -40,13 +41,8 @@ public static class Composition
 
         app.MapOpenApi();
 
-        // Verbs, never nouns (high-level-architecture.md "intent-based").
-        app.MapCommand<RegisterPerson, PersonId>("/register-person");
-        app.MapCommand<RenamePerson, PersonId>("/rename-person");
-        app.MapCommand<ChangePersonContactDetails, PersonId>("/change-person-contact-details");
-        app.MapCommand<ChangePersonClubAffiliation, PersonId>("/change-person-club-affiliation");
-        app.MapQuery<FindPeople, IReadOnlyList<PersonSummary>>("/people");
-        app.MapQuery<GetPerson, Person>("/person");
+        app.MapCommands();
+        app.MapQueries();
 
         return app;
     }
