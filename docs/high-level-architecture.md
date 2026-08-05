@@ -68,6 +68,10 @@ We prefer to minimise solitary style white-box testing and mocking, and instead 
 do overlapping sociable black-box style tests verifing behaviour without "double-encoding"
 the structure and dependencies of the application.
 
+#### Property-based testing where invariants exist
+Property-based tests are used alongside example-based tests where a feature has a genuine
+invariant (e.g. scoring, normalisation, draw fairness) rather than just fixed cases.
+
 ### System assumes no specific external UX requirements
 We do not let external parties shape this system. It is the core kernel of a wider integrated 
 competition system (which may have displays, sounds, announcements, score gathering systems etc).
