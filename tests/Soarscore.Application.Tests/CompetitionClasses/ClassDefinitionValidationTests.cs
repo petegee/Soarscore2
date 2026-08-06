@@ -10,6 +10,7 @@ using Soarscore.Application.CompetitionClasses;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
+using static Soarscore.Application.Tests.CompetitionClasses.ClassDefinitionFixtures;
 
 namespace Soarscore.Application.Tests.CompetitionClasses;
 
@@ -33,7 +34,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-1.unresolved-metric-ref");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-1.unresolved-metric-ref");
     }
 
     [Fact]
@@ -48,7 +49,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-2.unresolved-rank-by-metric");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-2.unresolved-rank-by-metric");
     }
 
     [Fact]
@@ -63,7 +64,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-3.unresolved-parameter-ref");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-3.unresolved-parameter-ref");
     }
 
     [Fact]
@@ -81,18 +82,21 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-7.parameter-unit-mismatch");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-7.parameter-unit-mismatch");
     }
 
     [Fact]
     public void Check8_adjacent_piecewise_bands_naming_different_parameters_do_not_meet()
     {
+        // Unit "s" matches Minimal()'s "flightTime" metric so check 7 (parameter
+        // unit agreement) does not also fire on these bands' from/to slots —
+        // isolates the mutation to check 8 alone.
         var definition = Minimal() with
         {
             Parameters =
             [
-                new Parameter { Name = "a" },
-                new Parameter { Name = "b" },
+                new Parameter { Name = "a", Unit = "s" },
+                new Parameter { Name = "b", Unit = "s" },
             ],
         };
         var task = definition.Phases[0].Tasks[0] with
@@ -114,7 +118,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-8.piecewise-bands-do-not-meet");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-8.piecewise-bands-do-not-meet");
     }
 
     [Fact]
@@ -136,7 +140,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-9.rows-not-ascending");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-9.rows-not-ascending");
     }
 
     [Fact]
@@ -158,7 +162,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-9.unbounded-row-not-last");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-9.unbounded-row-not-last");
     }
 
     [Fact]
@@ -177,27 +181,27 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-10.drops-not-descending");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-10.drops-not-descending");
     }
 
     [Fact]
     public void Check11_finalRanking_SinglePhase_is_rejected_with_more_than_one_phase()
     {
-        var definition = TwoPhases() with { FinalRanking = FinalRankingKind.SinglePhase };
+        var definition = NPhases(2) with { FinalRanking = FinalRankingKind.SinglePhase };
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-11.single-phase-final-ranking-with-multiple-phases");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-11.single-phase-final-ranking-with-multiple-phases");
     }
 
     [Fact]
     public void Check12_finalRanking_is_required_with_more_than_one_phase()
     {
-        var definition = TwoPhases();
+        var definition = NPhases(2);
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-12.missing-final-ranking");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-12.missing-final-ranking");
     }
 
     [Fact]
@@ -215,7 +219,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-13.minnewgroupsize-with-no-reflight");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-13.minnewgroupsize-with-no-reflight");
     }
 
     [Fact]
@@ -230,7 +234,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-14.normalised-terms-without-normalisation");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-14.normalised-terms-without-normalisation");
     }
 
     [Fact]
@@ -245,7 +249,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-15.normalisation-without-group");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-15.normalisation-without-group");
     }
 
     [Fact]
@@ -266,7 +270,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle(d => d.Code == "class-definition.check-16.exclusion-group-non-deduct-effect");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-16.exclusion-group-non-deduct-effect");
     }
 
     [Fact]
@@ -279,43 +283,4 @@ public class ClassDefinitionValidationTests
         }
     }
 
-    // ---------------------------------------------------------------- fixtures
-
-    private static ClassDefinition Minimal() => new()
-    {
-        Name = "Test Class",
-        Version = "v1",
-        Reflight = new ReflightRule { EntitledScores = ReflightSelection.BetterOf, OthersScore = ReflightSelection.BetterOf },
-        Phases =
-        [
-            new PhaseDefinition
-            {
-                Ordinal = 1,
-                Type = PhaseType.Preliminary,
-                Validity = new ValidityRule { MinRounds = 1 },
-                Tasks =
-                [
-                    new TaskDefinition
-                    {
-                        Code = "A",
-                        Name = "Task A",
-                        Metrics = [new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" }],
-                        Flights = new LastFlight(),
-                        Timing = new TaskTiming { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-                        Score = [new RateTerm { MetricRef = "flightTime", Rate = 1 }],
-                    },
-                ],
-            },
-        ],
-    };
-
-    private static ClassDefinition TwoPhases()
-    {
-        var definition = Minimal();
-        var phase = definition.Phases[0];
-        return definition with { Phases = [phase, phase with { Ordinal = 2 }] };
-    }
-
-    private static ClassDefinition WithSingleTask(ClassDefinition definition, TaskDefinition task) =>
-        definition with { Phases = [definition.Phases[0] with { Tasks = [task] }] };
 }

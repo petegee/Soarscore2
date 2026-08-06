@@ -1,6 +1,8 @@
 using Soarscore.Api.Routing;
 using Soarscore.Application.CompetitionClasses;
+using Soarscore.Application.Competitions;
 using Soarscore.Application.People;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 
 namespace Soarscore.Api.Commands;
@@ -16,6 +18,8 @@ public static class Commands
         app.MapCommand<ChangePersonClubAffiliation, PersonId>("/change-person-club-affiliation");
 
         app.MapCommand<PublishClassDefinition, string>("/publish-class-definition");
+
+        app.MapCommand<CreateCompetition, CompetitionId>("/create-competition");
 
         return app;
     }

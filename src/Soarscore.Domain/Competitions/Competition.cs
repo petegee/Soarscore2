@@ -15,9 +15,29 @@ using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Competitions;
 
-public readonly record struct CompetitionId(Guid Value)
+/// <summary>
+/// <see cref="IParsable{TSelf}"/> so ASP.NET's Minimal API parameter binding
+/// (<c>[AsParameters]</c> query records, e.g. GetCompetition) can bind this
+/// straight from a query-string value — no Api-layer converter needed.
+/// Mirrors People/Person.cs's PersonId.
+/// </summary>
+public readonly record struct CompetitionId(Guid Value) : IParsable<CompetitionId>
 {
     public static CompetitionId New() => new(Guid.CreateVersion7());
+
+    public static CompetitionId Parse(string s, IFormatProvider? provider) => new(Guid.Parse(s, provider));
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out CompetitionId result)
+    {
+        if (Guid.TryParse(s, provider, out var value))
+        {
+            result = new CompetitionId(value);
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
 
     public override string ToString() => Value.ToString();
 }
@@ -417,4 +437,47 @@ public sealed record Competition
 
     private static Competition Require(Competition? current, CompetitionEvent @event) =>
         current ?? throw new ArgumentException($"{@event.GetType().Name} folded with no current projection — a Competition must begin with CompetitionCreated.");
+
+    // Decide functions — WI-2 (docs/plans/create-competition-steel-thread-plan.md).
+    // Named Decide, not Create, because Create is already taken by the fold
+    // above. Unlike Person.Register, this does not mint its own id: WI-3's
+    // handler needs the id before calling Decide, in order to also construct
+    // AdoptedRules from a cross-aggregate read. AdoptedRules is deliberately
+    // not (re-)validated here — by the time this runs, the caller has already
+    // resolved it from an already-validated, immutable PublishedClassDefinition
+    // stream (LADR-0002 §5). A decide function takes already-resolved value
+    // objects as input, the same way Person.Register takes an
+    // already-constructed ContactDetails rather than reaching out to check
+    // anything about it itself.
+    public static Result<CompetitionCreated> Decide(
+        CompetitionId id,
+        string name,
+        string location,
+        DateOnly startDate,
+        DateOnly endDate,
+        string evaluatorVersion,
+        AdoptedRules adoptedRules,
+        DateTimeOffset at)
+    {
+        var defect = ValidateName(name) ?? ValidateLocation(location) ?? ValidateDates(startDate, endDate);
+        return defect is not null
+            ? Result<CompetitionCreated>.Failure(defect.Code, defect.Message)
+            : Result<CompetitionCreated>.Success(
+                new CompetitionCreated(id, name, location, startDate, endDate, evaluatorVersion, adoptedRules, at));
+    }
+
+    private static Defect? ValidateName(string name) =>
+        string.IsNullOrWhiteSpace(name)
+            ? new Defect("competition.name.blank", "$.name", "Name must not be blank.")
+            : null;
+
+    private static Defect? ValidateLocation(string location) =>
+        string.IsNullOrWhiteSpace(location)
+            ? new Defect("competition.location.blank", "$.location", "Location must not be blank.")
+            : null;
+
+    private static Defect? ValidateDates(DateOnly startDate, DateOnly endDate) =>
+        startDate > endDate
+            ? new Defect("competition.dates.invalid", "$.startDate", "Start date must not be after end date.")
+            : null;
 }

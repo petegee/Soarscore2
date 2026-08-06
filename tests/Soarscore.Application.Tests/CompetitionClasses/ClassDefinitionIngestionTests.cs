@@ -3,12 +3,11 @@
 // code. Corpus.All is also checked to sit inside every limit — the ceilings
 // were set relative to those actuals in the first place.
 
-using System.Collections.Immutable;
 using AwesomeAssertions;
 using Soarscore.Application.CompetitionClasses;
-using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
+using static Soarscore.Application.Tests.CompetitionClasses.ClassDefinitionIngestionFixtures;
 
 namespace Soarscore.Application.Tests.CompetitionClasses;
 
@@ -109,66 +108,4 @@ public class ClassDefinitionIngestionTests
         }
     }
 
-    // ---------------------------------------------------------------- fixtures
-
-    private static TaskDefinition MinimalTask(string code) => new()
-    {
-        Code = code,
-        Name = code,
-        Metrics = [new MetricDefinition { Name = "m", Kind = MeasuredKind.Number }],
-        Flights = new LastFlight(),
-        Timing = new TaskTiming { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        Score = [new RateTerm { MetricRef = "m", Rate = 1 }],
-    };
-
-    private static ClassDefinition BaseDefinition(TaskDefinition task) => new()
-    {
-        Name = "Test Class",
-        Version = "v1",
-        Reflight = new ReflightRule { EntitledScores = ReflightSelection.BetterOf, OthersScore = ReflightSelection.BetterOf },
-        Phases =
-        [
-            new PhaseDefinition
-            {
-                Ordinal = 1,
-                Type = PhaseType.Preliminary,
-                Validity = new ValidityRule { MinRounds = 1 },
-                Tasks = [task],
-            },
-        ],
-    };
-
-    private static ClassDefinition DefinitionWithTasks(int count)
-    {
-        var tasks = Enumerable.Range(0, count).Select(i => MinimalTask($"T{i}")).ToImmutableArray();
-        var definition = BaseDefinition(MinimalTask("seed"));
-        return definition with { Phases = [definition.Phases[0] with { Tasks = tasks }] };
-    }
-
-    private static ClassDefinition DefinitionWithParameters(int count)
-    {
-        var parameters = Enumerable.Range(0, count).Select(i => new Parameter { Name = $"p{i}" }).ToImmutableArray();
-        return BaseDefinition(MinimalTask("A")) with { Parameters = parameters };
-    }
-
-    private static ClassDefinition DefinitionWithScoreTerms(int count)
-    {
-        var terms = Enumerable.Range(0, count).Select(_ => (ScoreTerm)new ConstantTerm { Value = 1 }).ToImmutableArray();
-        var task = MinimalTask("A") with { Score = terms };
-        return BaseDefinition(task);
-    }
-
-    private static ClassDefinition DefinitionWithBands(int count)
-    {
-        var bands = Enumerable.Range(0, count).Select(i => new Band(i, i + 1, 1)).ToImmutableArray();
-        var task = MinimalTask("A") with { Score = [new PiecewiseTerm { MetricRef = "m", Bands = bands }] };
-        return BaseDefinition(task);
-    }
-
-    private static ClassDefinition DefinitionWithRows(int count)
-    {
-        var rows = Enumerable.Range(0, count).Select(i => new LookupRow(i, i)).ToImmutableArray();
-        var task = MinimalTask("A") with { Score = [new LookupTerm { MetricRef = "m", Rows = rows }] };
-        return BaseDefinition(task);
-    }
 }

@@ -4,9 +4,11 @@ using Marten;
 using Soarscore.Application;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure.CompetitionClasses;
+using Soarscore.Infrastructure.Competitions;
 using Soarscore.Infrastructure.People;
 using Weasel.Core;
 
@@ -33,6 +35,18 @@ public static class MartenConfig
             opts.Events.MapEventType<ClassDefinitionPublished>("classDefinitionPublished");
             opts.Events.MapEventType<ClassDefinitionRetired>("classDefinitionRetired");
 
+            // create-competition-steel-thread-plan.md WI-4: CompetitionCreated only —
+            // the other ten CompetitionEvent subtypes (CompetitorRegistered,
+            // CompetitorWithdrawn, PhaseDrawn, ReflightGroupAppended,
+            // TaskRoundCompleted, TaskRoundAnnulled, RulesAmended, ParameterBound,
+            // Finalised, PenaltyRecorded) are not registered here because nothing
+            // appends them yet. Each future thread that adds a command producing one
+            // of them must add its own MapEventType line before that command can
+            // append — the JSON $kind discriminators for all eleven already exist on
+            // CompetitionEvents.cs and compile fine either way; only the registry is
+            // per-command.
+            opts.Events.MapEventType<CompetitionCreated>("competitionCreated");
+
             // Casing and enum storage must be passed explicitly here even though
             // SoarscoreEventJson.Options already sets them: Marten's overload rebuilds
             // its own options from these two parameters and silently discards the
@@ -56,6 +70,11 @@ public static class MartenConfig
             // not a document-level constraint. Inline for read-your-own-writes, not for
             // an invariant class_library enforces.
             opts.Projections.Add(new ClassDefinitionSummaryProjection(), ProjectionLifecycle.Inline);
+
+            // WI-4 (create-competition-steel-thread-plan.md): no unique index —
+            // nothing about CompetitionSummary's fields is unique the way
+            // PersonSummary.Email is.
+            opts.Projections.Add(new CompetitionSummaryProjection(), ProjectionLifecycle.Inline);
         });
         return store;
     }

@@ -1,6 +1,8 @@
 using Soarscore.Api.Routing;
 using Soarscore.Application.CompetitionClasses;
+using Soarscore.Application.Competitions;
 using Soarscore.Application.People;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 
@@ -16,6 +18,9 @@ public static class Queries
 
         app.MapQuery<FindClassDefinitions, IReadOnlyList<ClassDefinitionSummary>>("/class-definitions");
         app.MapQuery<GetClassDefinition, ClassDefinition>("/class-definition");
+
+        app.MapQuery<FindCompetitions, IReadOnlyList<CompetitionSummary>>("/competitions");
+        app.MapQuery<GetCompetition, Competition>("/competition");
 
         return app;
     }
