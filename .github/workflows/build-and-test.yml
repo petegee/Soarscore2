@@ -25,5 +25,8 @@ jobs:
       - name: Build
         run: dotnet build Soarscore.sln --configuration Release --no-restore
 
+      - name: Emit seed corpus JSON
+        run: dotnet run --project tools/Soarscore.SeedData --configuration Release --no-build
+
       - name: Test
         run: dotnet test Soarscore.sln --configuration Release --no-build
