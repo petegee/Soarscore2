@@ -20,6 +20,8 @@ public static class Commands
         app.MapCommand<PublishClassDefinition, string>("/publish-class-definition");
 
         app.MapCommand<CreateCompetition, CompetitionId>("/create-competition");
+        app.MapCommand<RegisterCompetitor, CompetitorId>("/register-competitor");
+        app.MapCommand<WithdrawCompetitor, CompetitorId>("/withdraw-competitor");
 
         return app;
     }

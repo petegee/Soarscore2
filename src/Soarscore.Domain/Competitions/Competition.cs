@@ -480,4 +480,77 @@ public sealed record Competition
         startDate > endDate
             ? new Defect("competition.dates.invalid", "$.startDate", "Start date must not be after end date.")
             : null;
+
+    // Instance decide functions — WI-1 (docs/plans/register-competitor-steel-thread-plan.md).
+    // Instance, unlike Decide above: deciding whether a registration or
+    // withdrawal is valid needs the current field, and the aggregate is what
+    // already holds it. CompetitorId is minted by the caller (handler), not
+    // here — same reason Decide above does not mint CompetitionId: a decide
+    // function stays deterministic on already-resolved inputs, which is what
+    // lets WI-2's property tests compare an expected event against an actual
+    // one.
+
+    public Result<CompetitorRegistered> RegisterCompetitor(CompetitorId id, PersonId personRef, DateTimeOffset at)
+    {
+        var defect = ValidateNotAlreadyRegistered(personRef) ?? ValidateFieldNotFrozen();
+        if (defect is not null)
+        {
+            return Result<CompetitorRegistered>.Failure(defect.Code, defect.Message);
+        }
+
+        // max+1, not Count+1: they agree today only because withdrawal never
+        // removes a record. Numbers are never reused — a withdrawn
+        // competitor's number stays retired, already written on score sheets.
+        var competitor = new Competitor
+        {
+            Id = id,
+            PersonRef = personRef,
+            CompetitorNumber = Competitors.Select(c => c.CompetitorNumber).DefaultIfEmpty(0).Max() + 1,
+            RegisteredAt = at,
+            WithdrawnAt = null,
+        };
+
+        return Result<CompetitorRegistered>.Success(new CompetitorRegistered(competitor, at));
+    }
+
+    public Result<CompetitorWithdrawn> WithdrawCompetitor(CompetitorId competitorRef, DateTimeOffset at)
+    {
+        // Deliberately no field-freeze check: aggregate-roots.md:330-333 closes
+        // *registration* at the draw, not withdrawal — "a withdrawal is
+        // recorded but leaves the draw intact." Registration closes at the
+        // draw; withdrawal never closes. This looks like an asymmetric
+        // oversight; it is the rule.
+        var defect = ValidateCompetitorExists(competitorRef) ?? ValidateNotAlreadyWithdrawn(competitorRef);
+        return defect is not null
+            ? Result<CompetitorWithdrawn>.Failure(defect.Code, defect.Message)
+            : Result<CompetitorWithdrawn>.Success(new CompetitorWithdrawn(competitorRef, at));
+    }
+
+    // Compares against *all* competitors, including withdrawn ones — a
+    // withdrawal is not a re-entry ticket (invariant 1, the plan's Context).
+    private Defect? ValidateNotAlreadyRegistered(PersonId personRef) =>
+        Competitors.Any(c => c.PersonRef == personRef)
+            ? new Defect("competition.competitor.alreadyRegistered", "$.personRef", "This person is already registered in this competition.")
+            : null;
+
+    // Unreachable this thread — Phases is always empty because no command
+    // produces PhaseDrawn yet. Written anyway, the same way CreateCompetition's
+    // retirement check was written against a state nothing could yet produce.
+    // "Accepted" currently means "any phase drawn" because Draw.Status carries
+    // no defined value set (Competition.cs:230-234) — revisit this check once
+    // it does.
+    private Defect? ValidateFieldNotFrozen() =>
+        !Phases.IsEmpty
+            ? new Defect("competition.field.frozen", "$.personRef", "The field is frozen: a phase has already been drawn.")
+            : null;
+
+    private Defect? ValidateCompetitorExists(CompetitorId competitorRef) =>
+        Competitors.Any(c => c.Id == competitorRef)
+            ? null
+            : new Defect("competition.competitor.notFound", "$.competitorRef", "No such competitor in this competition.");
+
+    private Defect? ValidateNotAlreadyWithdrawn(CompetitorId competitorRef) =>
+        Competitors.Single(c => c.Id == competitorRef).WithdrawnAt is not null
+            ? new Defect("competition.competitor.alreadyWithdrawn", "$.competitorRef", "This competitor has already withdrawn.")
+            : null;
 }

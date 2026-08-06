@@ -35,17 +35,20 @@ public static class MartenConfig
             opts.Events.MapEventType<ClassDefinitionPublished>("classDefinitionPublished");
             opts.Events.MapEventType<ClassDefinitionRetired>("classDefinitionRetired");
 
-            // create-competition-steel-thread-plan.md WI-4: CompetitionCreated only —
-            // the other ten CompetitionEvent subtypes (CompetitorRegistered,
-            // CompetitorWithdrawn, PhaseDrawn, ReflightGroupAppended,
-            // TaskRoundCompleted, TaskRoundAnnulled, RulesAmended, ParameterBound,
-            // Finalised, PenaltyRecorded) are not registered here because nothing
-            // appends them yet. Each future thread that adds a command producing one
-            // of them must add its own MapEventType line before that command can
-            // append — the JSON $kind discriminators for all eleven already exist on
+            // create-competition-steel-thread-plan.md WI-4 registered CompetitionCreated.
+            // register-competitor-steel-thread-plan.md WI-5 adds CompetitorRegistered
+            // and CompetitorWithdrawn below. The remaining eight CompetitionEvent
+            // subtypes (PhaseDrawn, ReflightGroupAppended, TaskRoundCompleted,
+            // TaskRoundAnnulled, RulesAmended, ParameterBound, Finalised,
+            // PenaltyRecorded) are still not registered here because nothing appends
+            // them yet. Each future thread that adds a command producing one of them
+            // must add its own MapEventType line before that command can append — the
+            // JSON $kind discriminators for all eleven already exist on
             // CompetitionEvents.cs and compile fine either way; only the registry is
             // per-command.
             opts.Events.MapEventType<CompetitionCreated>("competitionCreated");
+            opts.Events.MapEventType<CompetitorRegistered>("competitorRegistered");
+            opts.Events.MapEventType<CompetitorWithdrawn>("competitorWithdrawn");
 
             // Casing and enum storage must be passed explicitly here even though
             // SoarscoreEventJson.Options already sets them: Marten's overload rebuilds

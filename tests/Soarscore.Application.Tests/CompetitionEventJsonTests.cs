@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
@@ -52,6 +53,52 @@ public class CompetitionEventJsonTests
         var json = JsonSerializer.Serialize(created, SoarscoreEventJson.Options);
 
         json.Should().Contain("\"$kind\":\"competitionCreated\"");
+    }
+
+    private static Competitor SampleCompetitor() =>
+        new()
+        {
+            Id = CompetitorId.New(),
+            PersonRef = PersonId.New(),
+            CompetitorNumber = 1,
+            RegisteredAt = DateTimeOffset.UtcNow,
+        };
+
+    [Fact]
+    public void CompetitorRegistered_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent registered = new CompetitorRegistered(SampleCompetitor(), DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(registered, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<CompetitorRegistered>();
+    }
+
+    [Fact]
+    public void CompetitorRegistered_serialises_its_PersonId_as_a_nested_value_object_not_flattened()
+    {
+        var competitor = SampleCompetitor();
+        CompetitionEvent registered = new CompetitorRegistered(competitor, DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(registered, SoarscoreEventJson.Options);
+
+        json.Should().Contain($"\"personRef\":{{\"value\":\"{competitor.PersonRef.Value}\"}}");
+    }
+
+    [Fact]
+    public void CompetitorWithdrawn_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent withdrawn = new CompetitorWithdrawn(CompetitorId.New(), DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(withdrawn, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<CompetitorWithdrawn>();
     }
 
     [Fact]
