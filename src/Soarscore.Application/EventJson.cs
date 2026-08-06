@@ -21,6 +21,15 @@
 //    registered, because AdoptedRules and ClassDefinitionPublished embed a full
 //    ClassDefinition, and those two types cannot serialise without them
 //    (ParameterReferenceConverters.cs).
+//  - AllowOutOfOrderMetadataProperties (docs/plans/class-definition-adoption-steel-thread-plan.md
+//    WI-7 finding): jsonb does not preserve key order, so a `ClassDefinitionPublished`
+//    read back from Postgres can — and, empirically, does — land with a nested
+//    ScoreTerm/Predicate/FlightSelection's `$kind` discriminator anywhere but
+//    first in its object. Without this, .NET's default polymorphic reader
+//    rejects the document outright ("must specify a type discriminator") even
+//    though the discriminator is present, just not first — a store-backed test
+//    is what caught this; the seed tool's own round-trip test never touches
+//    Postgres and so never exercised jsonb's reordering.
 //
 // Event-type name <-> CLR-type mapping (Marten's MapEventType, LADR-0001 §4.8)
 // is an Infrastructure/Marten concern and is not here: the $kind strings on
@@ -44,6 +53,7 @@ public static class SoarscoreEventJson
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            AllowOutOfOrderMetadataProperties = true,
         };
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new DecimalAsStringConverter());

@@ -124,7 +124,12 @@ public sealed record ValidityRule
 {
     public required NumberOrParam MinRounds { get; init; }
 
-    public NumberOrParam? MinTasks { get; init; }
+    /// <summary>
+    /// A discrete whole-number count, unlike <see cref="MinRounds"/> — not one
+    /// of the thirteen ParameterRef-permitted slots (ParameterReference.cs),
+    /// and the notation (§4) never showed a `param(...)` form for it either.
+    /// </summary>
+    public int? MinTasks { get; init; }
 }
 
 /// <summary>

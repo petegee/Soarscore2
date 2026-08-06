@@ -3,7 +3,7 @@ using ArchUnitNET.Loader;
 using ArchUnitNET.xUnitV3;
 using Soarscore.Application;
 using Soarscore.Domain.People;
-using Soarscore.Infrastructure.CompetitionClasses;
+using Soarscore.Infrastructure;
 using Xunit;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -23,7 +23,7 @@ namespace Soarscore.ArchitectureTests;
 public sealed class LayerRuleTests
 {
     private static readonly ArchUnitNET.Domain.Architecture Architecture = new ArchLoader()
-        .LoadAssemblies(typeof(Person).Assembly, typeof(SoarscoreEventJson).Assembly, typeof(ClassDefinitionStreamId).Assembly)
+        .LoadAssemblies(typeof(Person).Assembly, typeof(SoarscoreEventJson).Assembly, typeof(MartenEventStore).Assembly)
         .Build();
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class LayerRuleTests
     [Fact]
     public void Infrastructure_does_not_depend_on_Api()
     {
-        IArchRule rule = Types().That().ResideInAssembly(typeof(ClassDefinitionStreamId).Assembly)
+        IArchRule rule = Types().That().ResideInAssembly(typeof(MartenEventStore).Assembly)
             .Should().NotDependOnAny(Types(includeReferenced: true).That()
                 .ResideInAssemblyMatching(@"^Soarscore\.Api(\.|,)"))
             .Because("Api is the outermost adapter (composition root); nothing beneath it may depend back on it.");

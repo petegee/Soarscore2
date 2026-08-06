@@ -3,11 +3,14 @@
 // and enumerate its EndpointDataSource without starting Kestrel or opening an
 // HTTP client — "driven without HTTP testing tools" (LADR-0003).
 
+using Microsoft.AspNetCore.Http.Features;
 using Soarscore.Api.Commands;
 using Soarscore.Api.Queries;
 using Soarscore.Application;
+using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
 using Soarscore.Domain.People;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure;
 
 namespace Soarscore.Api;
@@ -25,6 +28,22 @@ public static class Composition
         // this once registered, rather than hand-writing the response shape.
         builder.Services.AddProblemDetails();
 
+        // WI-1/WI-6 (class-definition-adoption-steel-thread-plan.md): what
+        // POST /publish-class-definition binds its body through, and what every
+        // response — including GET /class-definition — is written with. Only
+        // adds to ASP.NET's Web defaults (already camelCase); harmless to the
+        // Person endpoints, none of which carry a NumberOrParam/FlagOrParam or an
+        // enum.
+        builder.Services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.MaxDepth = ClassDefinitionIngestion.MaxDepth;
+            options.SerializerOptions.AllowOutOfOrderMetadataProperties = true;
+            foreach (var converter in ClassDefinitionIngestion.Options.Converters)
+            {
+                options.SerializerOptions.Converters.Add(converter);
+            }
+        });
+
         builder.Services.AddSoarscoreInfrastructure(builder.Configuration);
         builder.Services.AddSingleton<IDispatcher, Dispatcher>();
 
@@ -37,7 +56,27 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<FindPeople, IReadOnlyList<PersonSummary>>, FindPeopleHandler>();
         builder.Services.AddScoped<IQueryHandler<GetPerson, Person>, GetPersonHandler>();
 
+        builder.Services.AddScoped<ICommandHandler<PublishClassDefinition, string>, PublishClassDefinitionHandler>();
+        builder.Services.AddScoped<IQueryHandler<FindClassDefinitions, IReadOnlyList<ClassDefinitionSummary>>, FindClassDefinitionsHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetClassDefinition, ClassDefinition>, GetClassDefinitionHandler>();
+
         var app = builder.Build();
+
+        // WI-1/WI-6: the payload-size ceiling, ahead of routing and therefore
+        // ahead of model binding — Kestrel enforces it while reading the body
+        // stream, before ClassDefinitionIngestion.Options ever parses a byte of
+        // an oversized POST. Scoped to this one path; every other endpoint's body
+        // is small by construction and keeps the server's ordinary default.
+        app.Use(async (context, next) =>
+        {
+            if (HttpMethods.IsPost(context.Request.Method)
+                && context.Request.Path.Equals("/publish-class-definition", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = ClassDefinitionIngestion.MaxPayloadBytes;
+            }
+
+            await next();
+        });
 
         app.MapOpenApi();
 

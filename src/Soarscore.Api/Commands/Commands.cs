@@ -1,4 +1,5 @@
 using Soarscore.Api.Routing;
+using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
 using Soarscore.Domain.People;
 
@@ -13,6 +14,8 @@ public static class Commands
         app.MapCommand<RenamePerson, PersonId>("/rename-person");
         app.MapCommand<ChangePersonContactDetails, PersonId>("/change-person-contact-details");
         app.MapCommand<ChangePersonClubAffiliation, PersonId>("/change-person-club-affiliation");
+
+        app.MapCommand<PublishClassDefinition, string>("/publish-class-definition");
 
         return app;
     }

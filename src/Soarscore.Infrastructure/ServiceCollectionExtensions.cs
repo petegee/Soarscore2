@@ -12,8 +12,10 @@ using Marten.Events.Projections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Soarscore.Application;
+using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
 using Soarscore.Domain.People;
+using Soarscore.Infrastructure.CompetitionClasses;
 using Soarscore.Infrastructure.People;
 using Weasel.Core;
 
@@ -33,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDocumentStore>(store);
         services.AddSingleton<Application.IEventStore, MartenEventStore>();
         services.AddSingleton<IPeopleQuery, MartenPeopleQuery>();
+        services.AddSingleton<IClassLibraryQuery, MartenClassLibraryQuery>();
         services.AddSingleton<IClock, SystemClock>();
 
         return services;

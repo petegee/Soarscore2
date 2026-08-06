@@ -1,5 +1,4 @@
-// Marten stream identity for the CompetitionClass aggregate — an
-// Infrastructure-only concern, not a Domain one.
+// Marten stream identity for the CompetitionClass aggregate.
 //
 // LADR-0002 §5 makes CompetitionClass's real identity a content hash, and
 // Shared.cs deliberately mints no ClassDefinitionId for it. The other three
@@ -16,12 +15,20 @@
 // project's scale (a handful of class definitions, ever), and it is purely a
 // storage-key concern — the business identity a Competition's AdoptedRules
 // and every ClassDefinitionEvent actually carries is still the full hash
-// string, never this Guid. Nothing outside Infrastructure should need to know
-// this derivation exists.
+// string, never this Guid.
+//
+// Lives in Application, not Infrastructure (docs/plans/class-definition-adoption-steel-thread-plan.md
+// WI-4), despite deriving a Marten stream key: PublishClassDefinitionHandler
+// must supply this Guid to IEventStore.AppendAsync and GetClassDefinition must
+// supply the same Guid to ReadStreamAsync, and both are Application-layer code
+// that must not depend on Infrastructure. The function itself has zero
+// Marten/Npgsql dependency (pure Guid-from-bytes arithmetic), so this is a
+// relocation, not a redesign — Infrastructure keeps calling it from its new
+// home, and nothing about its behaviour changes.
 
 using Soarscore.Domain.PublishedClassDefinition;
 
-namespace Soarscore.Infrastructure.CompetitionClasses;
+namespace Soarscore.Application.CompetitionClasses;
 
 public static class ClassDefinitionStreamId
 {

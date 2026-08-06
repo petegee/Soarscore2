@@ -31,6 +31,9 @@
     <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
     <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
     <ProjectReference Include="..\..\src\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
+    <!-- WI-7 (class-definition-adoption-steel-thread-plan.md): the corpus is the
+         richest-payload fixture for the ClassDefinition round-trip tests. -->
+    <ProjectReference Include="..\..\tools\Soarscore.SeedData\Soarscore.SeedData.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,8 +2,11 @@ using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Soarscore.Application;
+using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
 using Soarscore.Domain.People;
+using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Infrastructure.CompetitionClasses;
 using Soarscore.Infrastructure.People;
 using Weasel.Core;
 
@@ -27,6 +30,9 @@ public static class MartenConfig
             opts.Events.MapEventType<ContactDetailsChanged>("contactDetailsChanged");
             opts.Events.MapEventType<ClubAffiliationChanged>("clubAffiliationChanged");
 
+            opts.Events.MapEventType<ClassDefinitionPublished>("classDefinitionPublished");
+            opts.Events.MapEventType<ClassDefinitionRetired>("classDefinitionRetired");
+
             // Casing and enum storage must be passed explicitly here even though
             // SoarscoreEventJson.Options already sets them: Marten's overload rebuilds
             // its own options from these two parameters and silently discards the
@@ -43,6 +49,13 @@ public static class MartenConfig
             opts.Schema.For<PersonSummary>().UniqueIndex(x => x.Email);
 
             opts.Projections.Add(new PersonSummaryProjection(), ProjectionLifecycle.Inline);
+
+            // WI-5 (class-definition-adoption-steel-thread-plan.md): no unique index —
+            // the content hash's uniqueness is already the Marten stream key
+            // (ExistingStreamIdCollisionException, handled in PublishClassDefinition.cs),
+            // not a document-level constraint. Inline for read-your-own-writes, not for
+            // an invariant class_library enforces.
+            opts.Projections.Add(new ClassDefinitionSummaryProjection(), ProjectionLifecycle.Inline);
         });
         return store;
     }

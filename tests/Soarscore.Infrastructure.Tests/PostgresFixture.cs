@@ -11,6 +11,7 @@ using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Soarscore.Application;
+using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -25,6 +26,8 @@ public sealed class PostgresFixture : IAsyncLifetime
     public IEventStore EventStore => _provider!.GetRequiredService<IEventStore>();
 
     public IPeopleQuery PeopleQuery => _provider!.GetRequiredService<IPeopleQuery>();
+
+    public IClassLibraryQuery ClassLibraryQuery => _provider!.GetRequiredService<IClassLibraryQuery>();
 
     /// <summary>Exposed only for test 4's read-model drop/rebuild — no port on IEventStore/IPeopleQuery covers it.</summary>
     public IDocumentStore DocumentStore => _provider!.GetRequiredService<IDocumentStore>();
