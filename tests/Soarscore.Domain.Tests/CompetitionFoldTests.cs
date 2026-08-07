@@ -127,7 +127,7 @@ public class CompetitionFoldTests
     public void PhaseDrawn_appends_a_new_phase_with_its_schedule()
     {
         var competition = Competition.Create(SampleCreatedEvent());
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
         var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "A", Groups = [group] };
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "Accepted" };
@@ -143,7 +143,7 @@ public class CompetitionFoldTests
     private static Competition CompetitionWithOneTaskRound()
     {
         var competition = Competition.Create(SampleCreatedEvent());
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
         var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "A", Groups = [group] };
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "Accepted" };
@@ -155,7 +155,7 @@ public class CompetitionFoldTests
     public void ReflightGroupAppended_navigates_by_ordinal_and_appends_the_group()
     {
         var competition = CompetitionWithOneTaskRound();
-        var newGroup = new Group { Id = GroupId.New(), Ordinal = 2 };
+        var newGroup = new Group { Id = GroupId.New(), Ordinal = 2, CompetitorRefs = [CompetitorId.New()] };
 
         var updated = competition.Apply(new ReflightGroupAppended(1, 1, 1, newGroup, DateTimeOffset.UtcNow));
 
@@ -168,7 +168,7 @@ public class CompetitionFoldTests
     public void TaskRoundCompleted_sets_state_and_leaves_other_task_rounds_untouched()
     {
         var competition = Competition.Create(SampleCreatedEvent());
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
         var taskRoundA = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "A", Groups = [group] };
         var taskRoundB = new TaskRound { Ordinal = 2, State = TaskRoundState.Drawn, TaskRef = "B", Groups = [group] };
         var round = new Round { Ordinal = 1, TaskRounds = [taskRoundA, taskRoundB] };
@@ -291,11 +291,11 @@ public class CompetitionFoldTests
             CompetitorNumber = 1,
             RegisteredAt = createdAt,
         };
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
         var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "A", Groups = [group] };
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = createdAt, Status = "Accepted" };
-        var reflightGroup = new Group { Id = GroupId.New(), Ordinal = 2 };
+        var reflightGroup = new Group { Id = GroupId.New(), Ordinal = 2, CompetitorRefs = [CompetitorId.New()] };
         var penalty = new Penalty { InfractionType = "late launch", Scope = PenaltyScope.TaskRound };
 
         CompetitionEvent[] stream =

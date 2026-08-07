@@ -51,7 +51,7 @@ public class CompetitionReplaceTaskRoundPropertyTests
             {
                 EventKind.AppendGroup => before.Apply(new ReflightGroupAppended(
                     t.targetPhase, t.targetRound, t.targetTaskRound,
-                    new Group { Id = GroupId.New(), Ordinal = 99 },
+                    new Group { Id = GroupId.New(), Ordinal = 99, CompetitorRefs = [CompetitorId.New()] },
                     DateTimeOffset.UtcNow)),
                 EventKind.Complete => before.Apply(new TaskRoundCompleted(
                     t.targetPhase, t.targetRound, t.targetTaskRound, DateTimeOffset.UtcNow)),
@@ -144,7 +144,7 @@ public class CompetitionReplaceTaskRoundPropertyTests
         Ordinal = taskRoundOrdinal,
         State = TaskRoundState.Drawn,
         TaskRef = $"P{phaseOrdinal}R{roundOrdinal}T{taskRoundOrdinal}",
-        Groups = [new Group { Id = GroupId.New(), Ordinal = 1 }],
+        Groups = [new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] }],
     };
 
     private static Dictionary<(int Phase, int Round, int TaskRound), TaskRound> Flatten(Competition competition) =>

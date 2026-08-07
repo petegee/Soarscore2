@@ -29,7 +29,7 @@ public class CompetitionTests
             RegisteredAt = DateTimeOffset.UtcNow,
         };
 
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
 
         var taskRound = new TaskRound
         {
@@ -120,7 +120,7 @@ public class CompetitionTests
     public void Round_IsComplete_reflects_taskRound_states(
         TaskRoundState first, TaskRoundState second, bool expectedComplete)
     {
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
 
         var round = new Round
         {

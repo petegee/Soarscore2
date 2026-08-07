@@ -98,6 +98,7 @@ classDiagram
 
     class Group {
         +int ordinal
+        +competitorId[] competitorRefs
     }
 
     class Entry {
@@ -216,7 +217,7 @@ classDiagram
     Person "1" *-- "0..1" ClubAffiliation : club
     Phase "1" *-- "1" Draw : organised by
     Draw "1" --> "2..*" Competitor : allocates
-    Draw ..> Group : produces initial
+    Draw ..> Group : produces initial (drawn allocation, not "who flew")
     Entry "*" --> "1" Group : flown in
     Entry "*" --> "1" Competitor : flown by
     TaskRound ..> AdoptedRules : task by id

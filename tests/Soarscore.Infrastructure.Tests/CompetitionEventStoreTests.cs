@@ -52,7 +52,7 @@ public sealed class CompetitionEventStoreTests(PostgresFixture fixture) : IClass
         // Compares by content hash rather than record equality: ImmutableArray<T>.Equals
         // is reference-based (LADR-0003), same gotcha ClassDefinitionEventStoreTests.cs
         // notes for the class-definition round trip.
-        ClassDefinitionHashing.ComputeContentHash(fetched.Value.AdoptedRules.Definition).Should().Be(published.Value);
+        ClassDefinitionHashing.ComputeContentHash(fetched.Value.Competition.AdoptedRules.Definition).Should().Be(published.Value);
     }
 
     [Fact]

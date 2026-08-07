@@ -60,7 +60,7 @@ public class CompetitionProjectionPropertyTests
             CompetitorNumber = 1,
             RegisteredAt = at,
         };
-        var group = new Group { Id = GroupId.New(), Ordinal = 1 };
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
         var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "A", Groups = [group] };
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = at, Status = "Accepted" };

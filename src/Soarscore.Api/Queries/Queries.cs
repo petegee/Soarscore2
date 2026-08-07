@@ -20,7 +20,7 @@ public static class Queries
         app.MapQuery<GetClassDefinition, ClassDefinition>("/class-definition");
 
         app.MapQuery<FindCompetitions, IReadOnlyList<CompetitionSummary>>("/competitions");
-        app.MapQuery<GetCompetition, Competition>("/competition");
+        app.MapQuery<GetCompetition, CompetitionView>("/competition");
 
         return app;
     }

@@ -321,11 +321,14 @@ classDiagram
     cssClass "CompetitionClass,Person" external
 ```
 
-> **Group membership** is not stored here — it is the set of Entries whose
-> `groupRef` points at a given Group. "Who is in Group C" is a query over the
-> Entry aggregate, not a list held on Group. Field membership *is* stored here —
-> the Competitor records. Two different things: the field is who is in the
-> competition; group membership is who flew where.
+> **Group membership:** `Group.CompetitorRefs` is the *drawn* allocation — who
+> a draw put in the group, fixed at draw time. It is not "who flew": after
+> reflights, fillers and annulments, who a scoring pass actually counts for
+> the group remains a query over the Entry aggregate (Entries whose
+> `groupRef` points at the Group), not duplicated on this list. Field
+> membership *is* stored here too — the Competitor records. Three different
+> things: the field is who is in the competition; the drawn allocation is who
+> a draw put where; group membership (for scoring) is who flew where.
 
 > **Field freeze:** competitors are added or removed only until the draw is
 > accepted. After that a withdrawal is recorded but leaves the draw intact —

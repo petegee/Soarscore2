@@ -107,7 +107,18 @@ WI-1.
   proof a flyoff draw is "nearly done" — the field-selection logic still needs to change.
 - **Redrawing.** The glossary: *"A draw is produced... and can be accepted or rejected and
   redrawn."* This thread models only the first, unconditional draw — `Phases.IsEmpty` is the
-  only precondition, and there is no `RejectDraw`/`RedrawPhase`. Own future thread.
+  only precondition, and there is no `RejectDraw`/`RedrawPhase`. Own future thread. **Acceptance
+  criteria for that thread, fixed here so the requirement isn't lost in the meantime:**
+  `aggregate-roots.md`:330-333 and the glossary (`soaring-domain-glossary.md`:51) already state
+  the field freezes on *acceptance*, not on draw — `draw → reject → draw → accept → freeze`.
+  `Competition.cs`:539-541 already flags today's `ValidateFieldNotFrozen` (`!Phases.IsEmpty`) as
+  a stand-in for this: *"'Accepted' currently means 'any phase drawn' because `Draw.Status`
+  carries no defined value set — revisit this check once it does."* The next thread is where
+  that revisit happens: `Draw.Status` gets a real vocabulary (`drawn` / `accepted` / `rejected`),
+  `AcceptDraw` and `RejectDraw` commands are added, and `ValidateFieldNotFrozen` moves from
+  `Phases.IsEmpty` to "the current phase's `Draw.Status == accepted`." *This* thread's WI-7
+  `field.frozen` test is unaffected — it already tests the documented approximation, not final
+  semantics, and stays correct under it.
 - **Mid-round regroup floors** (F3J: move a pilot up if a group falls to ≤3, `F3J.13.1 c`;
   F5J: refill if ≤5 or ≤4 in small contests, `5.5.11.14.1`). These react to a live shortfall —
   a withdrawal or a reflight mid-contest — and land on `ReflightGroupAppended`, not on the
@@ -332,6 +343,32 @@ which they cannot until `BindParameter` exists.
 `POST /draw-phase`, through the existing `MapCommand` helper only. No new query — `GET
 /competition?id=…` already returns the folded `Competition`, `Phases` included.
 
+### WI-6a — Pairwise co-occurrence view
+
+So the organiser can see *why* a draw's pairings look the way they do — and judge whether to
+accept it, once WI-6's "Redrawing" acceptance criteria above are built — expose the pairwise
+meeting counts `PhaseDraw.BuildGroups` already tracks internally while constructing groups.
+This is a pure derivation over data the fold already has (`Rounds` → `TaskRound` → `Group` →
+`CompetitorRefs`), not new domain state — no event shape change, no change to `BuildGroups`'s
+write path.
+
+`PairwiseCoOccurrence.Compute(ImmutableArray<Round> rounds) : ImmutableDictionary<(CompetitorId, CompetitorId), int>`
+— for every group in every round, increments a count for each unordered competitor pair
+co-located in it. Pure, class-agnostic (counts pairs regardless of what class the competition
+runs), cheap at CLAUDE.md's ≤20 pilots/≤8 rounds ceiling. Lives in `Soarscore.Application`
+alongside `PeopleProjection` — a read-model derivation over folded state, not a decide
+function, so it does not belong beside `PhaseDraw.BuildGroups` in Domain despite the shared
+shape.
+
+**Api:** no new query, extending WI-6's stance — the `GET /competition?id=…` response gains a
+`pairwiseCoOccurrence` list (`{competitorA, competitorB, count}`) alongside `phases`, computed
+on read from the folded `Competition`, not stored or denormalised.
+
+**Verify:** a unit test against a hand-built `Rounds` fixture with known counts (e.g. 3 rounds
+× 2 groups of 3 → predictable per-pair totals); cross-checked against WI-2's brute-force
+fairness oracle at the same small-`N` cases already generated there, so this does not need its
+own reference-oracle infrastructure.
+
 ### WI-7 — Store-backed tests
 
 `tests/Soarscore.Infrastructure.Tests`, Testcontainers, `Trait("Category", "Storage")`:
@@ -354,7 +391,8 @@ which they cannot until `BindParameter` exists.
 Against a running API and PostgreSQL, in order: publish an F3J class definition → create a
 competition → `POST /register-competitor` six or more times → `POST /draw-phase` with e.g. 2
 rounds → `GET /competition?id=…` shows `phases[0].rounds` with the expected group split and
-membership → drawing again returns `ProblemDetails` `drawPhase.alreadyDrawn` → registering a
+membership, and `pairwiseCoOccurrence` with the matching per-pair counts → drawing again
+returns `ProblemDetails` `drawPhase.alreadyDrawn` → registering a
 further competitor now returns `competition.field.frozen`, closing the loop the previous
 thread's plan left open → against a *fresh* competition with no registrations, `POST
 /draw-phase` returns `drawPhase.fieldEmpty`.
@@ -371,6 +409,7 @@ WI-3 ── needs WI-1
 WI-4 ─┐ needs WI-3
 WI-5 ─┘ (independent of each other, parallelisable)
 WI-6 ── needs WI-3, WI-5
+WI-6a ─ needs WI-1 (independent of WI-6 itself, but shares its Api surface)
 WI-7 ── needs WI-5
 WI-8 last
 ```

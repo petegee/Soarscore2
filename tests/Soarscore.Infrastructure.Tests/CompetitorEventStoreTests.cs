@@ -77,10 +77,10 @@ public sealed class CompetitorEventStoreTests(PostgresFixture fixture) : IClassF
         var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
         fetched.IsSuccess.Should().BeTrue();
 
-        fetched.Value.Competitors.Should().HaveCount(3);
-        fetched.Value.Competitors.Select(c => c.Id).Should().Equal(first.Value, second.Value, third.Value);
-        fetched.Value.Competitors.Select(c => c.CompetitorNumber).Should().Equal(1, 2, 3);
-        fetched.Value.Competitors.Select(c => c.PersonRef).Should().Equal(personA, personB, personC);
+        fetched.Value.Competition.Competitors.Should().HaveCount(3);
+        fetched.Value.Competition.Competitors.Select(c => c.Id).Should().Equal(first.Value, second.Value, third.Value);
+        fetched.Value.Competition.Competitors.Select(c => c.CompetitorNumber).Should().Equal(1, 2, 3);
+        fetched.Value.Competition.Competitors.Select(c => c.PersonRef).Should().Equal(personA, personB, personC);
     }
 
     [Fact]
@@ -125,9 +125,9 @@ public sealed class CompetitorEventStoreTests(PostgresFixture fixture) : IClassF
 
         // Three, not two: withdrawal records rather than removes
         // (aggregate-roots.md:330-333) — the number stays retired.
-        fetched.Value.Competitors.Should().HaveCount(3);
-        fetched.Value.Competitors.Single(c => c.Id == first.Value).WithdrawnAt.Should().NotBeNull();
-        fetched.Value.Competitors.Where(c => c.Id != first.Value).Should().OnlyContain(c => c.WithdrawnAt == null);
+        fetched.Value.Competition.Competitors.Should().HaveCount(3);
+        fetched.Value.Competition.Competitors.Single(c => c.Id == first.Value).WithdrawnAt.Should().NotBeNull();
+        fetched.Value.Competition.Competitors.Where(c => c.Id != first.Value).Should().OnlyContain(c => c.WithdrawnAt == null);
     }
 
     [Fact]

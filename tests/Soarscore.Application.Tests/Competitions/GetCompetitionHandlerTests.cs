@@ -34,8 +34,9 @@ public class GetCompetitionHandlerTests
         var result = await handler.HandleAsync(new GetCompetition(id), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Id.Should().Be(id);
-        result.Value.Name.Should().Be("Nationals");
+        result.Value.Competition.Id.Should().Be(id);
+        result.Value.Competition.Name.Should().Be("Nationals");
+        result.Value.PairwiseCoOccurrence.Should().BeEmpty();
     }
 
     [Fact]

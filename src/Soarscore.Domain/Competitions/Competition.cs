@@ -12,6 +12,7 @@
 using System.Collections.Immutable;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Domain.Competitions;
 
@@ -181,16 +182,20 @@ public sealed record Competitor
 }
 
 /// <summary>
-/// group membership is NOT stored here — deliberately no competitor/member
-/// list. "Who is in Group C" is a query over the Entry aggregate (which
-/// Entries have GroupRef pointing here), not a list held on Group
-/// (aggregate-roots.md §3 callout). Do not add one back.
+/// <see cref="CompetitorRefs"/> is the *drawn* allocation — who this draw put
+/// in the group, fixed at draw time (aggregate-roots.md §3 callout). It is
+/// not "who flew": after reflights, fillers and annulments, who a scoring
+/// pass actually counts for the group remains an Entry-derived query (Entries
+/// whose GroupRef points here), not duplicated on this list.
 /// </summary>
 public sealed record Group
 {
     public required GroupId Id { get; init; }
 
     public required int Ordinal { get; init; }
+
+    /// <summary>2..* — the drawn allocation. See the type doc comment.</summary>
+    public required ImmutableArray<CompetitorId> CompetitorRefs { get; init; }
 }
 
 /// <summary>
@@ -524,6 +529,137 @@ public sealed record Competition
         return defect is not null
             ? Result<CompetitorWithdrawn>.Failure(defect.Code, defect.Message)
             : Result<CompetitorWithdrawn>.Success(new CompetitorWithdrawn(competitorRef, at));
+    }
+
+    // Instance decide function — WI-1 (docs/plans/phase-drawn-steel-thread-plan.md).
+    // Not the Defect-chain style RegisterCompetitor/WithdrawCompetitor use:
+    // later checks need values (phaseDefinition, the eligible field,
+    // resolved MinPerGroup) computed by earlier ones, and the happy path
+    // needs them again to build the event, so this reads top-to-bottom with
+    // early returns instead.
+    public Result<PhaseDrawn> DrawPhase(int rounds, DateTimeOffset at)
+    {
+        // Only the first, unconditional draw — see the plan's "Redrawing" Out
+        // of scope entry. Phases.Length is therefore always 0 below; the
+        // expression is written generically anyway so a later thread adding
+        // a second call site (flyoff draws) does not have to touch this line.
+        if (!Phases.IsEmpty)
+        {
+            return Result<PhaseDrawn>.Failure(
+                "drawPhase.alreadyDrawn", "A phase has already been drawn for this competition.");
+        }
+
+        // Positional index into the class's ordered phase list — NOT a
+        // lookup by PhaseDefinition.Ordinal, which is the rulebook's own
+        // (often 1-based) numbering and a different scheme entirely.
+        var phaseDefinition = AdoptedRules.Definition.Phases[Phases.Length];
+
+        if (rounds < 1)
+        {
+            return Result<PhaseDrawn>.Failure("drawPhase.roundsInvalid", "Rounds must be at least 1.");
+        }
+
+        if (phaseDefinition.Rounds.MaxRounds is { } maxRounds && rounds > maxRounds)
+        {
+            return Result<PhaseDrawn>.Failure(
+                "drawPhase.roundsInvalid", $"Rounds must not exceed the class's maximum of {maxRounds}.");
+        }
+
+        // The structural shape check, not a class-name check (core
+        // architectural law) — multi-task rounds and catalogue-choice rounds
+        // are real algorithmic gaps this thread does not build, see the
+        // plan's Out of scope. Exactly one task, a fixed single-task
+        // sequence, is what this draw can schedule.
+        if (phaseDefinition.Tasks.Length != 1
+            || phaseDefinition.Rounds.Kind != CompositionKind.FixedSequence
+            || phaseDefinition.Rounds.TasksPerRound != 1)
+        {
+            return Result<PhaseDrawn>.Failure(
+                "drawPhase.unsupportedRoundComposition",
+                "This phase's round composition (multi-task rounds or catalogue task choice) is not yet supported by the draw.");
+        }
+
+        var task = phaseDefinition.Tasks[0];
+
+        var field = Competitors
+            .Where(c => c.WithdrawnAt is null)
+            .Select(c => c.Id)
+            .ToImmutableArray();
+
+        if (field.IsEmpty)
+        {
+            return Result<PhaseDrawn>.Failure("drawPhase.fieldEmpty", "No eligible competitors to draw.");
+        }
+
+        // Absent GroupConstraint means the class does not group-score at all
+        // (NZ N/P) — one whole-field group, every round; minPerGroup ==
+        // field.Length makes PhaseDraw.BuildGroups's groupCount formula
+        // produce exactly one group without a special case.
+        var minPerGroup = field.Length;
+
+        if (task.Group is not null)
+        {
+            var bindings = ParameterBindings
+                .GroupBy(b => b.ParameterName)
+                .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+
+            decimal resolvedMinPerGroup;
+            try
+            {
+                resolvedMinPerGroup = ParameterResolver.Resolve(task.Group.MinPerGroup, bindings);
+            }
+            catch (UnresolvedParameterException ex)
+            {
+                return Result<PhaseDrawn>.Failure("drawPhase.parameterUnbound", ex.Message);
+            }
+
+            minPerGroup = (int)resolvedMinPerGroup;
+
+            if (minPerGroup > field.Length)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.fieldTooSmall",
+                    $"The eligible field ({field.Length}) is smaller than the class's minimum group size ({minPerGroup}).");
+            }
+        }
+
+        var groupedRounds = PhaseDraw.BuildGroups(field, minPerGroup, rounds);
+
+        var rows = groupedRounds
+            .Select((groups, roundIndex) => new Round
+            {
+                Ordinal = roundIndex + 1,
+                TaskRounds =
+                [
+                    new TaskRound
+                    {
+                        Ordinal = 1,
+                        State = TaskRoundState.Drawn,
+                        TaskRef = task.Code,
+                        Groups = groups
+                            .Select((members, groupIndex) => new Group
+                            {
+                                Id = GroupId.New(),
+                                Ordinal = groupIndex + 1,
+                                CompetitorRefs = members,
+                            })
+                            .ToImmutableArray(),
+                    },
+                ],
+            })
+            .ToImmutableArray();
+
+        // Draw.Status still carries no defined vocabulary
+        // (Competition.cs — the Draw record's doc comment) — "drawn" is a
+        // stable literal, following the EvaluatorVersion precedent.
+        var @event = new PhaseDrawn(
+            PhaseOrdinal: Phases.Length,
+            Type: phaseDefinition.Type,
+            Draw: new Draw { CreatedAt = at, Status = "drawn" },
+            Rounds: rows,
+            At: at);
+
+        return Result<PhaseDrawn>.Success(@event);
     }
 
     // Compares against *all* competitors, including withdrawn ones — a

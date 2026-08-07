@@ -101,6 +101,54 @@ public class CompetitionEventJsonTests
         reread.Should().BeOfType<CompetitorWithdrawn>();
     }
 
+    private static PhaseDrawn SamplePhaseDrawnEvent(DateTimeOffset? at = null)
+    {
+        var group1 = new Group
+        {
+            Id = GroupId.New(),
+            Ordinal = 1,
+            CompetitorRefs = [CompetitorId.New(), CompetitorId.New()],
+        };
+        var group2 = new Group
+        {
+            Id = GroupId.New(),
+            Ordinal = 2,
+            CompetitorRefs = [CompetitorId.New(), CompetitorId.New()],
+        };
+        var taskRound = new TaskRound
+        {
+            Ordinal = 1,
+            State = TaskRoundState.Drawn,
+            TaskRef = "A",
+            Groups = [group1, group2],
+        };
+        var round = new Round
+        {
+            Ordinal = 1,
+            TaskRounds = [taskRound],
+        };
+
+        return new PhaseDrawn(
+            PhaseOrdinal: 0,
+            Type: PhaseType.Preliminary,
+            Draw: new Draw { CreatedAt = at ?? DateTimeOffset.UtcNow, Status = "drawn" },
+            Rounds: [round],
+            At: at ?? DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
+    public void PhaseDrawn_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent drawn = SamplePhaseDrawnEvent();
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<PhaseDrawn>();
+    }
+
     [Fact]
     public void Finalised_event_round_trips_with_decimal_aggregate_as_a_json_string()
     {
