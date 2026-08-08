@@ -49,7 +49,22 @@ public static class Composition
         });
 
         builder.Services.AddSoarscoreInfrastructure(builder.Configuration);
-        builder.Services.AddSingleton<IDispatcher, Dispatcher>();
+        // capture-a-score-steel-thread-plan.md WI-13: Scoped, not Singleton.
+        // Dispatcher.Invoke (Dispatcher.cs) resolves ICommandHandler<,>/
+        // IQueryHandler<,> — both registered Scoped below — through the
+        // IServiceProvider its constructor captures. A Singleton Dispatcher
+        // captures the ROOT provider (a deliberate .NET DI guard against
+        // captive dependencies), so every handler resolution was quietly
+        // running against the root scope rather than the request's — masked
+        // under plain `dotnet run` because Kestrel's default host only
+        // validates scopes in the Development environment, and nothing
+        // before this thread hosted the app any other way. The acceptance
+        // suite's WebApplicationFactory (Development by default) surfaced it
+        // immediately: "Cannot resolve scoped service ... from root
+        // provider." Dispatcher holds no state, so Scoped costs nothing and
+        // gives every request its own handler resolution, which is what was
+        // always intended.
+        builder.Services.AddScoped<IDispatcher, Dispatcher>();
 
         // One registration per handler — no assembly scanning (LADR-0003
         // "Command/query dispatch": inspectable over convention-magic).
@@ -89,7 +104,18 @@ public static class Composition
             if (HttpMethods.IsPost(context.Request.Method)
                 && context.Request.Path.Equals("/publish-class-definition", StringComparison.OrdinalIgnoreCase))
             {
-                context.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = ClassDefinitionIngestion.MaxPayloadBytes;
+                // capture-a-score-steel-thread-plan.md WI-13: Kestrel always
+                // provides IHttpMaxRequestBodySizeFeature, but
+                // Microsoft.AspNetCore.Mvc.Testing's WebApplicationFactory hosts
+                // this app over TestServer, which does not — the acceptance
+                // suite's first HTTP call through this middleware
+                // NullReferenceException'd on the `!` below before this null
+                // check existed. Null-conditional rather than an added `is null`
+                // branch: under real Kestrel this still sets the limit exactly
+                // as before, and under TestServer skipping it is correct, not a
+                // silent gap — TestServer enforces no body-size limit of its own
+                // either, so there is nothing to configure.
+                context.Features.Get<IHttpMaxRequestBodySizeFeature>()?.MaxRequestBodySize = ClassDefinitionIngestion.MaxPayloadBytes;
             }
 
             await next();
