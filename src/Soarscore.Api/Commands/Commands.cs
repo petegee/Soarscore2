@@ -1,8 +1,10 @@
 using Soarscore.Api.Routing;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.Competitions;
+using Soarscore.Application.Entries;
 using Soarscore.Application.People;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 
 namespace Soarscore.Api.Commands;
@@ -24,6 +26,10 @@ public static class Commands
         app.MapCommand<WithdrawCompetitor, CompetitorId>("/withdraw-competitor");
         app.MapCommand<DrawPhase, CompetitionId>("/draw-phase");
         app.MapCommand<BindParameter, CompetitionId>("/bind-parameter");
+
+        app.MapCommand<OpenEntry, EntryId>("/open-entry");
+        app.MapCommand<OpenFlight, EntryId>("/open-flight");
+        app.MapCommand<CaptureMeasurement, EntryId>("/capture-measurement");
 
         return app;
     }

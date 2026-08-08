@@ -1,6 +1,7 @@
 using Soarscore.Api.Routing;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.Competitions;
+using Soarscore.Application.Entries;
 using Soarscore.Application.People;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
@@ -21,6 +22,8 @@ public static class Queries
 
         app.MapQuery<FindCompetitions, IReadOnlyList<CompetitionSummary>>("/competitions");
         app.MapQuery<GetCompetition, CompetitionView>("/competition");
+
+        app.MapQuery<FindEntries, IReadOnlyList<EntrySummary>>("/entries");
 
         return app;
     }

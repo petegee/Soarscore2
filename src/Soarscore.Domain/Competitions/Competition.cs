@@ -44,10 +44,29 @@ public readonly record struct CompetitionId(Guid Value) : IParsable<CompetitionI
     public override string ToString() => Value.ToString();
 }
 
-/// <summary>An entity inside this aggregate; referenced by id from the Entry aggregate.</summary>
-public readonly record struct CompetitorId(Guid Value)
+/// <summary>
+/// An entity inside this aggregate; referenced by id from the Entry aggregate.
+/// <see cref="IParsable{TSelf}"/> so ASP.NET's Minimal API parameter binding
+/// (<c>[AsParameters]</c> query records, e.g. FindEntries) can bind this
+/// straight from a query-string value — mirrors CompetitionId above.
+/// </summary>
+public readonly record struct CompetitorId(Guid Value) : IParsable<CompetitorId>
 {
     public static CompetitorId New() => new(Guid.CreateVersion7());
+
+    public static CompetitorId Parse(string s, IFormatProvider? provider) => new(Guid.Parse(s, provider));
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out CompetitorId result)
+    {
+        if (Guid.TryParse(s, provider, out var value))
+        {
+            result = new CompetitorId(value);
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
 
     public override string ToString() => Value.ToString();
 }
@@ -56,10 +75,27 @@ public readonly record struct CompetitorId(Guid Value)
 /// An entity inside this aggregate; referenced by id from the Entry aggregate.
 /// Group membership is not stored on the Group itself — it is the set of
 /// Entries whose GroupRef points at it (aggregate-roots.md §3).
+/// <see cref="IParsable{TSelf}"/> so ASP.NET's Minimal API parameter binding
+/// (<c>[AsParameters]</c> query records, e.g. FindEntries) can bind this
+/// straight from a query-string value — mirrors CompetitionId above.
 /// </summary>
-public readonly record struct GroupId(Guid Value)
+public readonly record struct GroupId(Guid Value) : IParsable<GroupId>
 {
     public static GroupId New() => new(Guid.CreateVersion7());
+
+    public static GroupId Parse(string s, IFormatProvider? provider) => new(Guid.Parse(s, provider));
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out GroupId result)
+    {
+        if (Guid.TryParse(s, provider, out var value))
+        {
+            result = new GroupId(value);
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
 
     public override string ToString() => Value.ToString();
 }

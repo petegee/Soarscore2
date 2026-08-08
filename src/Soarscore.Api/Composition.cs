@@ -9,8 +9,10 @@ using Soarscore.Api.Queries;
 using Soarscore.Application;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.Competitions;
+using Soarscore.Application.Entries;
 using Soarscore.Application.People;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure;
@@ -69,6 +71,11 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<BindParameter, CompetitionId>, BindParameterHandler>();
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
+
+        builder.Services.AddScoped<ICommandHandler<OpenEntry, EntryId>, OpenEntryHandler>();
+        builder.Services.AddScoped<ICommandHandler<OpenFlight, EntryId>, OpenFlightHandler>();
+        builder.Services.AddScoped<ICommandHandler<CaptureMeasurement, EntryId>, CaptureMeasurementHandler>();
+        builder.Services.AddScoped<IQueryHandler<FindEntries, IReadOnlyList<EntrySummary>>, FindEntriesHandler>();
 
         var app = builder.Build();
 
