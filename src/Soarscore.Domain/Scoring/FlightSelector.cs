@@ -75,7 +75,7 @@ public static class FlightSelector
 
         // 7. Apply raw rounding if set.
         if (task.RawScore is not null)
-            rawScore = ApplyRounding(rawScore, task.RawScore);
+            rawScore = RoundingSupport.ApplyRounding(rawScore, task.RawScore);
 
         // 8. Return.
         var targetAssignments = BuildTargetAssignments(withTargets, task.Flights);
@@ -353,34 +353,5 @@ public static class FlightSelector
         // The target values can be inferred from the difference between the
         // original and clamped metric values.
         return new Dictionary<int, decimal?>();
-    }
-
-    private static decimal ApplyRounding(decimal value, Rounding rounding)
-    {
-        return rounding.Mode switch
-        {
-            RoundingMode.Truncate => Truncate(value, rounding.Precision),
-            RoundingMode.HalfUp => HalfUp(value, rounding.Precision),
-            RoundingMode.Ceiling => Ceiling(value, rounding.Precision),
-            _ => value
-        };
-    }
-
-    private static decimal Truncate(decimal value, decimal precision)
-    {
-        decimal factor = 1m / precision;
-        return Math.Truncate(value * factor) / factor;
-    }
-
-    private static decimal HalfUp(decimal value, decimal precision)
-    {
-        decimal factor = 1m / precision;
-        return Math.Round(value * factor, MidpointRounding.AwayFromZero) / factor;
-    }
-
-    private static decimal Ceiling(decimal value, decimal precision)
-    {
-        decimal factor = 1m / precision;
-        return Math.Ceiling(value * factor) / factor;
     }
 }
