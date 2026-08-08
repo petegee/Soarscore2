@@ -168,10 +168,11 @@ without a new line.
 ### Governing documents
 
 - `docs/plans/scoring-service-plan.md` and `docs/plans/scoring-service-issues.md`
-  — **deleted from HEAD in `38cb008`, recoverable from `d1ea17d`.** All eleven
-  Scoring files header-cite the former; its eight resolved design issues are the
-  semantics the shipped pipeline code implements. WI-12 restores both, subject
-  to approval.
+  — deleted from HEAD in `38cb008`, **restored from `d1ea17d` at `900df6d`**. All
+  eleven Scoring files header-cite the former; its WI-1..WI-8 are the pipeline as
+  built, and its WI-9 is superseded by this plan. The latter's eight resolved
+  design issues are the semantics the shipped code implements and still bind —
+  issue #4 governs WI-1, #5 group annulment, #8 the `ByTask` drop algorithm.
 - `docs/ladr/ladr-0001-event-store.md` §3 — results are derived, never stored.
 - `docs/aggregate-roots.md` §Scoring — the five-method service interface.
 - CLAUDE.md's core architectural law — WI-11 turns it into a failing build.
@@ -422,21 +423,17 @@ conversation, not a suppression.
 
 ### WI-12 — Documentation
 
-Three items, the first needing approval under CLAUDE.md house-keeping rule 4:
+Three items, the first two **already done** as prep for this plan:
 
-1. **Restore `docs/plans/scoring-service-plan.md` and
-   `docs/plans/scoring-service-issues.md` from `d1ea17d`** — *ask the user
-   first*. Eleven shipped source files cite the plan in their headers, and the
-   issues doc holds the eight resolved design questions whose resolutions the
-   pipeline code implements (issue #4 governs WI-1, issue #5 governs group
-   annulment, issue #8 governs `ByTask` drops). Restoring them fixes eleven
-   dangling citations and preserves reasoning that exists nowhere else. Add a
-   header note to the restored plan recording that its WI-9 is superseded here.
-2. **Refresh `docs/plans/gap.md`** — it is stale on gaps 3 (nine unreachable
-   events, not seven — three of them Entry's), 4 (closed for F5L and NZ Class M),
-   5 (eleven files/2,153 lines; `ParameterResolver` no longer orphaned and now
-   tested; `ScoreCompetition` a shell per finding 1) and 6 (five arch tests in
-   three files; the DI-registration item closed by `HandlerRegistrationTests`).
+1. ~~**Restore `docs/plans/scoring-service-plan.md` and
+   `docs/plans/scoring-service-issues.md` from `d1ea17d`**~~ — done (approved
+   2026-08-09). Both carry a status header recording what shipped, that WI-9 is
+   superseded by this plan, and the three places this plan departs from it.
+2. ~~**Refresh `docs/plans/gap.md`**~~ — done; re-based on `900df6d`. It had gone
+   stale on gaps 3 (nine unreachable events, not seven — three of them Entry's),
+   4 (closed; F5L and NZ Class M drawable), 5 (eleven files/2,153 lines;
+   `ParameterResolver` no longer orphaned and now tested; `ScoreCompetition` a
+   shell per finding 1) and 6 (now closed by `ClassAgnosticismTests`).
 3. **Update `tech-debt.md:6`** — the duplicate-`TaskRoundState` item is
    discharged in the sense that predicted: record the conversion's location and
    finding 5's rule.

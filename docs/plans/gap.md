@@ -30,12 +30,12 @@ One documentation artefact worth noting because it misleads a reader: only
 `command-side-steel-thread-plan.md` carries `**Status:** Complete`. The other six say
 `**Status:** Proposed` despite having landed and being test-verified.
 
-Two plan documents are **cited by shipped code but absent from HEAD**:
+Two further plan documents were **cited by shipped code but absent from HEAD** —
 `docs/plans/scoring-service-plan.md` and `docs/plans/scoring-service-issues.md`, added
-in `d1ea17d` and removed in `38cb008`. All eleven files under
-`src/Soarscore.Domain/Scoring/` header-cite the former, and the latter holds the eight
-resolved design questions the shipped pipeline code implements. Both are recoverable
-(`git show d1ea17d:docs/plans/scoring-service-plan.md`).
+in `d1ea17d` and removed in `38cb008`. **Restored at `900df6d`**, each carrying a status
+header recording what shipped and what is superseded: WI-1 through WI-8 are the code in
+the tree, WI-9 is superseded by `scoring-steel-thread-plan.md`, and all eight design
+issues are resolved and still binding.
 
 ## Update — 2026-08-08: `bind-parameter-steel-thread-plan.md` implemented
 
@@ -255,18 +255,11 @@ production caller at all.
 
 Three problems, in order of how much they cost:
 
-**Its plan document was deleted, and so was its issues document.** All eleven files
-header-cite `docs/plans/scoring-service-plan.md`. That file was added in `d1ea17d` and
-removed in `38cb008` ("renamed folder to reflect true agg root"); so was
-`docs/plans/scoring-service-issues.md`, which recorded eight design questions and their
-resolutions — the semantics the shipped pipeline implements (issue #4 fixes where
-amendment resolution lives, #5 group annulment, #8 the `ByTask` drop algorithm). Both
-are recoverable:
-
-```
-git show d1ea17d:docs/plans/scoring-service-plan.md
-git show d1ea17d:docs/plans/scoring-service-issues.md
-```
+~~**Its plan document was deleted, and so was its issues document.**~~ **Fixed at
+`900df6d`** — both restored from `d1ea17d`, so the eleven header citations resolve
+again and the eight design resolutions the pipeline implements (issue #4 where
+amendment resolution lives, #5 group annulment, #8 the `ByTask` drop algorithm) are
+back in the tree rather than only in git history.
 
 **It has no caller.** Zero references to `ScoringService` from
 `src/Soarscore.Application` or `src/Soarscore.Api`. It is also the only component
