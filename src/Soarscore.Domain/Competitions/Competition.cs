@@ -10,6 +10,7 @@
 // this root.
 
 using System.Collections.Immutable;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
@@ -689,6 +690,136 @@ public sealed record Competition
             At: at);
 
         return Result<PhaseDrawn>.Success(@event);
+    }
+
+    // Instance decide function — WI-2 (docs/plans/capture-a-score-steel-thread-plan.md).
+    // Returns an event for the ENTRY aggregate's stream, not this one — new to
+    // the repo and deliberate: the Competition is the sole authority on
+    // whether an Entry may exist and what working time it gets (does this
+    // coordinate exist, was this competitor drawn into this group, is the
+    // field still valid), and Entry itself has no state yet to check any of
+    // that against. DrawPhase's early-return style above, not
+    // RegisterCompetitor's Defect-chain style: later checks need values (the
+    // task-round, the group, the resolved working time) computed by earlier
+    // ones, and the happy path needs them again to build the event.
+    //
+    // Deliberately absent: an "already open" check (a read-model concern —
+    // see the plan's WI-8) and any PreparationTime handling (no domain
+    // representation for a preparation window exists yet — out of scope).
+    public Result<EntryOpened> OpenEntry(
+        EntryId id,
+        int phaseOrdinal,
+        int roundOrdinal,
+        int taskRoundOrdinal,
+        GroupId groupRef,
+        CompetitorId competitorRef,
+        DateTimeOffset at)
+    {
+        var phase = Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal);
+        if (phase is null)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.phaseNotDrawn", "No phase has been drawn with this ordinal.");
+        }
+
+        var round = phase.Rounds.FirstOrDefault(r => r.Ordinal == roundOrdinal);
+        if (round is null)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.roundNotFound", "No round with this ordinal in this phase.");
+        }
+
+        var taskRound = round.TaskRounds.FirstOrDefault(tr => tr.Ordinal == taskRoundOrdinal);
+        if (taskRound is null)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.taskRoundNotFound", "No task-round with this ordinal in this round.");
+        }
+
+        var group = taskRound.Groups.FirstOrDefault(g => g.Id == groupRef);
+        if (group is null)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.groupNotFound", "No group with this id in this task-round.");
+        }
+
+        if (taskRound.State is TaskRoundState.Complete or TaskRoundState.Annulled)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.taskRoundClosed", "This task-round is complete or annulled.");
+        }
+
+        if (!group.CompetitorRefs.Contains(competitorRef))
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.competitorNotDrawn", "This competitor was not drawn into this group.");
+        }
+
+        var competitor = Competitors.First(c => c.Id == competitorRef);
+        if (competitor.WithdrawnAt is not null)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.competitorWithdrawn", "This competitor has withdrawn.");
+        }
+
+        // TaskRound.TaskRef is the task's Code, "the only stable handle" to
+        // reference it (Competition.cs, TaskRound's doc comment) — so the
+        // task is found by scanning every phase's declared tasks, not by
+        // indexing into AdoptedRules.Definition.Phases with this runtime
+        // phaseOrdinal: the two numbering schemes are unrelated (see
+        // DrawPhase's own note on PhaseDefinition.Ordinal above).
+        var task = AdoptedRules.Definition.Phases
+            .SelectMany(p => p.Tasks)
+            .First(t => t.Code == taskRound.TaskRef);
+
+        TimeWindow workingTime;
+        if (task.Timing.Kind == WorkingTimeKind.Fixed)
+        {
+            if (task.Timing.WorkingTime is not { } declaredWorkingTime)
+            {
+                return Result<EntryOpened>.Failure(
+                    "openEntry.workingTimeUndeclared",
+                    "This task's timing is Fixed but declares no WorkingTime — a definition defect.");
+            }
+
+            // Flattened last-write-wins, exactly as Competition.cs's DrawPhase
+            // already does for the draw.
+            var bindings = ParameterBindings
+                .GroupBy(b => b.ParameterName)
+                .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+
+            decimal resolvedWorkingTimeSeconds;
+            try
+            {
+                resolvedWorkingTimeSeconds = ParameterResolver.Resolve(
+                    declaredWorkingTime, bindings, AdoptedRules.Definition.Parameters);
+            }
+            catch (UnresolvedParameterException ex)
+            {
+                return Result<EntryOpened>.Failure("openEntry.parameterUnbound", ex.Message);
+            }
+
+            workingTime = new TimeWindow { Start = at, End = at.AddSeconds((double)resolvedWorkingTimeSeconds) };
+        }
+        else
+        {
+            // UntilAllFlightsComplete: not a class datum at all — the round
+            // ends when the last flight does (Entries/Entry.cs, TimeWindow's
+            // doc comment).
+            workingTime = new TimeWindow { Start = at, End = null };
+        }
+
+        return Result<EntryOpened>.Success(new EntryOpened(
+            id,
+            workingTime,
+            Id,
+            phaseOrdinal,
+            roundOrdinal,
+            taskRoundOrdinal,
+            groupRef,
+            competitorRef,
+            ReflightRole.Original,
+            at));
     }
 
     // Compares against *all* competitors, including withdrawn ones — a
