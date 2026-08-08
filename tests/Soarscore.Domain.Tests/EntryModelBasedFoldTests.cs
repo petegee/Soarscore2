@@ -156,7 +156,8 @@ public class EntryModelBasedFoldTests
         Gen.Int[0, 0].Select(_ =>
         {
             var entry = Entry.Create(new EntryOpened(
-                EntryId.New(), SampleWorkingTime, GroupId.New(), CompetitorId.New(), ReflightRole.Original, DateTimeOffset.UtcNow));
+                EntryId.New(), SampleWorkingTime, CompetitionId.New(), 1, 1, 1,
+                GroupId.New(), CompetitorId.New(), ReflightRole.Original, DateTimeOffset.UtcNow));
 
             return (new Actual { Value = entry }, new Model());
         });

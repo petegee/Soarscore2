@@ -104,6 +104,9 @@ classDiagram
     class Entry {
         <<aggregate root>>
         +TimeWindow workingTime
+        +int phaseOrdinal
+        +int roundOrdinal
+        +int taskRoundOrdinal
         +ReflightRole role
     }
 
@@ -220,6 +223,7 @@ classDiagram
     Draw ..> Group : produces initial (drawn allocation, not "who flew")
     Entry "*" --> "1" Group : flown in
     Entry "*" --> "1" Competitor : flown by
+    Entry "*" --> "1" Competition : belongs to (coordinate cached at open, avoids a phase→round→task-round scan)
     TaskRound ..> AdoptedRules : task by id
     DeclaredResult ..> Competitor : for
     AdoptedRules ..> CompetitionClass : adopted from
@@ -227,6 +231,7 @@ classDiagram
     note for AdoptedRules "The whole rulebook, copied in at creation. Scoring reads this, never the library class."
     note for Measurement "Raw and append-only; corrections recorded as Amendments"
     note for Entry "A reflight is a second Entry; role decides which one counts"
+    note for Entry "phaseOrdinal/roundOrdinal/taskRoundOrdinal duplicate the Group's ancestry so the write path never scans the Competition to find its task"
     note for Finalisation "Captures what was declared; the raw record stays authoritative"
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
@@ -1091,6 +1096,13 @@ stage reads anything new from `AdoptedRules` for it.
   when writing a class is whether one pilot's score reads another's, and the
   adoption check that guards it is that a `Normalisation` requires a
   `GroupConstraint`.
+- **A working time's end is optional, and its absence is a statement too.**
+  `TimeWindow.end` is null under `WorkingTimeKind.UntilAllFlightsComplete` — the
+  round ends when the last flight does, not at a moment anyone can name in
+  advance (F3F, F3K task C, NZ Class M ALES 200, NZ Class M NDC). This is the
+  same rule absent `Normalisation` and absent `GroupConstraint` already
+  follow: recording a guessed end time would be a fabricated fact, not a
+  harmless default.
 - **A zeroed flight is still a flight.** `Task.flightValidWhen` is the per-flight
   gate — `F3K.9.3`'s late landing, `F3K.11.3`'s launch outside the three-second
   signal, `F3K.7`'s launch before the working time. It zeroes that flight's

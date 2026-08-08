@@ -42,6 +42,10 @@ public abstract record EntryEvent : IDomainEvent
 public sealed record EntryOpened(
     EntryId Id,
     TimeWindow WorkingTime,
+    CompetitionId CompetitionRef,
+    int PhaseOrdinal,
+    int RoundOrdinal,
+    int TaskRoundOrdinal,
     GroupId GroupRef,
     CompetitorId CompetitorRef,
     ReflightRole Role,

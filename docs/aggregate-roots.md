@@ -367,11 +367,29 @@ of another aggregate by id is fine here (precedent: `groupRef`) because Entry
 only ever holds the id — any mutation of a Competitor still goes through the
 Competition root.
 
+Entry also carries the full write-path coordinate — `competitionRef`,
+`phaseOrdinal`, `roundOrdinal`, `taskRoundOrdinal` — alongside `groupRef`,
+duplicating the same ordinal-addressing idiom the Competition aggregate already
+uses internally to reach a task-round. Without it, validating a captured
+measurement against the task's declared metrics means loading the Competition
+and scanning every phase → round → task-round → group for the matching id, on
+the highest-volume write in the system; with it, the walk is direct.
+
+`workingTime.end` is nullable: it is null whenever the class leaves the round
+open-ended (`WorkingTimeKind.UntilAllFlightsComplete`) rather than stating a
+fixed length, because no one knows when an open-ended working time will end at
+the moment it opens. Absence is the truthful encoding, the same choice already
+made for an absent `Normalisation` or `GroupConstraint`.
+
 ```mermaid
 classDiagram
     direction TB
     class Entry {
         +TimeWindow workingTime
+        +competitionId competitionRef
+        +int phaseOrdinal
+        +int roundOrdinal
+        +int taskRoundOrdinal
         +groupId groupRef
         +competitorId competitorRef
         +ReflightRole role
@@ -413,6 +431,9 @@ classDiagram
     class Competitor {
         <<Competition aggregate>>
     }
+    class Competition {
+        <<external root>>
+    }
 
     Entry "1" *-- "0..1" Annulment
     Entry "1" *-- "1..*" Flight
@@ -423,11 +444,12 @@ classDiagram
 
     Entry ..> Group : belongs to
     Entry ..> Competitor : flown by
+    Entry ..> Competition : full coordinate, write-path lookup
 
     classDef root fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     classDef external fill:#EEEEEE,stroke:#BDBDBD,stroke-width:1px,color:#555
     cssClass "Entry" root
-    cssClass "Group,Competitor" external
+    cssClass "Group,Competitor,Competition" external
 ```
 
 ---

@@ -25,6 +25,10 @@ public class EntryTests
         {
             Id = EntryId.New(),
             WorkingTime = new TimeWindow { Start = Now, End = Now.AddMinutes(10) },
+            CompetitionRef = CompetitionId.New(),
+            PhaseOrdinal = 1,
+            RoundOrdinal = 1,
+            TaskRoundOrdinal = 1,
             GroupRef = GroupId.New(),
             CompetitorRef = CompetitorId.New(),
             Role = ReflightRole.Original,
@@ -108,6 +112,10 @@ public class EntryTests
         {
             Id = EntryId.New(),
             WorkingTime = new TimeWindow { Start = Now, End = Now.AddMinutes(10) },
+            CompetitionRef = CompetitionId.New(),
+            PhaseOrdinal = 1,
+            RoundOrdinal = 1,
+            TaskRoundOrdinal = 1,
             GroupRef = GroupId.New(),
             CompetitorRef = CompetitorId.New(),
             Role = ReflightRole.Original,
@@ -147,6 +155,10 @@ public class EntryTests
         {
             Id = EntryId.New(),
             WorkingTime = new TimeWindow { Start = Now, End = Now.AddMinutes(10) },
+            CompetitionRef = CompetitionId.New(),
+            PhaseOrdinal = 1,
+            RoundOrdinal = 1,
+            TaskRoundOrdinal = 1,
             GroupRef = groupRef,
             CompetitorRef = CompetitorId.New(),
             Role = ReflightRole.Entitled,
@@ -179,6 +191,7 @@ public class EntryTests
     public void Entries_with_identical_values_are_equal_records()
     {
         var id = EntryId.New();
+        var competitionRef = CompetitionId.New();
         var groupRef = GroupId.New();
         var competitorRef = CompetitorId.New();
         var window = new TimeWindow { Start = Now, End = Now.AddMinutes(10) };
@@ -195,12 +208,16 @@ public class EntryTests
 
         var a = new Entry
         {
-            Id = id, WorkingTime = window, GroupRef = groupRef, CompetitorRef = competitorRef,
+            Id = id, WorkingTime = window, CompetitionRef = competitionRef,
+            PhaseOrdinal = 1, RoundOrdinal = 1, TaskRoundOrdinal = 1,
+            GroupRef = groupRef, CompetitorRef = competitorRef,
             Role = ReflightRole.Original, Flights = flights,
         };
         var b = new Entry
         {
-            Id = id, WorkingTime = window, GroupRef = groupRef, CompetitorRef = competitorRef,
+            Id = id, WorkingTime = window, CompetitionRef = competitionRef,
+            PhaseOrdinal = 1, RoundOrdinal = 1, TaskRoundOrdinal = 1,
+            GroupRef = groupRef, CompetitorRef = competitorRef,
             Role = ReflightRole.Original, Flights = flights,
         };
 

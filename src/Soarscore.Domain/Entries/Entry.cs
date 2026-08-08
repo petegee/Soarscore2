@@ -7,9 +7,13 @@
 // what keeps concurrent scorer writes — the live capture path — from
 // contending with the rest of the Competition.
 //
-// GroupRef and CompetitorRef reach across the aggregate boundary into the
-// Competition aggregate by id only (GroupId, CompetitorId — Shared.cs);
-// nothing here holds a direct reference to a Group or a Competitor.
+// CompetitionRef, GroupRef and CompetitorRef reach across the aggregate
+// boundary into the Competition aggregate by id only (CompetitionId, GroupId,
+// CompetitorId — Shared.cs, Competition.cs); nothing here holds a direct
+// reference to a Competition, a Group or a Competitor. PhaseOrdinal,
+// RoundOrdinal and TaskRoundOrdinal are the same ordinal-addressing idiom
+// Competition uses internally to reach a task-round, carried here so the
+// write path never has to scan the Competition to find its own task.
 
 using System.Collections.Immutable;
 using Soarscore.Domain.Competitions;
@@ -35,7 +39,14 @@ public sealed record TimeWindow
 {
     public required DateTimeOffset Start { get; init; }
 
-    public required DateTimeOffset End { get; init; }
+    /// <summary>
+    /// Null under WorkingTimeKind.UntilAllFlightsComplete: the working time
+    /// is not a class datum at all, the round ends when the last flight does
+    /// (ScoringVocabulary.cs, TaskTiming.WorkingTime). Absence is the only
+    /// truthful encoding — the same rule absent Normalisation and absent
+    /// GroupConstraint follow.
+    /// </summary>
+    public DateTimeOffset? End { get; init; }
 }
 
 /// <summary>
@@ -135,6 +146,18 @@ public sealed record Entry
 
     public required TimeWindow WorkingTime { get; init; }
 
+    /// <summary>The Competition this Entry belongs to.</summary>
+    public required CompetitionId CompetitionRef { get; init; }
+
+    /// <summary>The Phase.Ordinal of the task-round this Entry was opened against.</summary>
+    public required int PhaseOrdinal { get; init; }
+
+    /// <summary>The Round.Ordinal of the task-round this Entry was opened against.</summary>
+    public required int RoundOrdinal { get; init; }
+
+    /// <summary>The TaskRound.Ordinal this Entry was opened against.</summary>
+    public required int TaskRoundOrdinal { get; init; }
+
     /// <summary>The Group this Entry belongs to, inside the Competition aggregate.</summary>
     public required GroupId GroupRef { get; init; }
 
@@ -159,6 +182,10 @@ public sealed record Entry
     {
         Id = @event.Id,
         WorkingTime = @event.WorkingTime,
+        CompetitionRef = @event.CompetitionRef,
+        PhaseOrdinal = @event.PhaseOrdinal,
+        RoundOrdinal = @event.RoundOrdinal,
+        TaskRoundOrdinal = @event.TaskRoundOrdinal,
         GroupRef = @event.GroupRef,
         CompetitorRef = @event.CompetitorRef,
         Role = @event.Role,

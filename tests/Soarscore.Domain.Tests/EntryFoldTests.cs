@@ -10,6 +10,7 @@ namespace Soarscore.Domain.Tests;
 public class EntryFoldTests
 {
     private static readonly EntryId SampleId = EntryId.New();
+    private static readonly CompetitionId SampleCompetition = CompetitionId.New();
     private static readonly GroupId SampleGroup = GroupId.New();
     private static readonly CompetitorId SampleCompetitor = CompetitorId.New();
 
@@ -20,7 +21,7 @@ public class EntryFoldTests
     };
 
     private static EntryOpened SampleOpened(DateTimeOffset at) =>
-        new(SampleId, SampleWorkingTime, SampleGroup, SampleCompetitor, ReflightRole.Original, at);
+        new(SampleId, SampleWorkingTime, SampleCompetition, 1, 1, 1, SampleGroup, SampleCompetitor, ReflightRole.Original, at);
 
     [Fact]
     public void EntryOpened_creates_the_projection_from_an_empty_stream()
@@ -33,6 +34,10 @@ public class EntryFoldTests
         entry.Should().NotBeNull();
         entry.Id.Should().Be(SampleId);
         entry.WorkingTime.Should().Be(SampleWorkingTime);
+        entry.CompetitionRef.Should().Be(SampleCompetition);
+        entry.PhaseOrdinal.Should().Be(1);
+        entry.RoundOrdinal.Should().Be(1);
+        entry.TaskRoundOrdinal.Should().Be(1);
         entry.GroupRef.Should().Be(SampleGroup);
         entry.CompetitorRef.Should().Be(SampleCompetitor);
         entry.Role.Should().Be(ReflightRole.Original);
