@@ -109,7 +109,7 @@ public static class NormalisationEngine
 
             // 6. Round normalised if set.
             if (norm.Round is not null)
-                normalised = ApplyRounding(normalised, norm.Round);
+                normalised = RoundingSupport.ApplyRounding(normalised, norm.Round);
 
             // 7. Add normalised terms (evaluated per selected flight).
             if (!task.ScoreNormalised.IsDefaultOrEmpty
@@ -128,7 +128,7 @@ public static class NormalisationEngine
 
             // 8. Round again after adding normalised terms (if Round is set).
             if (norm.Round is not null)
-                normalised = ApplyRounding(normalised, norm.Round);
+                normalised = RoundingSupport.ApplyRounding(normalised, norm.Round);
 
             resultBuilder[competitorRef] = taskResult with { RawScore = normalised };
         }
@@ -141,34 +141,4 @@ public static class NormalisationEngine
         );
     }
 
-    // --------------------------------------------------------- private
-
-    private static decimal ApplyRounding(decimal value, Rounding rounding)
-    {
-        return rounding.Mode switch
-        {
-            RoundingMode.Truncate => Truncate(value, rounding.Precision),
-            RoundingMode.HalfUp => HalfUp(value, rounding.Precision),
-            RoundingMode.Ceiling => Ceiling(value, rounding.Precision),
-            _ => value
-        };
-    }
-
-    private static decimal Truncate(decimal value, decimal precision)
-    {
-        decimal factor = 1m / precision;
-        return Math.Truncate(value * factor) / factor;
-    }
-
-    private static decimal HalfUp(decimal value, decimal precision)
-    {
-        decimal factor = 1m / precision;
-        return Math.Round(value * factor, MidpointRounding.AwayFromZero) / factor;
-    }
-
-    private static decimal Ceiling(decimal value, decimal precision)
-    {
-        decimal factor = 1m / precision;
-        return Math.Ceiling(value * factor) / factor;
-    }
 }
