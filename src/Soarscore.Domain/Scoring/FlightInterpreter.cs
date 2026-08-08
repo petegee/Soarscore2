@@ -20,14 +20,13 @@ public static class FlightInterpreter
     /// Evaluate one flight: resolve measurements, apply flightValidWhen,
     /// evaluate each raw score term, return score + per-term breakdown.
     /// </summary>
-    /// <param name="flight">The flight (unused directly — measurements come pre-resolved).</param>
     /// <param name="task">The resolved task definition.</param>
     /// <param name="flightSequence">The flight's 1-based sequence number.</param>
     /// <param name="resolvedMetrics">
-    /// Pre-resolved effective measurements for this flight (amendments applied).
+    /// Pre-resolved effective measurements for this flight (amendments applied
+    /// — MeasurementDigest.Resolve is the orchestrator's job, not this one's).
     /// </param>
     public static InterpretedFlight Interpret(
-        object? flight,           // Flight type TBD — measurements come pre-resolved
         ResolvedTask task,
         int flightSequence,
         IReadOnlyDictionary<string, MeasuredValue> resolvedMetrics)

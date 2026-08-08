@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AwesomeAssertions;
 using CsCheck;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
@@ -111,6 +112,99 @@ public class PhaseAggregatorPropertyTests
             }
 
             return true;
+        });
+    }
+
+    // ---------------------------------------------------- bounds (WI-5 #4)
+
+    /// <summary>
+    /// WI-5 invariant 4 (docs/plans/scoring-steel-thread-plan.md): the phase
+    /// aggregate never exceeds the sum of every task-round score, and never
+    /// falls below the sum of the best (n - dropCount) of them. Stated over
+    /// NON-NEGATIVE scores, unlike ScoreValue's -100..100 range above: with a
+    /// negative score in the mix, dropping the WORST (most negative) score
+    /// can raise the aggregate past the full sum, which is correct behaviour,
+    /// not a violation — a raw score reaching this stage is never negative in
+    /// practice (a task's own rounding/clamping floors it before
+    /// aggregation), so the bound is checked over the domain it actually
+    /// holds for. The tests above already cover conservation and
+    /// worst-first-dropped for both dimensions; this is the literal ≤ / ≥
+    /// bound the plan names, checked separately rather than folded in.
+    /// </summary>
+    private static readonly Gen<decimal> NonNegativeScoreValue = Gen.Int[0, 10_000].Select(i => i / 100m);
+
+    [Fact]
+    public void Aggregate_never_exceeds_the_full_sum_and_never_falls_below_the_best_n_minus_drops_ByRound()
+    {
+        (from roundCount in Gen.Int[2, 6]
+         from dropCount in Gen.Int[1, roundCount - 1]
+         from scores in NonNegativeScoreValue.Array[roundCount]
+         select (roundCount, dropCount, scores))
+        .Sample(t =>
+        {
+            var rounds = Enumerable.Range(1, t.roundCount)
+                .Select(r => new RoundData(r,
+                    ImmutableArray.Create(new TaskRoundData(1, "A", TaskRoundState.Complete))))
+                .ToImmutableArray();
+
+            var allScores = Enumerable.Range(1, t.roundCount)
+                .Select(r => new TaskRoundScore("A", r, 1, t.scores[r - 1]))
+                .ToDictionary(s => $"R{s.RoundOrdinal}", s => s);
+
+            var phase = MakePhase(new DropPolicy
+            {
+                Dimension = DropDimension.ByRound,
+                DropCount = t.dropCount,
+            });
+
+            var result = PhaseAggregator.Aggregate("Comp", phase, rounds, allScores);
+
+            var fullSum = t.scores.Sum();
+            var bestNMinusDrops = t.scores.OrderByDescending(s => s).Take(t.roundCount - t.dropCount).Sum();
+
+            result.Aggregate.Should().BeLessThanOrEqualTo(fullSum);
+            result.Aggregate.Should().BeGreaterThanOrEqualTo(bestNMinusDrops);
+        });
+    }
+
+    [Fact]
+    public void Aggregate_never_exceeds_the_full_sum_and_never_falls_below_the_best_n_minus_drops_ByTask()
+    {
+        (from roundsPerTask in Gen.Int[2, 6]
+         from dropCount in Gen.Int[1, roundsPerTask - 1]
+         from scoresA in NonNegativeScoreValue.Array[roundsPerTask]
+         from scoresB in NonNegativeScoreValue.Array[roundsPerTask]
+         select (roundsPerTask, dropCount, scoresA, scoresB))
+        .Sample(t =>
+        {
+            var rounds = Enumerable.Range(1, t.roundsPerTask)
+                .Select(r => new RoundData(r, ImmutableArray.Create(
+                    new TaskRoundData(1, "A", TaskRoundState.Complete),
+                    new TaskRoundData(2, "B", TaskRoundState.Complete))))
+                .ToImmutableArray();
+
+            var allScores = new Dictionary<string, TaskRoundScore>();
+            for (int r = 1; r <= t.roundsPerTask; r++)
+            {
+                allScores[$"A{r}"] = new TaskRoundScore("A", r, 1, t.scoresA[r - 1]);
+                allScores[$"B{r}"] = new TaskRoundScore("B", r, 2, t.scoresB[r - 1]);
+            }
+
+            var phase = MakePhase(new DropPolicy
+            {
+                Dimension = DropDimension.ByTask,
+                DropCount = t.dropCount,
+            });
+
+            var result = PhaseAggregator.Aggregate("Comp", phase, rounds, allScores);
+
+            var fullSum = t.scoresA.Sum() + t.scoresB.Sum();
+            var bestNMinusDrops =
+                t.scoresA.OrderByDescending(s => s).Take(t.roundsPerTask - t.dropCount).Sum()
+                + t.scoresB.OrderByDescending(s => s).Take(t.roundsPerTask - t.dropCount).Sum();
+
+            result.Aggregate.Should().BeLessThanOrEqualTo(fullSum);
+            result.Aggregate.Should().BeGreaterThanOrEqualTo(bestNMinusDrops);
         });
     }
 

@@ -60,10 +60,10 @@ internal static class TaskResolver
         }
 
         // Flattened last-write-wins, exactly as Competition.cs's DrawPhase and
-        // Competition.OpenEntry already do.
-        var bindings = competition.ParameterBindings
-            .GroupBy(b => b.ParameterName)
-            .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+        // Competition.OpenEntry already do — lifted to ScoringService by
+        // docs/plans/scoring-steel-thread-plan.md WI-3, which needed a fourth
+        // copy and made this the one place the flatten is written instead.
+        var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings);
 
         try
         {

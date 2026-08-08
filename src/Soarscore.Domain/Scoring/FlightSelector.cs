@@ -7,6 +7,7 @@
 // TargetValues[n-1-i] (Issue #3).
 
 using System.Collections.Immutable;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
@@ -31,11 +32,15 @@ public static class FlightSelector
     /// passing results here.
     /// </param>
     public static TaskResult SelectAndScore(
-        object? entry,             // Entry type TBD
+        Entry? entry,
         ResolvedTask task,
         IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
         ImmutableArray<InterpretedFlight> interpretedFlights)
     {
+        // 0. Annulled → no result, regardless of what was captured.
+        if (entry?.Annulment is not null)
+            return new TaskResult(TaskResultState.NoResult, null, 0m);
+
         // 1. No flights → NoResult.
         if (interpretedFlights.IsDefaultOrEmpty)
             return new TaskResult(TaskResultState.NoResult, null, 0m);

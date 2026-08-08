@@ -56,7 +56,11 @@ public static class SeedF3F
             P.Is("modelIntact", true),
             P.Is("clearedPlaneWithin5s", true),
             P.Is("seenEnteringCourse", true),
-            P.Is("flownWithinRules", true)),
+            P.Is("flownWithinRules", true),
+            P.Gt("courseTime", 0)),                                           // a captured 0 is a mis-capture, not a course flown in zero
+                                                                               //   time — courseCompleted=true alone does not rule that out,
+                                                                               //   and a raw 0 would otherwise be crowned the group's winner
+                                                                               //   (this file's own header note on the inverted task)
         Score = [T.Rate("courseTime", 1)],                                     // the raw result IS the elapsed time; the direction inverts it
     };
 

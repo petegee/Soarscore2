@@ -58,6 +58,35 @@ public class NormalisationEngineTests
         group.Results["B"].RawScore.Should().Be(750m);
     }
 
+    // A LowerIsBetter raw score of exactly zero must not divide-by-zero.
+    // For any metric this pipeline currently scores (courseTime, always
+    // non-negative), a captured zero is itself the smallest possible value,
+    // so MinBy always crowns IT the winner and the pre-existing
+    // `winnerRaw == 0m` branch above already zeroes the whole group before
+    // this guard is reached (see NormalisationEngineTests' sibling test and
+    // SeedF3F.cs/SeedF3B.cs's ValidWhen, which now reject a captured zero
+    // before it ever reaches here). The guard below is only reachable if a
+    // future LowerIsBetter metric's raw score can go negative — a raw of
+    // -5 stands in for that, giving a nonzero (negative) winnerRaw while a
+    // different, non-winning competitor sits at exactly zero.
+    [Fact]
+    public void LowerIsBetter_non_winning_zero_raw_score_scores_zero_without_dividing_by_zero()
+    {
+        var task = MakeNormalisedTask(LowerIsBetter(1000));
+        var results = new Dictionary<string, TaskResult>
+        {
+            ["A"] = ValidResult(-5m),
+            ["B"] = ValidResult(0m),
+        };
+
+        var group = NormalisationEngine.Normalise(
+            "G1", results.ToImmutableDictionary(), task, EmptyBindings());
+
+        group.WinnerRef.Should().Be("A");
+        group.Results["A"].RawScore.Should().Be(1000m);
+        group.Results["B"].RawScore.Should().Be(0m);
+    }
+
     // ------------------------------------------------------ No normalisation pass-through
 
     [Fact]

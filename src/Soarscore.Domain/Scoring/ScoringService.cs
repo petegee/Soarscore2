@@ -1,74 +1,69 @@
-// ScoringService — docs/plans/scoring-service-plan.md WI-9.
+// ScoringService — docs/plans/scoring-service-plan.md WI-9, superseded by
+// docs/plans/scoring-steel-thread-plan.md (WI-2..WI-4).
 //
 // Domain service that orchestrates the scoring pipeline. It reads adopted rules
 // and structure from the Competition aggregate and raw data from the Entry
-// aggregate, resolves parameters and amendments, routes penalties, handles
-// reflights, and wires all pipeline stages together.
+// aggregate, resolves parameters and amendments, routes penalties, and wires
+// all pipeline stages together.
 //
-// Granular methods let callers compute only what they need. The convenience
-// methods ScoreGroup and ScoreCompetition run the full pipeline.
+// Granular methods let callers compute only what they need. ScoreGroup and
+// ScoreCompetition run the full pipeline. Static, not instantiable (finding 6
+// of the steel-thread plan) — it holds no state, matching every other stage
+// in this namespace.
 
 using System.Collections.Immutable;
+using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
 
 /// <summary>
 /// The scoring domain service. Wires pipeline stages together, resolves
-/// parameters and amendments, routes penalties, and handles reflights.
+/// parameters and amendments, routes penalties, and orchestrates the
+/// competition-wide walk.
 /// </summary>
-public class ScoringService
+public static class ScoringService
 {
     // ---------------------------------------------------- granular methods
 
     /// <summary>Interpret one flight through flightValidWhen and raw score terms.</summary>
-    public InterpretedFlight InterpretFlight(
-        object flight,              // Flight aggregate (TBD)
+    public static InterpretedFlight InterpretFlight(
         ResolvedTask task,
         int flightSequence,
-        IReadOnlyDictionary<string, MeasuredValue> resolvedMetrics)
-    {
-        return FlightInterpreter.Interpret(flight, task, flightSequence, resolvedMetrics);
-    }
+        IReadOnlyDictionary<string, MeasuredValue> resolvedMetrics) =>
+        FlightInterpreter.Interpret(task, flightSequence, resolvedMetrics);
 
     /// <summary>Select flights from an Entry, apply caps, round.</summary>
-    public TaskResult SelectFlights(
-        object entry,               // Entry aggregate (TBD)
+    public static TaskResult SelectFlights(
+        Entry? entry,
         ResolvedTask task,
         IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
-        ImmutableArray<InterpretedFlight> interpretedFlights)
-    {
-        return FlightSelector.SelectAndScore(entry, task, parameterBindings, interpretedFlights);
-    }
+        ImmutableArray<InterpretedFlight> interpretedFlights) =>
+        FlightSelector.SelectAndScore(entry, task, parameterBindings, interpretedFlights);
 
     /// <summary>Normalise a group's task results.</summary>
-    public GroupResult NormaliseGroup(
+    public static GroupResult NormaliseGroup(
         string groupRef,
         ImmutableDictionary<string, TaskResult> results,
         ResolvedTask task,
-        IReadOnlyDictionary<string, MeasuredValue> parameterBindings)
-    {
-        return NormalisationEngine.Normalise(groupRef, results, task, parameterBindings);
-    }
+        IReadOnlyDictionary<string, MeasuredValue> parameterBindings) =>
+        NormalisationEngine.Normalise(groupRef, results, task, parameterBindings);
 
     /// <summary>Aggregate phase scores for one competitor, applying drops.</summary>
-    public PhaseScores Aggregate(
+    public static PhaseScores Aggregate(
         string competitorRef,
         PhaseDefinition phase,
         ImmutableArray<RoundData> rounds,
-        IReadOnlyDictionary<string, TaskRoundScore> allScores)
-    {
-        return PhaseAggregator.Aggregate(competitorRef, phase, rounds, allScores);
-    }
+        IReadOnlyDictionary<string, TaskRoundScore> allScores) =>
+        PhaseAggregator.Aggregate(competitorRef, phase, rounds, allScores);
 
     /// <summary>Rank competitors by final scores.</summary>
-    public CompetitionResult Rank(
+    public static CompetitionResult Rank(
         ImmutableArray<FinalCompetitorScore> scores,
         FinalRankingKind? finalRanking,
-        PromotionRule? promotion)
-    {
-        return RankingEngine.Rank(scores, finalRanking, promotion);
-    }
+        PromotionRule? promotion) =>
+        RankingEngine.Rank(scores, finalRanking, promotion);
 
     // ---------------------------------------------------- convenience methods
 
@@ -76,21 +71,17 @@ public class ScoringService
     /// Full pipeline for one task-round group: interpret flights, select,
     /// apply raw penalties, normalise.
     /// </summary>
-    /// <param name="groupRef">Group identifier.</param>
+    /// <param name="groupRef">Group identifier (stringified GroupId — finding 3).</param>
     /// <param name="task">The task definition (unresolved — parameters are resolved here).</param>
-    /// <param name="phase">The phase (for context).</param>
     /// <param name="classDef">The class definition (for penalty definitions).</param>
-    /// <param name="entries">CompetitorRef → Entry. Each Entry has Flights with Measurements.</param>
+    /// <param name="entries">CompetitorRef (stringified CompetitorId) → Entry.</param>
     /// <param name="parameterBindings">Bound parameter values (from Competition.ParameterBindings).</param>
-    /// <param name="competitionPenalties">Penalties recorded at the competition level.</param>
-    public GroupResult ScoreGroup(
+    public static GroupResult ScoreGroup(
         string groupRef,
         TaskDefinition task,
-        PhaseDefinition phase,
         ClassDefinition classDef,
-        ImmutableDictionary<string, object> entries,  // CompetitorRef → Entry (TBD)
-        IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
-        ImmutableArray<RecordedPenalty> competitionPenalties)
+        ImmutableDictionary<string, Entry> entries,
+        IReadOnlyDictionary<string, MeasuredValue> parameterBindings)
     {
         // 1. Resolve task parameters.
         var resolvedTask = ParameterResolver.ResolveTask(task, parameterBindings, classDef.Parameters);
@@ -100,16 +91,17 @@ public class ScoringService
 
         foreach (var (competitorRef, entry) in entries)
         {
-            // 2a. Resolve amendments for each flight → ResolvedMeasurements.
-            //     (Issue #4: amendment resolution lives in the orchestrator.)
+            // 2a. Resolve amendments for each flight → ResolvedMeasurements
+            //     (issue #4: amendment resolution lives in the orchestrator).
             var interpretedFlights = InterpretAllFlights(entry, resolvedTask);
 
-            // 2b. Select flights and assemble raw score.
+            // 2b. Select flights and assemble raw score. Annulment is checked
+            //     inside FlightSelector.SelectAndScore.
             var taskResult = FlightSelector.SelectAndScore(
                 entry, resolvedTask, parameterBindings, interpretedFlights);
 
-            // 2c. Apply raw penalties scoped to this Entry.
-            var entryPenalties = GetEntryPenalties(entry, competitionPenalties);
+            // 2c. Apply raw penalties scoped to this Entry (Flight/Entry scope).
+            var entryPenalties = GetEntryPenalties(entry);
             taskResult = PenaltyEngine.ApplyRawPenalties(
                 taskResult, entryPenalties, classDef.Penalties);
 
@@ -122,128 +114,212 @@ public class ScoringService
     }
 
     /// <summary>
-    /// Full competition result: score all groups, aggregate phases, apply
-    /// aggregate penalties, rank.
+    /// Full competition result: walk every phase/round/task-round/group, score
+    /// each group, aggregate per competitor with drops applied, apply aggregate
+    /// penalties, and rank.
     /// </summary>
-    /// <param name="classDef">The class definition (rules, penalties, phases).</param>
-    /// <param name="phases">The phases to score (from Competition.AdoptedRules).</param>
-    /// <param name="entriesByCompetitor">CompetitorRef → ordered Entries by round/task.</param>
-    /// <param name="parameterBindings">Bound parameter values.</param>
-    /// <param name="allPenalties">All recorded penalties (all scopes).</param>
-    public CompetitionResult ScoreCompetition(
-        ClassDefinition classDef,
-        ImmutableArray<PhaseDefinition> phases,
-        ImmutableDictionary<string, ImmutableArray<object>> entriesByCompetitor,
-        IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
-        ImmutableArray<RecordedPenalty> allPenalties)
+    /// <param name="competition">The competition, with its adopted rules and drawn structure.</param>
+    /// <param name="entries">Every Entry in the competition, keyed by EntryId (EntryCollector's job to assemble).</param>
+    public static Result<CompetitionResult> ScoreCompetition(
+        Competition competition,
+        IReadOnlyDictionary<EntryId, Entry> entries)
     {
-        // --- Phase 1: Score every task-round group ---
-        // This produces per-phase, per-round, per-task, per-group results.
-        // The actual grouping structure comes from the Competition aggregate.
-        // For now, we define the output shape.
+        var classDef = competition.AdoptedRules.Definition;
+        var bindings = FlattenParameterBindings(competition.ParameterBindings);
 
-        // Collect all TaskRoundScores: CompetitorRef → list of scores.
-        var allTaskRoundScores = new Dictionary<string, List<TaskRoundScore>>();
+        // competitorRef (string) → running total across every phase they score in.
+        // Only phase 0 is ever drawn today (Competition.cs's DrawPhase), so this
+        // sum is exactly that phase's aggregate — see the plan's Out of scope
+        // note on LastPhaseReplaces/SplitByPromotion.
+        var totalsByCompetitor = new Dictionary<string, decimal>();
 
-        // (The full scoring loop would iterate phases → rounds → task-rounds → groups.
-        //  Since we don't have the aggregate types, this is structural.)
-
-        // --- Phase 2: Aggregate per competitor ---
-        var finalScores = ImmutableArray.CreateBuilder<FinalCompetitorScore>();
-
-        foreach (var (competitorRef, _) in entriesByCompetitor)
+        foreach (var phase in competition.Phases)
         {
-            // Aggregate scores across phases.
-            // If multi-phase with LastPhaseReplaces, the fly-off phase replaces
-            // the preliminary phase scores for promoted competitors.
-            // SplitByPromotion splits the ranking into two lists.
+            // Positional index into the class's ordered phase list, not a
+            // PhaseDefinition.Ordinal lookup — the same convention
+            // Competition.DrawPhase uses to mint Phase.Ordinal in the first place.
+            var phaseDefinition = classDef.Phases[phase.Ordinal];
 
-            // For now: sum all task-round scores (no phase aggregation yet).
-            var competitorScores = allTaskRoundScores.TryGetValue(competitorRef, out var list)
-                ? list
-                : new List<TaskRoundScore>();
+            var roundData = ImmutableArray.CreateBuilder<RoundData>();
+            var scoresByCompetitor = new Dictionary<string, List<TaskRoundScore>>();
 
-            decimal totalScore = competitorScores.Sum(s => s.Score);
+            foreach (var round in phase.Rounds)
+            {
+                var taskRoundData = ImmutableArray.CreateBuilder<TaskRoundData>();
 
-            // Apply aggregate penalties.
-            // Separate penalties by scope:
-            //   - Competition-level penalties → applied here.
-            //   - TaskRound-level penalties → applied here (after drops).
-            var aggregatePenalties = GetAggregatePenalties(competitorRef, allPenalties);
-            var penaltyResult = PenaltyEngine.ApplyAggregatePenalties(
-                totalScore, aggregatePenalties, classDef.Penalties);
+                foreach (var taskRound in round.TaskRounds)
+                {
+                    var taskRoundEntries = entries.Values
+                        .Where(e => e.PhaseOrdinal == phase.Ordinal
+                                 && e.RoundOrdinal == round.Ordinal
+                                 && e.TaskRoundOrdinal == taskRound.Ordinal)
+                        .ToList();
+
+                    // Finding 5: no Entry anywhere in this task-round → it has
+                    // not been flown yet. Omit it entirely rather than lying
+                    // that it is Complete (which would hand a drop-worst policy
+                    // a zero to spend on a round nobody has flown).
+                    if (taskRoundEntries.Count == 0)
+                        continue;
+
+                    var reflightOffender = taskRoundEntries
+                        .GroupBy(e => e.CompetitorRef)
+                        .FirstOrDefault(g => g.Count(e => e.Annulment is null) > 1);
+
+                    if (reflightOffender is not null)
+                    {
+                        return Result<CompetitionResult>.Failure(
+                            "score.reflightNotSupported",
+                            $"Competitor {reflightOffender.Key} has more than one non-annulled Entry for "
+                            + $"phase {phase.Ordinal}/round {round.Ordinal}/task-round {taskRound.Ordinal}. "
+                            + "Reflight scoring (entitled/filler selection) is not yet supported.");
+                    }
+
+                    var taskDefinition = classDef.Phases
+                        .SelectMany(p => p.Tasks)
+                        .FirstOrDefault(t => t.Code == taskRound.TaskRef);
+
+                    if (taskDefinition is null)
+                    {
+                        return Result<CompetitionResult>.Failure(
+                            "score.taskNotDeclared",
+                            $"Task-round references task '{taskRound.TaskRef}', which is not declared "
+                            + "by the adopted class definition.");
+                    }
+
+                    foreach (var group in taskRound.Groups)
+                    {
+                        var groupEntries = taskRoundEntries
+                            .Where(e => e.GroupRef == group.Id)
+                            .ToImmutableDictionary(e => e.CompetitorRef.ToString(), e => e);
+
+                        // A competitor drawn into a group with no Entry
+                        // contributes no TaskRoundScore — absent, not zero.
+                        if (groupEntries.IsEmpty)
+                            continue;
+
+                        var groupResult = ScoreGroup(
+                            group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings);
+
+                        foreach (var (competitorRef, taskResult) in groupResult.Results)
+                        {
+                            if (!scoresByCompetitor.TryGetValue(competitorRef, out var list))
+                            {
+                                list = [];
+                                scoresByCompetitor[competitorRef] = list;
+                            }
+
+                            list.Add(new TaskRoundScore(
+                                taskRound.TaskRef, round.Ordinal, taskRound.Ordinal, taskResult.RawScore));
+                        }
+                    }
+
+                    var state = taskRound.State == Competitions.TaskRoundState.Annulled
+                        ? TaskRoundState.Annulled
+                        : TaskRoundState.Complete;
+
+                    taskRoundData.Add(new TaskRoundData(taskRound.Ordinal, taskRound.TaskRef, state));
+                }
+
+                if (taskRoundData.Count > 0)
+                    roundData.Add(new RoundData(round.Ordinal, taskRoundData.ToImmutable()));
+            }
+
+            var rounds = roundData.ToImmutable();
+
+            foreach (var (competitorRef, scores) in scoresByCompetitor)
+            {
+                var allScores = scores
+                    .Select((score, index) => (score, index))
+                    .ToDictionary(x => $"{x.score.RoundOrdinal}|{x.score.TaskOrdinal}|{x.index}", x => x.score);
+
+                var phaseScores = Aggregate(competitorRef, phaseDefinition, rounds, allScores);
+
+                totalsByCompetitor[competitorRef] =
+                    totalsByCompetitor.GetValueOrDefault(competitorRef) + phaseScores.Aggregate;
+            }
+        }
+
+        var aggregatePenalties = GetAggregatePenalties(competition.Penalties);
+
+        var finalScores = ImmutableArray.CreateBuilder<FinalCompetitorScore>(totalsByCompetitor.Count);
+
+        foreach (var (competitorRef, totalScore) in totalsByCompetitor)
+        {
+            var penaltyResult = PenaltyEngine.ApplyAggregatePenalties(totalScore, aggregatePenalties, classDef.Penalties);
 
             finalScores.Add(new FinalCompetitorScore(
                 CompetitorRef: competitorRef,
                 Score: totalScore - penaltyResult.Deduction,
-                Disqualified: penaltyResult.Disqualified
-            ));
+                Disqualified: penaltyResult.Disqualified));
         }
 
-        // --- Phase 3: Handle finalRanking logic ---
-        // LastPhaseReplaces: the orchestrator pre-computes scores —
-        // promoted competitors use fly-off scores, others use preliminary.
-        // SplitByPromotion: two separate ranking lists.
+        // PromotionRule "appears only on a phase after the first"
+        // (PhaseDefinition's doc comment) — the same phases[1] read
+        // ScoreCompetition always used, kept for when a second phase exists.
+        var promotion = classDef.Phases.Length > 1 ? classDef.Phases[1].Promotion : null;
 
-        // --- Phase 4: Rank ---
-        return RankingEngine.Rank(
-            finalScores.ToImmutable(),
-            classDef.FinalRanking,
-            phases.Length > 1 ? phases[1].Promotion : null
-        );
+        return Result<CompetitionResult>.Success(
+            Rank(finalScores.ToImmutable(), classDef.FinalRanking, promotion));
     }
+
+    // ---------------------------------------------------- parameter bindings
+
+    /// <summary>
+    /// Flattens Competition.ParameterBindings last-write-wins by ParameterName.
+    /// Lifted here from its fourth inline copy (Competition.DrawPhase,
+    /// Competition.OpenEntry, Application.Entries.TaskResolver) so this is the
+    /// one place the flatten is written.
+    /// </summary>
+    public static IReadOnlyDictionary<string, MeasuredValue> FlattenParameterBindings(
+        ImmutableArray<ParameterBinding> bindings) =>
+        bindings
+            .GroupBy(b => b.ParameterName)
+            .ToDictionary(g => g.Key, g => g.Last().BoundValue);
 
     // ---------------------------------------------------- amendment resolution
 
     /// <summary>
-    /// Resolve the effective measurements for all flights in an Entry.
-    /// The effective value of each Measurement is the most recent Amendment's
-    /// NewValue, or the original Measurement.Value if no amendments exist.
-    /// (Issue #4: this lives in the orchestrator, not in pipeline stages.)
+    /// Resolve the effective measurements for every Flight in an Entry, in
+    /// sequence order, and interpret each through the task's raw score terms.
     /// </summary>
-    private ImmutableArray<InterpretedFlight> InterpretAllFlights(
-        object entry,       // Entry aggregate (TBD)
-        ResolvedTask task)
+    private static ImmutableArray<InterpretedFlight> InterpretAllFlights(Entry entry, ResolvedTask task)
     {
-        // Placeholder: when the Entry/Flight/Measurement/Amendment types exist,
-        // this method:
-        // 1. Iterates over entry.Flights in sequence order.
-        // 2. For each Flight, resolves amendments:
-        //      For each Measurement:
-        //        effective = most recent Amendment.NewValue ?? Measurement.Value
-        // 3. Builds a ResolvedMeasurements dictionary.
-        // 4. Calls FlightInterpreter.Interpret for each flight.
-        // 5. Returns the InterpretedFlight array.
+        var builder = ImmutableArray.CreateBuilder<InterpretedFlight>(entry.Flights.Length);
 
-        // Until aggregates exist, return empty.
-        return ImmutableArray<InterpretedFlight>.Empty;
+        foreach (var flight in entry.Flights)
+        {
+            var resolved = MeasurementDigest.Resolve(flight);
+            builder.Add(FlightInterpreter.Interpret(task, flight.Sequence, resolved.Metrics));
+        }
+
+        return builder.ToImmutable();
     }
 
     // ---------------------------------------------------- penalty routing
 
     /// <summary>
-    /// Extract penalties scoped to a specific Entry from the full penalty list.
-    /// Penalty scope (Flight/Entry/TaskRound/Competition) is determined by the
-    /// Penalty entity on the aggregate — the orchestrator reads scope and routes
-    /// accordingly (design rule #6: stage is derived from effect, not configured).
+    /// Extract Flight/Entry-scoped penalties from an Entry, grouped by
+    /// infraction type and counted — one recorded Penalty is one occurrence
+    /// (finding 4).
     /// </summary>
-    private static ImmutableArray<RecordedPenalty> GetEntryPenalties(
-        object entry,
-        ImmutableArray<RecordedPenalty> allPenalties)
-    {
-        // Placeholder: when the Penalty entity exists with scope information,
-        // filter to penalties scoped to this Entry.
-        return ImmutableArray<RecordedPenalty>.Empty;
-    }
+    private static ImmutableArray<RecordedPenalty> GetEntryPenalties(Entry entry) =>
+        entry.Penalties
+            .Where(p => p.Scope is PenaltyScope.Flight or PenaltyScope.Entry)
+            .GroupBy(p => p.InfractionType)
+            .Select(g => new RecordedPenalty(g.Key, g.Count()))
+            .ToImmutableArray();
 
     /// <summary>
-    /// Extract penalties scoped to the Competition aggregate level.
+    /// Extract TaskRound/Competition-scoped penalties from the Competition
+    /// aggregate, grouped by infraction type and counted. Penalty carries no
+    /// competitor reference at this scope — a Competition/TaskRound-scoped
+    /// penalty applies uniformly, the same set for every competitor.
     /// </summary>
-    private static ImmutableArray<RecordedPenalty> GetAggregatePenalties(
-        string competitorRef,
-        ImmutableArray<RecordedPenalty> allPenalties)
-    {
-        // Placeholder: filter to Competition-level penalties.
-        return ImmutableArray<RecordedPenalty>.Empty;
-    }
+    private static ImmutableArray<RecordedPenalty> GetAggregatePenalties(ImmutableArray<Penalty> competitionPenalties) =>
+        competitionPenalties
+            .Where(p => p.Scope is PenaltyScope.TaskRound or PenaltyScope.Competition)
+            .GroupBy(p => p.InfractionType)
+            .Select(g => new RecordedPenalty(g.Key, g.Count()))
+            .ToImmutableArray();
 }

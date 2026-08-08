@@ -282,7 +282,7 @@ public class FlightSelectorTests
             ["launchedInWorkingTime"] = MeasuredValue.Of(true),
             ["flight.sequence"] = MeasuredValue.Of(seq),
         };
-        return FlightInterpreter.Interpret(null, task, seq, metrics);
+        return FlightInterpreter.Interpret(task, seq, metrics);
     }
 
     private static InterpretedFlight InterpretFlight(
@@ -313,6 +313,6 @@ public class FlightSelectorTests
             metrics["landedInPilotArea"] = MeasuredValue.Of(true);
             metrics["overflewLandingWindow"] = MeasuredValue.Of(false);
         }
-        return FlightInterpreter.Interpret(null, task, seq, metrics);
+        return FlightInterpreter.Interpret(task, seq, metrics);
     }
 }

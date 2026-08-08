@@ -96,6 +96,24 @@ public static class NormalisationEngine
             }
 
             decimal raw = taskResult.RawScore;
+
+            // A LowerIsBetter raw score of exactly zero has no finite
+            // normalised value — the division below is undefined, not just
+            // large. Not reachable today for a non-negative metric: a zero
+            // would already be the smallest value among validEntries and so
+            // would already have won the MinBy above, tripping the
+            // `winnerRaw == 0m` branch first (and, for courseTime, a
+            // captured zero is excluded even earlier — see
+            // SeedF3F.cs/SeedF3B.cs's ValidWhen). Kept as a backstop for any
+            // future LowerIsBetter metric whose raw score can go negative,
+            // where a real (negative) winner could coexist with another
+            // competitor sitting at exactly zero.
+            if (norm.Direction == NormalisationDirection.LowerIsBetter && raw == 0m)
+            {
+                resultBuilder[competitorRef] = taskResult with { RawScore = 0m };
+                continue;
+            }
+
             decimal normalised;
 
             if (norm.Direction == NormalisationDirection.HigherIsBetter)

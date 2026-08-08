@@ -33,7 +33,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         // 601s: piecewise 600×1 + 1×(−1) = 599. Landing bonus: 601 ≤ 630, so
@@ -56,7 +56,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Score.Should().Be(0m);
@@ -78,7 +78,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Score.Should().Be(640m);
@@ -99,7 +99,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Score.Should().Be(200m);
@@ -119,7 +119,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Score.Should().Be(0m);
@@ -142,7 +142,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Score.Should().Be(45m);
@@ -163,7 +163,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Score.Should().Be(0m);
@@ -189,7 +189,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         // flightTime=180, launchAltitude at NLH+15 → -25. No land/pilot/overfly deductions.
@@ -211,7 +211,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         // flightTime=180, launch at NLH → 0, pilot area → -10. Total: 170
@@ -236,7 +236,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(3),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Result.State.Should().Be(FlightResultState.Valid);
         result.Result.Measurements.Metrics.ContainsKey("flight.sequence").Should().BeTrue();
@@ -276,7 +276,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Score.Should().Be(20m);
     }
@@ -313,7 +313,7 @@ public class FlightInterpreterTests
             ["flight.sequence"] = MeasuredValue.Of(1),
         };
 
-        var result = FlightInterpreter.Interpret(null, task, 1, metrics);
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
 
         result.Score.Should().Be(200m);
     }

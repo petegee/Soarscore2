@@ -3,6 +3,7 @@ using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.Competitions;
 using Soarscore.Application.Entries;
 using Soarscore.Application.People;
+using Soarscore.Application.Scoring;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -24,6 +25,9 @@ public static class Queries
         app.MapQuery<GetCompetition, CompetitionView>("/competition");
 
         app.MapQuery<FindEntries, IReadOnlyList<EntrySummary>>("/entries");
+
+        app.MapQuery<ScoreTaskRound, IReadOnlyList<GroupScoreView>>("/task-round-result");
+        app.MapQuery<ScoreCompetition, CompetitionScoreView>("/competition-result");
 
         return app;
     }

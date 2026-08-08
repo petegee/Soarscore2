@@ -66,8 +66,8 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Ten commands + four queries are
-        // mapped as of WI-10.
+        // test below would vacuously pass. Thirteen commands + nine queries
+        // are mapped as of scoring-steel-thread-plan.md WI-8.
         mappedMessages.Should().HaveCountGreaterThanOrEqualTo(10);
 
         using var scope = app.Services.CreateScope();

@@ -121,7 +121,11 @@ public static class SeedF3B
             MinNewGroupSize = NumberOrParam.Param("minNewGroup"),
         },
         ValidWhen = P.All(P.Is("courseCompleted", true),                       // F2 + F3
-                          P.Is("landedInDefinedArea", true)),
+                          P.Is("landedInDefinedArea", true),
+                          P.Gt("courseTime", 0)),                              // a captured 0 is a mis-capture, not a course flown in zero
+                                                                               //   time — courseCompleted=true alone does not rule that out,
+                                                                               //   and a raw 0 would otherwise be crowned the group's winner
+                                                                               //   (this file's own header note on the inverted task)
         Score = [T.Rate("courseTime", 1)],                                     // the raw result IS the elapsed time; the direction inverts it
     };
 
