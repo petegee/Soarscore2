@@ -16,6 +16,12 @@
     <!-- Pinned to the AspNetCore.App runtime installed alongside the 10.0.110 SDK
          (LADR-0003 "API documentation": in-box, spec emitted as a build artefact). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <!-- capture-a-score-steel-thread-plan.md WI-13: WebApplicationFactory, so the
+         Reqnroll acceptance suite drives the real Soarscore.Api over real HTTP
+         rather than through IDispatcher (LADR-0003 "Test entry point"'s prior
+         stance — this is the first suite that needs it). Same 10.0.10 as
+         Microsoft.AspNetCore.OpenApi above, the AspNetCore.App runtime the SDK carries. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <!-- Transitive via Microsoft.AspNetCore.OpenApi, which pins 2.0.0 — GHSA-v5pm-xwqc-g5wc
          (stack overflow parsing a circular-reference OpenAPI document), patched at 2.7.5.
@@ -24,6 +30,10 @@
     <!-- Transitive via Marten -> Weasel.Postgresql, pinned to match rather than
          float independently (LADR-0003 "all versions pinned"). -->
     <PackageVersion Include="Npgsql" Version="9.0.4" />
+    <!-- capture-a-score-steel-thread-plan.md WI-13, LADR-0003's Reqnroll entry:
+         Gherkin/BDD over xunit.v3 — repo's xunit.v3 3.2.2 / xunit.runner.visualstudio
+         3.1.5 satisfy the ≥3.0.2 floor Reqnroll.xunit.v3 3.3.4 declares. -->
+    <PackageVersion Include="Reqnroll.xunit.v3" Version="3.3.4" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.13.3" />
     <PackageVersion Include="Verify.XunitV3" Version="31.28.0" />

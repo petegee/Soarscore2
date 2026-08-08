@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soarscore.Api", "src\Soarsc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soarscore.Infrastructure.Tests", "tests\Soarscore.Infrastructure.Tests\Soarscore.Infrastructure.Tests.csproj", "{4E02FBF1-E06E-4A3B-9CEE-1E3B2C4E27DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soarscore.Acceptance.Tests", "tests\Soarscore.Acceptance.Tests\Soarscore.Acceptance.Tests.csproj", "{82613ACA-6AF5-4866-B5FA-57F02B756542}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +147,18 @@ Global
 		{4E02FBF1-E06E-4A3B-9CEE-1E3B2C4E27DF}.Release|x64.Build.0 = Release|Any CPU
 		{4E02FBF1-E06E-4A3B-9CEE-1E3B2C4E27DF}.Release|x86.ActiveCfg = Release|Any CPU
 		{4E02FBF1-E06E-4A3B-9CEE-1E3B2C4E27DF}.Release|x86.Build.0 = Release|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Debug|x64.Build.0 = Debug|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Debug|x86.Build.0 = Debug|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Release|x64.ActiveCfg = Release|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Release|x64.Build.0 = Release|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Release|x86.ActiveCfg = Release|Any CPU
+		{82613ACA-6AF5-4866-B5FA-57F02B756542}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -159,5 +173,6 @@ Global
 		{979F05A5-4CDE-453D-AB21-8EA68DBC2C91} = {1D55DED2-8329-4917-A077-37B53C358887}
 		{E5AC0FB3-EB1A-40AC-A4E0-EB2EA28D24B3} = {B78D7BAC-DD9D-4C00-8756-940697A06114}
 		{4E02FBF1-E06E-4A3B-9CEE-1E3B2C4E27DF} = {1D55DED2-8329-4917-A077-37B53C358887}
+		{82613ACA-6AF5-4866-B5FA-57F02B756542} = {1D55DED2-8329-4917-A077-37B53C358887}
 	EndGlobalSection
 EndGlobal

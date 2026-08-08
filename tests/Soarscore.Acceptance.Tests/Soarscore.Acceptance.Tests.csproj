@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(SoarscoreTargetFramework)</TargetFramework>
+    <RootNamespace>Soarscore.Acceptance.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <!-- docs/plans/capture-a-score-steel-thread-plan.md WI-13: the repo's first
+       automated end-to-end suite (gap.md §7), driven through real HTTP against
+       the real Soarscore.Api (Microsoft.AspNetCore.Mvc.Testing's
+       WebApplicationFactory<Program>) over a real Testcontainers PostgreSQL —
+       the same PostgresFixture pattern tests/Soarscore.Infrastructure.Tests
+       uses, plus an in-process HTTP client. "Driven without HTTP tools"
+       (LADR-0003 "Test entry point") stops applying here on purpose: this
+       suite's whole job is to prove the HTTP surface itself, not the
+       Application layer beneath it. -->
+
+  <ItemGroup>
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Reqnroll.xunit.v3" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
+    <ProjectReference Include="..\..\src\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
+    <!-- The composition root: WebApplicationFactory<Program> hosts THIS project
+         in-process, and Program.cs's `public partial class Program` marker
+         lives here. -->
+    <ProjectReference Include="..\..\src\Soarscore.Api\Soarscore.Api.csproj" />
+    <!-- F5J and NZ Class M ALES 200 are the real corpus definitions the feature
+         file's scenarios 1 and 2 publish and adopt, same choice
+         EntryCaptureEventStoreTests.cs (WI-12) makes and for the same reason
+         (Fixed timing vs. UntilAllFlightsComplete + parameter-bound). -->
+    <ProjectReference Include="..\..\tools\Soarscore.SeedData\Soarscore.SeedData.csproj" />
+  </ItemGroup>
+
+</Project>
