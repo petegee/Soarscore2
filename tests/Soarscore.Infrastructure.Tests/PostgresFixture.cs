@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Soarscore.Application;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.Competitions;
+using Soarscore.Application.Entries;
 using Soarscore.Application.People;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -31,6 +32,9 @@ public sealed class PostgresFixture : IAsyncLifetime
     public IClassLibraryQuery ClassLibraryQuery => _provider!.GetRequiredService<IClassLibraryQuery>();
 
     public ICompetitionsQuery CompetitionsQuery => _provider!.GetRequiredService<ICompetitionsQuery>();
+
+    /// <summary>capture-a-score-steel-thread-plan.md WI-12 — the entry_index query port.</summary>
+    public IEntryQuery EntryQuery => _provider!.GetRequiredService<IEntryQuery>();
 
     /// <summary>Exposed only for test 4's read-model drop/rebuild — no port on IEventStore/IPeopleQuery covers it.</summary>
     public IDocumentStore DocumentStore => _provider!.GetRequiredService<IDocumentStore>();
