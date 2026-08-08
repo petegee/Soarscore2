@@ -16,6 +16,7 @@ namespace Soarscore.Domain.Tests;
 public class OpenFlightDecideTests
 {
     private static readonly EntryId SampleId = EntryId.New();
+    private static readonly CompetitionId SampleCompetition = CompetitionId.New();
     private static readonly GroupId SampleGroup = GroupId.New();
     private static readonly CompetitorId SampleCompetitor = CompetitorId.New();
 
@@ -27,7 +28,8 @@ public class OpenFlightDecideTests
 
     private static Entry OpenEntry() =>
         Entry.Create(new EntryOpened(
-            SampleId, SampleWorkingTime, SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
+            SampleId, SampleWorkingTime, SampleCompetition, 1, 1, 1,
+            SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
 
     private static Entry AnnulledEntry() =>
         OpenEntry().Apply(new EntryAnnulled(
@@ -140,7 +142,7 @@ public class OpenFlightDecideTests
         early.Value.LaunchAt.Should().Be(beforeWorkingTime);
         entry = entry.Apply(early.Value);
 
-        var afterWorkingTime = SampleWorkingTime.End.AddMinutes(5);
+        var afterWorkingTime = SampleWorkingTime.End!.Value.AddMinutes(5);
 
         var late = entry.OpenFlight(2, afterWorkingTime, maxLaunches: null, at: DateTimeOffset.UtcNow);
 

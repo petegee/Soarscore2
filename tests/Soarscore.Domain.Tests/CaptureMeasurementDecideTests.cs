@@ -17,6 +17,7 @@ namespace Soarscore.Domain.Tests;
 public class CaptureMeasurementDecideTests
 {
     private static readonly EntryId SampleId = EntryId.New();
+    private static readonly CompetitionId SampleCompetition = CompetitionId.New();
     private static readonly GroupId SampleGroup = GroupId.New();
     private static readonly CompetitorId SampleCompetitor = CompetitorId.New();
 
@@ -46,7 +47,8 @@ public class CaptureMeasurementDecideTests
     private static Entry EntryWithOneOpenFlight()
     {
         var entry = Entry.Create(new EntryOpened(
-            SampleId, SampleWorkingTime, SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
+            SampleId, SampleWorkingTime, SampleCompetition, 1, 1, 1,
+            SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
 
         return entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
     }
