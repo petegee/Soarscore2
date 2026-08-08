@@ -12,6 +12,14 @@
 > (Domain 177, Application 125, Architecture 4; Infrastructure storage tests
 > filtered out with `dotnet test --filter "Category!=Storage"`).
 
+> **Update — 2026-08-08, later the same day.** `bind-parameter-steel-thread-plan.md`
+> (WI-1 through WI-8) has been implemented and verified — see the new "Update" section
+> below, right after Context, for what changed, what is still uncommitted, and two
+> issues the work surfaced that this snapshot did not anticipate. The gap table and
+> the per-gap sections below it are left as originally written (they are the
+> `d273ed1` snapshot); do not treat gap 4's row or §4's prose as current without
+> reading the update.
+
 ## Context
 
 Five plans live in `docs/plans/`: `command-side`, `create-competition`,
@@ -21,7 +29,66 @@ this document is what those sections promised but the tree does not yet contain.
 
 One documentation artefact worth noting because it misleads a reader: only
 `command-side-steel-thread-plan.md` carries `**Status:** Complete`. The other four still
-say `**Status:** Proposed` despite having landed.
+say `**Status:** Proposed` despite having landed. **`bind-parameter-steel-thread-plan.md`
+now joins that list** — it carries `**Status:** Proposed` in its own header despite the
+work below being implemented and test-verified.
+
+## Update — 2026-08-08: `bind-parameter-steel-thread-plan.md` implemented
+
+All eight work items landed: `Competition.BindParameter` (decide function),
+`ParameterResolver`'s default-value fallback, the `BindParameter` command/handler,
+Marten wiring, the `/bind-parameter` endpoint, CsCheck property tests, Postgres
+store-backed tests, and a real executed end-to-end run captured at
+`docs/verification/bind-parameter-e2e.http`. Full solution build is clean; 339
+non-Storage tests pass (Domain 199, Application 136, Architecture 4) plus 22
+Storage-tagged tests against a real Postgres — up from the 306/22 baseline this
+snapshot recorded.
+
+**Not yet committed.** Every change above is uncommitted in the working tree (`git
+status` shows it all as modified/untracked against `master`). Gap 4 and gap 3 below
+should not be treated as closed in the repository's actual history until a commit
+lands.
+
+**Two things this work surfaced that were not anticipated when gap 4 was written:**
+
+1. **F5K is still not drawable in practice, for a different reason than the one this
+   thread fixed.** `BindParameter` makes F5K's `minPerGroup` parameter bindable, but
+   F5K's real seed definition (`tools/Soarscore.SeedData/SeedF5K.cs`) uses
+   `ChooseFromCatalogue` composition on both phases, which `Competition.DrawPhase`
+   rejects with `drawPhase.unsupportedRoundComposition` *before* it ever reaches the
+   parameter-resolution check — confirmed both by a live HTTP run (F5K leg of
+   `docs/verification/bind-parameter-e2e.http`) and by `BindParameterEventStoreTests.cs`
+   needing to fall back to NZ Class M ALES 200 for its Postgres payoff test. This is
+   the pre-existing, already-deferred "Catalogue-choice rounds" gap (see "Deliberately
+   deferred" below) — not a defect in the bind-parameter thread — but it means gap 4's
+   original consequence line ("F5K, F5L and NZ Class M cannot be drawn at all today")
+   is only fully resolved for **F5L and NZ Class M**. F5K needs the catalogue-choice
+   thread on top of this one before it can actually be drawn end to end, despite its
+   parameter now being bindable.
+2. **A DI-registration gap with no automated guard.** While building WI-6 (the
+   `/bind-parameter` endpoint), a sub-agent added the route
+   (`app.MapCommand<BindParameter, CompetitionId>(...)` in
+   `src/Soarscore.Api/Commands/Commands.cs`) but did not add the matching
+   `builder.Services.AddScoped<ICommandHandler<BindParameter, CompetitionId>,
+   BindParameterHandler>()` line in `src/Soarscore.Api/Composition.cs`. This compiles
+   cleanly and `RouteShapeTests` (gap 6's architecture-test suite) passes unchanged,
+   because that test only reflects over route shape (path/verb), not DI resolvability —
+   the gap would only have surfaced as a 500 at first real request. Caught by manual
+   review, not by any test, and fixed before this thread's WI-8 e2e run. **No test in
+   the repo currently asserts that every `MapCommand`/`MapQuery` registration has a
+   corresponding DI registration** — worth adding as a cheap addition to
+   `tests/Soarscore.Architecture.Tests` (a reflection test resolving each mapped
+   command/query type's handler interface from the built `WebApplication`'s
+   `IServiceProvider` would catch this class of mistake at build time, the same
+   protection `RouteShapeTests` already gives route shape). Not tracked elsewhere in
+   this document; added here as a new, small item for whoever next touches
+   `Soarscore.Architecture.Tests`.
+
+**Consequence for the gap table below:** row 4 (`BindParameter`) is resolved subject to
+the F5K caveat above; row 3 (unreachable `CompetitionEvent` types) drops from seven to
+six — `ParameterBound` is now reachable, leaving `ReflightGroupAppended`,
+`TaskRoundCompleted`, `TaskRoundAnnulled`, `RulesAmended`, `Finalised`,
+`PenaltyRecorded`. Rows 1, 2, 5 and 6 are unaffected by this thread.
 
 ## Gap inventory
 
@@ -97,7 +164,12 @@ can ever be bound, and the draw rejects parameterised group sizes outright:
 `Competition.cs:613` returns `drawPhase.parameterUnbound`.
 
 **Consequence: F5K, F5L and NZ Class M (ALES 200) cannot be drawn at all today**,
-despite all three sitting in the seed corpus under `tools/Soarscore.SeedData/`.
+despite all three sitting in the seed corpus under `tools/Soarscore.SeedData/`. They are
+exactly the three definitions whose `minPerGroup` resolves to a parameter with no
+declared default; the other eight use a literal.
+
+> **Planned.** `bind-parameter-steel-thread-plan.md` (2026-08-08) covers this gap. It also
+> resolves two model findings turned up while designing it — see the deferred list below.
 
 ## 5 — The orphaned scoring engine
 
@@ -196,16 +268,43 @@ Recorded here so nobody "fixes" them by mistake:
   `AcceptDraw`/`RejectDraw`, moving `ValidateFieldNotFrozen` off `Phases.IsEmpty`).
 - **Flyoff-phase draws.** The current draw's field is unconditionally "every
   non-withdrawn Competitor"; flyoff field selection is a different algorithm.
-- **Multi-task rounds (F3B) and catalogue-choice rounds (F3K/F5K).** Structurally
+- **Multi-task rounds (F3B).** `FixedSequence` with `tasksPerRound: 3` — structurally
   rejected at `Competition.cs:573-580` with `drawPhase.unsupportedRoundComposition`.
+- **Catalogue-choice rounds (F3K and F5K only).** Rejected at the same site, but a
+  *different* problem from F3B's. **Decided 2026-08-08: when this thread is taken, each
+  round's task is set at draw time** — so `PhaseDrawn` grows a per-round task selection
+  rather than a separate later event. **Confirmed live 2026-08-08 (bind-parameter
+  thread, see the Update section above): this is now the *only* thing standing between
+  F5K and a working draw** — `BindParameter` resolves its `minPerGroup`, but
+  `Competition.DrawPhase` still rejects F5K's real definition with
+  `drawPhase.unsupportedRoundComposition` first. F3K is blocked by the same check.
+- **Per-round parameter bindings.** `ParameterBinding` carries no round or phase ordinal
+  (`Competition.cs:116-125`), so `ParameterBindingPoint.PerRound` is *unrepresentable*.
+  Six parameters are affected, all F3K's. **Decided 2026-08-08: deferred into the
+  catalogue-choice thread above**, because binding "the working time for round 3" is
+  meaningless until round 3 has a task, and adding scope alone unblocks nothing — F3K is
+  independently blocked by the round composition. Reasoning in
+  `bind-parameter-steel-thread-plan.md`, finding 1.
 - **The `.class` notation parser** and **class-definition drift detection** — both
   settled out of scope.
+
+**One item has moved off this list.** `Parameter.DefaultValue` was inert —
+`ParameterResolver` consulted only bindings and threw on an unbound `Ref`. **Decided
+2026-08-08: the resolver falls back to the declared default**, rather than seeding
+`ParameterBound` events at `CreateCompetition`. The audit objection to a fallback does
+not hold (`AdoptedRules.Definition` is an immutable copy already in the log, so defaults
+are auditable and the effective value is reconstructible), and seeding would silently
+defeat `RulesAmended`'s retroactive intent. Scheduled as WI-2 of
+`bind-parameter-steel-thread-plan.md`.
 
 ## Recommended sequencing — a proposal, not a decision
 
 1. **`BindParameter` slice first** (~1 day). It is small, it is the same shape already
    executed four times, and it fixes three seed-corpus classes that are broken *now*
-   (gap 4). Cheapest real value in the repo.
+   (gap 4). Cheapest real value in the repo. **Done, 2026-08-08 — see the Update
+   section above.** Fixes F5L and NZ Class M ALES 200 outright; F5K still needs the
+   catalogue-choice thread (item 3's sibling, listed under "Deliberately deferred") on
+   top before its draw actually succeeds.
 2. **Entry write path plus `entry_index`** (gaps 1 and 2). This is the critical path:
    the only option that advances the system's actual purpose, and the thing that makes
    the scoring engine testable at all. **Write a plan document before coding** — every

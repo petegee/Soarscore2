@@ -531,6 +531,35 @@ public sealed record Competition
             : Result<CompetitorWithdrawn>.Success(new CompetitorWithdrawn(competitorRef, at));
     }
 
+    // Instance decide function — WI-1 (docs/plans/bind-parameter-steel-thread-plan.md).
+    // Defect-chain style, like RegisterCompetitor/WithdrawCompetitor above —
+    // unlike DrawPhase below, no later check needs a value computed by an
+    // earlier one, so each validator re-resolves the named Parameter itself
+    // rather than threading it through. Re-binding before the draw is
+    // deliberately allowed and not deduped here: last-write-wins is resolved
+    // at the draw's call site (Competition.cs, DrawPhase), not here.
+    public Result<ParameterBound> BindParameter(string parameterName, MeasuredValue value, string by, DateTimeOffset at)
+    {
+        var defect = ValidateParameterDeclared(parameterName)
+            ?? ValidateParameterKind(parameterName, value)
+            ?? ValidateParameterValueAllowed(parameterName, value)
+            ?? ValidateParameterNotFrozen(parameterName);
+
+        if (defect is not null)
+        {
+            return Result<ParameterBound>.Failure(defect.Code, defect.Message);
+        }
+
+        return Result<ParameterBound>.Success(
+            new ParameterBound(new ParameterBinding
+            {
+                ParameterName = parameterName,
+                BoundValue = value,
+                By = by,
+                At = at,
+            }));
+    }
+
     // Instance decide function — WI-1 (docs/plans/phase-drawn-steel-thread-plan.md).
     // Not the Defect-chain style RegisterCompetitor/WithdrawCompetitor use:
     // later checks need values (phaseDefinition, the eligible field,
@@ -606,7 +635,7 @@ public sealed record Competition
             decimal resolvedMinPerGroup;
             try
             {
-                resolvedMinPerGroup = ParameterResolver.Resolve(task.Group.MinPerGroup, bindings);
+                resolvedMinPerGroup = ParameterResolver.Resolve(task.Group.MinPerGroup, bindings, AdoptedRules.Definition.Parameters);
             }
             catch (UnresolvedParameterException ex)
             {
@@ -674,7 +703,10 @@ public sealed record Competition
     // retirement check was written against a state nothing could yet produce.
     // "Accepted" currently means "any phase drawn" because Draw.Status carries
     // no defined value set (Competition.cs:230-234) — revisit this check once
-    // it does.
+    // it does. See ValidateParameterNotFrozen below for the other consumer of
+    // the same !Phases.IsEmpty approximation — deliberately not merged with
+    // it, since the two ask different questions (is the field closed, vs is
+    // this parameter settled) and will diverge once Draw.Status is defined.
     private Defect? ValidateFieldNotFrozen() =>
         !Phases.IsEmpty
             ? new Defect("competition.field.frozen", "$.personRef", "The field is frozen: a phase has already been drawn.")
@@ -689,4 +721,38 @@ public sealed record Competition
         Competitors.Single(c => c.Id == competitorRef).WithdrawnAt is not null
             ? new Defect("competition.competitor.alreadyWithdrawn", "$.competitorRef", "This competitor has already withdrawn.")
             : null;
+
+    private Defect? ValidateParameterDeclared(string parameterName) =>
+        AdoptedRules.Definition.Parameters.Any(p => p.Name == parameterName)
+            ? null
+            : new Defect("competition.parameter.notDeclared", "$.parameterName", $"'{parameterName}' is not a parameter of the adopted class.");
+
+    private Defect? ValidateParameterKind(string parameterName, MeasuredValue value)
+    {
+        var parameter = AdoptedRules.Definition.Parameters.FirstOrDefault(p => p.Name == parameterName);
+        return parameter is not null && value.Kind != parameter.Kind
+            ? new Defect("competition.parameter.kindMismatch", "$.value", $"'{parameterName}' expects a {parameter.Kind} value, not {value.Kind}.")
+            : null;
+    }
+
+    private Defect? ValidateParameterValueAllowed(string parameterName, MeasuredValue value)
+    {
+        var parameter = AdoptedRules.Definition.Parameters.FirstOrDefault(p => p.Name == parameterName);
+        return parameter is not null && !parameter.AllowedValues.IsEmpty && !parameter.AllowedValues.Contains(value)
+            ? new Defect("competition.parameter.valueNotAllowed", "$.value", $"The bound value is not one of '{parameterName}''s allowed values.")
+            : null;
+    }
+
+    // See ValidateFieldNotFrozen above for the other consumer of
+    // !Phases.IsEmpty — this asks whether THIS PARAMETER is settled, not
+    // whether the field is closed, and is scoped to CompetitionSetup only:
+    // a BeforeFlying parameter (e.g. F5K's nlh) is legitimately bound after
+    // the draw, so freezing every parameter there would be wrong.
+    private Defect? ValidateParameterNotFrozen(string parameterName)
+    {
+        var parameter = AdoptedRules.Definition.Parameters.FirstOrDefault(p => p.Name == parameterName);
+        return parameter is not null && parameter.BoundAt == ParameterBindingPoint.CompetitionSetup && !Phases.IsEmpty
+            ? new Defect("competition.parameter.frozen", "$.parameterName", $"'{parameterName}' is bound at competition setup and cannot be changed once a phase has been drawn.")
+            : null;
+    }
 }

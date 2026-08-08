@@ -23,6 +23,7 @@ public static class Commands
         app.MapCommand<RegisterCompetitor, CompetitorId>("/register-competitor");
         app.MapCommand<WithdrawCompetitor, CompetitorId>("/withdraw-competitor");
         app.MapCommand<DrawPhase, CompetitionId>("/draw-phase");
+        app.MapCommand<BindParameter, CompetitionId>("/bind-parameter");
 
         return app;
     }

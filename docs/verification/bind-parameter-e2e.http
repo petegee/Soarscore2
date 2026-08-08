@@ -1,0 +1,379 @@
+### bind-parameter-e2e.http
+###
+### docs/plans/bind-parameter-steel-thread-plan.md WI-8 — checked-in record of
+### the end-to-end verification run against a live API + real PostgreSQL, per
+### the plan's own instruction not to leave a third undocumented manual e2e
+### step (after phase-drawn WI-8 and create-competition WI-7, both of which
+### were manual and left no record).
+###
+### This file was executed for real on 2026-08-08 against:
+###   - a throwaway Postgres 16 container (docker run postgres:16-alpine)
+###   - `dotnet run --project src/Soarscore.Api --urls http://localhost:5299`
+### and every response below matches what the run actually returned. It is
+### also intended to be re-run as a regression check: start the two processes
+### above, open this file in Rider's HTTP Client, and run top to bottom.
+###
+### Two companion body files sit next to this one — `publish-f5k-body.json`
+### and `publish-nz-m-ales200-body.json`. Each wraps the corresponding real
+### seed definition (tools/Soarscore.SeedData/json/40-f5k.json and
+### /80-nz-m-ales200.json) in the `{"definition": {...}}` envelope
+### `PublishClassDefinition` actually requires — POSTing the raw seed file
+### unwrapped 500s with a NullReferenceException in
+### ClassDefinitionIngestion.CheckLimits, confirmed while building this file.
+### If either seed file changes, regenerate its wrapped copy here.
+###
+### IMPORTANT FINDING FROM THIS RUN, not fixed by this thread and not this
+### thread's job to fix: the plan's own text says "publish F5K ... attempt
+### the draw (expect drawPhase.parameterUnbound)". Run for real, F5K's real
+### definition does NOT reach that failure. Both of F5K's phases are
+### ChooseFromCatalogue (5-task catalogues), which trips
+### `drawPhase.unsupportedRoundComposition` in Competition.DrawPhase before
+### the parameter-binding check is ever reached — a separate, pre-existing,
+### deliberately out-of-scope gap (the plan's "Finding 1"). Binding
+### `minPerGroup` cannot unblock F5K's draw today. This is exactly what
+### BindParameterEventStoreTests.cs (WI-7) found and worked around by using
+### NZ Class M ALES 200's real definition for its store-backed payoff test
+### instead of F5K's. This file does the same: it runs F5K far enough to
+### demonstrate that finding for real (steps 1-4), then runs the plan's full
+### intended sequence — parameterUnbound -> BindParameter -> success —
+### against NZ Class M ALES 200 (steps 5-14), one of the other two classes
+### this thread names as unblocked (F5K, F5L, NZ Class M ALES 200 all carry a
+### no-default minPerGroup/groupSize parameter).
+
+@baseUrl = http://localhost:5299
+
+### =====================================================================
+### Part 1 — F5K: publish, create, attempt the draw. Demonstrates the
+### catalogue-choice limitation above; does NOT reach parameterUnbound.
+### =====================================================================
+
+### 1. Publish F5K's real class definition.
+### Actual response in this run: 200, body
+###   "b064045339205123fe297b8068535270e3e6aff69cd9b780418856bcf6853986"
+POST {{baseUrl}}/publish-class-definition
+Content-Type: application/json
+
+< ./publish-f5k-body.json
+
+> {%
+    client.global.set("f5kHash", JSON.parse(response.body));
+%}
+
+### 2. Create a competition adopting F5K.
+### Actual response: 200, body {"value":"019fdfc7-df8a-7346-81fa-6823b46e777a"}
+POST {{baseUrl}}/create-competition
+Content-Type: application/json
+
+{
+  "name": "F5K E2E Test",
+  "location": "Taupo",
+  "startDate": "2026-01-10",
+  "endDate": "2026-01-12",
+  "classContentHash": "{{f5kHash}}"
+}
+
+> {%
+    client.global.set("f5kCompId", JSON.parse(response.body).value);
+%}
+
+### 3a. Register one person — enough to attempt a draw (the draw fails on
+### round composition before it would ever check the field size).
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{
+  "name": "Test Pilot F5K",
+  "contact": { "email": "pilot-f5k-1@example.com" },
+  "club": null
+}
+
+> {%
+    client.global.set("f5kPersonId", JSON.parse(response.body).value);
+%}
+
+### 3b. Register that person as a competitor.
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{f5kCompId}}" },
+  "personId": { "value": "{{f5kPersonId}}" }
+}
+
+### 4. Attempt the draw.
+### Actual response in this run: 400
+###   {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1",
+###    "title":"drawPhase.unsupportedRoundComposition","status":400,
+###    "detail":"This phase's round composition (multi-task rounds or
+###    catalogue task choice) is not yet supported by the draw.", ...}
+### NOT drawPhase.parameterUnbound — see the file header. Binding minPerGroup
+### here would not change this outcome, so this thread's F5K leg stops here.
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{f5kCompId}}" },
+  "rounds": 2
+}
+
+### =====================================================================
+### Part 2 — NZ Class M ALES 200: the plan's actual provable sequence.
+### NZ-M's real definition (unlike F5K's) is FixedSequence/single-task on
+### its one phase, so it reaches drawPhase.parameterUnbound and can be
+### unblocked by BindParameter, exactly as WI-7's store-backed payoff test
+### (BindParameterEventStoreTests.cs,
+### BindParameter_unblocks_DrawPhase_for_NZ_Class_M_ALES_200_...) already
+### proves against a real Postgres store. This section repeats that proof
+### through the live HTTP API end to end.
+### =====================================================================
+
+### 5. Publish NZ Class M ALES 200's real class definition.
+### Actual response: 200, body
+###   "0cb1bb1cf79e8411ae378b2fc6fcabe5b424b277d42469527b3373e9ef0dabd0"
+POST {{baseUrl}}/publish-class-definition
+Content-Type: application/json
+
+< ./publish-nz-m-ales200-body.json
+
+> {%
+    client.global.set("nzmHash", JSON.parse(response.body));
+%}
+
+### 6. Create a competition adopting NZ Class M ALES 200.
+### Actual response: 200, body {"value":"019fdfc8-3499-7200-adee-f9cec81fd6cc"}
+POST {{baseUrl}}/create-competition
+Content-Type: application/json
+
+{
+  "name": "NZ-M ALES 200 E2E Test",
+  "location": "Taupo",
+  "startDate": "2026-01-10",
+  "endDate": "2026-01-12",
+  "classContentHash": "{{nzmHash}}"
+}
+
+> {%
+    client.global.set("nzmCompId", JSON.parse(response.body).value);
+%}
+
+### 7. Register 12 people + competitors — enough to satisfy a groupSize of 6
+### (two full groups). Run 1..12: this block reuses the same "nzmPersonId"
+### variable for each pair, since only the just-registered person is needed
+### to register that pilot's competitor before moving to the next pilot.
+###
+### Pilot 1
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 1", "contact": { "email": "pilot-nzm-1@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 2
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 2", "contact": { "email": "pilot-nzm-2@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 3
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 3", "contact": { "email": "pilot-nzm-3@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 4
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 4", "contact": { "email": "pilot-nzm-4@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 5
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 5", "contact": { "email": "pilot-nzm-5@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 6
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 6", "contact": { "email": "pilot-nzm-6@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 7
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 7", "contact": { "email": "pilot-nzm-7@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 8
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 8", "contact": { "email": "pilot-nzm-8@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 9
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 9", "contact": { "email": "pilot-nzm-9@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 10
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 10", "contact": { "email": "pilot-nzm-10@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 11
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 11", "contact": { "email": "pilot-nzm-11@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### Pilot 12
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot NZM 12", "contact": { "email": "pilot-nzm-12@example.com" }, "club": null }
+
+> {% client.global.set("nzmPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{nzmCompId}}" }, "personId": { "value": "{{nzmPersonId}}" } }
+
+### 8. Attempt the draw with groupSize unbound.
+### Actual response in this run: 400
+###   {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1",
+###    "title":"drawPhase.parameterUnbound","status":400,
+###    "detail":"Parameter 'groupSize' has no binding in the provided
+###    bindings dictionary.", ...}
+### This is the failure BindParameter exists to clear — before this thread,
+### nothing in the system could clear it.
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{nzmCompId}}" },
+  "rounds": 2
+}
+
+### 9. Bind groupSize to 6 — two groups of 6 from the 12 registered
+### competitors.
+### Actual response: 200, body {"value":"019fdfc8-3499-7200-adee-f9cec81fd6cc"}
+POST {{baseUrl}}/bind-parameter
+Content-Type: application/json
+
+{
+  "competitionRef": { "value": "{{nzmCompId}}" },
+  "parameterName": "groupSize",
+  "value": { "kind": "Number", "number": 6 },
+  "by": "CD Jane"
+}
+
+### 10. Draw again.
+### Actual response: 200, body {"value":"019fdfc8-3499-7200-adee-f9cec81fd6cc"}
+### — success, where the unbound attempt in step 8 failed for the same
+### competition, the same rounds, the one difference being step 9's bind.
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{nzmCompId}}" },
+  "rounds": 2
+}
+
+### 11. Confirm via GET /competition: two rounds, each with two groups of
+### exactly 6 competitors (the bound value), and parameterBindings carries
+### the groupSize binding by "CD Jane". Verified in this run — both rounds'
+### task-round groups had CompetitorRefs.Length == 6, 12 unique competitors
+### placed each round, and parameterBindings contained exactly the one
+### groupSize=6 entry.
+GET {{baseUrl}}/competition?Id={{nzmCompId}}

@@ -119,15 +119,19 @@ Backing detail: [NFR-1](docs/non-functional-requirements.md#nfr-1--one-centralis
    and propose a fix, then ask the user before applying it** — surface the
    conflict with a recommended resolution rather than silently reconciling it
    yourself.
- 3. Agents must not add transient information to anything /docs
- 4. Agents must ask the user before adding anything in /docs
-
+3. Agents must not add transient information to anything /docs
+4. Agents must ask the user before adding anything in /docs
+5. Any residual technical debt identified or intentionally deferred during
+   implementing a feature can go into the tech-debt.md markdown doc as
+   a checklist item `[ ] tech debt heading. Description`
+6. Any newly identified feature identified during implementing a feature, 
+   which would be out of scope of the current feature, can go into the todo.md 
+   markdown doc as a checklist item `[ ] feature heading. Description`
 
 
 
 !!!CHECK
 ## Pointers
-
 
 - Start any domain question at `docs/soaring-domain-glossary.md`.
 - "Who needs this / why" → `docs/users.md`.

@@ -39,17 +39,19 @@ public static class ParameterResolver
 
     /// <summary>
     /// Resolve a NumberOrParam to a concrete decimal.
-    /// Literal passes through; Ref looks up the binding.
-    /// Throws UnresolvedParameterException if a Ref has no binding.
+    /// Literal passes through; Ref resolves against the bindings, falling
+    /// back to the declared Parameter's DefaultValue when unbound.
+    /// Throws UnresolvedParameterException if a Ref is unbound and undefaulted.
     /// </summary>
     public static decimal Resolve(
         NumberOrParam value,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         return value switch
         {
             NumberOrParam.Literal l => l.Value,
-            NumberOrParam.Ref r => ResolveBinding(r.ParameterName, bindings),
+            NumberOrParam.Ref r => ResolveBinding(r.ParameterName, bindings, declaredParameters),
             _ => throw new ArgumentException($"Unknown NumberOrParam subtype: {value.GetType().Name}")
         };
     }
@@ -60,9 +62,10 @@ public static class ParameterResolver
     public static decimal ResolveOr(
         NumberOrParam? value,
         IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters,
         decimal @default)
     {
-        return value is not null ? Resolve(value, bindings) : @default;
+        return value is not null ? Resolve(value, bindings, declaredParameters) : @default;
     }
 
     // ----------------------------------------------------- FlagOrParam
@@ -72,12 +75,13 @@ public static class ParameterResolver
     /// </summary>
     public static bool ResolveFlag(
         FlagOrParam value,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         return value switch
         {
             FlagOrParam.Literal l => l.Value,
-            FlagOrParam.Ref r => ResolveFlagBinding(r.ParameterName, bindings),
+            FlagOrParam.Ref r => ResolveFlagBinding(r.ParameterName, bindings, declaredParameters),
             _ => throw new ArgumentException($"Unknown FlagOrParam subtype: {value.GetType().Name}")
         };
     }
@@ -88,9 +92,10 @@ public static class ParameterResolver
     public static bool ResolveFlagOr(
         FlagOrParam? value,
         IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters,
         bool @default)
     {
-        return value is not null ? ResolveFlag(value, bindings) : @default;
+        return value is not null ? ResolveFlag(value, bindings, declaredParameters) : @default;
     }
 
     // ---------------------------------------------------- ResolvedTask
@@ -102,31 +107,34 @@ public static class ParameterResolver
     /// </summary>
     public static ResolvedTask ResolveTask(
         TaskDefinition task,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         return new ResolvedTask(
             Code: task.Code,
             Name: task.Name,
             Metrics: task.Metrics,
             Flights: task.Flights,
-            Timing: ResolveTiming(task.Timing, bindings),
-            Group: task.Group is not null ? ResolveGroup(task.Group, bindings) : null,
+            Timing: ResolveTiming(task.Timing, bindings, declaredParameters),
+            Group: task.Group is not null ? ResolveGroup(task.Group, bindings, declaredParameters) : null,
             Normalise: task.Normalise,
             ValidWhen: task.ValidWhen,
             FlightValidWhen: task.FlightValidWhen,
             RawScore: task.RawScore,
             Reflight: task.Reflight,
-            Score: ResolveScoreTerms(task.Score, bindings),
-            ScoreNormalised: ResolveScoreTerms(task.ScoreNormalised, bindings)
+            Score: ResolveScoreTerms(task.Score, bindings, declaredParameters),
+            ScoreNormalised: ResolveScoreTerms(task.ScoreNormalised, bindings, declaredParameters)
         );
     }
 
     // --------------------------------------------------------- private
 
-    private static decimal ResolveBinding(string parameterName, IReadOnlyDictionary<string, MeasuredValue> bindings)
+    private static decimal ResolveBinding(
+        string parameterName,
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
-        if (!bindings.TryGetValue(parameterName, out var value))
-            throw new UnresolvedParameterException(parameterName);
+        var value = ResolveBindingOrDefault(parameterName, bindings, declaredParameters);
 
         if (value.Kind != MeasuredKind.Number)
             throw new UnresolvedParameterException(parameterName,
@@ -139,10 +147,12 @@ public static class ParameterResolver
         return value.Number.Value;
     }
 
-    private static bool ResolveFlagBinding(string parameterName, IReadOnlyDictionary<string, MeasuredValue> bindings)
+    private static bool ResolveFlagBinding(
+        string parameterName,
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
-        if (!bindings.TryGetValue(parameterName, out var value))
-            throw new UnresolvedParameterException(parameterName);
+        var value = ResolveBindingOrDefault(parameterName, bindings, declaredParameters);
 
         if (value.Kind != MeasuredKind.Flag)
             throw new UnresolvedParameterException(parameterName,
@@ -155,30 +165,55 @@ public static class ParameterResolver
         return value.Flag.Value;
     }
 
+    /// <summary>
+    /// Three-step resolution order: a binding (last-write-wins, already
+    /// flattened by the caller) wins; failing that, the declared Parameter's
+    /// DefaultValue; failing that, throw.
+    /// </summary>
+    private static MeasuredValue ResolveBindingOrDefault(
+        string parameterName,
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
+    {
+        if (bindings.TryGetValue(parameterName, out var bound))
+            return bound;
+
+        var declared = declaredParameters.IsDefault
+            ? null
+            : declaredParameters.FirstOrDefault(p => p.Name == parameterName);
+
+        if (declared?.DefaultValue is { } defaultValue)
+            return defaultValue;
+
+        throw new UnresolvedParameterException(parameterName);
+    }
+
     private static ResolvedTiming ResolveTiming(
         TaskTiming timing,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         return new ResolvedTiming(
             Kind: timing.Kind,
             WorkingTime: timing.WorkingTime is not null
-                ? Resolve(timing.WorkingTime, bindings)
+                ? Resolve(timing.WorkingTime, bindings, declaredParameters)
                 : null,
             PreparationTime: timing.PreparationTime is not null
-                ? Resolve(timing.PreparationTime, bindings)
+                ? Resolve(timing.PreparationTime, bindings, declaredParameters)
                 : null,
             MaxLaunches: timing.MaxLaunches is not null
-                ? (int)Resolve(timing.MaxLaunches, bindings)
+                ? (int)Resolve(timing.MaxLaunches, bindings, declaredParameters)
                 : null
         );
     }
 
     private static ResolvedGroupConstraint ResolveGroup(
         GroupConstraint group,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         return new ResolvedGroupConstraint(
-            MinPerGroup: Resolve(group.MinPerGroup, bindings),
+            MinPerGroup: Resolve(group.MinPerGroup, bindings, declaredParameters),
             MinValidResults: group.MinValidResults
         );
     }
@@ -190,37 +225,39 @@ public static class ParameterResolver
     /// </summary>
     private static ImmutableArray<ScoreTerm> ResolveScoreTerms(
         ImmutableArray<ScoreTerm> terms,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         if (terms.IsDefaultOrEmpty)
             return [];
 
         var builder = ImmutableArray.CreateBuilder<ScoreTerm>(terms.Length);
         foreach (var term in terms)
-            builder.Add(ResolveScoreTerm(term, bindings));
+            builder.Add(ResolveScoreTerm(term, bindings, declaredParameters));
         return builder.MoveToImmutable();
     }
 
     private static ScoreTerm ResolveScoreTerm(
         ScoreTerm term,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         return term switch
         {
             RateTerm t => t with
             {
-                Cap = ResolveNumberOrParamNullable(t.Cap, bindings)
+                Cap = ResolveNumberOrParamNullable(t.Cap, bindings, declaredParameters)
             },
 
             LookupTerm t => t,  // no NumberOrParam slots
 
             PiecewiseTerm t => t with
             {
-                Origin = ResolveNumberOrParamNullable(t.Origin, bindings),
+                Origin = ResolveNumberOrParamNullable(t.Origin, bindings, declaredParameters),
                 Bands = t.Bands.Select(b => b with
                 {
-                    From = ResolveNumberOrParamNullable(b.From, bindings),
-                    To = ResolveNumberOrParamNullable(b.To, bindings)
+                    From = ResolveNumberOrParamNullable(b.From, bindings, declaredParameters),
+                    To = ResolveNumberOrParamNullable(b.To, bindings, declaredParameters)
                 }).ToImmutableArray()
             },
 
@@ -228,8 +265,8 @@ public static class ParameterResolver
 
             ConditionalTerm t => t with
             {
-                Then = ResolveScoreTerm(t.Then, bindings),
-                Else = t.Else is not null ? ResolveScoreTerm(t.Else, bindings) : null
+                Then = ResolveScoreTerm(t.Then, bindings, declaredParameters),
+                Else = t.Else is not null ? ResolveScoreTerm(t.Else, bindings, declaredParameters) : null
             },
 
             _ => throw new ArgumentException($"Unknown ScoreTerm subtype: {term.GetType().Name}")
@@ -241,7 +278,8 @@ public static class ParameterResolver
     /// </summary>
     private static NumberOrParam? ResolveNumberOrParamNullable(
         NumberOrParam? value,
-        IReadOnlyDictionary<string, MeasuredValue> bindings)
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        ImmutableArray<Parameter> declaredParameters)
     {
         if (value is null)
             return null;
@@ -250,7 +288,7 @@ public static class ParameterResolver
             return value;
 
         if (value is NumberOrParam.Ref r)
-            return (NumberOrParam)Resolve(r, bindings);  // implicit conversion decimal → Literal
+            return (NumberOrParam)Resolve(r, bindings, declaredParameters);  // implicit conversion decimal → Literal
 
         return value;
     }

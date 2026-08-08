@@ -93,7 +93,7 @@ public class ScoringService
         ImmutableArray<RecordedPenalty> competitionPenalties)
     {
         // 1. Resolve task parameters.
-        var resolvedTask = ParameterResolver.ResolveTask(task, parameterBindings);
+        var resolvedTask = ParameterResolver.ResolveTask(task, parameterBindings, classDef.Parameters);
 
         // 2. For each Entry: interpret flights, select, apply raw penalties.
         var taskResults = ImmutableDictionary.CreateBuilder<string, TaskResult>();

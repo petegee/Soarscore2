@@ -389,7 +389,7 @@ public class FlightInterpreterTests
     {
         var f3b = SeedF3B.Definition;
         var taskA = f3b.Phases[0].Tasks.Single(t => t.Code == "A");
-        return ParameterResolver.ResolveTask(taskA, new Dictionary<string, MeasuredValue>());
+        return ParameterResolver.ResolveTask(taskA, new Dictionary<string, MeasuredValue>(), []);
     }
 
     private static ResolvedTask ResolveF3KTaskA()
@@ -399,7 +399,7 @@ public class FlightInterpreterTests
         return ParameterResolver.ResolveTask(taskA, new Dictionary<string, MeasuredValue>
         {
             ["workingTime.A"] = MeasuredValue.Of(600m),
-        });
+        }, []);
     }
 
     private static ResolvedTask ResolveF3KTaskE()
@@ -409,7 +409,7 @@ public class FlightInterpreterTests
         return ParameterResolver.ResolveTask(taskE, new Dictionary<string, MeasuredValue>
         {
             ["workingTime.E"] = MeasuredValue.Of(600m),
-        });
+        }, []);
     }
 
     private static ResolvedTask ResolveF5KTaskA()
@@ -420,7 +420,7 @@ public class FlightInterpreterTests
         {
             ["nlh"] = MeasuredValue.Of(60m),
             ["minPerGroup"] = MeasuredValue.Of(5m),
-        });
+        }, []);
     }
 
     private static ResolvedTask ResolveF5KTaskE()
@@ -431,6 +431,6 @@ public class FlightInterpreterTests
         {
             ["nlh"] = MeasuredValue.Of(60m),
             ["minPerGroup"] = MeasuredValue.Of(5m),
-        });
+        }, []);
     }
 }

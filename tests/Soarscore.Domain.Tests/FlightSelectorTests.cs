@@ -149,7 +149,7 @@ public class FlightSelectorTests
         return ParameterResolver.ResolveTask(taskA, new Dictionary<string, MeasuredValue>
         {
             ["workingTime.A"] = MeasuredValue.Of(600m),
-        });
+        }, []);
     }
 
     private static ResolvedTask ResolveF3KTaskE()
@@ -159,14 +159,14 @@ public class FlightSelectorTests
         return ParameterResolver.ResolveTask(taskE, new Dictionary<string, MeasuredValue>
         {
             ["workingTime.E"] = MeasuredValue.Of(600m),
-        });
+        }, []);
     }
 
     private static ResolvedTask ResolveF3BTaskC()
     {
         var f3b = SeedF3B.Definition;
         var taskC = f3b.Phases[0].Tasks.Single(t => t.Code == "C");
-        return ParameterResolver.ResolveTask(taskC, new Dictionary<string, MeasuredValue>());
+        return ParameterResolver.ResolveTask(taskC, new Dictionary<string, MeasuredValue>(), []);
     }
 
     private static ResolvedTask ResolveF5KTaskA()
@@ -177,7 +177,7 @@ public class FlightSelectorTests
         {
             ["nlh"] = MeasuredValue.Of(60m),
             ["minPerGroup"] = MeasuredValue.Of(5m),
-        });
+        }, []);
     }
 
     private static ResolvedTask MakeLastNTask(int count)

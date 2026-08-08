@@ -149,6 +149,41 @@ public class CompetitionEventJsonTests
         reread.Should().BeOfType<PhaseDrawn>();
     }
 
+    private static ParameterBinding SampleParameterBinding(MeasuredValue value, DateTimeOffset? at = null) =>
+        new()
+        {
+            ParameterName = "minPerGroup",
+            BoundValue = value,
+            By = "CD",
+            At = at ?? DateTimeOffset.UtcNow,
+        };
+
+    [Fact]
+    public void ParameterBound_event_round_trips_through_SoarscoreEventJson_byte_for_byte_for_Number()
+    {
+        CompetitionEvent bound = new ParameterBound(SampleParameterBinding(MeasuredValue.Of(4m)));
+
+        var json = JsonSerializer.Serialize(bound, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<ParameterBound>();
+    }
+
+    [Fact]
+    public void ParameterBound_event_round_trips_through_SoarscoreEventJson_byte_for_byte_for_Flag()
+    {
+        CompetitionEvent bound = new ParameterBound(SampleParameterBinding(MeasuredValue.Of(true)));
+
+        var json = JsonSerializer.Serialize(bound, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<ParameterBound>();
+    }
+
     [Fact]
     public void Finalised_event_round_trips_with_decimal_aggregate_as_a_json_string()
     {
