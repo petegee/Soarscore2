@@ -72,6 +72,23 @@ and no existing real data that needs to be preserved, or migrated.
   volumes. (Named for the FAI; the corpus is now broader than the name.)
 
 
+## Testing approach
+
+- Unit and property-based (CsCheck) tests per layer remain the default —
+  see Repository map.
+- As features reach true end-to-end, user-centric workflows, cover them with
+  **BDD/Gherkin-style acceptance tests** (Given/When/Then) exercising the
+  workflow end-to-end. This is a routine part of the testing approach once a
+  feature has a real user-facing workflow to cover, not an optional extra.
+- During planning, identify where **property-based testing** (CsCheck) will
+  add value and be appropriate — a genuine invariant, algorithm, or class of
+  input where example-based tests would leave gaps (e.g. draw fairness, score
+  calculation, drop-worst rules, normalisation) — and **articulate the
+  invariant explicitly** as part of the plan. A named invariant is what makes
+  the property test meaningful; identifying it during planning, not
+  implementation, is what ensures it stays held true rather than getting
+  discovered after the fact.
+
 ## Domain in one screen
 Domain diagram is here: docs/soaring-domain-class-diagram.md - as with the glossary
 this cannot be changed without approval.
