@@ -6,3 +6,7 @@ tools/Soarscore.SeedData/deep.sh
 
 # Generated seed JSON — run `dotnet run --project tools/Soarscore.SeedData` to regenerate
 tools/Soarscore.SeedData/json/
+
+# Reqnroll's MSBuild codegen target regenerates these from *.feature on every
+# build (WI-13, capture-a-score-steel-thread-plan.md) — derived, not authored.
+*.feature.cs

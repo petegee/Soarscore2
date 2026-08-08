@@ -23,3 +23,19 @@ See CLAUDE.md house-keeping rule 5.
   `Competition.cs` while other work may have been in-flight against it.
   Repointing it would remove the last duplicate copy of this traversal, per
   the plan's own note that "there is no third copy... worth writing".
+- [ ] WI-13's scenario 3 (`tests/Soarscore.Acceptance.Tests/Features/CapturingAScore.feature`,
+  "A launch before the working time is recorded, not refused") publishes a
+  hand-authored, single-task F3K-shaped `ClassDefinition`
+  (`Support/AcceptanceF3KShape.cs`) instead of the real corpus F3K
+  (`Corpus.All`, `10-f3k`, `SeedF3K.Definition`). The real F3K's own phases
+  are `CompositionKind.ChooseFromCatalogue` with more than one task, which
+  `Competition.DrawPhase` explicitly rejects
+  (`drawPhase.unsupportedRoundComposition`) — catalogue-choice rounds are
+  `capture-a-score-steel-thread-plan.md`'s own documented, out-of-scope gap
+  ("Still gated, and not by this thread: Catalogue-choice rounds... still the
+  only thing between F3K/F5K and a draw"), so the real corpus definition
+  cannot reach a drawn phase at all today. The stand-in reuses F3K's real
+  task-D numbers (10-minute fixed working time, 2 launches, flightTime
+  truncated to 0.1 s per F3K.7) restructured as the sole task on a
+  `FixedSequence` phase. Once catalogue-choice draws land, retarget this
+  scenario at the real corpus F3K and delete `AcceptanceF3KShape.cs`.
