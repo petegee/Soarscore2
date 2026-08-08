@@ -1,37 +1,41 @@
 # Gap analysis — what the codebase does not yet do
 
-**Status:** Snapshot · **Date:** 2026-08-08 · **Commit:** `d273ed1` ("draw"), branch `master`
+**Status:** Re-verified · **Date:** 2026-08-09 · **Commit:** `900df6d`, branch `master`
 
 > **This is a point-in-time audit, not a live document.** Every claim below was
-> verified by reading the tree at `d273ed1`. Line numbers drift on the next commit
-> that touches a file. **Re-verify before acting on any of it** — treat a `file:line`
-> here as a starting point for a grep, not as an address. Nothing in this file is a
-> decision; the sequencing section is a recommendation the user has not chosen.
+> re-verified by reading the tree at `900df6d`, superseding the original `d273ed1`
+> snapshot. Line numbers drift on the next commit that touches a file. **Re-verify
+> before acting on any of it** — treat a `file:line` here as a starting point for a
+> grep, not as an address.
 >
-> Test suite at that commit: green — 306 tests
-> (Domain 177, Application 125, Architecture 4; Infrastructure storage tests
-> filtered out with `dotnet test --filter "Category!=Storage"`).
-
-> **Update — 2026-08-08, later the same day.** `bind-parameter-steel-thread-plan.md`
-> (WI-1 through WI-8) has been implemented and verified — see the new "Update" section
-> below, right after Context, for what changed, what is still uncommitted, and two
-> issues the work surfaced that this snapshot did not anticipate. The gap table and
-> the per-gap sections below it are left as originally written (they are the
-> `d273ed1` snapshot); do not treat gap 4's row or §4's prose as current without
-> reading the update.
+> Test suite: green — 440 tests (Domain 236, Application 167, Architecture 7,
+> Acceptance 3, Infrastructure/Storage 27; the storage tests are filtered out of a fast
+> local loop with `dotnet test --filter "Category!=Storage"`). That is `900df6d`'s 438
+> plus the two `ClassAgnosticismTests` this re-audit added — see §6.
+>
+> The two **Update** sections below are kept as the record of how the tree got here.
+> The gap table and the per-gap sections have been rewritten against `900df6d` and
+> no longer need reading through those updates to be trusted.
 
 ## Context
 
-Five plans live in `docs/plans/`: `command-side`, `create-competition`,
-`class-definition-adoption`, `register-competitor`, `phase-drawn`. All five are
-implemented in code. Their *What this unlocks* sections were audited item by item, and
-this document is what those sections promised but the tree does not yet contain.
+Seven plans live in `docs/plans/`: `command-side`, `create-competition`,
+`class-definition-adoption`, `register-competitor`, `phase-drawn`, `bind-parameter`,
+`capture-a-score`. All seven are implemented in code. Their *What this unlocks*
+sections were audited item by item, and this document is what those sections promised
+but the tree does not yet contain. An eighth, `scoring-steel-thread-plan.md`, is
+proposed and not yet started — it covers gap 5 and §6.
 
 One documentation artefact worth noting because it misleads a reader: only
-`command-side-steel-thread-plan.md` carries `**Status:** Complete`. The other four still
-say `**Status:** Proposed` despite having landed. **`bind-parameter-steel-thread-plan.md`
-now joins that list** — it carries `**Status:** Proposed` in its own header despite the
-work below being implemented and test-verified.
+`command-side-steel-thread-plan.md` carries `**Status:** Complete`. The other six say
+`**Status:** Proposed` despite having landed and being test-verified.
+
+Two plan documents are **cited by shipped code but absent from HEAD**:
+`docs/plans/scoring-service-plan.md` and `docs/plans/scoring-service-issues.md`, added
+in `d1ea17d` and removed in `38cb008`. All eleven files under
+`src/Soarscore.Domain/Scoring/` header-cite the former, and the latter holds the eight
+resolved design questions the shipped pipeline code implements. Both are recoverable
+(`git show d1ea17d:docs/plans/scoring-service-plan.md`).
 
 ## Update — 2026-08-08: `bind-parameter-steel-thread-plan.md` implemented
 
@@ -44,10 +48,7 @@ non-Storage tests pass (Domain 199, Application 136, Architecture 4) plus 22
 Storage-tagged tests against a real Postgres — up from the 306/22 baseline this
 snapshot recorded.
 
-**Not yet committed.** Every change above is uncommitted in the working tree (`git
-status` shows it all as modified/untracked against `master`). Gap 4 and gap 3 below
-should not be treated as closed in the repository's actual history until a commit
-lands.
+~~**Not yet committed.**~~ Committed since; the working tree is clean at `900df6d`.
 
 **Two things this work surfaced that were not anticipated when gap 4 was written:**
 
@@ -150,142 +151,170 @@ unlocked next, since Entry now produces real measurements for it to consume.
 
 ## Gap inventory
 
-| # | Gap | Nature | Consequence |
-|---|---|---|---|
-| 1 | Entry aggregate has no write path | Largest gap; named by all five plan audits | **No way to capture a score.** |
-| 2 | `entry_index` read model does not exist | Permitted by LADR-0001 §3, never built | No leaderboard query surface |
-| 3 | Seven of eleven `CompetitionEvent` types are unreachable | Folds exist; no decide functions | Runtime trap, see below |
-| 4 | `BindParameter` / `ParameterBound` has no command | Live functional hole | F5K, F5L, NZ Class M cannot be drawn |
-| 5 | The scoring engine is orphaned | ~2,100 lines with no caller and a deleted plan doc | Untestable end-to-end, unshipped |
-| 6 | The core architectural law has no guarding test | Convention only | Regression is invisible |
-| 7 | Assorted smaller items | See §7 | — |
+| # | Gap | Nature | Consequence | Status at `900df6d` |
+|---|---|---|---|---|
+| 1 | Entry aggregate has no write path | Largest gap; named by all five plan audits | **No way to capture a score.** | **Closed** — `capture-a-score` |
+| 2 | `entry_index` read model does not exist | Permitted by LADR-0001 §3, never built | No leaderboard query surface | **Closed** — `capture-a-score` |
+| 3 | Nine of seventeen domain event types are unreachable | Folds exist; no decide functions | Runtime trap, see below | Open (was 7 of 11; recounted) |
+| 4 | `BindParameter` / `ParameterBound` has no command | Live functional hole | F5K, F5L, NZ Class M cannot be drawn | **Closed** — `bind-parameter` |
+| 5 | The scoring engine is orphaned | 2,153 lines, nine files with no caller, and a deleted plan doc | **Nothing turns captured scores into results.** | Open — planned |
+| 6 | The core architectural law has no guarding test | Convention only | Regression is invisible | **Closed** — `ClassAgnosticismTests` |
+| 7 | Assorted smaller items | See §7 | — | Six of seven open |
+
+Gap 5 is now the only thing between this system and its purpose. Gaps 1, 2 and 4
+closed in sequence, and each closure moved the blocker one step further down the
+capture-to-result chain; scoring is the last link.
 
 ---
 
-## 1 — Entry aggregate write path
+## 1 — Entry aggregate write path · **closed**
 
-`src/Soarscore.Domain/Entries/Entry.cs` (251 lines) is **folds only**: `Create`
-(`:158`), the `Apply` overloads (`:171` onward) and the static dispatcher (`:236`). It
-contains **zero `Result<>` decide functions**.
+Closed by `capture-a-score-steel-thread-plan.md`, committed. `Entry` now carries
+`OpenFlight` and `CaptureMeasurement` decide functions and `Competition` carries
+`OpenEntry`; the three commands, their handlers, Marten registrations and Api endpoints
+all exist. A score can be captured end to end over real HTTP.
 
-The events exist and round-trip:
-`src/Soarscore.Domain/Entries/EntryEvents.cs:42-75` — `EntryOpened`, `FlightOpened`,
-`MeasurementCaptured`, `MeasurementAmended`, `EntryAnnulled`, `PenaltyRecorded`. The
-fold is well tested (`tests/Soarscore.Domain.Tests/EntryFoldTests.cs`,
-`EntryModelBasedFoldTests.cs`, `EntryTests.cs`, and
-`tests/Soarscore.Application.Tests/EntryEventJsonTests.cs`).
+Three of Entry's six events remain unreachable — see §3.
 
-What is absent above the Domain: **everything**. There is no
-`src/Soarscore.Application/Entries/` directory. Grepping
-`src/Soarscore.Application`, `src/Soarscore.Infrastructure` and `src/Soarscore.Api`
-for `Soarscore.Domain.Entries` or `EntryId` returns **zero hits** — no commands, no
-handlers, no endpoints, no `MapEventType` for any Entry event.
+## 2 — `entry_index` read model · **closed**
 
-Stated plainly: **there is currently no way to capture a score in this system.** The
-draw is the last thing wired end to end.
+Closed by the same thread. `EntrySummary`, `EntryProjection`, `IEntryQuery`,
+`MartenEntryQuery` and the `FindEntries` query all exist, and `MartenConfig` registers
+the projection alongside Person, ClassDefinition and Competition.
 
-Its blocking input has now arrived. `Group` carries a real allocation —
-`Competition.cs:198` (`CompetitorRefs`), populated by the draw at `Competition.cs:644`.
-The reason Entry was gated is gone.
+Worth carrying forward: the Marten adapter filters **client-side after loading**, not
+in SQL. Marten's LINQ provider duck-types any `...Id`-named type as a bare `uuid`
+scalar, but this repo's ids serialise as `{"value": "<guid>"}`, so server-side `Where`
+clauses on `CompetitionRef`/`GroupRef`/`CompetitorRef` either threw or failed with
+`invalid input syntax for type uuid`. A deliberate trade at this project's scale
+(≤ 20 pilots, ≤ 8 rounds/day), and one nothing short of a real store would have caught.
 
-## 2 — `entry_index` read model
+## 3 — Nine unreachable event types
 
-LADR-0001 §3 provides for it (`docs/ladr/ladr-0001-event-store.md:64` describes the
-document, `:72` describes the leaderboard query that resolves through it). Nothing
-exists: zero hits for `entry_index`, `EntrySummary` or `IEntryQuery` anywhere under
-`src/` or `tests/`. `MartenConfig.cs:69-81` registers exactly three Inline projections —
-Person, ClassDefinition, Competition.
+Recounted at `900df6d`. The original entry said "seven of eleven `CompetitionEvent`
+types" and counted only the Competition aggregate; Entry has the same condition on
+three of its six events.
 
-This gap is the twin of gap 1 and should be closed with it, not after it.
+**`CompetitionEvent` — six of eleven unreachable.** Folds exist and are tested; the
+decide functions on `Competition` are now `Decide`, `RegisterCompetitor`,
+`WithdrawCompetitor`, `DrawPhase`, `BindParameter` and `OpenEntry` (the last producing
+an `EntryEvent`, not a `CompetitionEvent`). Unreachable: `ReflightGroupAppended`,
+`TaskRoundCompleted`, `TaskRoundAnnulled`, `RulesAmended`, `Finalised`,
+`PenaltyRecorded`. `ParameterBound` left this list with the bind-parameter thread.
 
-## 3 — Seven unreachable `CompetitionEvent` types
-
-Folds exist and are tested (`Competition.cs:344-374`, dispatched at `:433-439`). The
-only decide functions on `Competition` are `Decide` (`:457`), `RegisterCompetitor`
-(`:498`), `WithdrawCompetitor` (`:521`) and `DrawPhase` (`:540`).
-
-Unreachable: `ReflightGroupAppended`, `TaskRoundCompleted`, `TaskRoundAnnulled`,
-`RulesAmended`, `ParameterBound`, `Finalised`, `PenaltyRecorded`.
+**`EntryEvent` — three of six unreachable.** `EntryOpened`, `FlightOpened` and
+`MeasurementCaptured` all have decide functions as of `capture-a-score`. Unreachable:
+`MeasurementAmended`, `EntryAnnulled`, `PenaltyRecorded`.
 
 **Runtime trap — read this before writing any command that appends one.**
-`src/Soarscore.Infrastructure/MartenConfig.cs:49-52` registers exactly **four**
-competition events (`competitionCreated`, `competitorRegistered`,
-`competitorWithdrawn`, `phaseDrawn`). The comment at `MartenConfig.cs:41-46`
-documents the other seven as deliberately unregistered. **Appending any of the seven
-would fail at runtime.** Any thread touching these must add its own `MapEventType`
-line, per LADR-0001 §4.8.
+`src/Soarscore.Infrastructure/MartenConfig.cs` registers exactly the reachable set:
+five competition events (`:52-56`) and three entry events (`:67-69`). The comments at
+`:40-51` and `:58-66` document the rest as deliberately unregistered. **Appending any
+of the nine would fail at runtime.** Any thread touching these must add its own
+`MapEventType` line, per LADR-0001 §4.8.
 
-## 4 — `BindParameter` / `ParameterBound`
+Note the shape of the remaining nine: they are not a backlog so much as three coherent
+threads waiting to be taken — task-round lifecycle (`TaskRoundCompleted`,
+`TaskRoundAnnulled`, `Finalised`), reflights (`ReflightGroupAppended`), and the second
+Entry thread (`MeasurementAmended`, `EntryAnnulled`, both `PenaltyRecorded`s).
 
-Not a future feature — a hole in shipped behaviour. No command exists, so no parameter
-can ever be bound, and the draw rejects parameterised group sizes outright:
-`Competition.cs:613` returns `drawPhase.parameterUnbound`.
+## 4 — `BindParameter` / `ParameterBound` · **closed**
 
-**Consequence: F5K, F5L and NZ Class M (ALES 200) cannot be drawn at all today**,
-despite all three sitting in the seed corpus under `tools/Soarscore.SeedData/`. They are
-exactly the three definitions whose `minPerGroup` resolves to a parameter with no
-declared default; the other eight use a literal.
+Closed by `bind-parameter-steel-thread-plan.md`, committed. `BindParameter` is wired
+end to end — decide function, command, handler, Marten registration, `/bind-parameter`
+endpoint, property tests, store-backed tests.
 
-> **Planned.** `bind-parameter-steel-thread-plan.md` (2026-08-08) covers this gap. It also
-> resolves two model findings turned up while designing it — see the deferred list below.
+**F5L and NZ Class M ALES 200 are drawable as a result.** F5K is not, and not for this
+reason: its definition uses `ChooseFromCatalogue` composition, which
+`Competition.cs:639-646` rejects with `drawPhase.unsupportedRoundComposition` *before*
+parameter resolution is ever reached. See "Catalogue-choice rounds" under the deferred
+list. Eight of the eleven corpus classes can be drawn today; F3K and F5K are blocked by
+catalogue choice, F3B by multi-task rounds — all three at that same single check.
 
 ## 5 — The orphaned scoring engine
 
-Ten files, 2,134 lines, in `src/Soarscore.Domain/Scoring/`:
+Eleven files, 2,153 lines, in `src/Soarscore.Domain/Scoring/`:
 
-| File | Lines |
-|---|---|
-| `FlightSelector.cs` | 386 |
-| `ParameterResolver.cs` | 257 |
-| `PhaseAggregator.cs` | 250 |
-| `ScoringService.cs` | 249 |
-| `PenaltyEngine.cs` | 231 |
-| `FlightInterpreter.cs` | 225 |
-| `ScoringResultTypes.cs` | 179 |
-| `NormalisationEngine.cs` | 174 |
-| `PredicateEvaluator.cs` | 101 |
-| `RankingEngine.cs` | 82 |
+| File | Lines | Production callers outside `Scoring/` |
+|---|---|---|
+| `FlightSelector.cs` | 357 | none |
+| `ParameterResolver.cs` | 295 | **three** — `Competition.DrawPhase`, `Competition.OpenEntry`, `TaskResolver` |
+| `PhaseAggregator.cs` | 250 | none |
+| `ScoringService.cs` | 249 | none |
+| `PenaltyEngine.cs` | 231 | none |
+| `FlightInterpreter.cs` | 225 | none |
+| `ScoringResultTypes.cs` | 179 | none |
+| `NormalisationEngine.cs` | 144 | none |
+| `PredicateEvaluator.cs` | 101 | none |
+| `RankingEngine.cs` | 82 | none |
+| `RoundingSupport.cs` | 40 | **one** — `Entry.CaptureMeasurement` |
+
+`ParameterResolver` and `RoundingSupport` were pulled into service by the
+bind-parameter and capture-a-score threads respectively; nine files still have no
+production caller at all.
 
 Three problems, in order of how much they cost:
 
-**Its plan document was deleted.** All ten files header-cite
-`docs/plans/scoring-service-plan.md`. That file was added in `d1ea17d` and removed in
-`38cb008` ("renamed folder to reflect true agg root"); it is absent from HEAD. It is
-recoverable:
+**Its plan document was deleted, and so was its issues document.** All eleven files
+header-cite `docs/plans/scoring-service-plan.md`. That file was added in `d1ea17d` and
+removed in `38cb008` ("renamed folder to reflect true agg root"); so was
+`docs/plans/scoring-service-issues.md`, which recorded eight design questions and their
+resolutions — the semantics the shipped pipeline implements (issue #4 fixes where
+amendment resolution lives, #5 group annulment, #8 the `ByTask` drop algorithm). Both
+are recoverable:
 
 ```
 git show d1ea17d:docs/plans/scoring-service-plan.md
+git show d1ea17d:docs/plans/scoring-service-issues.md
 ```
 
 **It has no caller.** Zero references to `ScoringService` from
-`src/Soarscore.Application` or `src/Soarscore.Api`.
+`src/Soarscore.Application` or `src/Soarscore.Api`. It is also the only component
+with no test file of any kind. `ParameterResolver` gained `ParameterResolverTests` with
+the bind-parameter thread; `PredicateEvaluator` has no file of its own but is covered
+inside `FlightInterpreterTests.cs:321-382`.
 
-**Three components have no tests.** `ScoringService`, `ParameterResolver` and
-`PredicateEvaluator` have no test file. The other seven components do
-(`FlightInterpreterTests`, `FlightSelectorTests` + `FlightSelectorPropertyTests`,
-`NormalisationEngineTests` + property tests, `PenaltyEngineTests`,
-`PhaseAggregatorTests` + property tests, `RankingEngineTests`).
+**The nuance that makes most of it cheaper than it looks.** The `object` / `object?`
+parameters annotated *TBD* — `ScoringService.cs:26,36,91,136,205,231`,
+`FlightInterpreter.cs:30`, `FlightSelector.cs:34` — are **unused in the method
+bodies**. The engine already operates on pre-digested inputs (`resolvedMetrics`,
+`interpretedFlights`). Six of the seven public methods are complete; rescuing them
+needs an adapter that turns an Entry stream into those pre-digested inputs, not a
+redesign.
 
-**The nuance that makes this cheaper than it looks.** The `object` / `object?`
-parameters annotated *TBD* — `ScoringService.cs:26,36,91,205` (and the untagged
-`object entry` at `:231`), `FlightInterpreter.cs:30`, `FlightSelector.cs:34` — are
-**completely unused in the method bodies**. The engine already operates on
-pre-digested inputs (`resolvedMetrics`, `interpretedFlights`). So it is **not
-mis-typed against a stale aggregate design**; it has vestigial parameters and no
-caller. Rescuing it needs an adapter that turns an Entry stream into those
-pre-digested inputs — not a redesign.
+**The exception, which the original snapshot missed.** `ScoreCompetition`
+(`ScoringService.cs:133-194`) is a **shell**, not a mis-typed method. It never
+populates `allTaskRoundScores` (`:146`), never calls `PhaseAggregator`, and sums an
+always-empty list at `:166`, so every competitor scores zero and is then ranked. Its
+own comment says so (`:148-149`). That method has to be written.
 
-## 6 — The core architectural law is unguarded
+**Two more things an adapter must reconcile**, neither visible from the file list:
+nothing in the tree resolves a `Measurement`'s `Amendments` to an effective value —
+the stub meant to do it returns `Empty` (`:204-220`) — and `RecordedPenalty(
+InfractionType, OccurrenceCount)` does not match the domain's `Penalty(InfractionType,
+Scope)`, which carries no count.
+
+> **Planned.** `scoring-steel-thread-plan.md` (2026-08-09) covers this gap, in two
+> slices: score one group, then the ranked leaderboard.
+
+## 6 — The core architectural law is unguarded · **closed**
 
 CLAUDE.md states that "the core system must not know about any specific competition
-class" and that this is "not a style preference". `tests/Soarscore.Architecture.Tests/`
-contains four tests total (`LayerRuleTests.cs`, `RouteShapeTests.cs`) and **none of
-them asserts the absence of class-name branching**. The law holds by convention only.
+class" and that this is "not a style preference". The law was held by convention only:
+`tests/Soarscore.Architecture.Tests/` asserted layer dependencies, route shape and DI
+resolvability, and nothing asserted the absence of class-name branching.
 
-The draw path was checked and does honour it: no `F3B`/`F3J`/`F3K`/`F5J`/`F5K`/`F5L`
-literals in the draw logic outside a rule-reference comment at `PhaseDraw.cs:18` and
-one explanatory comment at `ClassDefinitionIngestion.cs:27`. The point is that nothing
-would catch it if that changed.
+Closed by `tests/Soarscore.Architecture.Tests/ClassAgnosticismTests.cs` (2026-08-09).
+It scans every `.cs` file under `src/`, strips comments, and fails on any occurrence of
+`F3B|F3F|F3J|F3K|F5J|F5K|F5L|NZMAA|ALES|Radian`. A source scan rather than an
+ArchUnitNET rule because neither ArchUnitNET nor reflection can see a string literal or
+a switch arm naming a class. Comment stripping is what makes it viable: all twenty
+class-name occurrences in `src/` today are rule references or explanatory comments,
+which are the good case. A second test asserts the scan reaches real files, so it
+cannot pass vacuously.
+
+**The law held in fact when the guard was added** — zero non-comment hits across `src/`,
+and no NZ-class leakage either.
 
 ## 7 — Smaller items
 
@@ -306,10 +335,16 @@ would catch it if that changed.
 - **`command-side-steel-thread-plan.md` WI-11 housekeeping was never done**: no
   `nuget-license` CI step in `.github/workflows/build-and-test.yml`, no
   `PublicAPI.Shipped.txt` baseline anywhere in the tree.
-- **No automated end-to-end test.** Nothing spins up the API against PostgreSQL — no
-  `WebApplicationFactory` or `HttpClient` usage in `tests/`. `phase-drawn` WI-8 and
-  `create-competition` WI-7 were manual procedures with no recorded evidence of
-  execution.
+- ~~**No automated end-to-end test.**~~ **Closed** by `capture-a-score`.
+  `tests/Soarscore.Acceptance.Tests` hosts the real Api via
+  `WebApplicationFactory<Program>` against a Testcontainers PostgreSQL and drives it
+  over `HttpClient` — three Reqnroll scenarios in `Features/CapturingAScore.feature`.
+- ~~**No test asserts that every mapped route has a DI registration.**~~ **Closed** by
+  `tests/Soarscore.Architecture.Tests/HandlerRegistrationTests.cs`, which resolves
+  every mapped command/query handler from the real built `IServiceProvider`. (Raised in
+  the 2026-08-08 update below, after a route shipped without its handler registration
+  and compiled cleanly.) Its sanity-floor comment at `:71` is stale — it says "ten
+  commands and four queries" against thirteen and seven.
 - **The `fai-rules` skill cannot check a live definition.**
   `.claude/skills/fai-rules/references/compliance-check.md` has zero mentions of the
   API; it routes only to `docs/rules/`. Compliance is checkable against authored text,
@@ -355,27 +390,27 @@ are auditable and the effective value is reconstructible), and seeding would sil
 defeat `RulesAmended`'s retroactive intent. Scheduled as WI-2 of
 `bind-parameter-steel-thread-plan.md`.
 
-## Recommended sequencing — a proposal, not a decision
+## Sequencing
 
-1. **`BindParameter` slice first** (~1 day). It is small, it is the same shape already
-   executed four times, and it fixes three seed-corpus classes that are broken *now*
-   (gap 4). Cheapest real value in the repo. **Done, 2026-08-08 — see the Update
-   section above.** Fixes F5L and NZ Class M ALES 200 outright; F5K still needs the
-   catalogue-choice thread (item 3's sibling, listed under "Deliberately deferred") on
-   top before its draw actually succeeds.
-2. **Entry write path plus `entry_index`** (gaps 1 and 2). This is the critical path:
-   the only option that advances the system's actual purpose, and the thing that makes
-   the scoring engine testable at all. **Write a plan document before coding** — every
-   thread that landed cleanly had one, and Entry's decide surface is the least
-   specified thing in the repo.
-3. **De-orphan the scoring engine** (gap 5): drop the dead parameters, restore the plan
-   doc from `d1ea17d`, backfill the three missing test files, then build the
-   Entry-to-scoring adapter and a `ScoreTaskRound` query.
+1. ~~**`BindParameter` slice**~~ — **done 2026-08-08.** Fixed F5L and NZ Class M ALES
+   200 outright; F5K still needs the catalogue-choice thread before its draw succeeds.
+2. ~~**Entry write path plus `entry_index`**~~ (gaps 1 and 2) — **done 2026-08-09.**
+3. **De-orphan the scoring engine** (gap 5) — **chosen 2026-08-09, planned in
+   `scoring-steel-thread-plan.md`, not started.** The critical path: the only remaining
+   work that advances the system's actual purpose. Two slices — score one group, then
+   the ranked leaderboard.
 
-Two things this ordering deliberately rejects. "Close the remaining Competition events"
-(gap 3) as a goal in itself is motion without direction — close each one when a command
-needs it. And "de-orphan scoring" *first* cannot be validated, because without Entry
-there are no real measurements to feed it.
+What comes after is a genuine choice rather than a queue, and the three candidates are
+roughly equal in size: **catalogue-choice draws** (unblocks F3K and F5K, retires the
+acceptance test's hand-authored F3K stand-in), the **second Entry thread**
+(`MeasurementAmended`, `EntryAnnulled`, `PenaltyRecorded` — the inputs the scoring
+pipeline can read but nothing can produce), and **task-round lifecycle**
+(`TaskRoundCompleted`/`Annulled`, which would let the leaderboard distinguish "not
+flown" from "flown, no result" rather than inferring it from Entry presence).
+
+One thing this ordering has consistently rejected: "close the remaining unreachable
+events" (gap 3) as a goal in itself is motion without direction — close each one when a
+command needs it.
 
 ## Standing practice for whoever picks this up
 
