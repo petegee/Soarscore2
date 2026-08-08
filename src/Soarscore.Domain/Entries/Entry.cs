@@ -18,6 +18,7 @@
 using System.Collections.Immutable;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Domain.Entries;
 
@@ -31,9 +32,16 @@ public readonly record struct EntryId(Guid Value)
 /// <summary>
 /// The working-time window a competitor flies within. Not expanded in either
 /// diagram — abbreviated away the same as several of ClassDefinition's own
-/// value objects. Flight times captured within the owning Entry cannot exceed
-/// this window; that invariant is enforced at capture, not here
-/// (high-level-architecture.md, "Core-owned invariants").
+/// value objects. Flight times captured within the owning Entry are NOT
+/// checked against this window at capture. `F3K.7` is explicit that a launch
+/// before the working time begins is scored zero, not refused — and it makes
+/// the working time a scoring input, not a capture gate, in the other
+/// direction too: the flight runs "until a landing … or the working time
+/// expires". Encoding a reject-outside-window check in
+/// <see cref="Entry.OpenFlight"/> would put a scoring rule into the core
+/// system (CLAUDE.md's core architectural law); the class model already owns
+/// this as data, via `TaskDefinition.FlightValidWhen`
+/// (docs/plans/capture-a-score-steel-thread-plan.md, finding 3).
 /// </summary>
 public sealed record TimeWindow
 {
@@ -238,6 +246,110 @@ public sealed record Entry
 
     /// <summary>Appends a Flight/Entry-scoped Penalty.</summary>
     public Entry Apply(PenaltyRecorded @event) => this with { Penalties = Penalties.Add(@event.Penalty) };
+
+    // Instance decide function — WI-3 (docs/plans/capture-a-score-steel-thread-plan.md).
+    // maxLaunches arrives already resolved from the task's MaxLaunches, not
+    // read from a ClassDefinition here — the same reasoning finding 1 applies
+    // to the coordinate keeps Entry free of any dependency on the class
+    // definition's task shape; the handler does that resolution. Null means
+    // the task limits launches not at all (half the corpus).
+    //
+    // Nothing is checked about launchAt — see TimeWindow's doc comment above
+    // and finding 3: F3K.7 scores an early launch rather than refusing it, so
+    // gating OpenFlight on the working-time window would put a scoring rule
+    // into the core system. A mistyped launch time cannot be corrected in
+    // this slice; FlightOpened has no amendment event (deferred, not missed).
+    public Result<FlightOpened> OpenFlight(int sequence, DateTimeOffset launchAt, int? maxLaunches, DateTimeOffset at)
+    {
+        if (Annulment is not null)
+        {
+            return Result<FlightOpened>.Failure(
+                "entry.annulled", "This Entry has been annulled and cannot record further flights.");
+        }
+
+        if (sequence != Flights.Length + 1)
+        {
+            return Result<FlightOpened>.Failure(
+                "openFlight.sequenceOutOfOrder",
+                $"Flight sequence must be {Flights.Length + 1}; got {sequence}.");
+        }
+
+        if (maxLaunches is { } max && Flights.Length >= max)
+        {
+            return Result<FlightOpened>.Failure(
+                "openFlight.maxLaunchesExceeded", $"This task allows at most {max} launches.");
+        }
+
+        return Result<FlightOpened>.Success(new FlightOpened(sequence, launchAt, at));
+    }
+
+    // Instance decide function — WI-4 (docs/plans/capture-a-score-steel-thread-plan.md).
+    // metrics arrives already resolved from the task's declared
+    // MetricDefinitions, for the same reason maxLaunches does above: Entry
+    // never learns which class it is flying under.
+    public Result<MeasurementCaptured> CaptureMeasurement(
+        int flightSequence,
+        string metric,
+        MeasuredValue value,
+        DateTimeOffset capturedAt,
+        ImmutableArray<MetricDefinition> metrics)
+    {
+        if (Annulment is not null)
+        {
+            return Result<MeasurementCaptured>.Failure(
+                "entry.annulled", "This Entry has been annulled and cannot record further measurements.");
+        }
+
+        var flight = Flights.FirstOrDefault(f => f.Sequence == flightSequence);
+        if (flight is null)
+        {
+            return Result<MeasurementCaptured>.Failure(
+                "captureMeasurement.flightNotFound", $"No flight with sequence {flightSequence} has been opened.");
+        }
+
+        var metricDefinition = metrics.FirstOrDefault(m => m.Name == metric);
+        if (metricDefinition is null)
+        {
+            return Result<MeasurementCaptured>.Failure(
+                "captureMeasurement.metricNotDeclared", $"'{metric}' is not a metric declared by this task.");
+        }
+
+        if (value.Kind != metricDefinition.Kind)
+        {
+            return Result<MeasurementCaptured>.Failure(
+                "captureMeasurement.kindMismatch",
+                $"'{metric}' is a {metricDefinition.Kind} metric; the captured value is a {value.Kind}.");
+        }
+
+        // A second value for the same metric is a correction, MeasurementAmended's
+        // job — which does not exist yet (out of scope, see the plan's Scope
+        // section). This is what makes the aggregate's append-only promise
+        // enforceable rather than aspirational.
+        if (flight.Measurements.Any(m => m.Metric == metric))
+        {
+            return Result<MeasurementCaptured>.Failure(
+                "captureMeasurement.alreadyCaptured",
+                $"'{metric}' was already captured for flight {flightSequence}. " +
+                "Correcting a captured value is MeasurementAmended's job, not a second capture.");
+        }
+
+        // Round per the metric's declared precision (finding 4) — the stored
+        // value IS the raw observation, not a derivation from it. A Flag-kind
+        // metric has nothing to round and Precision is null there by
+        // construction.
+        var storedValue = metricDefinition.Precision is { } precision && value.Number is { } number
+            ? value with { Number = RoundingSupport.ApplyRounding(number, precision) }
+            : value;
+
+        var measurement = new Measurement
+        {
+            Metric = metric,
+            Value = storedValue,
+            CapturedAt = capturedAt,
+        };
+
+        return Result<MeasurementCaptured>.Success(new MeasurementCaptured(flightSequence, measurement));
+    }
 
     /// <summary>Finds the Flight matching <paramref name="sequence"/> and replaces it via <paramref name="update"/>.</summary>
     private static ImmutableArray<Flight> ReplaceFlight(
