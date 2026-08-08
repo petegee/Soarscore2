@@ -5,10 +5,12 @@ using Soarscore.Application;
 using Soarscore.Application.CompetitionClasses;
 using Soarscore.Application.People;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure.CompetitionClasses;
 using Soarscore.Infrastructure.Competitions;
+using Soarscore.Infrastructure.Entries;
 using Soarscore.Infrastructure.People;
 using Weasel.Core;
 
@@ -53,6 +55,19 @@ public static class MartenConfig
             opts.Events.MapEventType<PhaseDrawn>("phaseDrawn");
             opts.Events.MapEventType<ParameterBound>("parameterBound");
 
+            // capture-a-score-steel-thread-plan.md WI-9 registers three of the six
+            // EntryEvent subtypes: EntryOpened, FlightOpened, MeasurementCaptured —
+            // the narrow capture slice that thread scopes itself to. The other three
+            // (MeasurementAmended, EntryAnnulled, PenaltyRecorded) are still not
+            // registered here because nothing appends them yet — they are the
+            // corrections-and-rulings thread, deliberately out of scope for capture.
+            // Same discipline as the CompetitionEvent block above: the JSON $kind
+            // discriminators for all six already exist on EntryEvents.cs and compile
+            // fine either way; only the registry is per-command.
+            opts.Events.MapEventType<EntryOpened>("entryOpened");
+            opts.Events.MapEventType<FlightOpened>("flightOpened");
+            opts.Events.MapEventType<MeasurementCaptured>("measurementCaptured");
+
             // Casing and enum storage must be passed explicitly here even though
             // SoarscoreEventJson.Options already sets them: Marten's overload rebuilds
             // its own options from these two parameters and silently discards the
@@ -81,6 +96,14 @@ public static class MartenConfig
             // nothing about CompetitionSummary's fields is unique the way
             // PersonSummary.Email is.
             opts.Projections.Add(new CompetitionSummaryProjection(), ProjectionLifecycle.Inline);
+
+            // WI-9 (capture-a-score-steel-thread-plan.md): no unique index — two
+            // Entries can legitimately share a (task-round, competitor) pair once
+            // reflights exist (EntrySummary.cs), so nothing here is unique the way
+            // PersonSummary.Email is. Inline for read-your-own-writes on the
+            // openEntry.alreadyOpen check (WI-8), not for an invariant entry_index
+            // itself enforces.
+            opts.Projections.Add(new EntryIndexProjection(), ProjectionLifecycle.Inline);
         });
         return store;
     }
