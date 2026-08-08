@@ -90,6 +90,64 @@ six — `ParameterBound` is now reachable, leaving `ReflightGroupAppended`,
 `TaskRoundCompleted`, `TaskRoundAnnulled`, `RulesAmended`, `Finalised`,
 `PenaltyRecorded`. Rows 1, 2, 5 and 6 are unaffected by this thread.
 
+## Update — 2026-08-09: `capture-a-score-steel-thread-plan.md` implemented
+
+All thirteen work items landed and are committed on `master`. `Competition.OpenEntry`,
+`Entry.OpenFlight` and `Entry.CaptureMeasurement` (decide functions), the
+`OpenEntry`/`OpenFlight`/`CaptureMeasurement` commands and handlers, the `entry_index`
+read model (`EntryLoader`, `EntryProjection`, `IEntryQuery`, `FindEntries`), Marten
+wiring for the three events plus the `EntryIndexProjection`/`MartenEntryQuery`
+adapters, the four Api endpoints (`/open-entry`, `/open-flight`,
+`/capture-measurement`, `/entries`) with matching DI registrations, CsCheck property
+tests (five named invariants, two corpus-generic), store-backed Postgres tests, and a
+Reqnroll acceptance-test project driving real HTTP against the real Api over
+Testcontainers Postgres. Full solution: 438 tests passing (Architecture 5, Domain 236,
+Application 167, Infrastructure/Storage 27, Acceptance 3), 0 failures, clean build.
+
+**Gap 1 (Entry write path) and gap 2 (`entry_index`) are closed.** A score can now be
+captured end to end, at both the store layer (`EntryCaptureEventStoreTests.cs`) and
+over real HTTP (`Soarscore.Acceptance.Tests`).
+
+**The §7 "no automated end-to-end test" item is closed.** `tests/Soarscore.Acceptance.Tests`
+hosts the real `Soarscore.Api` via `WebApplicationFactory<Program>` against a
+Testcontainers PostgreSQL and drives it with an `HttpClient` — the first test in the
+repo to do either. Three Reqnroll scenarios cover: capturing a flight time for a drawn
+competitor, a working time the rulebook leaves open-ended (NZ Class M ALES 200,
+exercising nullable `TimeWindow.End`), and a launch before the working time being
+recorded rather than refused (the finding-3 regression, `F3K.7`).
+
+**One thing this work surfaced that was not anticipated when the plan was written:**
+the real corpus `SeedF3K` definition cannot reach a drawn phase at all — its phases are
+`ChooseFromCatalogue`, which `Competition.DrawPhase` rejects, the same
+already-deferred "catalogue-choice rounds" gap the bind-parameter thread's update above
+hit for F5K. The acceptance test's finding-3 scenario therefore publishes a
+hand-authored, single-task F3K-shaped class definition
+(`tests/Soarscore.Acceptance.Tests/Support/AcceptanceF3KShape.cs`) reusing F3K's real
+task-D numbers, rather than the real corpus F3K — recorded in `tech-debt.md` to
+retarget once catalogue-choice draws land.
+
+**Two real bugs were found and fixed by this thread's testing, not by inspection:**
+
+1. **`MartenEntryQuery`'s server-side filters were broken for every strong-typed-id
+   comparison.** Marten's LINQ provider duck-types any `...Id`-named type as a bare
+   `uuid` scalar, but this repo's ids serialize as `{"value": "<guid>"}` with no custom
+   converter — so `Where` clauses on `CompetitionRef`/`GroupRef`/`CompetitorRef` either
+   threw `InvalidCastException` or failed server-side with `invalid input syntax for
+   type uuid`. This would have broken `OpenEntryHandler`'s `openEntry.alreadyOpen`
+   check the first time it ran against real Postgres, silently — nothing catches it
+   short of a real store. Found by `EntryCaptureEventStoreTests.cs` (WI-12), fixed by
+   filtering client-side after loading, a deliberate trade at this project's scale (≤20
+   pilots, ≤8 rounds/day).
+2. **`IDispatcher` was registered `AddSingleton`**, capturing the root
+   `IServiceProvider` and resolving `Scoped` handlers from it — invisible under `dotnet
+   run` but a hard failure under `WebApplicationFactory`'s Development-environment
+   scope validation. Found and fixed while building the WI-13 acceptance-test host.
+
+**Consequence for the gap table below:** rows 1 and 2 are resolved. Row 7's
+end-to-end-test item is resolved; the remaining §7 items are unaffected. Rows 3, 4, 5,
+6 are unaffected by this thread — gap 5 (the orphaned scoring engine) is explicitly
+unlocked next, since Entry now produces real measurements for it to consume.
+
 ## Gap inventory
 
 | # | Gap | Nature | Consequence |
