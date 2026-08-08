@@ -127,12 +127,6 @@ belong there. This list is deliberately short: anything that varies between
 classes is class data by the law in `CLAUDE.md`, and an entry here must be
 defensible as universal, not merely as convenient.
 
-**Flight times within an Entry cannot exceed that Entry's working time.**
-Enforced at capture. `F3K.7` states a stricter form of this — the sum of scored
-flight times may not exceed the working time minus one second per scored flight —
-but that arithmetic is F3K-specific and is a knowingly accepted deviation, not an
-oversight; see §6 of `competition-class-notation.md`.
-
 **A field smaller than a task's `minPerGroup` flies as one group.**
 `F3B.1.8 b` writes the escape hatch out loud ("a minimum of eight competitors *or
 all competitors*") and F3K does not, but F3K's minimum of five is equally
