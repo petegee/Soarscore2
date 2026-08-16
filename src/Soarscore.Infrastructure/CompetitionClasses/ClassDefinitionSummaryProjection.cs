@@ -1,5 +1,5 @@
 // The Marten Inline projection shim for the `class_library` read model —
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-5,
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-5,
 // LADR-0001 §2/§4.3. Portable ballast: groups the raw events Marten hands it
 // back into per-stream order and replays them through Application's
 // ClassDefinitionProjection.Apply, which is the only part of this that would

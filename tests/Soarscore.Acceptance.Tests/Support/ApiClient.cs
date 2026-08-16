@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-13. A thin wrapper over
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-13. A thin wrapper over
 // HttpClient/System.Net.Http.Json so every step definition serialises and
 // deserialises with the SAME JsonSerializerOptions the real Api uses for
 // every request and response — Composition.cs's ConfigureHttpJsonOptions

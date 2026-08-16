@@ -1,4 +1,4 @@
-// docs/plans/command-side-steel-thread-plan.md WI-6. Resolves through
+// kanban/completed/command-side-steel-thread-plan.md WI-6. Resolves through
 // IPeopleQuery (WI-5) — the cross-stream lookups the `people` read model
 // exists for. Not GetPerson: that goes through IEventStore and folds
 // (GetPerson.cs) per high-level-architecture.md's "querying by ID loads the

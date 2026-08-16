@@ -1,4 +1,4 @@
-// Result<T> — docs/plans/command-side-steel-thread-plan.md WI-3,
+// Result<T> — kanban/completed/command-side-steel-thread-plan.md WI-3,
 // LADR-0003 "Result type".
 //
 // Lives in Domain, not Application: WI-4's decide functions (Person.Register

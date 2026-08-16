@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-13. One PostgreSQL
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-13. One PostgreSQL
 // container, one WebApplicationFactory<Program> and one direct-to-store
 // IServiceProvider for the whole test run — mirroring
 // tests/Soarscore.Infrastructure.Tests/PostgresFixture.cs's "one container

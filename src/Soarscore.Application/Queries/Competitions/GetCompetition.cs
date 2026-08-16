@@ -1,10 +1,10 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. Served by folding
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. Served by folding
 // the stream, never from the `competitions` read model —
 // high-level-architecture.md: "If querying by ID, then you must use load the
 // stream." This is the one query ICompetitionsQuery deliberately has no
 // method for (ICompetitionsQuery.cs). Mirrors People/GetPerson.cs.
 //
-// docs/plans/phase-drawn-steel-thread-plan.md WI-6a extended the result with
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-6a extended the result with
 // PairwiseCoOccurrence — computed here, on read, from the folded Competition;
 // not stored or denormalised, and not a new query (the plan's explicit
 // stance: GET /competition gains a field, rather than growing a sibling

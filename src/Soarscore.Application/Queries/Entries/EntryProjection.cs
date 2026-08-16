@@ -1,4 +1,4 @@
-// The `entry_index` read model's fold — docs/plans/capture-a-score-steel-thread-plan.md
+// The `entry_index` read model's fold — kanban/completed/capture-a-score-steel-thread-plan.md
 // WI-7, LADR-0001 §4.3. Plain static function, portable if the store is ever
 // swapped; the Marten IProjection shim wrapping it is Infrastructure's
 // concern (WI-9, mirroring Competitions/CompetitionSummaryProjection.cs).

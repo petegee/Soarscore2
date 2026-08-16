@@ -2,7 +2,7 @@ using Soarscore.Api;
 
 Composition.Build(args).Run();
 
-// docs/plans/capture-a-score-steel-thread-plan.md WI-13: the marker
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-13: the marker
 // WebApplicationFactory<Program> needs to host this app in-process for the
 // Reqnroll acceptance suite. Top-level statements already generate an
 // internal `partial class Program`; this declaration only widens its

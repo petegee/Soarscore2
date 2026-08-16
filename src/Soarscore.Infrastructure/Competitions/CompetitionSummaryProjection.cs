@@ -1,5 +1,5 @@
 // The Marten Inline projection shim for the `competitions` read model —
-// docs/plans/create-competition-steel-thread-plan.md WI-1, LADR-0001 §2/§4.3.
+// kanban/completed/create-competition-steel-thread-plan.md WI-1, LADR-0001 §2/§4.3.
 // Portable ballast: groups the raw events Marten hands it back into
 // per-stream order and replays them through Application's
 // CompetitionProjection.Apply, which is the only part of this that would
@@ -7,7 +7,7 @@
 //
 // Not registered with Marten yet — the event-type mapping for
 // CompetitionCreated and this projection's Inline registration are WI-4's
-// job (docs/plans/create-competition-steel-thread-plan.md), a later thread
+// job (kanban/completed/create-competition-steel-thread-plan.md), a later thread
 // that depends on this one landing first.
 
 using JasperFx.Events;

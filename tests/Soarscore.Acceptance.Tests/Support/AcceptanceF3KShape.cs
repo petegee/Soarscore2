@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-13, scenario 3's
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-13, scenario 3's
 // finding-3 regression at the acceptance level ("A launch before the working
 // time is recorded, not refused").
 //

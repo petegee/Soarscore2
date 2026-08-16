@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-7. Mirrors
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-7. Mirrors
 // Competitions/FindCompetitionsHandlerTests.cs / People/PersonQueriesTests.cs's
 // style for a query handler resolving through a fake read-model query.
 

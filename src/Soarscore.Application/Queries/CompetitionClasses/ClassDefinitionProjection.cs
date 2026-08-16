@@ -1,4 +1,4 @@
-// The `class_library` read model — docs/plans/class-definition-adoption-steel-thread-plan.md
+// The `class_library` read model — kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-3, LADR-0001 §3/§4.3. One of the four read models the ADR permits; it
 // exists solely so the library can be searched/listed across the whole
 // population, which no single stream can answer for itself — mirrors

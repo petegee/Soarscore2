@@ -21,7 +21,7 @@
 //    registered, because AdoptedRules and ClassDefinitionPublished embed a full
 //    ClassDefinition, and those two types cannot serialise without them
 //    (ParameterReferenceConverters.cs).
-//  - AllowOutOfOrderMetadataProperties (docs/plans/class-definition-adoption-steel-thread-plan.md
+//  - AllowOutOfOrderMetadataProperties (kanban/completed/class-definition-adoption-steel-thread-plan.md
 //    WI-7 finding): jsonb does not preserve key order, so a `ClassDefinitionPublished`
 //    read back from Postgres can — and, empirically, does — land with a nested
 //    ScoreTerm/Predicate/FlightSelection's `$kind` discriminator anywhere but

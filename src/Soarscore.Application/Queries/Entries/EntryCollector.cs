@@ -1,4 +1,4 @@
-// EntryCollector — docs/plans/scoring-steel-thread-plan.md WI-6.
+// EntryCollector — kanban/completed/scoring-steel-thread-plan.md WI-6.
 //
 // Assembles every Entry in a competition for the scoring queries: fan out
 // through IEntryQuery.FindAsync (the entry_index read model — exactly the job

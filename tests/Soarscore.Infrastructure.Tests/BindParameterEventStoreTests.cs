@@ -1,4 +1,4 @@
-// docs/plans/bind-parameter-steel-thread-plan.md WI-7 — the store-backed
+// kanban/completed/bind-parameter-steel-thread-plan.md WI-7 — the store-backed
 // tests for BindParameter, against real PostgreSQL via Testcontainers rather
 // than the FakeEventStore double the Application-layer handler tests use.
 // Same style as DrawPhaseEventStoreTests.cs: calls the real handlers

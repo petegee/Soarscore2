@@ -1,4 +1,4 @@
-// docs/plans/phase-drawn-steel-thread-plan.md WI-6a — so the organiser can
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-6a — so the organiser can
 // see *why* a draw's pairings look the way they do, and judge whether to
 // accept it (once the "Redrawing" thread the plan defers exists). A pure
 // derivation over data the fold already has (Rounds -> TaskRound -> Group ->

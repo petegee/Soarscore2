@@ -1,4 +1,4 @@
-// WI-9 (docs/plans/command-side-steel-thread-plan.md) — the four store-backed
+// WI-9 (kanban/completed/command-side-steel-thread-plan.md) — the four store-backed
 // tests that carry real weight, run against a real PostgreSQL via
 // Testcontainers rather than the FakeEventStore/FakePeopleQuery doubles WI-6's
 // handler tests use. One shared container (PostgresFixture) for the whole

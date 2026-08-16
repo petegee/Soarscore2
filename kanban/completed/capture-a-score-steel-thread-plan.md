@@ -1,6 +1,6 @@
 # Plan — Capturing a score: the Entry write path and `entry_index`
 
-**Status:** Proposed · **Date:** 2026-08-08
+**Status:** Complete — implemented and test-verified · **Date:** 2026-08-08
 
 Work items are numbered `WI-n`, scoped to *this* plan document (see
 `command-side-steel-thread-plan.md`'s numbering note — WI numbers reset per plan).
@@ -706,7 +706,7 @@ For `gap.md`'s "Deliberately deferred" list, so nobody "fixes" them by mistake:
   `Complete`, `Annulled`) and `Scoring/PhaseAggregator.cs:34` (`Complete`, `Annulled`).
   Different namespaces, so they compile, but they will collide when gap 5's scoring
   adapter has to map one to the other. Not this thread's to reconcile; recorded so the
-  adapter thread does not discover it late. → `tech-debt.md`.
+  adapter thread does not discover it late. → `kanban/tech-debt.md`.
 
 ## Standing practice
 

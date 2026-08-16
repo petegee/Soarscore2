@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-1's own "Verify":
+// kanban/completed/create-competition-steel-thread-plan.md WI-1's own "Verify":
 // feed CompetitionCreated and check the built summary, then feed one of the
 // ten out-of-scope event types against a non-null summary and assert the
 // second call is a no-op rather than a throw — CompetitionProjection.Apply's

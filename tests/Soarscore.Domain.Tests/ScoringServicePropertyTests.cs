@@ -12,7 +12,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Property tests for <see cref="ScoringService"/>'s two orchestration-level
-/// invariants — WI-5 invariants 2 and 3 (docs/plans/scoring-steel-thread-plan.md).
+/// invariants — WI-5 invariants 2 and 3 (kanban/completed/scoring-steel-thread-plan.md).
 /// A small synthetic class/task, not a corpus one: these invariants are about
 /// ScoringService's own orchestration (fold-order independence, purity), not
 /// about any particular class's rules, so a minimal fixture is what isolates

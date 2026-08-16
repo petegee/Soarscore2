@@ -1,4 +1,4 @@
-// The `competitions` read model's fold — docs/plans/create-competition-steel-thread-plan.md
+// The `competitions` read model's fold — kanban/completed/create-competition-steel-thread-plan.md
 // WI-1, LADR-0001 §4.3. Plain static function, portable if the store is ever
 // swapped; the Marten IProjection shim wrapping it is Infrastructure's
 // concern (CompetitionSummaryProjection.cs).

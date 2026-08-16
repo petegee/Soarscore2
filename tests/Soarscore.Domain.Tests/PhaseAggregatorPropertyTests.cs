@@ -118,7 +118,7 @@ public class PhaseAggregatorPropertyTests
     // ---------------------------------------------------- bounds (WI-5 #4)
 
     /// <summary>
-    /// WI-5 invariant 4 (docs/plans/scoring-steel-thread-plan.md): the phase
+    /// WI-5 invariant 4 (kanban/completed/scoring-steel-thread-plan.md): the phase
     /// aggregate never exceeds the sum of every task-round score, and never
     /// falls below the sum of the best (n - dropCount) of them. Stated over
     /// NON-NEGATIVE scores, unlike ScoreValue's -100..100 range above: with a

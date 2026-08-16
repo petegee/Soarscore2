@@ -1,6 +1,6 @@
 ### bind-parameter-e2e.http
 ###
-### docs/plans/bind-parameter-steel-thread-plan.md WI-8 — checked-in record of
+### kanban/completed/bind-parameter-steel-thread-plan.md WI-8 — checked-in record of
 ### the end-to-end verification run against a live API + real PostgreSQL, per
 ### the plan's own instruction not to leave a third undocumented manual e2e
 ### step (after phase-drawn WI-8 and create-competition WI-7, both of which

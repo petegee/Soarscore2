@@ -116,7 +116,7 @@ public sealed record Person
     private static Person Require(Person? current, PersonEvent @event) =>
         current ?? throw new ArgumentException($"{@event.GetType().Name} folded with no current projection — a change event can never be first in the stream.");
 
-    // Decide functions — WI-4 (docs/plans/command-side-steel-thread-plan.md).
+    // Decide functions — WI-4 (kanban/completed/command-side-steel-thread-plan.md).
     // They return the event to append; they never mutate this instance and
     // never append it themselves (that is the handler's job, WI-6). Email
     // uniqueness is deliberately not checked here — see the ContactDetails

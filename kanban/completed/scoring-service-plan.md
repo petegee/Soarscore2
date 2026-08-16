@@ -13,7 +13,7 @@
 >
 > **WI-9 (the orchestrator) did not ship.** `ScoringService.cs` exists but has no
 > caller, `ScoreCompetition` is a shell, and amendment resolution was never written.
-> **`docs/plans/scoring-steel-thread-plan.md` (2026-08-09) supersedes WI-9** and takes
+> **`kanban/completed/scoring-steel-thread-plan.md` (2026-08-09) supersedes WI-9** and takes
 > it to a working end. Where the two disagree, the newer plan wins — it departs from
 > this one in three recorded places: `ScoringService` becomes a `static` class rather
 > than an instantiable one, the engine keeps its `string` refs rather than being
@@ -75,7 +75,7 @@ rank(Competition) → ScoreResult
 
 ## Issue Tracking
 
-**Before starting any work item, check `docs/plans/scoring-service-issues.md`.**
+**Before starting any work item, check `kanban/completed/scoring-service-issues.md`.**
 
 There are 8 open design questions. Each WI that depends on an unresolved issue is marked with **[SEE ISSUE #N]**. The agent must confirm the resolution (check the issue checkbox) before implementing anything that depends on the unresolved semantics.
 
@@ -437,7 +437,7 @@ public static class FlightInterpreter
 
 **Agent instructions**: Apply flight selection to an Entry, check validWhen, assemble the raw score, apply CapScope.PerTask caps, and round.
 
-**[ISSUE #1, #2, #3, #6] — DO NOT START until these are resolved.** The agent must read `docs/plans/scoring-service-issues.md`, confirm that issues #1, #2, #3, and #6 have checkmarks, and understand the resolved semantics before implementing anything that depends on them (CapScope.PerTask interaction, validWhen evaluation, AnyOrder target pairing, validWhen ordering).
+**[ISSUE #1, #2, #3, #6] — DO NOT START until these are resolved.** The agent must read `kanban/completed/scoring-service-issues.md`, confirm that issues #1, #2, #3, and #6 have checkmarks, and understand the resolved semantics before implementing anything that depends on them (CapScope.PerTask interaction, validWhen evaluation, AnyOrder target pairing, validWhen ordering).
 
 **Location**: `src/Soarscore.Domain/Scoring/FlightSelector.cs`
 
@@ -988,7 +988,7 @@ Per the architecture: **black-box sociable tests**. Each WI's tests should:
 
 ## Open Issues
 
-See `docs/plans/scoring-service-issues.md` for the 8 unresolved design questions. Each WI that depends on an issue has a **[ISSUE #N]** marker. Agents must check that file before starting and confirm resolutions. Issues are resolved by the project lead and checked off.
+See `kanban/completed/scoring-service-issues.md` for the 8 unresolved design questions. Each WI that depends on an issue has a **[ISSUE #N]** marker. Agents must check that file before starting and confirm resolutions. Issues are resolved by the project lead and checked off.
 
 The issues in priority order:
 1. `CapScope.PerTask` interaction between WI-3 and WI-4 (CRITICAL — affects F5K scoring)

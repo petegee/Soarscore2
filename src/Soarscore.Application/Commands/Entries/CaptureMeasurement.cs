@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8. The highest-volume
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8. The highest-volume
 // write in the system. Loads the Entry for its state and the Competition
 // (via the Entry's own coordinate — WI-1) for the task's declared Metrics,
 // via TaskResolver — same shape as OpenFlightHandler. CapturedAt comes from

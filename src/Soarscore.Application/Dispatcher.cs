@@ -1,4 +1,4 @@
-// Command/query dispatch — docs/plans/command-side-steel-thread-plan.md WI-3,
+// Command/query dispatch — kanban/completed/command-side-steel-thread-plan.md WI-3,
 // LADR-0003 "Command/query dispatch".
 //
 // Hand-rolled over IServiceProvider rather than MediatR (commercial licence

@@ -1,4 +1,4 @@
-// FlightInterpreter — docs/plans/scoring-service-plan.md WI-3.
+// FlightInterpreter — kanban/completed/scoring-service-plan.md WI-3.
 //
 // Evaluates one Flight's measurements through flightValidWhen and through the
 // raw score terms. This is a pure function — same inputs, same outputs.

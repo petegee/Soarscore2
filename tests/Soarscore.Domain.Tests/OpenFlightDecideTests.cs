@@ -8,7 +8,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Entry.OpenFlight"/> —
-/// docs/plans/capture-a-score-steel-thread-plan.md WI-3. One per failure
+/// kanban/completed/capture-a-score-steel-thread-plan.md WI-3. One per failure
 /// code, plus success, plus the sequence advancing across successive folds,
 /// plus the finding-3 regression test: a launch outside the working time is
 /// recorded, not refused.

@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-6. Mirrors
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-6. Mirrors
 // Competitions/GetCompetitionHandlerTests.cs's found/not-found style, since
 // EntryLoader has no handler of its own yet (WI-8) to exercise it through —
 // the loader is tested directly, the way PersonLoader/CompetitionLoader are

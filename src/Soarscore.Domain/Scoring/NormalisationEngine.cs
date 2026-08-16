@@ -1,4 +1,4 @@
-// NormalisationEngine — docs/plans/scoring-service-plan.md WI-5.
+// NormalisationEngine — kanban/completed/scoring-service-plan.md WI-5.
 //
 // Normalises task results within a group, applies post-normalisation score
 // terms (ScoreNormalised), rounds, and checks minValidResults for group

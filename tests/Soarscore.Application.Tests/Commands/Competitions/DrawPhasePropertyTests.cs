@@ -1,4 +1,4 @@
-// docs/plans/phase-drawn-steel-thread-plan.md WI-4. The handler-level
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-4. The handler-level
 // companion to Soarscore.Domain.Tests's PhaseDrawPropertyTests (WI-2,
 // invariant 1): this drives the real async DrawPhaseHandler.HandleAsync
 // against a FakeEventStore, not just Competition.DrawPhase directly, so it

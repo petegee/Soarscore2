@@ -1,4 +1,4 @@
-// RoundingSupport — extracted per docs/plans/capture-a-score-steel-thread-plan.md
+// RoundingSupport — extracted per kanban/completed/capture-a-score-steel-thread-plan.md
 // finding 4. ApplyRounding was a private method duplicated identically in
 // FlightSelector.cs and NormalisationEngine.cs; Entry.CaptureMeasurement
 // (Soarscore.Domain.Entries) needed a third copy, so it is a shared internal

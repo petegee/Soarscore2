@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-4. Application
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-4. Application
 // tests via IDispatcher, a fake IEventStore, a fake clock — mirrors
 // People/PersonCommandsTests.cs's shape.
 

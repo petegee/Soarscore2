@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8. The first command in
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8. The first command in
 // the repo whose handler appends to a NEW stream (a minted EntryId, keyed
 // with ExpectedVersion.NoStream) after reading a DIFFERENT aggregate's
 // stream to decide — Competition.OpenEntry (WI-2) owns every rule check, so

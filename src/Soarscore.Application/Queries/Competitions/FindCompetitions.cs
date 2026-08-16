@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. Resolves through
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. Resolves through
 // ICompetitionsQuery (WI-1) — the cross-stream listing/filtering the
 // `competitions` read model exists for. Not GetCompetition: that goes through
 // IEventStore and folds (GetCompetition.cs).

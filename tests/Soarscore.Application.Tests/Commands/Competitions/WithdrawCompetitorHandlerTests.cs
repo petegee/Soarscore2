@@ -1,4 +1,4 @@
-// docs/plans/register-competitor-steel-thread-plan.md WI-3. Covers
+// kanban/completed/register-competitor-steel-thread-plan.md WI-3. Covers
 // WithdrawCompetitorHandler directly against a FakeEventStore — same style as
 // RegisterCompetitorHandlerTests.cs, but no person lookup: withdrawal
 // addresses a CompetitorId that, by construction, is already in the field.

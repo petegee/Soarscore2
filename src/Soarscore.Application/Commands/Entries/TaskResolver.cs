@@ -1,12 +1,12 @@
 // Shared by OpenFlightHandler and CaptureMeasurementHandler — the phase ->
 // round -> task-round -> task walk both need to reach the resolved
 // MaxLaunches / Metrics for the task-round an Entry was opened against.
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8: "there is no third
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8: "there is no third
 // copy of a phase->round->task-round->task traversal worth writing".
 //
 // Competition.OpenEntry (WI-2, already landed) walks this same path inline
 // to derive the working time; it is not repointed at this helper here — that
-// refactor is out of this work item's scope and is recorded in tech-debt.md
+// refactor is out of this work item's scope and is recorded in kanban/tech-debt.md
 // instead, so as not to touch Competition.cs while other work may be
 // in-flight against it.
 //
@@ -61,7 +61,7 @@ internal static class TaskResolver
 
         // Flattened last-write-wins, exactly as Competition.cs's DrawPhase and
         // Competition.OpenEntry already do — lifted to ScoringService by
-        // docs/plans/scoring-steel-thread-plan.md WI-3, which needed a fourth
+        // kanban/completed/scoring-steel-thread-plan.md WI-3, which needed a fourth
         // copy and made this the one place the flatten is written instead.
         var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings);
 

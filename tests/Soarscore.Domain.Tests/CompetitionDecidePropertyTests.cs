@@ -9,7 +9,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Property-based tests for <see cref="Competition.Decide"/> (WI-2,
-/// docs/plans/create-competition-steel-thread-plan.md, LADR-0003: CsCheck).
+/// kanban/completed/create-competition-steel-thread-plan.md, LADR-0003: CsCheck).
 /// CompetitionDecideTests covers the fixed, hand-built cases; this generates
 /// the name/location/date-pair space and checks two general claims: valid
 /// input always succeeds with fields copied through unchanged, and an

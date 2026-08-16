@@ -1,4 +1,4 @@
-// The Marten adapter for IClassLibraryQuery — docs/plans/class-definition-adoption-steel-thread-plan.md
+// The Marten adapter for IClassLibraryQuery — kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-3/WI-5. Reads the `class_library` read model only; never the event log.
 // Mirrors People/MartenPeopleQuery.cs.
 

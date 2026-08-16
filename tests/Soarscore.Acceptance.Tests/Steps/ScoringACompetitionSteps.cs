@@ -1,4 +1,4 @@
-// docs/plans/scoring-steel-thread-plan.md WI-10 — step definitions for
+// kanban/completed/scoring-steel-thread-plan.md WI-10 — step definitions for
 // Features/ScoringACompetition.feature. Every step drives real HTTP against
 // the real Soarscore.Api (AcceptanceFixture.Client), the same discipline
 // CapturingAScoreSteps.cs (WI-13 of the earlier plan) established.

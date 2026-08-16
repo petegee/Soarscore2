@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. The fake-store
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. The fake-store
 // analogue of WI-6's real-Postgres round-trip proof: for any corpus
 // definition published into the fake store, and any valid name/location/date
 // input, CreateCompetitionHandler always succeeds and the AdoptedRules it

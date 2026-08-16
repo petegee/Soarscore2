@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-4. Deviates
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-4. Deviates
 // from the WI-6 handler template (command-side-steel-thread-plan.md: read
 // stream -> fold -> decide -> append Exact(version)) because there is no
 // prior stream to read and no decide function to call: creation only, and

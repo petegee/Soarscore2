@@ -17,7 +17,7 @@
 // and every ClassDefinitionEvent actually carries is still the full hash
 // string, never this Guid.
 //
-// Lives in Application, not Infrastructure (docs/plans/class-definition-adoption-steel-thread-plan.md
+// Lives in Application, not Infrastructure (kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-4), despite deriving a Marten stream key: PublishClassDefinitionHandler
 // must supply this Guid to IEventStore.AppendAsync and GetClassDefinition must
 // supply the same Guid to ReadStreamAsync, and both are Application-layer code

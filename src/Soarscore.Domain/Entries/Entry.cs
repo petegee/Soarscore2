@@ -41,7 +41,7 @@ public readonly record struct EntryId(Guid Value)
 /// <see cref="Entry.OpenFlight"/> would put a scoring rule into the core
 /// system (CLAUDE.md's core architectural law); the class model already owns
 /// this as data, via `TaskDefinition.FlightValidWhen`
-/// (docs/plans/capture-a-score-steel-thread-plan.md, finding 3).
+/// (kanban/completed/capture-a-score-steel-thread-plan.md, finding 3).
 /// </summary>
 public sealed record TimeWindow
 {
@@ -96,7 +96,7 @@ public sealed record Amendment
 /// Append-only and corrected by Amendments, never overwritten: there is no
 /// setter on <see cref="Value"/>, and resolving the effective value from a
 /// Measurement's Amendments is ScoringService's job, not this type's
-/// (docs/plans/scoring-service-plan.md WI-9).
+/// (kanban/completed/scoring-service-plan.md WI-9).
 /// </summary>
 public sealed record Measurement
 {
@@ -247,7 +247,7 @@ public sealed record Entry
     /// <summary>Appends a Flight/Entry-scoped Penalty.</summary>
     public Entry Apply(PenaltyRecorded @event) => this with { Penalties = Penalties.Add(@event.Penalty) };
 
-    // Instance decide function — WI-3 (docs/plans/capture-a-score-steel-thread-plan.md).
+    // Instance decide function — WI-3 (kanban/completed/capture-a-score-steel-thread-plan.md).
     // maxLaunches arrives already resolved from the task's MaxLaunches, not
     // read from a ClassDefinition here — the same reasoning finding 1 applies
     // to the coordinate keeps Entry free of any dependency on the class
@@ -283,7 +283,7 @@ public sealed record Entry
         return Result<FlightOpened>.Success(new FlightOpened(sequence, launchAt, at));
     }
 
-    // Instance decide function — WI-4 (docs/plans/capture-a-score-steel-thread-plan.md).
+    // Instance decide function — WI-4 (kanban/completed/capture-a-score-steel-thread-plan.md).
     // metrics arrives already resolved from the task's declared
     // MetricDefinitions, for the same reason maxLaunches does above: Entry
     // never learns which class it is flying under.

@@ -1,4 +1,4 @@
-// RankingEngine — docs/plans/scoring-service-plan.md WI-8.
+// RankingEngine — kanban/completed/scoring-service-plan.md WI-8.
 //
 // Produces final placings from per-competitor scores, handling finalRanking
 // kinds and ties. Disqualified competitors are excluded from placings.

@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. FindCompetitions
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. FindCompetitions
 // takes no criteria requirement (unlike FindPeople) — both filters are
 // optional and "no filters" is a valid, meaningful call (list everything).
 

@@ -1,4 +1,4 @@
-// docs/plans/register-competitor-steel-thread-plan.md WI-7 — the store-backed
+// kanban/completed/register-competitor-steel-thread-plan.md WI-7 — the store-backed
 // tests for RegisterCompetitor/WithdrawCompetitor, against real PostgreSQL via
 // Testcontainers rather than the FakeEventStore double the Application-layer
 // handler tests use. Same style as CompetitionEventStoreTests.cs: calls the

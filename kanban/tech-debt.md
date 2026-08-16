@@ -7,8 +7,8 @@ See CLAUDE.md house-keeping rule 5.
   members: `Soarscore.Domain.Competitions` (`Competition.cs:105` — `Drawn`, `InProgress`,
   `Complete`, `Annulled`) and `Soarscore.Domain.Scoring` (`PhaseAggregator.cs:34` —
   `Complete`, `Annulled`). They compile because the namespaces differ. Identified while
-  planning `docs/plans/capture-a-score-steel-thread-plan.md`; discharged by
-  `docs/plans/scoring-steel-thread-plan.md` WI-3, exactly as predicted — the mapping is
+  planning `kanban/completed/capture-a-score-steel-thread-plan.md`; discharged by
+  `kanban/completed/scoring-steel-thread-plan.md` WI-3, exactly as predicted — the mapping is
   lossy in one direction and the adapter filters, rather than collapsing the enums. The
   conversion lives in `ScoringService.ScoreCompetition`
   (`src/Soarscore.Domain/Scoring/ScoringService.cs`), one `Competitions.TaskRoundState`
@@ -22,7 +22,7 @@ See CLAUDE.md house-keeping rule 5.
   (`TaskRoundCompleted` has no decide function); the entries-present test is what
   the leaderboard means "provisional, over rounds flown so far" instead of that.
 - [ ] `Competition.OpenEntry`'s inline task walk vs. `TaskResolver`. WI-8
-  (docs/plans/capture-a-score-steel-thread-plan.md) extracted the
+  (kanban/completed/capture-a-score-steel-thread-plan.md) extracted the
   phase→round→task-round→task traversal into
   `Soarscore.Application.Entries.TaskResolver`, shared by `OpenFlightHandler`
   and `CaptureMeasurementHandler`. `Competition.OpenEntry` (WI-2, already

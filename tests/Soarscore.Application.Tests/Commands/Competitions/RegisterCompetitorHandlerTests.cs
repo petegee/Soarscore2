@@ -1,4 +1,4 @@
-// docs/plans/register-competitor-steel-thread-plan.md WI-3. Covers
+// kanban/completed/register-competitor-steel-thread-plan.md WI-3. Covers
 // RegisterCompetitorHandler directly against a FakeEventStore, no dispatcher
 // needed — same style as CreateCompetitionHandlerTests.cs.
 

@@ -1,4 +1,4 @@
-// MeasurementDigest — docs/plans/scoring-steel-thread-plan.md WI-1.
+// MeasurementDigest — kanban/completed/scoring-steel-thread-plan.md WI-1.
 //
 // Resolves the effective value of every Measurement on a Flight: the most
 // recent Amendment's NewValue by At, or the original Measurement.Value when

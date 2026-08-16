@@ -1,4 +1,4 @@
-// docs/plans/register-competitor-steel-thread-plan.md WI-3. The RenamePerson
+// kanban/completed/register-competitor-steel-thread-plan.md WI-3. The RenamePerson
 // read→fold→decide→append template, plus one cross-aggregate read — the same
 // shape CreateCompetition.cs already established for confirming a referenced
 // aggregate exists before deciding. Here it confirms the PersonId being

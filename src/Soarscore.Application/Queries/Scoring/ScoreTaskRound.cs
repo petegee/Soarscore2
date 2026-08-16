@@ -1,4 +1,4 @@
-// ScoreTaskRound — docs/plans/scoring-steel-thread-plan.md WI-7, slice 1.
+// ScoreTaskRound — kanban/completed/scoring-steel-thread-plan.md WI-7, slice 1.
 //
 // Scores one task-round's groups: what gets read out at the field when a
 // group lands. GroupRef optional — unset scores every group in the task-round.

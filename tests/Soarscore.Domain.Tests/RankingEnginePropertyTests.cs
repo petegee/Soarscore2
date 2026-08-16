@@ -7,7 +7,7 @@ using Xunit;
 namespace Soarscore.Domain.Tests;
 
 /// <summary>
-/// WI-5 invariant 5 (docs/plans/scoring-steel-thread-plan.md): for any set of
+/// WI-5 invariant 5 (kanban/completed/scoring-steel-thread-plan.md): for any set of
 /// FinalCompetitorScore, RankingEngine.Rank's placings are drawn from 1..n, a
 /// higher score never receives a worse placing, and equal scores receive
 /// equal placings. RankingEngineTests already covers example cases (ties,

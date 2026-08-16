@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8. Covers
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8. Covers
 // OpenFlightHandler directly against a FakeEventStore — same style as
 // RegisterCompetitorHandlerTests.cs. The fixture opens a real Entry by
 // running Competition.OpenEntry's own decide function against a hand-built

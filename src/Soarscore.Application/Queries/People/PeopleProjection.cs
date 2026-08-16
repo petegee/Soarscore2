@@ -1,4 +1,4 @@
-// The `people` read model — docs/plans/command-side-steel-thread-plan.md WI-5,
+// The `people` read model — kanban/completed/command-side-steel-thread-plan.md WI-5,
 // LADR-0001 §3/§4.3. One of the four read models the ADR permits; it exists
 // solely so email/name can be queried across the whole population, which no
 // single stream can answer for itself (Domain/People/Person.cs).

@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-12 — the store-backed
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-12 — the store-backed
 // tests for the Entry write path and `entry_index`, against a real
 // PostgreSQL via Testcontainers rather than the FakeEventStore double the
 // Application-layer handler tests (tests/Soarscore.Application.Tests/Entries/)

@@ -9,7 +9,7 @@
 >
 > Issue #4 (where amendment resolution lives) is the one still owed code: it resolved
 > to "the orchestrator pre-processes", and the orchestrator's stub returns an empty
-> array. `docs/plans/scoring-steel-thread-plan.md` WI-1 implements that resolution
+> array. `kanban/completed/scoring-steel-thread-plan.md` WI-1 implements that resolution
 > rather than reopening it.
 
 Resolved by: project lead. Checked off as each is decided. Each issue references the WI(s) that depend on it.

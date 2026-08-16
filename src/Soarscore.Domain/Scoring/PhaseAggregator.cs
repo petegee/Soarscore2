@@ -1,4 +1,4 @@
-// PhaseAggregator — docs/plans/scoring-service-plan.md WI-7.
+// PhaseAggregator — kanban/completed/scoring-service-plan.md WI-7.
 //
 // Aggregates task-round results into round scores, then phase scores, applying
 // drop policies in order. Handles both ByRound and ByTask drop dimensions.

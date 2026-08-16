@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-1's pass-through
+// kanban/completed/create-competition-steel-thread-plan.md WI-1's pass-through
 // property: CompetitionProjection.Apply's default arm (`_ => current`) must
 // hold for every one of the ten CompetitionEvent subtypes other than
 // CompetitionCreated, not just the one hand-picked example

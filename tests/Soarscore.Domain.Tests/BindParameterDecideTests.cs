@@ -10,7 +10,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Competition.BindParameter"/> —
-/// docs/plans/bind-parameter-steel-thread-plan.md WI-1. Mirrors
+/// kanban/completed/bind-parameter-steel-thread-plan.md WI-1. Mirrors
 /// PhaseDrawnDecideTests's style: real seed-corpus ClassDefinitions
 /// (Soarscore.SeedData) wherever the corpus already has the shape a case
 /// needs, a hand-built fixture only for the one shape it does not — a class

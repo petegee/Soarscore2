@@ -1,4 +1,4 @@
-// The only routing surface exposed — docs/plans/command-side-steel-thread-plan.md
+// The only routing surface exposed — kanban/completed/command-side-steel-thread-plan.md
 // WI-8, LADR-0003 "Web / API host": Minimal APIs, MapCommand/MapQuery helpers
 // only. Nothing in this project calls MapPost/MapGet/MapPut/etc. directly
 // outside these two methods, so registering a non-GET/POST verb is not

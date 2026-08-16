@@ -1,5 +1,5 @@
 // The Marten Inline projection shim for the `people` read model —
-// docs/plans/command-side-steel-thread-plan.md WI-7, LADR-0001 §2/§4.3.
+// kanban/completed/command-side-steel-thread-plan.md WI-7, LADR-0001 §2/§4.3.
 //
 // Portable ballast: all it does is group the raw events Marten hands it back
 // into per-stream order and replay them through Application's

@@ -1,4 +1,4 @@
-// The Marten adapter for IPeopleQuery — docs/plans/command-side-steel-thread-plan.md
+// The Marten adapter for IPeopleQuery — kanban/completed/command-side-steel-thread-plan.md
 // WI-5/WI-7. Reads the `people` read model only; never the event log. No
 // get-by-id here by design — see IPeopleQuery.cs.
 

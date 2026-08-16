@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-7. Resolves through
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-7. Resolves through
 // IEntryQuery — the cross-stream lookup the `entry_index` read model exists
 // for. Not GetEntry: that would go through IEventStore and fold (EntryLoader.cs),
 // mirroring Competitions/FindCompetitions.cs and People/FindPeople.cs.

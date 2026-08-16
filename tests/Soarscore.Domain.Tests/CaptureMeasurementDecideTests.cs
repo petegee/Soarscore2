@@ -9,7 +9,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Entry.CaptureMeasurement"/> —
-/// docs/plans/capture-a-score-steel-thread-plan.md WI-4. One per failure
+/// kanban/completed/capture-a-score-steel-thread-plan.md WI-4. One per failure
 /// code, plus success for both MeasuredKind variants, plus rounding applied
 /// at each RoundingMode — Truncate in particular, against an F3K-shaped
 /// 0.1 s flightTime metric (finding 4).

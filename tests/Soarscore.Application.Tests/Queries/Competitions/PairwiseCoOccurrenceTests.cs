@@ -1,4 +1,4 @@
-// docs/plans/phase-drawn-steel-thread-plan.md WI-6a.
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-6a.
 //
 // A hand-built Rounds fixture with known, hand-computed counts — 3 rounds x
 // 2 groups of 3 over 6 competitors, varying membership each round (not the

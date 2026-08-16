@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-3. A fold
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-3. A fold
 // invariants property, complementing ClassDefinitionProjectionTests.cs's
 // fixed examples: across a randomised Published[-> Retired] event pair, the
 // identity fields Published set must survive untouched, and RetiredAt must

@@ -1,4 +1,4 @@
-// PenaltyEngine — docs/plans/scoring-service-plan.md WI-6.
+// PenaltyEngine — kanban/completed/scoring-service-plan.md WI-6.
 //
 // Applies penalties at both the raw-score level (ZeroFlight, ZeroRound, ZeroTask)
 // and the final-aggregate level (DeductPoints, Disqualify), with exclusion-group

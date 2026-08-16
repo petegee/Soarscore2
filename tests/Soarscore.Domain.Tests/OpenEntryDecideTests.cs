@@ -11,7 +11,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Competition.OpenEntry"/> —
-/// docs/plans/capture-a-score-steel-thread-plan.md WI-2. Mirrors
+/// kanban/completed/capture-a-score-steel-thread-plan.md WI-2. Mirrors
 /// PhaseDrawnDecideTests's and BindParameterDecideTests's style: real
 /// seed-corpus ClassDefinitions (Soarscore.SeedData) wherever the corpus
 /// already has the shape a case needs. The draw itself is bypassed —

@@ -1,4 +1,4 @@
-// The Marten adapter for IEntryQuery — docs/plans/capture-a-score-steel-thread-plan.md
+// The Marten adapter for IEntryQuery — kanban/completed/capture-a-score-steel-thread-plan.md
 // WI-9. Reads the `entry_index` read model only; never the event log. Mirrors
 // Competitions/MartenCompetitionsQuery.cs.
 //

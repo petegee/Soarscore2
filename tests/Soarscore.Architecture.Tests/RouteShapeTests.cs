@@ -1,4 +1,4 @@
-// WI-2/WI-8 (docs/plans/command-side-steel-thread-plan.md): turns
+// WI-2/WI-8 (kanban/completed/command-side-steel-thread-plan.md): turns
 // high-level-architecture.md's "intent-based" rule — only POST (a Command) and
 // GET (a Query), never PUT/PATCH/DELETE/OPTIONS — into a failing build. Builds
 // the real WebApplication via Composition.Build so it exercises the actual

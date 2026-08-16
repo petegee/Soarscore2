@@ -1,6 +1,6 @@
 # Plan — The CD's choices: `BindParameter`
 
-**Status:** Proposed · **Date:** 2026-08-08
+**Status:** Complete — implemented and test-verified · **Date:** 2026-08-08
 
 Work items are numbered `WI-n`, scoped to *this* plan document (see
 `command-side-steel-thread-plan.md`'s numbering note — WI numbers reset per plan).

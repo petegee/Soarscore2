@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-2's own
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-2's own
 // "Verify" section proposes this: "generate a valid definition (a corpus
 // definition plus one random mutation drawn from a table mapping 'this
 // mutation' -> 'should trip check N'), assert the *only* defect raised is

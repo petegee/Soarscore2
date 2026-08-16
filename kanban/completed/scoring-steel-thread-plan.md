@@ -1,6 +1,6 @@
 # Plan — Scoring: de-orphaning the scoring engine
 
-**Status:** Proposed · **Date:** 2026-08-09 · **Base commit:** `900df6d` · **Gap:** `docs/plans/gap.md` §5
+**Status:** Complete — implemented and test-verified · **Date:** 2026-08-09 · **Base commit:** `900df6d` · **Gap:** `kanban/gap.md` §5
 
 Closes gap 5. Turns 2,153 lines of pipeline that nothing calls into a scored
 group and a ranked leaderboard, reachable over HTTP.
@@ -37,7 +37,7 @@ the payoff and rests on one assumption stated in finding 5.
 
 #### Finding 1 — `ScoreCompetition` is a shell, not a mis-typed method
 
-`docs/plans/gap.md` §5 says the engine "is **not** mis-typed against a stale
+`kanban/gap.md` §5 says the engine "is **not** mis-typed against a stale
 aggregate design; it has vestigial parameters and no caller", and that rescuing
 it "needs an adapter … not a redesign". That is true of `InterpretFlight`,
 `SelectFlights`, `NormaliseGroup`, `Aggregate`, `Rank` and `ScoreGroup` — all
@@ -110,7 +110,7 @@ this one. Recorded under "Newly deferred".
 competition this system can produce sits at `Drawn` forever.
 `Scoring.TaskRoundState` (`PhaseAggregator.cs:34`) has two — `Complete`,
 `Annulled` — and `PhaseAggregator` reads it to decide what a drop policy may
-drop. This is the duplicate-enum item already recorded at `tech-debt.md:6`; this
+drop. This is the duplicate-enum item already recorded at `kanban/kanban/tech-debt.md:6`; this
 thread is the first code that must reconcile it, exactly as that item predicted.
 
 Mapping `Drawn` → `Complete` would be a lie with teeth: an undrawn-and-unflown
@@ -126,7 +126,7 @@ it**; a task-round whose Competition state is `Annulled` maps to
 The result is a **provisional leaderboard over rounds flown so far**, which is
 what a leaderboard means mid-competition, and it makes drop-worst behave the way
 a CD expects during an event. The two enums are left in place; the mapping is a
-private function in the adapter, and `tech-debt.md:6` is updated to record that
+private function in the adapter, and `kanban/kanban/tech-debt.md:6` is updated to record that
 the conversion now exists and where.
 
 #### Finding 6 — `ScoringService` should be static, not an instantiable class
@@ -167,7 +167,7 @@ without a new line.
 
 ### Governing documents
 
-- `docs/plans/scoring-service-plan.md` and `docs/plans/scoring-service-issues.md`
+- `kanban/completed/scoring-service-plan.md` and `kanban/completed/scoring-service-issues.md`
   — deleted from HEAD in `38cb008`, **restored from `d1ea17d` at `900df6d`**. All
   eleven Scoring files header-cite the former; its WI-1..WI-8 are the pipeline as
   built, and its WI-9 is superseded by this plan. The latter's eight resolved
@@ -425,16 +425,16 @@ conversation, not a suppression.
 
 Three items, the first two **already done** as prep for this plan:
 
-1. ~~**Restore `docs/plans/scoring-service-plan.md` and
-   `docs/plans/scoring-service-issues.md` from `d1ea17d`**~~ — done (approved
+1. ~~**Restore `kanban/completed/scoring-service-plan.md` and
+   `kanban/completed/scoring-service-issues.md` from `d1ea17d`**~~ — done (approved
    2026-08-09). Both carry a status header recording what shipped, that WI-9 is
    superseded by this plan, and the three places this plan departs from it.
-2. ~~**Refresh `docs/plans/gap.md`**~~ — done; re-based on `900df6d`. It had gone
+2. ~~**Refresh `kanban/gap.md`**~~ — done; re-based on `900df6d`. It had gone
    stale on gaps 3 (nine unreachable events, not seven — three of them Entry's),
    4 (closed; F5L and NZ Class M drawable), 5 (eleven files/2,153 lines;
    `ParameterResolver` no longer orphaned and now tested; `ScoreCompetition` a
    shell per finding 1) and 6 (now closed by `ClassAgnosticismTests`).
-3. **Update `tech-debt.md:6`** — the duplicate-`TaskRoundState` item is
+3. **Update `kanban/kanban/tech-debt.md:6`** — the duplicate-`TaskRoundState` item is
    discharged in the sense that predicted: record the conversion's location and
    finding 5's rule.
 

@@ -13,7 +13,7 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 // stays as WI-2 specifies; only the C# namespace differs.
 namespace Soarscore.ArchitectureTests;
 
-// WI-2 (docs/plans/command-side-steel-thread-plan.md): guards the hexagonal
+// WI-2 (kanban/completed/command-side-steel-thread-plan.md): guards the hexagonal
 // layering CLAUDE.md and LADR-0001 §4.2 state in prose. Soarscore.Api (WI-8) is
 // not loaded into the Architecture below — the rules here only constrain
 // Domain/Application/Infrastructure's outbound dependencies, and the

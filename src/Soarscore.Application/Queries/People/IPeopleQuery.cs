@@ -1,4 +1,4 @@
-// The `people` read model's query port — docs/plans/command-side-steel-thread-plan.md
+// The `people` read model's query port — kanban/completed/command-side-steel-thread-plan.md
 // WI-5, LADR-0001 §4.2. Defined here, implemented in Soarscore.Infrastructure
 // against Marten; IDocumentSession never appears above that project.
 //

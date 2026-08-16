@@ -1,4 +1,4 @@
-// Property tests — docs/plans/bind-parameter-steel-thread-plan.md WI-3.
+// Property tests — kanban/completed/bind-parameter-steel-thread-plan.md WI-3.
 // CsCheck, in PhaseDrawPropertyTests / PhaseDrawnDecideTests's style: drives
 // Competition.BindParameter / Competition.DrawPhase / ParameterResolver
 // directly, domain-level — no FakeEventStore, no command handler.

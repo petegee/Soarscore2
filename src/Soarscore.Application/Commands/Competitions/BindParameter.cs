@@ -1,4 +1,4 @@
-// docs/plans/bind-parameter-steel-thread-plan.md WI-4. The plain
+// kanban/completed/bind-parameter-steel-thread-plan.md WI-4. The plain
 // RenamePerson/DrawPhase read->fold->decide->append template — no
 // cross-aggregate read, the class definition is already sitting in
 // AdoptedRules. The one addition over that template: `By` is validated here,

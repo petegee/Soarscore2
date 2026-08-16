@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-2. One negative
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-2. One negative
 // fixture per numbered check, each built from a minimal baseline that itself
 // validates clean, mutated to break exactly the one construct that check
 // guards. Plus the corpus-wide "all seed classes validate clean" assertion

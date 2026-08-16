@@ -11,7 +11,7 @@ using Xunit;
 namespace Soarscore.Domain.Tests;
 
 /// <summary>
-/// WI-5 invariant 7 (docs/plans/scoring-steel-thread-plan.md): every DRAWABLE
+/// WI-5 invariant 7 (kanban/completed/scoring-steel-thread-plan.md): every DRAWABLE
 /// seed class scores end to end, without throwing, and every competitor with
 /// at least one Entry receives a placing. This is the test that would catch a
 /// class-specific assumption leaking into the pipeline (CLAUDE.md's core

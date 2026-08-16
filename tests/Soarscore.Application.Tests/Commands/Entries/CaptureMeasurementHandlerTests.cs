@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8. Covers
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8. Covers
 // CaptureMeasurementHandler directly against a FakeEventStore — same style
 // as OpenFlightHandlerTests.cs, with a flight already opened on the fixture
 // Entry so a measurement has somewhere to land.

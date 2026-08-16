@@ -1,4 +1,4 @@
-// docs/plans/phase-drawn-steel-thread-plan.md WI-7 — the store-backed tests
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-7 — the store-backed tests
 // for DrawPhase, against real PostgreSQL via Testcontainers rather than the
 // FakeEventStore double the Application-layer handler tests use. Same style
 // as CompetitorEventStoreTests.cs: calls the real handlers directly against

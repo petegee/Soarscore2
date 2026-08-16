@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8. Covers
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8. Covers
 // OpenEntryHandler directly against a FakeEventStore/FakeEntryQuery — same
 // style as RegisterCompetitorHandlerTests.cs. The Phase/Round/TaskRound/Group
 // shape is hand-built directly into the event stream rather than drawn

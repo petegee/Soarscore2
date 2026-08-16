@@ -1,4 +1,4 @@
-// The event-store port — docs/plans/command-side-steel-thread-plan.md WI-3,
+// The event-store port — kanban/completed/command-side-steel-thread-plan.md WI-3,
 // LADR-0001 §4.1. Exactly the three methods the ADR permits, and no more: no
 // IQueryable, no Marten type appears above Soarscore.Infrastructure, which is
 // the only project allowed to implement this interface (WI-7).

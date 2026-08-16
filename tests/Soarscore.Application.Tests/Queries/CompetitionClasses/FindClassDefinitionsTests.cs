@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-4. Mirrors
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-4. Mirrors
 // People/PersonQueriesTests.cs's shape.
 
 using AwesomeAssertions;

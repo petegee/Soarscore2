@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-13. No GetEntry query
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-13. No GetEntry query
 // exists yet (EntrySummary.cs: "a future work item, mirroring GetCompetition"),
 // so a Then step asserting an Entry's full folded state — a flight, a
 // measurement, a null TimeWindow.End — has no HTTP surface to read it from.

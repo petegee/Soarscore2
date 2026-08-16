@@ -1,4 +1,4 @@
-// docs/plans/command-side-steel-thread-plan.md WI-6. Same handler template as
+// kanban/completed/command-side-steel-thread-plan.md WI-6. Same handler template as
 // RenamePerson.cs — see that file for the rationale.
 
 using Soarscore.Application.Shared.People;

@@ -10,7 +10,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Competition.Decide"/> (WI-2,
-/// docs/plans/create-competition-steel-thread-plan.md) — mirrors
+/// kanban/completed/create-competition-steel-thread-plan.md) — mirrors
 /// PersonDecideTests's style. AdoptedRules validity is deliberately not
 /// exercised here (the plan explicitly excludes it from this decide
 /// function's scope); only that it passes through the resulting event

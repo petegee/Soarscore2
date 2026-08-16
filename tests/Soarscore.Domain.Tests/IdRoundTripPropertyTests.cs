@@ -6,7 +6,7 @@ using Xunit;
 namespace Soarscore.Domain.Tests;
 
 /// <summary>
-/// WI-5 invariant 6 (docs/plans/scoring-steel-thread-plan.md, finding 3):
+/// WI-5 invariant 6 (kanban/completed/scoring-steel-thread-plan.md, finding 3):
 /// stringify-then-parse is the identity for <see cref="CompetitorId"/> and
 /// <see cref="GroupId"/> — the property that lets the scoring engine keep
 /// speaking <c>string</c> (the Guid's "D" form) rather than retyping

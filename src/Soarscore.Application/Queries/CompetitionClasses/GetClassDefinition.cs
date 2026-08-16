@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-4. Served by
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-4. Served by
 // folding the stream, never from the `class_library` read model —
 // high-level-architecture.md: "If querying by ID, then you must use load the
 // stream." Mirrors People/GetPerson.cs; the query returns the plain

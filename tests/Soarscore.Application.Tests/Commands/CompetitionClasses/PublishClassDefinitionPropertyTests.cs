@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-4's idempotency
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-4's idempotency
 // claim ("republishing identical content targets the same stream and is a
 // safe no-op"), checked as a property across a random republish count and a
 // random corpus definition, complementing PublishClassDefinitionTests.cs's

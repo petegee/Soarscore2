@@ -1,7 +1,7 @@
-// Closes gap 6 (docs/plans/gap.md §6): CLAUDE.md's core architectural law —
-// "the core system must not know about any specific competition class", stated
-// there as "not a style preference" — held by convention only, with nothing to
-// catch a regression.
+// Guards CLAUDE.md's core architectural law — "the core system must not know
+// about any specific competition class", stated there as "not a style
+// preference". Before this test the law was held by convention only, with
+// nothing to catch a regression.
 //
 // This test is a source scan, not an ArchUnitNET rule or a reflection test,
 // because neither of those can see what actually leaks: a string literal or a

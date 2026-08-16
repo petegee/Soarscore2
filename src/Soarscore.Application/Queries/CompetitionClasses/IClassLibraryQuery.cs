@@ -1,4 +1,4 @@
-// The `class_library` read model's query port — docs/plans/class-definition-adoption-steel-thread-plan.md
+// The `class_library` read model's query port — kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-3, LADR-0001 §4.2. Defined here, implemented in Soarscore.Infrastructure
 // against Marten; IDocumentSession never appears above that project. Mirrors
 // People/IPeopleQuery.cs.

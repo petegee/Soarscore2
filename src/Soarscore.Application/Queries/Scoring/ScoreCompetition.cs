@@ -1,4 +1,4 @@
-// ScoreCompetition — docs/plans/scoring-steel-thread-plan.md WI-7, slice 2.
+// ScoreCompetition — kanban/completed/scoring-steel-thread-plan.md WI-7, slice 2.
 //
 // The whole-competition leaderboard: every group scored, phase-aggregated
 // with drops, aggregate penalties applied, ranked. CompetitionLoader.LoadAsync

@@ -1,4 +1,4 @@
-// docs/plans/scoring-steel-thread-plan.md WI-9 — the store-backed tests for
+// kanban/completed/scoring-steel-thread-plan.md WI-9 — the store-backed tests for
 // the two scoring queries (ScoreTaskRoundHandler, ScoreCompetitionHandler),
 // against a real PostgreSQL via Testcontainers. Same style as
 // EntryCaptureEventStoreTests.cs / DrawPhaseEventStoreTests.cs: calls the

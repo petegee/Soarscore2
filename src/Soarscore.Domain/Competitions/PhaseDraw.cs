@@ -1,4 +1,4 @@
-// The draw's pairing algorithm — docs/plans/phase-drawn-steel-thread-plan.md
+// The draw's pairing algorithm — kanban/completed/phase-drawn-steel-thread-plan.md
 // WI-1. Pure and deterministic given a stable field ordering: no unseeded
 // randomness, so a replay and a CsCheck shrink (WI-2) both reproduce the same
 // output. GroupId is not minted here — this returns bare CompetitorId

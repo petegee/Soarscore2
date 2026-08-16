@@ -1,4 +1,4 @@
-// docs/plans/phase-drawn-steel-thread-plan.md WI-3. Covers DrawPhaseHandler
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-3. Covers DrawPhaseHandler
 // directly against a FakeEventStore — same style as
 // WithdrawCompetitorHandlerTests.cs: no cross-aggregate read, the adopted
 // class definition is already sitting in AdoptedRules.

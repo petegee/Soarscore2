@@ -1,4 +1,4 @@
-// docs/plans/command-side-steel-thread-plan.md WI-6. Served by folding the
+// kanban/completed/command-side-steel-thread-plan.md WI-6. Served by folding the
 // stream, never from the `people` read model — high-level-architecture.md:
 // "If querying by ID, then you must use load the stream." This is the one
 // query IPeopleQuery deliberately has no method for (IPeopleQuery.cs).

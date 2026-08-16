@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-7's own "Verify": feed
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-7's own "Verify": feed
 // EntryOpened and check the built summary, then feed one of the other five
 // event types against a non-null summary and assert the second call is a
 // no-op rather than a throw — EntryProjection.Apply's default arm is

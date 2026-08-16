@@ -1,4 +1,4 @@
-// Test fixture for WI-9 (docs/plans/command-side-steel-thread-plan.md): a
+// Test fixture for WI-9 (kanban/completed/command-side-steel-thread-plan.md): a
 // real PostgreSQL container wired up exactly the way WI-7's
 // AddSoarscoreInfrastructure does, so these tests exercise the same
 // composition as the running Api rather than a hand-assembled DocumentStore.

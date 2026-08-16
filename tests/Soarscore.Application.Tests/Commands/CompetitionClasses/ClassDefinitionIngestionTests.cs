@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-1. A fixture
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-1. A fixture
 // just inside each ceiling passes; one just outside is rejected with a stable
 // code. Corpus.All is also checked to sit inside every limit — the ceilings
 // were set relative to those actuals in the first place.

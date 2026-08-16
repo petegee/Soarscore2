@@ -1,4 +1,4 @@
-// docs/plans/command-side-steel-thread-plan.md WI-6. Mints the PersonId
+// kanban/completed/command-side-steel-thread-plan.md WI-6. Mints the PersonId
 // (Guid.CreateVersion7() — PersonId.New(), LADR-0001 §4.9) and appends with
 // ExpectedVersion.NoStream, the shape of every aggregate's first append.
 //

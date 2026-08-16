@@ -1,4 +1,4 @@
-// docs/plans/register-competitor-steel-thread-plan.md WI-4. The handler-level
+// kanban/completed/register-competitor-steel-thread-plan.md WI-4. The handler-level
 // companion to Soarscore.Domain.Tests.CompetitionFieldPropertyTests (invariant
 // 1): this drives the real async RegisterCompetitorHandler.HandleAsync, not
 // just Competition.RegisterCompetitor directly, so it is what actually proves

@@ -10,7 +10,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Property-based tests for invariant 1 from
-/// docs/plans/register-competitor-steel-thread-plan.md ("one registration per
+/// kanban/completed/register-competitor-steel-thread-plan.md ("one registration per
 /// PersonId per competition"), driving the real
 /// <see cref="Competition.RegisterCompetitor"/> / <see cref="Competition.WithdrawCompetitor"/>
 /// decide functions themselves — unlike CompetitionModelBasedFoldTests, which

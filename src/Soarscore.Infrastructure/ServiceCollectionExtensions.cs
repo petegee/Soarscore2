@@ -1,5 +1,5 @@
 // Composition root for Soarscore.Infrastructure —
-// docs/plans/command-side-steel-thread-plan.md WI-7. Wires the Marten/PostgreSQL
+// kanban/completed/command-side-steel-thread-plan.md WI-7. Wires the Marten/PostgreSQL
 // adapter: event-type mapping (LADR-0001 §4.8), the SoarscoreEventJson
 // conventions (LADR-0001 §4.5-6), the Inline `people` projection with its
 // unique email index (LADR-0001 §2/§3), and Rich append mode (see

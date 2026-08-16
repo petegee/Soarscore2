@@ -43,8 +43,8 @@ and no existing real data that needs to be preserved, or migrated.
 - `tests/Soarscore.Infrastructure.Tests` — store-backed tests against a real
   PostgreSQL via Testcontainers, tagged `Trait("Category", "Storage")` so a
   fast local loop can filter them out.
-- `docs/plans/` — implementation plans for a work thread (e.g.
-  `command-side-steel-thread-plan.md`), cited from code as `WI-n`.
+- `kanban/` — the work board. Stories live in one of four lane folders and their
+  plans are cited from code as `WI-n`. See "Working the board" below.
 - `docs/ladr/` — architecture decision records binding the choices above
   (`ladr-0001-event-store.md`, `ladr-0003-library-choices.md`).
 - `docs/rules/` — the rule knowledge base. `source-docs/` is the verbatim
@@ -139,11 +139,42 @@ Backing detail: [NFR-1](docs/non-functional-requirements.md#nfr-1--one-centralis
 3. Agents must not add transient information to anything /docs
 4. Agents must ask the user before adding anything in /docs
 5. Any residual technical debt identified or intentionally deferred during
-   implementing a feature can go into the tech-debt.md markdown doc as
-   a checklist item `[ ] tech debt heading. Description`
-6. Any newly identified feature identified during implementing a feature, 
-   which would be out of scope of the current feature, can go into the todo.md 
-   markdown doc as a checklist item `[ ] feature heading. Description`
+   implementing a feature can go into `kanban/tech-debt.md` as a checklist item
+   `[ ] tech debt heading. Description`
+6. Any newly identified feature identified during implementing a feature, which
+   would be out of scope of the current feature, becomes a new story stub in
+   `kanban/backlog/` — never a silent scope increase on the story in hand.
+
+## Working the board
+
+`kanban/` is the single source of truth for what is planned, in flight and done.
+Four lanes — `backlog/`, `in-progress/`, `completed/`, `blocked/` — plus two
+standing inventories at `kanban/` root: `tech-debt.md` (deferred debt, rule 5)
+and `deferred-decisions.md` (things decided *not* to do yet, with the reasoning —
+read it before "fixing" something that looks missing).
+
+1. **One story = one markdown file**, named for the work (`catalogue-choice-draws-plan.md`).
+   It starts as a short stub in `backlog/` — What, Why it matters, Before starting —
+   and grows its plan (`WI-n` work items) in place. Code cites work items by path
+   and number; keep the filename stable so those citations survive.
+2. **Move the file between lane folders as the work progresses** — `git mv`, so
+   history follows. That move *is* the status change; the lane, not prose, is the
+   truth. Update the `**Status:**` header line in the same commit.
+3. **Take a story into `in-progress/` before writing code**, and keep the lane
+   thin — finish or park before pulling another.
+4. **Park to `blocked/`** when something outside the story stops it, recording the
+   blocker and what would unblock it in the file.
+5. **On completion**, move to `completed/`, set the status header, and reconcile
+   `tech-debt.md` and `deferred-decisions.md` — tick what the story discharged,
+   add what it deferred. Completed stories are the historical record: never edit
+   them to match later reality, and never delete one.
+6. **Plans in `completed/` describe the tree as built.** Read them as history, not
+   instructions; where two disagree, the newer one wins and says so. They cite
+   `file:line` and test counts that drift — re-verify before acting on one.
+7. **State lives in the tree, not in a status document.** Do not write a
+   point-in-time audit of "what the code does not do" — it is stale on the next
+   commit and outlives its accuracy. Open work is a `backlog/` story; a settled
+   non-decision is a `deferred-decisions.md` entry.
 
 
 

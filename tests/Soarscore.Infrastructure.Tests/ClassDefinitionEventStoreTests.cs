@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-7 — the three
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-7 — the three
 // store-backed tests that carry real weight, against a real PostgreSQL via
 // Testcontainers rather than the FakeEventStore double the Application-layer
 // handler tests use. Calls the real handlers directly against

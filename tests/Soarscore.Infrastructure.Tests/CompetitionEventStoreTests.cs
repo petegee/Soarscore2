@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-6 — the three
+// kanban/completed/create-competition-steel-thread-plan.md WI-6 — the three
 // store-backed tests that carry real weight for CreateCompetition, against a
 // real PostgreSQL via Testcontainers rather than the FakeEventStore double
 // the Application-layer handler tests use. Calls the real handlers directly

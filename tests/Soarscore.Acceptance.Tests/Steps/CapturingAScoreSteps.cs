@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-13 — step definitions
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-13 — step definitions
 // for Features/CapturingAScore.feature. Every Given/When step that mutates
 // state goes through AcceptanceFixture.Client, real HTTP against the real
 // Soarscore.Api (Microsoft.AspNetCore.Mvc.Testing) over a real Testcontainers

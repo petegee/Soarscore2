@@ -1,4 +1,4 @@
-// PredicateEvaluator — docs/plans/scoring-service-plan.md WI-3 (shared).
+// PredicateEvaluator — kanban/completed/scoring-service-plan.md WI-3 (shared).
 //
 // Evaluates Predicates (Comparison / AllOf) against a set of resolved
 // measurements. Used by FlightInterpreter (flightValidWhen, score-term

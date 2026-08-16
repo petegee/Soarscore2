@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-8. The proof
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-8. The proof
 // LADR-0002 §1 demands: "seed classes must enter through the same door as
 // user classes." Drives every checked-in seed JSON file — not the C# Corpus
 // objects — through the real deserialise -> PublishClassDefinitionHandler

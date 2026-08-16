@@ -1,4 +1,4 @@
-// Validate() — the sixteen adoption checks. docs/plans/class-definition-adoption-steel-thread-plan.md
+// Validate() — the sixteen adoption checks. kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-2, LADR-0002 §4 ("deserialise -> Validate -> canonicalise+hash -> append"),
 // docs/high-level-architecture.md "Validated at adoption" (the numbered, canonical
 // inventory this file implements — cited by number here, not restated).

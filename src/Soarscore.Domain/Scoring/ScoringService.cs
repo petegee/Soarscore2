@@ -1,5 +1,5 @@
-// ScoringService — docs/plans/scoring-service-plan.md WI-9, superseded by
-// docs/plans/scoring-steel-thread-plan.md (WI-2..WI-4).
+// ScoringService — kanban/completed/scoring-service-plan.md WI-9, superseded by
+// kanban/completed/scoring-steel-thread-plan.md (WI-2..WI-4).
 //
 // Domain service that orchestrates the scoring pipeline. It reads adopted rules
 // and structure from the Competition aggregate and raw data from the Entry

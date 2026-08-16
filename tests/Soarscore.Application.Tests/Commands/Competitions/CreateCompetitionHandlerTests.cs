@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. Covers
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. Covers
 // CreateCompetitionHandler directly against a FakeEventStore, no dispatcher
 // needed — same style as PublishClassDefinitionPropertyTests.cs.
 

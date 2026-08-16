@@ -480,7 +480,7 @@ public sealed record Competition
     private static Competition Require(Competition? current, CompetitionEvent @event) =>
         current ?? throw new ArgumentException($"{@event.GetType().Name} folded with no current projection — a Competition must begin with CompetitionCreated.");
 
-    // Decide functions — WI-2 (docs/plans/create-competition-steel-thread-plan.md).
+    // Decide functions — WI-2 (kanban/completed/create-competition-steel-thread-plan.md).
     // Named Decide, not Create, because Create is already taken by the fold
     // above. Unlike Person.Register, this does not mint its own id: WI-3's
     // handler needs the id before calling Decide, in order to also construct
@@ -523,7 +523,7 @@ public sealed record Competition
             ? new Defect("competition.dates.invalid", "$.startDate", "Start date must not be after end date.")
             : null;
 
-    // Instance decide functions — WI-1 (docs/plans/register-competitor-steel-thread-plan.md).
+    // Instance decide functions — WI-1 (kanban/completed/register-competitor-steel-thread-plan.md).
     // Instance, unlike Decide above: deciding whether a registration or
     // withdrawal is valid needs the current field, and the aggregate is what
     // already holds it. CompetitorId is minted by the caller (handler), not
@@ -568,7 +568,7 @@ public sealed record Competition
             : Result<CompetitorWithdrawn>.Success(new CompetitorWithdrawn(competitorRef, at));
     }
 
-    // Instance decide function — WI-1 (docs/plans/bind-parameter-steel-thread-plan.md).
+    // Instance decide function — WI-1 (kanban/completed/bind-parameter-steel-thread-plan.md).
     // Defect-chain style, like RegisterCompetitor/WithdrawCompetitor above —
     // unlike DrawPhase below, no later check needs a value computed by an
     // earlier one, so each validator re-resolves the named Parameter itself
@@ -597,7 +597,7 @@ public sealed record Competition
             }));
     }
 
-    // Instance decide function — WI-1 (docs/plans/phase-drawn-steel-thread-plan.md).
+    // Instance decide function — WI-1 (kanban/completed/phase-drawn-steel-thread-plan.md).
     // Not the Defect-chain style RegisterCompetitor/WithdrawCompetitor use:
     // later checks need values (phaseDefinition, the eligible field,
     // resolved MinPerGroup) computed by earlier ones, and the happy path
@@ -728,7 +728,7 @@ public sealed record Competition
         return Result<PhaseDrawn>.Success(@event);
     }
 
-    // Instance decide function — WI-2 (docs/plans/capture-a-score-steel-thread-plan.md).
+    // Instance decide function — WI-2 (kanban/completed/capture-a-score-steel-thread-plan.md).
     // Returns an event for the ENTRY aggregate's stream, not this one — new to
     // the repo and deliberate: the Competition is the sole authority on
     // whether an Entry may exist and what working time it gets (does this

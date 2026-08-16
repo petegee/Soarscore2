@@ -1,4 +1,4 @@
-// The Marten adapter for IEventStore — docs/plans/command-side-steel-thread-plan.md
+// The Marten adapter for IEventStore — kanban/completed/command-side-steel-thread-plan.md
 // WI-7, LADR-0001 §4.1/§4.4/§4.8. The only place a Marten or Npgsql exception
 // is caught; nothing Marten-shaped escapes this project.
 //

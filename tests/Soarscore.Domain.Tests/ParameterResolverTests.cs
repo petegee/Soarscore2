@@ -7,7 +7,7 @@ using Xunit;
 namespace Soarscore.Domain.Tests;
 
 /// <summary>
-/// Tests for <see cref="ParameterResolver"/> — docs/plans/bind-parameter-steel-thread-plan.md
+/// Tests for <see cref="ParameterResolver"/> — kanban/completed/bind-parameter-steel-thread-plan.md
 /// WI-2 (finding 2). ParameterResolver had no test file before this thread; these
 /// cover the three-step resolution order (binding, then declared default, then throw)
 /// for both the Number path (Resolve) and the Flag path (ResolveFlag).

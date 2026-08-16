@@ -1,4 +1,4 @@
-// docs/plans/register-competitor-steel-thread-plan.md WI-3. The plain
+// kanban/completed/register-competitor-steel-thread-plan.md WI-3. The plain
 // RenamePerson read→fold→decide→append template — no cross-aggregate read,
 // unlike RegisterCompetitor.cs: withdrawal addresses a CompetitorId that, by
 // construction, is already in the field.

@@ -1,4 +1,4 @@
-// docs/plans/bind-parameter-steel-thread-plan.md WI-4. Covers
+// kanban/completed/bind-parameter-steel-thread-plan.md WI-4. Covers
 // BindParameterHandler directly against a FakeEventStore — same style as
 // DrawPhaseHandlerTests.cs: no cross-aggregate read, the adopted class
 // definition is already sitting in AdoptedRules. Uses SeedF3J's

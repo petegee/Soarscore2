@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-3. Pure fold
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-3. Pure fold
 // tests, no store needed — mirrors PeopleProjectionTests.cs's shape.
 
 using AwesomeAssertions;

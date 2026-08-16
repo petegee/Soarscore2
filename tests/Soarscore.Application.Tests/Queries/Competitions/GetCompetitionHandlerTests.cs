@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. Mirrors
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. Mirrors
 // People/PersonQueriesTests.cs's found/not-found style for GetPersonHandler.
 
 using AwesomeAssertions;

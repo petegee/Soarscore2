@@ -1,4 +1,4 @@
-// The Marten adapter for ICompetitionsQuery — docs/plans/create-competition-steel-thread-plan.md
+// The Marten adapter for ICompetitionsQuery — kanban/completed/create-competition-steel-thread-plan.md
 // WI-1. Reads the `competitions` read model only; never the event log.
 // Mirrors CompetitionClasses/MartenClassLibraryQuery.cs.
 //

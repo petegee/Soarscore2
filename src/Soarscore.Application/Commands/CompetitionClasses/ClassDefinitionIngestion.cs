@@ -1,4 +1,4 @@
-// Ingestion input limits — docs/plans/class-definition-adoption-steel-thread-plan.md
+// Ingestion input limits — kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-1, LADR-0002 §4: "payload size, nesting depth, band/row/term/parameter/task
 // counts... the absence of them is the obvious denial-of-service surface." The
 // input to this pipeline is untrusted (LADR-0002 §1), so these limits run

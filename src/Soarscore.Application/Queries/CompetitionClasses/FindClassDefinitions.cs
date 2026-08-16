@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-4. Resolves
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-4. Resolves
 // through IClassLibraryQuery (WI-3) — the cross-stream search the
 // `class_library` read model exists for. Not GetClassDefinition: that goes
 // through IEventStore and folds (GetClassDefinition.cs), per

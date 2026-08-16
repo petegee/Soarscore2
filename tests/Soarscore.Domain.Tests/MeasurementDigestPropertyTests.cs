@@ -10,7 +10,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Property test for <see cref="MeasurementDigest.Resolve"/> — WI-5 invariant 1
-/// (docs/plans/scoring-steel-thread-plan.md): the effective value of a
+/// (kanban/completed/scoring-steel-thread-plan.md): the effective value of a
 /// Measurement is its most recent Amendment's NewValue by At, ties broken by
 /// last-appended, and the original Value when there are no amendments.
 /// </summary>

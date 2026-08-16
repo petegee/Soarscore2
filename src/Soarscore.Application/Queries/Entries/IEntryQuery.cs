@@ -1,4 +1,4 @@
-// The `entry_index` read model's query port — docs/plans/capture-a-score-steel-thread-plan.md
+// The `entry_index` read model's query port — kanban/completed/capture-a-score-steel-thread-plan.md
 // WI-7, LADR-0001 §4.2. Defined here, implemented in Soarscore.Infrastructure
 // against Marten; IDocumentSession never appears above that project. Mirrors
 // People/IPeopleQuery.cs and Competitions/ICompetitionsQuery.cs.

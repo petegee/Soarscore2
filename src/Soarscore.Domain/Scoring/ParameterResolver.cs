@@ -1,4 +1,4 @@
-// ParameterResolver — docs/plans/scoring-service-plan.md WI-2.
+// ParameterResolver — kanban/completed/scoring-service-plan.md WI-2.
 //
 // Resolves NumberOrParam/FlagOrParam to concrete decimal/bool values, and
 // produces ResolvedTask snapshots from TaskDefinitions. Pipeline stages

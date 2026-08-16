@@ -10,7 +10,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Competition.DrawPhase"/> —
-/// docs/plans/phase-drawn-steel-thread-plan.md WI-1. Mirrors
+/// kanban/completed/phase-drawn-steel-thread-plan.md WI-1. Mirrors
 /// CompetitionDecideTests's style; drives real seed-corpus ClassDefinitions
 /// (Soarscore.SeedData) rather than hand-built fixtures wherever the corpus
 /// already has the shape a case needs — see the plan's "checked, not assumed"

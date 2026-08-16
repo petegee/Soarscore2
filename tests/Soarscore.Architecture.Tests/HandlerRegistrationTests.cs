@@ -1,8 +1,8 @@
-// WI-11 (docs/plans/capture-a-score-steel-thread-plan.md): gap.md flags that
-// RouteShapeTests only reflects over route *shape* (path/verb) and cannot see
+// WI-11 (kanban/completed/capture-a-score-steel-thread-plan.md). The gap this
+// closes: RouteShapeTests only reflects over route *shape* (path/verb) and cannot see
 // that a mapped command or query has no matching DI registration — that class
 // of bug currently surfaces as a 500 on first real request, caught only by
-// manual review (gap.md Update §2, the bind-parameter thread's near-miss).
+// manual review (found by the bind-parameter thread's near-miss).
 //
 // Builds the same WebApplication RouteShapeTests builds (Composition.Build),
 // then finds every mapped command/query type without touching Commands.cs,

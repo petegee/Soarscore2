@@ -1,6 +1,6 @@
 # Plan — Class-definition adoption steel thread: `Validate()` and `PublishClassDefinition`
 
-**Status:** Proposed · **Date:** 2026-08-05
+**Status:** Complete — implemented and test-verified · **Date:** 2026-08-05
 
 Work items are numbered `WI-n`, scoped to *this* plan document — the convention
 `command-side-steel-thread-plan.md` itself establishes (its own WI-0 citation points at

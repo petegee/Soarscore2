@@ -1,4 +1,4 @@
-// The `competitions` read model — docs/plans/create-competition-steel-thread-plan.md
+// The `competitions` read model — kanban/completed/create-competition-steel-thread-plan.md
 // WI-1, LADR-0001 §3/§4.3. One of the four read models the ADR permits; it
 // exists solely so a list view can show every competition (name, location,
 // dates, class) without folding a stream per row. Mirrors People/PeopleProjection.cs.

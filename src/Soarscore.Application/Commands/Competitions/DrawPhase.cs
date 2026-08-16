@@ -1,4 +1,4 @@
-// docs/plans/phase-drawn-steel-thread-plan.md WI-3. The plain
+// kanban/completed/phase-drawn-steel-thread-plan.md WI-3. The plain
 // RenamePerson/WithdrawCompetitor read->fold->decide->append template — no
 // cross-aggregate read, the class definition is already sitting in
 // AdoptedRules, copied in at CreateCompetition.

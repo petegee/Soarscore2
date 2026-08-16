@@ -1,4 +1,4 @@
-// FlightSelector — docs/plans/scoring-service-plan.md WI-4.
+// FlightSelector — kanban/completed/scoring-service-plan.md WI-4.
 //
 // Applies flight selection to an Entry, checks validWhen, assembles the raw
 // score, applies CapScope.PerTask caps, and rounds. Issues #1, #2, #3, #6 are

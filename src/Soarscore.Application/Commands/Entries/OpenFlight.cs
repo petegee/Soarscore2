@@ -1,4 +1,4 @@
-// docs/plans/capture-a-score-steel-thread-plan.md WI-8. Loads the Entry for
+// kanban/completed/capture-a-score-steel-thread-plan.md WI-8. Loads the Entry for
 // its state and the Competition (via the Entry's own coordinate — WI-1) for
 // the task's resolved MaxLaunches, via TaskResolver. Two loads on the hot
 // capture path is accepted, not overlooked (the plan's WI-8: sub-millisecond

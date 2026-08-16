@@ -1,4 +1,4 @@
-// docs/plans/create-competition-steel-thread-plan.md WI-3. A new handler
+// kanban/completed/create-competition-steel-thread-plan.md WI-3. A new handler
 // shape, not the WI-6 read-fold-decide-append template (RegisterPerson.cs) or
 // the idempotent-creation template (PublishClassDefinition.cs): this is the
 // first command whose decide function needs data folded from a *different*

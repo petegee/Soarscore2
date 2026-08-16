@@ -1,4 +1,4 @@
-// The `entry_index` read model — docs/plans/capture-a-score-steel-thread-plan.md
+// The `entry_index` read model — kanban/completed/capture-a-score-steel-thread-plan.md
 // WI-7, LADR-0001 §3/§4.3. One of exactly four read models the ADR permits;
 // it exists solely so "which Entry streams exist where" can be answered
 // without folding every Entry stream in the log, which no single stream can

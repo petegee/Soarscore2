@@ -1,4 +1,4 @@
-// docs/plans/command-side-steel-thread-plan.md WI-6. The handler template
+// kanban/completed/command-side-steel-thread-plan.md WI-6. The handler template
 // every later mutation copies: read stream → fold to current state → call
 // decide → append with ExpectedVersion.Exact(version).
 

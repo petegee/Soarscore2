@@ -1,4 +1,4 @@
-// docs/plans/class-definition-adoption-steel-thread-plan.md WI-1's "a
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-1's "a
 // definition just inside each limit passes; just outside is rejected" checked
 // as a property across random counts either side of each of CheckLimits' five
 // ceilings, rather than the one hand-picked pair per ceiling

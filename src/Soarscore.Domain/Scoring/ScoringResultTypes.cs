@@ -1,4 +1,4 @@
-// Scoring result types — docs/plans/scoring-service-plan.md WI-1.
+// Scoring result types — kanban/completed/scoring-service-plan.md WI-1.
 //
 // Pure data, no behaviour. All types are sealed records. These are the value
 // objects produced and consumed by the scoring pipeline stages (WI-3..WI-9).

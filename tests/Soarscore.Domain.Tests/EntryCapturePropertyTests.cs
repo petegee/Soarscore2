@@ -13,7 +13,7 @@ namespace Soarscore.Domain.Tests;
 /// <summary>
 /// Property tests for the Entry capture decide functions
 /// (<see cref="Entry.OpenFlight"/>, <see cref="Entry.CaptureMeasurement"/>) —
-/// docs/plans/capture-a-score-steel-thread-plan.md WI-5. Five invariants,
+/// kanban/completed/capture-a-score-steel-thread-plan.md WI-5. Five invariants,
 /// each its own named test so a failure names the invariant that broke, not
 /// just "a test failed".
 ///

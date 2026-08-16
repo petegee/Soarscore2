@@ -8,7 +8,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Property-based tests for <see cref="PhaseDraw.BuildGroups"/> —
-/// docs/plans/phase-drawn-steel-thread-plan.md WI-2, the two invariants the
+/// kanban/completed/phase-drawn-steel-thread-plan.md WI-2, the two invariants the
 /// whole draw thread is about. CsCheck, in CompetitionFieldPropertyTests's
 /// model-based style, driving the real pairing algorithm.
 /// </summary>
