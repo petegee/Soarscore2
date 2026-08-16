@@ -1,6 +1,6 @@
 # LADR-0001 — Event store: PostgreSQL + Marten
 
-**Status:** Accepted · **Date:** 2026-08-03
+**Status:** Accepted · **Date:** 2026-08-03 · **Amended (proposed):** 2026-08-16 — see §8
 
 ## Decision
 
@@ -151,3 +151,92 @@ fluent internal DSL, or JSON — is open and is the subject of the next ADR. Not
 §4.6 (decimals) and §4.8 (event versioning) apply to the adopted-rulebook payload
 whatever that decision is, and that a class definition must be **data at rest** in the
 adoption event for replay determinism to hold.
+
+## 8. Amendment, 2026-08-16 — the swap cost in §5 is wrong
+
+**Status: Proposed.** Nothing above is rewritten; §1–§7 stand as the reasoning that was
+correct when it was written. This section records what has since changed and what it does
+and does not overturn.
+
+### What changed
+
+Two things, neither of which existed when this ADR was accepted:
+
+1. **JasperFx now defines the store surface as store-agnostic contracts.**
+   `JasperFx.Events` (`IEventStoreOperations`, `IEventOperations`, `IQueryEventStore`,
+   `IJasperFxProjection<TOperations>`) and, from **JasperFx 2.47.0**,
+   `JasperFx.Events.Documents` (`IDocumentReadOperations`, `IDocumentWriteOperations`,
+   `IDocumentSessionOperations`, `IDocumentSessionFactory`, plus
+   `DocumentQueryableExtensions` supplying the async terminals through
+   `IDocumentQueryExecutor`). Marten, Polecat and Fisher each implement these *as their
+   own types* — no adapter and no wrapper on any of the three.
+
+2. **Fisher exists.** A SQLite-backed document store and event store, MIT, by the same
+   author, under the same JasperFx support contracts, enrolled in and passing the same
+   32-suite / 272-test `JasperFx.Events.ComplianceTests` that holds Marten and Polecat
+   accountable. 0.7.1 at the date of this amendment.
+
+### What that overturns
+
+**§5's accounting.** "Discarded: … Call it 1,000–1,200 LOC to rebuild against SQLite"
+rested on the premise that the session and store types are Marten's. That premise is now
+half false. A second backend is a NuGet package plus a composition root, not a store
+implementation:
+
+- The four query adapters (172 LOC) and the four projection bodies (172 LOC) become
+  store-agnostic outright — every member they use is on the shared contracts.
+- `MartenEventStore.cs` (161 LOC) is ~90% portable; what stays per-store is the two
+  exception translations.
+- `MartenConfig.cs` and the DI wiring (158 LOC) stay per-store **by design**. `AddMarten`
+  / `AddPolecat` / `AddFisher`, `StoreOptions`, `MapEventType`, `UniqueIndex` and
+  projection registration are not shared and JasperFx is not trying to share them.
+
+So: one shared adapter body plus a thin composition root per backend, not one build
+switched by configuration.
+
+**§1's counter-case, in part.** "Install Docker, run a Postgres container is an
+acceptable ask of self-hosters, and writing a store is not an acceptable use of the
+schedule" was a choice between those two options. There is now a third, and the schedule
+argument does not apply to it.
+
+### What it does not overturn
+
+- **§4's ten constraints, all of them.** They are why the rewrite is cheap rather than a
+  rewrite. §4.5 (never query into event JSON from SQL) and §4.6 (decimals as strings or
+  scaled integers) in particular have paid off exactly as they were written to.
+- **§4.1's port.** `IEventStore` stays. Its justification was never portability — it
+  returns `Result<T>` instead of throwing, rejects `Guid.Empty`, and translates store
+  exceptions into domain failure codes.
+- **§4.2's rule** that `IDocumentSession` does not appear in `Application`. A
+  store-agnostic `IDocumentSessionFactory` now *could* appear there, which would collapse
+  the four query interfaces and their adapters. It should not: §4.2's own stated reason
+  is hexagonal dependencies pointing inward, independently of portability, and that
+  reason is untouched.
+- **§6's first bullet.** More than one writer process remains SQLite's hard ceiling — one
+  writer per file, WAL unusable over network filesystems. Fisher does not move it; it
+  documents it (its exclusive-append methods *fail* where Marten's *wait*, with the
+  version guard still inside the write transaction). A SQLite deployment stays a
+  single-process convenience.
+- **§2 and §3.** The feature inventory and the four read models are unchanged, and every
+  one of Fisher's deliberate permanent gaps — message bus, partitioning,
+  `DaemonMode.HotCold`, Newtonsoft — is already outside §2.
+
+### The decision, restated
+
+**Marten on PostgreSQL remains the reference deployment.** What changes is the second
+sentence of §Decision: a SQLite adapter is no longer "viable for a third party to write"
+— it is a supportable target for us, gated on Fisher reaching 1.0, and Polecat makes SQL
+Server a third on the same terms.
+
+Two prerequisites, both recorded as work rather than decided here:
+
+- We are on Marten 9.22.2 → JasperFx.Events **2.37.0**. The document contracts are
+  2.47.0. Marten 9.24.0 pulls 2.48.0, the version Fisher is built against. Nothing
+  follows until that bump.
+- A support claim for three backends means the acceptance suite runs against three
+  backends. Separately, a Fisher-backed peer of `Soarscore.Infrastructure.Tests` removes
+  the Testcontainers dependency from the storage suite — worth having independently of
+  any deployment.
+
+Tracked at `kanban/backlog/jasperfx-shared-store-contracts.md` and
+`kanban/backlog/multi-backend-deployment.md`.
