@@ -11,7 +11,7 @@
 using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
-using Soarscore.Application.CompetitionClasses;
+using Soarscore.Application.Queries.CompetitionClasses;
 using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Infrastructure.CompetitionClasses;

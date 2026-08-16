@@ -22,11 +22,12 @@
 using AwesomeAssertions;
 using Reqnroll;
 using Soarscore.Acceptance.Tests.Support;
-using Soarscore.Application.CompetitionClasses;
-using Soarscore.Application.Competitions;
-using Soarscore.Application.Entries;
-using Soarscore.Application.People;
-using Soarscore.Application.Scoring;
+using Soarscore.Application.Commands.CompetitionClasses;
+using Soarscore.Application.Commands.Competitions;
+using Soarscore.Application.Commands.Entries;
+using Soarscore.Application.Commands.People;
+using Soarscore.Application.Queries.Competitions;
+using Soarscore.Application.Queries.Scoring;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;

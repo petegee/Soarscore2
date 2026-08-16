@@ -30,7 +30,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
 using Soarscore.Application;
-using Soarscore.Application.Entries;
+using Soarscore.Application.Queries.Entries;
 using Soarscore.Infrastructure;
 using Testcontainers.PostgreSql;
 

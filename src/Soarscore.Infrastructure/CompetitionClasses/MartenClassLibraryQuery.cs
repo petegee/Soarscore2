@@ -3,7 +3,7 @@
 // Mirrors People/MartenPeopleQuery.cs.
 
 using Marten;
-using Soarscore.Application.CompetitionClasses;
+using Soarscore.Application.Queries.CompetitionClasses;
 
 namespace Soarscore.Infrastructure.CompetitionClasses;
 

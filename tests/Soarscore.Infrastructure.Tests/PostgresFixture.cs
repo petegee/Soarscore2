@@ -11,10 +11,10 @@ using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Soarscore.Application;
-using Soarscore.Application.CompetitionClasses;
-using Soarscore.Application.Competitions;
-using Soarscore.Application.Entries;
-using Soarscore.Application.People;
+using Soarscore.Application.Queries.CompetitionClasses;
+using Soarscore.Application.Queries.Competitions;
+using Soarscore.Application.Queries.Entries;
+using Soarscore.Application.Queries.People;
 using Testcontainers.PostgreSql;
 using Xunit;
 

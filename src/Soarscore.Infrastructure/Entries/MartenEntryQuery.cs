@@ -29,7 +29,7 @@
 // ordinary LINQ predicates — only the three id-typed filters are affected.
 
 using Marten;
-using Soarscore.Application.Entries;
+using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Infrastructure.Entries;

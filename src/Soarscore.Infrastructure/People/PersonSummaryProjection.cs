@@ -10,7 +10,7 @@
 using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
-using Soarscore.Application.People;
+using Soarscore.Application.Queries.People;
 using Soarscore.Domain.People;
 
 namespace Soarscore.Infrastructure.People;

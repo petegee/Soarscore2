@@ -9,7 +9,7 @@
 // polymorphic ScoreTerm hierarchy round-trips.
 
 using System.Net.Http.Json;
-using Soarscore.Application.CompetitionClasses;
+using Soarscore.Application.Commands.CompetitionClasses;
 
 namespace Soarscore.Acceptance.Tests.Support;
 

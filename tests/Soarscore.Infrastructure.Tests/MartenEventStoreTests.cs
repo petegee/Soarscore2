@@ -105,7 +105,7 @@ public sealed class MartenEventStoreTests(PostgresFixture fixture) : IClassFixtu
 
         // Drop the read model's data only — the event log is untouched (§4.10:
         // read models are dropped and replayed, never migrated).
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Application.People.PersonSummary), TestContext.Current.CancellationToken);
+        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Application.Queries.People.PersonSummary), TestContext.Current.CancellationToken);
 
         var afterDrop = await fixture.PeopleQuery.FindByEmailAsync("katherine@replay.test", TestContext.Current.CancellationToken);
         afterDrop.Should().BeNull();

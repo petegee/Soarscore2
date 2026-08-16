@@ -1,9 +1,9 @@
 using Soarscore.Api.Routing;
-using Soarscore.Application.CompetitionClasses;
-using Soarscore.Application.Competitions;
-using Soarscore.Application.Entries;
-using Soarscore.Application.People;
-using Soarscore.Application.Scoring;
+using Soarscore.Application.Queries.CompetitionClasses;
+using Soarscore.Application.Queries.Competitions;
+using Soarscore.Application.Queries.Entries;
+using Soarscore.Application.Queries.People;
+using Soarscore.Application.Queries.Scoring;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;

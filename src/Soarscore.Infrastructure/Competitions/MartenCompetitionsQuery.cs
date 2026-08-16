@@ -6,7 +6,7 @@
 // standalone until then).
 
 using Marten;
-using Soarscore.Application.Competitions;
+using Soarscore.Application.Queries.Competitions;
 
 namespace Soarscore.Infrastructure.Competitions;
 

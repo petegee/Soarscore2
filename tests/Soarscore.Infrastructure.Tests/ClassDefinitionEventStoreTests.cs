@@ -6,7 +6,9 @@
 // MartenEventStoreTests.cs, no dispatcher needed for a store-level test.
 
 using AwesomeAssertions;
-using Soarscore.Application.CompetitionClasses;
+using Soarscore.Application.Commands.CompetitionClasses;
+using Soarscore.Application.Queries.CompetitionClasses;
+using Soarscore.Application.Shared.CompetitionClasses;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure;
 using Soarscore.SeedData;

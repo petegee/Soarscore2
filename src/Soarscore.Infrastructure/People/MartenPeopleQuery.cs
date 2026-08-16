@@ -3,7 +3,7 @@
 // get-by-id here by design — see IPeopleQuery.cs.
 
 using Marten;
-using Soarscore.Application.People;
+using Soarscore.Application.Queries.People;
 
 namespace Soarscore.Infrastructure.People;
 

@@ -8,8 +8,10 @@
 
 using AwesomeAssertions;
 using Soarscore.Application;
-using Soarscore.Application.CompetitionClasses;
-using Soarscore.Application.Competitions;
+using Soarscore.Application.Commands.CompetitionClasses;
+using Soarscore.Application.Commands.Competitions;
+using Soarscore.Application.Queries.Competitions;
+using Soarscore.Application.Shared.CompetitionClasses;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure;

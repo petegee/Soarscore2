@@ -8,7 +8,7 @@
 using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
-using Soarscore.Application.Entries;
+using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain.Entries;
 
 namespace Soarscore.Infrastructure.Entries;

@@ -30,6 +30,11 @@
     <!-- Transitive via Marten -> Weasel.Postgresql, pinned to match rather than
          float independently (LADR-0003 "all versions pinned"). -->
     <PackageVersion Include="Npgsql" Version="9.0.4" />
+    <!-- Transitive via Testcontainers.PostgreSql -> Testcontainers (SSH tunnelling
+         to remote Docker hosts). 2025.1.0 and earlier carry GHSA-q939-rpr3-3284
+         (ScpClient recursive-download path traversal); patched at 2026.0.0.
+         Overridden explicitly rather than left floating (CentralPackageTransitivePinningEnabled). -->
+    <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <!-- capture-a-score-steel-thread-plan.md WI-13, LADR-0003's Reqnroll entry:
          Gherkin/BDD over xunit.v3 — repo's xunit.v3 3.2.2 / xunit.runner.visualstudio
          3.1.5 satisfy the ≥3.0.2 floor Reqnroll.xunit.v3 3.3.4 declares. -->

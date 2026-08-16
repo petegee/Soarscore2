@@ -13,7 +13,7 @@
 using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
-using Soarscore.Application.Competitions;
+using Soarscore.Application.Queries.Competitions;
 using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Infrastructure.Competitions;
