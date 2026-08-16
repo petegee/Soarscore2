@@ -23,7 +23,12 @@ Feature: Capturing a score
   Scenario: A launch before the working time is recorded, not refused
     Given a published F3K class definition
     And a competition adopting it with 6 registered competitors
-    And a drawn preliminary phase of 4 rounds
+    And a drawn preliminary phase with these tasks
+      | round | task |
+      | 1     | D    |
+      | 2     | A    |
+      | 3     | B    |
+      | 4     | C    |
     When the scorer opens an entry for competitor 2 in round 1, group 1
     And the scorer opens a flight launched 5 minutes before the working time begins
     Then the flight is recorded with its launch time unchanged

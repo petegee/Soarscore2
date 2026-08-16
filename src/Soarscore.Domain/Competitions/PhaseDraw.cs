@@ -29,16 +29,28 @@ public static class PhaseDraw
     /// (resolvable designs / "social golfer"), not an implementation slip.
     /// </summary>
     public static ImmutableArray<ImmutableArray<ImmutableArray<CompetitorId>>> BuildGroups(
-        ImmutableArray<CompetitorId> field, int minPerGroup, int roundCount)
+        ImmutableArray<CompetitorId> field, int minPerGroup, int roundCount) =>
+        BuildGroups(field, Enumerable.Repeat(minPerGroup, roundCount).ToImmutableArray());
+
+    /// <summary>
+    /// Per-round <paramref name="minPerGroupByRound"/> — one entry per round,
+    /// its length therefore also the round count (catalogue-choice-draws-plan.md
+    /// WI-1: two values that must agree, when one already implies the other, is
+    /// a defect waiting to be written). Group SHAPE may change from round to
+    /// round; the cross-round pairing state (<c>pairCount</c>) does not reset
+    /// between rounds regardless — that is the property this overload protects.
+    /// </summary>
+    public static ImmutableArray<ImmutableArray<ImmutableArray<CompetitorId>>> BuildGroups(
+        ImmutableArray<CompetitorId> field, ImmutableArray<int> minPerGroupByRound)
     {
-        var groupCount = Math.Max(1, field.Length / minPerGroup);
-        var sizes = GroupSizes(field.Length, groupCount);
-
         var pairCount = new Dictionary<(CompetitorId, CompetitorId), int>();
-        var rounds = ImmutableArray.CreateBuilder<ImmutableArray<ImmutableArray<CompetitorId>>>(roundCount);
+        var rounds = ImmutableArray.CreateBuilder<ImmutableArray<ImmutableArray<CompetitorId>>>(minPerGroupByRound.Length);
 
-        for (var r = 0; r < roundCount; r++)
+        foreach (var minPerGroup in minPerGroupByRound)
         {
+            var groupCount = Math.Max(1, field.Length / minPerGroup);
+            var sizes = GroupSizes(field.Length, groupCount);
+
             var groups = BuildOneRound(field, sizes, pairCount);
             rounds.Add(groups);
             RecordPairings(groups, pairCount);

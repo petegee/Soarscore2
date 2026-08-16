@@ -17,17 +17,16 @@ namespace Soarscore.Domain.Tests;
 /// class-specific assumption leaking into the pipeline (CLAUDE.md's core
 /// architectural law).
 ///
-/// "Drawable" excludes F3K, F5K and F3B: Competition.DrawPhase rejects their
-/// round composition today (drawPhase.unsupportedRoundComposition — the check
-/// on phaseDefinition.Tasks.Length/Rounds.Kind/Rounds.TasksPerRound in
-/// Competition.cs's DrawPhase), so those three cannot reach ScoreCompetition
-/// regardless of what this thread does — see the plan's Out of scope. That
-/// leaves 8 of the 11 corpus classes.
-///
-/// A fixed enumeration, not a CsCheck generator over the class list — the
-/// "property" here is universality over the corpus, which enumerating every
-/// drawable member already demonstrates (mirrors EntryCapturePropertyTests'
-/// corpus-generic invariants 3/4, whose own doc comment makes the same call).
+/// "Drawable" excludes only F3B: Competition.DrawPhase refuses a phase whose
+/// Rounds.TasksPerRound != 1 (F3B's multi-task rounds — still an algorithmic
+/// gap, kanban/in-progress/catalogue-choice-draws-plan.md's Out of scope).
+/// F3K and F5K's ChooseFromCatalogue phases are drawable as of that same
+/// thread, given a valid per-round task selection. The set is DERIVED from
+/// each class's own Rounds.TasksPerRound — not a hard-coded file list — so a
+/// corpus change is picked up automatically; the same "scan, don't hard-code"
+/// discipline BindParameterPropertyTests property 5 and
+/// CatalogueDrawPropertyTests property 6 already apply. That leaves 10 of the
+/// 11 corpus classes.
 ///
 /// Drives the Domain decide functions directly — Soarscore.Domain.Tests
 /// cannot reference Soarscore.Application, so there is no handler/dispatcher
@@ -48,20 +47,16 @@ public class ScoringCorpusPropertyTests
     private const int FieldSize = 10;
     private const int Rounds = 2;
 
-    private static readonly ImmutableHashSet<string> DrawableFileNames = ImmutableHashSet.Create(
-        "30-f5j", "50-f3j", "60-f5l", "70-f3f",
-        "80-nz-m-ales200", "81-nz-m-ndc", "83-nz-n-ales123", "85-nz-p-radian");
-
     /// <summary>
-    /// FileName -> the parameter bindings that class's first phase/task needs
-    /// resolved before it can be drawn/opened. Only F5L and NZ-M-ALES200
+    /// FileName -> the parameter bindings that class's first phase/tasks need
+    /// resolved before it can be drawn/opened. Only F5L, NZ-M-ALES200 and F5K
     /// parameterise Group.MinPerGroup (BindParameterPropertyTests' property 5
-    /// discovers the same two, plus F5K, which is excluded here as
-    /// undrawable); only NZ-N-ALES123 and NZ-P-Radian parameterise a Fixed
-    /// task's WorkingTime with no declared default
+    /// discovers the same three); only NZ-N-ALES123 and NZ-P-Radian
+    /// parameterise a Fixed task's WorkingTime with no declared default
     /// (OpenEntryDecideTests.OpenEntry_against_an_unbound_undefaulted_parameterised_WorkingTime_fails_with_a_stable_code
-    /// is the same NZ-N shape). Every other class in the set resolves its
-    /// phase-0 task from literals alone.
+    /// is the same NZ-N shape). F3K needs nothing — its MinPerGroup is the
+    /// literal 5 (F3K.9.1). Every other class in the set resolves its phase-0
+    /// tasks from literals alone.
     /// </summary>
     private static readonly ImmutableDictionary<string, ImmutableArray<(string Name, MeasuredValue Value)>> RequiredBindings =
         new Dictionary<string, ImmutableArray<(string, MeasuredValue)>>
@@ -70,18 +65,22 @@ public class ScoringCorpusPropertyTests
             ["80-nz-m-ales200"] = [("groupSize", MeasuredValue.Of((decimal)FieldSize))],
             ["83-nz-n-ales123"] = [("roundDuration", MeasuredValue.Of(360m))],
             ["85-nz-p-radian"] = [("roundDuration", MeasuredValue.Of(420m))],
+            ["40-f5k"] = [("minPerGroup", MeasuredValue.Of(5m))],
         }.ToImmutableDictionary();
 
     [Fact]
     public void Every_drawable_corpus_class_scores_without_throwing_and_every_flown_competitor_is_placed()
     {
-        var drawable = Corpus.All.Where(c => DrawableFileNames.Contains(c.FileName)).ToImmutableArray();
+        // Derived, not a hard-coded file list: a class is drawable when its
+        // first phase schedules exactly one task per round — the same rule
+        // Competition.DrawPhase itself enforces (Rounds.TasksPerRound != 1 is
+        // the only remaining refusal, F3B's multi-task rounds).
+        var drawable = Corpus.All.Where(c => c.Definition.Phases[0].Rounds.TasksPerRound == 1).ToImmutableArray();
 
-        // Guards the premise: exactly the plan's stated 8 (11 corpus classes
-        // minus F3K/F5K/F3B). A corpus change that alters this set should
-        // fail here loudly, rather than silently under- or over-testing.
-        drawable.Length.Should().Be(8);
-        drawable.Select(c => c.FileName).Should().BeEquivalentTo(DrawableFileNames);
+        // Guards the premise: exactly 10 of the 11 corpus classes (everything
+        // but F3B). A corpus change that alters this set should fail here
+        // loudly, rather than silently under- or over-testing.
+        drawable.Length.Should().Be(10);
 
         foreach (var seedClass in drawable)
         {
@@ -124,17 +123,28 @@ public class ScoringCorpusPropertyTests
             }
         }
 
-        var drawn = competition.DrawPhase(Rounds, Now);
+        var phaseDefinition = definition.Phases[0];
+        var taskRefs = phaseDefinition.Rounds.Kind == CompositionKind.ChooseFromCatalogue
+            ? phaseDefinition.Tasks.Take(Rounds).Select(t => t.Code).ToImmutableArray()
+            : ImmutableArray<string>.Empty;
+
+        var drawn = competition.DrawPhase(Rounds, taskRefs, Now);
         drawn.IsSuccess.Should().BeTrue($"{seedClass.FileName}: {drawn.Code}");
         competition = competition.Apply(drawn.Value);
 
-        var task = definition.Phases[0].Tasks[0];
         var entries = new Dictionary<EntryId, Entry>();
         var flownCompetitors = new HashSet<CompetitorId>();
 
         foreach (var round in competition.Phases[0].Rounds)
         {
             var taskRound = round.TaskRounds[0];
+
+            // Resolved per task-round, not once from Tasks[0]: a
+            // ChooseFromCatalogue phase (F3K, F5K) can put a different task
+            // on every round, and each round's captured metrics must match
+            // the task actually assigned to it (TaskRound.TaskRef).
+            var task = phaseDefinition.Tasks.First(t => t.Code == taskRound.TaskRef);
+
             foreach (var group in taskRound.Groups)
             {
                 foreach (var competitorRef in group.CompetitorRefs)

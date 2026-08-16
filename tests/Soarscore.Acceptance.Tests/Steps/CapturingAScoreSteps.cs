@@ -91,6 +91,18 @@ public sealed class CapturingAScoreSteps
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
     }
 
+    // For a ChooseFromCatalogue phase (F3K): the table names the task the CD
+    // picked for each round, in round order — DrawPhase's taskRefs. Round
+    // ordinals in the table are expected 1..N with no gaps; only the order
+    // of the rows is read, not the "round" column's values themselves.
+    [Given(@"^a drawn preliminary phase with these tasks$")]
+    public async Task GivenADrawnPreliminaryPhaseWithTheseTasks(Table table)
+    {
+        var taskRefs = table.Rows.Select(row => row["task"]).ToList();
+        await ApiClient.PostCommandAsync<CompetitionId>(
+            Client, "/draw-phase", new DrawPhase(_competitionId, taskRefs.Count, taskRefs));
+    }
+
     // ----------------------------------------------------------------- When
 
     [When(@"^the scorer opens an entry for competitor (\d+) in round (\d+), group (\d+)$")]
@@ -205,8 +217,7 @@ public sealed class CapturingAScoreSteps
     {
         "F5J" => Corpus.All.Single(c => c.FileName == "30-f5j").Definition,
         "NZ Class M ALES 200" => Corpus.All.Single(c => c.FileName == "80-nz-m-ales200").Definition,
-        // Not the real corpus F3K — AcceptanceF3KShape.cs's header explains why.
-        "F3K" => AcceptanceF3KShape.Definition,
+        "F3K" => Corpus.All.Single(c => c.FileName == "10-f3k").Definition,
         _ => throw new NotSupportedException($"No class definition wired up for '{className}'."),
     };
 }

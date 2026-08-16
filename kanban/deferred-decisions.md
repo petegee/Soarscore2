@@ -25,9 +25,17 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
 - **Per-round parameter bindings.** `ParameterBinding` carries no round or phase
   ordinal, so `ParameterBindingPoint.PerRound` is *unrepresentable*. Six parameters are
   affected, all F3K's. **Decided 2026-08-08: deferred into the catalogue-choice story**
-  (`kanban/backlog/catalogue-choice-draws-plan.md`) — binding "the working time for
-  round 3" is meaningless until round 3 has a task, and adding the scope alone unblocks
-  nothing, because F3K is independently blocked by its round composition. Reasoning at
+  — binding "the working time for round 3" is meaningless until round 3 has a task, and
+  adding the scope alone would have unblocked nothing while F3K was independently
+  blocked by its round composition. That precondition is now discharged (rounds have
+  tasks — `kanban/completed/catalogue-choice-draws-plan.md`), but **decided 2026-08-16
+  it stays a separate follow-on thread rather than landing with the draw change** — it
+  still unblocks nothing (F3K's defaults cover every corpus scenario today; this only
+  buys a CD an override), and it touches a different set of files
+  (`ParameterBinding`/`ParameterResolver`/`TaskResolver`/`Competition.OpenEntry` all
+  growing round context). Now a planned story,
+  `kanban/backlog/per-round-parameter-bindings-plan.md`, whose shape is recorded in
+  `kanban/completed/catalogue-choice-draws-plan.md` Appendix A. Reasoning at
   `kanban/completed/bind-parameter-steel-thread-plan.md`, finding 1.
 
 ## Competition class model
@@ -44,7 +52,7 @@ Kept briefly, because the reasoning still binds the code that resulted.
 
 - **Catalogue-choice rounds.** **Decided 2026-08-08: each round's task is set at draw
   time** — `PhaseDrawn` grows a per-round task selection rather than a separate later
-  event. Now a planned story, `kanban/backlog/catalogue-choice-draws-plan.md`.
+  event. Shipped as `kanban/completed/catalogue-choice-draws-plan.md`.
 - **`Parameter.DefaultValue` was inert.** **Decided 2026-08-08: `ParameterResolver`
   falls back to the declared default**, rather than seeding `ParameterBound` events at
   `CreateCompetition`. The objection to a fallback does not hold —

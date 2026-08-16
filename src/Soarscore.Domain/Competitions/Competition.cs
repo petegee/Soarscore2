@@ -603,7 +603,7 @@ public sealed record Competition
     // resolved MinPerGroup) computed by earlier ones, and the happy path
     // needs them again to build the event, so this reads top-to-bottom with
     // early returns instead.
-    public Result<PhaseDrawn> DrawPhase(int rounds, DateTimeOffset at)
+    public Result<PhaseDrawn> DrawPhase(int rounds, ImmutableArray<string> taskRefs, DateTimeOffset at)
     {
         // Only the first, unconditional draw — see the plan's "Redrawing" Out
         // of scope entry. Phases.Length is therefore always 0 below; the
@@ -631,21 +631,75 @@ public sealed record Competition
                 "drawPhase.roundsInvalid", $"Rounds must not exceed the class's maximum of {maxRounds}.");
         }
 
-        // The structural shape check, not a class-name check (core
-        // architectural law) — multi-task rounds and catalogue-choice rounds
-        // are real algorithmic gaps this thread does not build, see the
-        // plan's Out of scope. Exactly one task, a fixed single-task
-        // sequence, is what this draw can schedule.
-        if (phaseDefinition.Tasks.Length != 1
-            || phaseDefinition.Rounds.Kind != CompositionKind.FixedSequence
-            || phaseDefinition.Rounds.TasksPerRound != 1)
+        // Multi-task rounds (F3B) — a real algorithmic gap this thread does
+        // not build, see catalogue-choice-draws-plan.md's Out of scope. The
+        // message names multi-task rounds only; catalogue choice has its own
+        // codes below.
+        if (phaseDefinition.Rounds.TasksPerRound != 1)
         {
             return Result<PhaseDrawn>.Failure(
                 "drawPhase.unsupportedRoundComposition",
-                "This phase's round composition (multi-task rounds or catalogue task choice) is not yet supported by the draw.");
+                "This phase schedules more than one task per round, which is not yet supported by the draw.");
         }
 
-        var task = phaseDefinition.Tasks[0];
+        ImmutableArray<string> resolvedTaskRefs;
+
+        if (phaseDefinition.Rounds.Kind == CompositionKind.FixedSequence)
+        {
+            if (!taskRefs.IsEmpty)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.taskSelectionNotPermitted",
+                    "This phase's rounds follow a fixed sequence; the class leaves no task choice to make.");
+            }
+
+            // A FixedSequence phase declaring several tasks with
+            // tasksPerRound: 1 is a definition the model permits and the
+            // draw has no rule for choosing within — no corpus class is in
+            // this state today.
+            if (phaseDefinition.Tasks.Length != 1)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.unsupportedRoundComposition",
+                    "This phase declares more than one task for a fixed sequence; the draw has no rule for choosing within it.");
+            }
+
+            resolvedTaskRefs = [.. Enumerable.Repeat(phaseDefinition.Tasks[0].Code, rounds)];
+        }
+        else
+        {
+            if (taskRefs.IsEmpty)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.taskSelectionRequired",
+                    "This phase's rounds are chosen from a catalogue; a task must be named for every round.");
+            }
+
+            if (taskRefs.Length != rounds)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.taskSelectionCountMismatch",
+                    $"{rounds} round(s) were requested but {taskRefs.Length} task(s) were named.");
+            }
+
+            var catalogueCodes = phaseDefinition.Tasks.Select(t => t.Code).ToImmutableArray();
+            var unknownCode = taskRefs.FirstOrDefault(code => !catalogueCodes.Contains(code));
+            if (unknownCode is not null)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.taskNotInCatalogue",
+                    $"'{unknownCode}' is not one of this phase's catalogue task codes ({string.Join(", ", catalogueCodes)}).");
+            }
+
+            if (phaseDefinition.Rounds.RequireDistinctTaskPerRound && taskRefs.Distinct().Count() != taskRefs.Length)
+            {
+                return Result<PhaseDrawn>.Failure(
+                    "drawPhase.taskSelectionNotDistinct",
+                    $"This phase requires a different task every round; the catalogue offers {catalogueCodes.Length} distinct task(s).");
+            }
+
+            resolvedTaskRefs = taskRefs;
+        }
 
         var field = Competitors
             .Where(c => c.WithdrawnAt is null)
@@ -657,39 +711,52 @@ public sealed record Competition
             return Result<PhaseDrawn>.Failure("drawPhase.fieldEmpty", "No eligible competitors to draw.");
         }
 
-        // Absent GroupConstraint means the class does not group-score at all
-        // (NZ N/P) — one whole-field group, every round; minPerGroup ==
-        // field.Length makes PhaseDraw.BuildGroups's groupCount formula
-        // produce exactly one group without a special case.
-        var minPerGroup = field.Length;
+        var bindings = ParameterBindings
+            .GroupBy(b => b.ParameterName)
+            .ToDictionary(g => g.Key, g => g.Last().BoundValue);
 
-        if (task.Group is not null)
+        // Resolved for every round before the builder runs, not lazily
+        // inside it: the draw is atomic, so an unbound parameter on round 5
+        // must fail the whole draw rather than emit a partial schedule.
+        var minPerGroupByRound = ImmutableArray.CreateBuilder<int>(rounds);
+
+        for (var i = 0; i < rounds; i++)
         {
-            var bindings = ParameterBindings
-                .GroupBy(b => b.ParameterName)
-                .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+            var task = phaseDefinition.Tasks.First(t => t.Code == resolvedTaskRefs[i]);
 
-            decimal resolvedMinPerGroup;
-            try
+            // Absent GroupConstraint means the class does not group-score at
+            // all (NZ N/P) — one whole-field group, every round; minPerGroup
+            // == field.Length makes PhaseDraw.BuildGroups's groupCount
+            // formula produce exactly one group without a special case.
+            var minPerGroup = field.Length;
+
+            if (task.Group is not null)
             {
-                resolvedMinPerGroup = ParameterResolver.Resolve(task.Group.MinPerGroup, bindings, AdoptedRules.Definition.Parameters);
-            }
-            catch (UnresolvedParameterException ex)
-            {
-                return Result<PhaseDrawn>.Failure("drawPhase.parameterUnbound", ex.Message);
+                decimal resolvedMinPerGroup;
+                try
+                {
+                    resolvedMinPerGroup = ParameterResolver.Resolve(task.Group.MinPerGroup, bindings, AdoptedRules.Definition.Parameters);
+                }
+                catch (UnresolvedParameterException ex)
+                {
+                    return Result<PhaseDrawn>.Failure(
+                        "drawPhase.parameterUnbound", $"Round {i + 1} ('{task.Code}'): {ex.Message}");
+                }
+
+                minPerGroup = (int)resolvedMinPerGroup;
+
+                if (minPerGroup > field.Length)
+                {
+                    return Result<PhaseDrawn>.Failure(
+                        "drawPhase.fieldTooSmall",
+                        $"Round {i + 1} ('{task.Code}'): the eligible field ({field.Length}) is smaller than the class's minimum group size ({minPerGroup}).");
+                }
             }
 
-            minPerGroup = (int)resolvedMinPerGroup;
-
-            if (minPerGroup > field.Length)
-            {
-                return Result<PhaseDrawn>.Failure(
-                    "drawPhase.fieldTooSmall",
-                    $"The eligible field ({field.Length}) is smaller than the class's minimum group size ({minPerGroup}).");
-            }
+            minPerGroupByRound.Add(minPerGroup);
         }
 
-        var groupedRounds = PhaseDraw.BuildGroups(field, minPerGroup, rounds);
+        var groupedRounds = PhaseDraw.BuildGroups(field, minPerGroupByRound.MoveToImmutable());
 
         var rows = groupedRounds
             .Select((groups, roundIndex) => new Round
@@ -701,7 +768,7 @@ public sealed record Competition
                     {
                         Ordinal = 1,
                         State = TaskRoundState.Drawn,
-                        TaskRef = task.Code,
+                        TaskRef = resolvedTaskRefs[roundIndex],
                         Groups = groups
                             .Select((members, groupIndex) => new Group
                             {

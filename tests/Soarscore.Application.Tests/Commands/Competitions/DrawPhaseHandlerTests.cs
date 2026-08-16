@@ -3,6 +3,7 @@
 // WithdrawCompetitorHandlerTests.cs: no cross-aggregate read, the adopted
 // class definition is already sitting in AdoptedRules.
 
+using System.Linq;
 using AwesomeAssertions;
 using Soarscore.Application;
 using Soarscore.Application.Commands.Competitions;
@@ -76,6 +77,85 @@ public class DrawPhaseHandlerTests
         stream.Should().HaveCount(14); // 1 created + 12 registered + 1 drawn
         var drawn = stream[13].Should().BeOfType<PhaseDrawn>().Subject;
         drawn.Rounds.Length.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Drawing_a_catalogue_choice_phase_succeeds_and_carries_the_named_task_per_round()
+    {
+        var store = new FakeEventStore();
+        var id = CompetitionId.New();
+        var f3kAdoptedRules = new AdoptedRules
+        {
+            Definition = SeedF3K.Definition,
+            SourceClassId = "content-hash-abc123",
+            SourceVersion = SeedF3K.Definition.Version,
+            AdoptedAt = Now,
+        };
+        var created = new CompetitionCreated(
+            id, "Club Champs 2026", "Auckland", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13),
+            "1", f3kAdoptedRules, Now);
+        await store.AppendAsync(id.Value, ExpectedVersion.NoStream, [created], TestContext.Current.CancellationToken);
+        SeedRegisteredCompetitors(store, id, 10, startingVersion: 1);
+        var handler = new DrawPhaseHandler(store, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new DrawPhase(id, 3, ["A", "B", "C"]), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+        var stream = store.Streams[id.Value];
+        var drawn = stream[^1].Should().BeOfType<PhaseDrawn>().Subject;
+        drawn.Rounds.Select(r => r.TaskRounds[0].TaskRef).Should().Equal("A", "B", "C");
+    }
+
+    [Fact]
+    public async Task Drawing_a_catalogue_choice_phase_with_no_selection_fails_with_taskSelectionRequired()
+    {
+        var store = new FakeEventStore();
+        var id = CompetitionId.New();
+        var f3kAdoptedRules = new AdoptedRules
+        {
+            Definition = SeedF3K.Definition,
+            SourceClassId = "content-hash-abc123",
+            SourceVersion = SeedF3K.Definition.Version,
+            AdoptedAt = Now,
+        };
+        var created = new CompetitionCreated(
+            id, "Club Champs 2026", "Auckland", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13),
+            "1", f3kAdoptedRules, Now);
+        await store.AppendAsync(id.Value, ExpectedVersion.NoStream, [created], TestContext.Current.CancellationToken);
+        SeedRegisteredCompetitors(store, id, 10, startingVersion: 1);
+        var handler = new DrawPhaseHandler(store, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(new DrawPhase(id, 3), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.taskSelectionRequired");
+    }
+
+    [Fact]
+    public async Task Drawing_a_fixedSequence_phase_with_a_selection_fails_with_taskSelectionNotPermitted()
+    {
+        var (store, competitionId) = SeedCompetition();
+        SeedRegisteredCompetitors(store, competitionId, 12, startingVersion: 1);
+        var handler = new DrawPhaseHandler(store, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new DrawPhase(competitionId, 1, ["D"]), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.taskSelectionNotPermitted");
+    }
+
+    [Fact]
+    public async Task Drawing_with_a_null_TaskRefs_still_draws_a_fixedSequence_class()
+    {
+        var (store, competitionId) = SeedCompetition();
+        SeedRegisteredCompetitors(store, competitionId, 12, startingVersion: 1);
+        var handler = new DrawPhaseHandler(store, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(new DrawPhase(competitionId, 3, null), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
     }
 
     [Fact]

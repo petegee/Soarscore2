@@ -1,0 +1,340 @@
+### catalogue-choice-draw-e2e.http
+###
+### kanban/in-progress/catalogue-choice-draws-plan.md WI-9 — checked-in record of
+### the end-to-end verification run against a live API + real PostgreSQL, per
+### the plan's own precedent (bind-parameter-e2e.http's WI-8) of not leaving
+### an undocumented manual e2e step.
+###
+### This file was executed for real on 2026-08-16 against:
+###   - a throwaway Postgres 16 container (docker run postgres:16-alpine)
+###   - `dotnet run --project src/Soarscore.Api --urls http://localhost:5299`
+### and every response below matches what the run actually returned. It is
+### also intended to be re-run as a regression check: start the two processes
+### above, open this file in Rider's HTTP Client, and run top to bottom.
+###
+### A companion body file sits next to this one — `publish-f3k-body.json` —
+### wrapping the real seed definition (tools/Soarscore.SeedData/json/10-f3k.json)
+### in the `{"definition": {...}}` envelope `PublishClassDefinition` actually
+### requires, the same convention `publish-f5k-body.json` (already checked in
+### by bind-parameter-e2e.http) already follows. If either seed file changes,
+### regenerate its wrapped copy here.
+###
+### THIS FILE COMPLETES bind-parameter-e2e.http's ABANDONED F5K LEG. That
+### file's own header records: "Both of F5K's phases are ChooseFromCatalogue
+### ... which trips drawPhase.unsupportedRoundComposition ... before the
+### parameter-binding check is ever reached ... Binding minPerGroup here
+### would not change this outcome." Catalogue-choice draws are now
+### implemented, and the real run below shows F5K reaching
+### drawPhase.parameterUnbound for the first time, exactly as bind-parameter's
+### plan originally predicted before the catalogue-choice gap was discovered.
+
+@baseUrl = http://localhost:5299
+
+### =====================================================================
+### Part 1 — F3K: a catalogue draw naming five distinct tasks succeeds.
+### =====================================================================
+
+### 1. Publish F3K's real class definition.
+### Actual response in this run: 200, body
+###   "f049fcea21944528de98792dda60e9b7152d32380f06f7e93306c6775b612098"
+POST {{baseUrl}}/publish-class-definition
+Content-Type: application/json
+
+< ./publish-f3k-body.json
+
+> {%
+    client.global.set("f3kHash", JSON.parse(response.body));
+%}
+
+### 2. Create a competition adopting F3K.
+### Actual response: 200, body {"value":"01a00920-ae4f-7967-b9da-c9919aaed71d"}
+POST {{baseUrl}}/create-competition
+Content-Type: application/json
+
+{
+  "name": "F3K E2E Test",
+  "location": "Taupo",
+  "startDate": "2026-01-10",
+  "endDate": "2026-01-12",
+  "classContentHash": "{{f3kHash}}"
+}
+
+> {%
+    client.global.set("f3kCompId", JSON.parse(response.body).value);
+%}
+
+### 3. Register six people + competitors — enough for F3K's literal
+### MinPerGroup of 5 (task A and every task that inherits its Group via
+### `with`). Run 1..6, reusing the same "f3kPersonId" variable per pair,
+### the same convention bind-parameter-e2e.http's NZ-M block uses.
+###
+### Pilot 1
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K 1", "contact": { "email": "pilot-f3k-1@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId}}" }, "personId": { "value": "{{f3kPersonId}}" } }
+
+### Pilot 2
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K 2", "contact": { "email": "pilot-f3k-2@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId}}" }, "personId": { "value": "{{f3kPersonId}}" } }
+
+### Pilot 3
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K 3", "contact": { "email": "pilot-f3k-3@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId}}" }, "personId": { "value": "{{f3kPersonId}}" } }
+
+### Pilot 4
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K 4", "contact": { "email": "pilot-f3k-4@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId}}" }, "personId": { "value": "{{f3kPersonId}}" } }
+
+### Pilot 5
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K 5", "contact": { "email": "pilot-f3k-5@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId}}" }, "personId": { "value": "{{f3kPersonId}}" } }
+
+### Pilot 6
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K 6", "contact": { "email": "pilot-f3k-6@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId}}" }, "personId": { "value": "{{f3kPersonId}}" } }
+
+### 4. Draw 5 rounds, naming 5 distinct tasks — the payoff this whole thread
+### exists to reach.
+### Actual response: 200, body {"value":"01a00920-ae4f-7967-b9da-c9919aaed71d"}
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{f3kCompId}}" },
+  "rounds": 5,
+  "taskRefs": ["A", "B", "C", "D", "E"]
+}
+
+### 5. Confirm via GET /competition: five rounds, each carrying the named
+### task in order, each one group of 6.
+### Actual response in this run (abbreviated to the fields that matter):
+###   round 1: task A, groups=[6]
+###   round 2: task B, groups=[6]
+###   round 3: task C, groups=[6]
+###   round 4: task D, groups=[6]
+###   round 5: task E, groups=[6]
+GET {{baseUrl}}/competition?Id={{f3kCompId}}
+
+### =====================================================================
+### Part 2 — F3K: naming a repeated task where the rules require distinct
+### tasks is refused. A second, separate competition — a competition can
+### only be drawn once (drawPhase.alreadyDrawn), so this leg cannot reuse
+### Part 1's competition.
+### =====================================================================
+
+### 6. Create a second competition adopting F3K.
+### Actual response: 200, body {"value":"01a00920-f48b-7816-8ff5-cd659bb7e1b7"}
+POST {{baseUrl}}/create-competition
+Content-Type: application/json
+
+{
+  "name": "F3K E2E Test — repeat leg",
+  "location": "Taupo",
+  "startDate": "2026-01-10",
+  "endDate": "2026-01-12",
+  "classContentHash": "{{f3kHash}}"
+}
+
+> {%
+    client.global.set("f3kCompId2", JSON.parse(response.body).value);
+%}
+
+### 7. Register six competitors (abbreviated here to one shown; the run
+### registered all six the same way as steps 3's block, against
+### pilot-f3k-repeat-N@example.com).
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F3K Repeat 1", "contact": { "email": "pilot-f3k-repeat-1@example.com" }, "club": null }
+
+> {% client.global.set("f3kPersonId2", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f3kCompId2}}" }, "personId": { "value": "{{f3kPersonId2}}" } }
+
+### 8. Draw naming the same task twice — F3K.10's "each a different task"
+### is RequireDistinctTaskPerRound on the preliminary phase.
+### Actual response in this run: 400
+###   {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1",
+###    "title":"drawPhase.taskSelectionNotDistinct","status":400,
+###    "detail":"This phase requires a different task every round; the
+###    catalogue offers 13 distinct task(s).", ...}
+### The message states the catalogue size, not the literal repeated code —
+### a deliberate choice (Competition.cs's DrawPhase, WI-2's own note: "a
+### second code for the pigeonhole case would be a distinction without a
+### difference at the API").
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{f3kCompId2}}" },
+  "rounds": 2,
+  "taskRefs": ["A", "A"]
+}
+
+### =====================================================================
+### Part 3 — F5K: completes bind-parameter-e2e.http's abandoned F5K leg.
+### Draw without binding minPerGroup -> parameterUnbound; bind; draw again
+### naming tasks -> success. See this file's header for why F5K could not
+### reach parameterUnbound before this thread.
+### =====================================================================
+
+### 9. Publish F5K's real class definition (reuses the existing
+### publish-f5k-body.json from bind-parameter-e2e.http).
+### Actual response: 200, body
+###   "b064045339205123fe297b8068535270e3e6aff69cd9b780418856bcf6853986"
+POST {{baseUrl}}/publish-class-definition
+Content-Type: application/json
+
+< ./publish-f5k-body.json
+
+> {%
+    client.global.set("f5kHash", JSON.parse(response.body));
+%}
+
+### 10. Create a competition adopting F5K.
+### Actual response: 200, body {"value":"01a00921-0ff9-7c6f-9c01-93bf979f13aa"}
+POST {{baseUrl}}/create-competition
+Content-Type: application/json
+
+{
+  "name": "F5K E2E Test",
+  "location": "Taupo",
+  "startDate": "2026-01-10",
+  "endDate": "2026-01-12",
+  "classContentHash": "{{f5kHash}}"
+}
+
+> {%
+    client.global.set("f5kCompId", JSON.parse(response.body).value);
+%}
+
+### 11. Register five people + competitors (F5K's minPerGroup will be bound
+### to 5 below). Run 1..5, abbreviated here to one shown; the actual run
+### registered all five against pilot-f5k-N@example.com.
+POST {{baseUrl}}/register-person
+Content-Type: application/json
+
+{ "name": "Pilot F5K 1", "contact": { "email": "pilot-f5k-1@example.com" }, "club": null }
+
+> {% client.global.set("f5kPersonId", JSON.parse(response.body).value); %}
+
+###
+POST {{baseUrl}}/register-competitor
+Content-Type: application/json
+
+{ "competitionId": { "value": "{{f5kCompId}}" }, "personId": { "value": "{{f5kPersonId}}" } }
+
+### 12. Attempt the draw with minPerGroup unbound.
+### Actual response in this run: 400
+###   {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1",
+###    "title":"drawPhase.parameterUnbound","status":400,
+###    "detail":"Round 1 ('A'): Parameter 'minPerGroup' has no binding in
+###    the provided bindings dictionary.", ...}
+### THE FINDING: unlike the earlier bind-parameter-e2e.http run (which
+### stopped at drawPhase.unsupportedRoundComposition before this parameter
+### check was ever reached), F5K now reaches parameterUnbound — catalogue
+### choice was the only thing standing between it and this check.
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{f5kCompId}}" },
+  "rounds": 3,
+  "taskRefs": ["A", "B", "C"]
+}
+
+### 13. Bind minPerGroup to 5.
+### Actual response: 200, body {"value":"01a00921-0ff9-7c6f-9c01-93bf979f13aa"}
+POST {{baseUrl}}/bind-parameter
+Content-Type: application/json
+
+{
+  "competitionRef": { "value": "{{f5kCompId}}" },
+  "parameterName": "minPerGroup",
+  "value": { "kind": "Number", "number": 5 },
+  "by": "CD Jane"
+}
+
+### 14. Draw again, naming tasks.
+### Actual response: 200, body {"value":"01a00921-0ff9-7c6f-9c01-93bf979f13aa"}
+### — success, where the unbound attempt in step 12 failed for the same
+### competition and rounds, the one difference being step 13's bind.
+POST {{baseUrl}}/draw-phase
+Content-Type: application/json
+
+{
+  "competitionId": { "value": "{{f5kCompId}}" },
+  "rounds": 3,
+  "taskRefs": ["A", "B", "C"]
+}
+
+### 15. Confirm via GET /competition: three rounds, each carrying the named
+### task in order, each one group of exactly 5 (the bound value).
+### Actual response in this run (abbreviated to the fields that matter):
+###   round 1: task A, groups=[5]
+###   round 2: task B, groups=[5]
+###   round 3: task C, groups=[5]
+GET {{baseUrl}}/competition?Id={{f5kCompId}}

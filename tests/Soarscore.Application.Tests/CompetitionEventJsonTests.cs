@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
@@ -101,38 +102,42 @@ public class CompetitionEventJsonTests
         reread.Should().BeOfType<CompetitorWithdrawn>();
     }
 
+    // Two rounds, two distinct TaskRef codes — a catalogue-choice draw
+    // shape (kanban/in-progress/catalogue-choice-draws-plan.md WI-5), so the
+    // per-round TaskRef is actually covered by serialisation rather than
+    // incidentally covered by a uniform one.
     private static PhaseDrawn SamplePhaseDrawnEvent(DateTimeOffset? at = null)
     {
-        var group1 = new Group
+        Round MakeRound(int ordinal, string taskRef)
         {
-            Id = GroupId.New(),
-            Ordinal = 1,
-            CompetitorRefs = [CompetitorId.New(), CompetitorId.New()],
-        };
-        var group2 = new Group
-        {
-            Id = GroupId.New(),
-            Ordinal = 2,
-            CompetitorRefs = [CompetitorId.New(), CompetitorId.New()],
-        };
-        var taskRound = new TaskRound
-        {
-            Ordinal = 1,
-            State = TaskRoundState.Drawn,
-            TaskRef = "A",
-            Groups = [group1, group2],
-        };
-        var round = new Round
-        {
-            Ordinal = 1,
-            TaskRounds = [taskRound],
-        };
+            var group1 = new Group
+            {
+                Id = GroupId.New(),
+                Ordinal = 1,
+                CompetitorRefs = [CompetitorId.New(), CompetitorId.New()],
+            };
+            var group2 = new Group
+            {
+                Id = GroupId.New(),
+                Ordinal = 2,
+                CompetitorRefs = [CompetitorId.New(), CompetitorId.New()],
+            };
+            var taskRound = new TaskRound
+            {
+                Ordinal = 1,
+                State = TaskRoundState.Drawn,
+                TaskRef = taskRef,
+                Groups = [group1, group2],
+            };
+
+            return new Round { Ordinal = ordinal, TaskRounds = [taskRound] };
+        }
 
         return new PhaseDrawn(
             PhaseOrdinal: 0,
             Type: PhaseType.Preliminary,
             Draw: new Draw { CreatedAt = at ?? DateTimeOffset.UtcNow, Status = "drawn" },
-            Rounds: [round],
+            Rounds: [MakeRound(1, "A"), MakeRound(2, "B")],
             At: at ?? DateTimeOffset.UtcNow);
     }
 
@@ -147,6 +152,17 @@ public class CompetitionEventJsonTests
 
         reemitted.Should().Be(json);
         reread.Should().BeOfType<PhaseDrawn>();
+    }
+
+    [Fact]
+    public void PhaseDrawn_round_trips_a_different_TaskRef_per_round()
+    {
+        CompetitionEvent drawn = SamplePhaseDrawnEvent();
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+        var reread = (PhaseDrawn)JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options)!;
+
+        reread.Rounds.Select(r => r.TaskRounds[0].TaskRef).Should().Equal("A", "B");
     }
 
     private static ParameterBinding SampleParameterBinding(MeasuredValue value, DateTimeOffset? at = null) =>

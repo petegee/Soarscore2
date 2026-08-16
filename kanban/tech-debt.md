@@ -31,7 +31,7 @@ See CLAUDE.md house-keeping rule 5.
   `Competition.cs` while other work may have been in-flight against it.
   Repointing it would remove the last duplicate copy of this traversal, per
   the plan's own note that "there is no third copy... worth writing".
-- [ ] WI-13's scenario 3 (`tests/Soarscore.Acceptance.Tests/Features/CapturingAScore.feature`,
+- [x] WI-13's scenario 3 (`tests/Soarscore.Acceptance.Tests/Features/CapturingAScore.feature`,
   "A launch before the working time is recorded, not refused") publishes a
   hand-authored, single-task F3K-shaped `ClassDefinition`
   (`Support/AcceptanceF3KShape.cs`) instead of the real corpus F3K
@@ -47,3 +47,7 @@ See CLAUDE.md house-keeping rule 5.
   truncated to 0.1 s per F3K.7) restructured as the sole task on a
   `FixedSequence` phase. Once catalogue-choice draws land, retarget this
   scenario at the real corpus F3K and delete `AcceptanceF3KShape.cs`.
+  Discharged by `kanban/completed/catalogue-choice-draws-plan.md` WI-7: the
+  scenario now draws the real corpus F3K's preliminary phase naming task D
+  (and three other distinct tasks) for its four rounds via a Gherkin table,
+  and `AcceptanceF3KShape.cs` is deleted.

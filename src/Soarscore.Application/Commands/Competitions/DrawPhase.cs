@@ -3,13 +3,24 @@
 // cross-aggregate read, the class definition is already sitting in
 // AdoptedRules, copied in at CreateCompetition.
 
+using System.Collections.Immutable;
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Application.Commands.Competitions;
 
-public sealed record DrawPhase(CompetitionId CompetitionId, int Rounds) : ICommand<CompetitionId>;
+/// <summary>
+/// <see cref="TaskRefs"/> is <c>IReadOnlyList&lt;string&gt;?</c>, not
+/// <c>ImmutableArray&lt;string&gt;</c> — the first command in the repo to
+/// carry a collection. An omitted <c>ImmutableArray&lt;T&gt;</c> property
+/// deserialises to <c>default</c> — an uninitialised struct that throws on
+/// enumeration rather than reading as empty — so the nullable list keeps the
+/// omitted case a plain <c>null</c>; converted at the handler boundary.
+/// Optional and defaulted so every existing caller of /draw-phase (the
+/// FixedSequence classes) keeps working untouched.
+/// </summary>
+public sealed record DrawPhase(CompetitionId CompetitionId, int Rounds, IReadOnlyList<string>? TaskRefs = null) : ICommand<CompetitionId>;
 
 public sealed class DrawPhaseHandler(IEventStore eventStore, IClock clock) : ICommandHandler<DrawPhase, CompetitionId>
 {
@@ -22,7 +33,8 @@ public sealed class DrawPhaseHandler(IEventStore eventStore, IClock clock) : ICo
         }
 
         var (competition, version) = loaded.Value;
-        var decision = competition.DrawPhase(command.Rounds, clock.UtcNow);
+        var taskRefs = command.TaskRefs?.ToImmutableArray() ?? [];
+        var decision = competition.DrawPhase(command.Rounds, taskRefs, clock.UtcNow);
         if (decision.IsFailure)
         {
             return Result<CompetitionId>.Failure(decision.Code!, decision.Message!, decision.Defects);

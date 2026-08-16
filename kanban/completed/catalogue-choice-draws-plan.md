@@ -1,6 +1,6 @@
 # Plan — Catalogue-choice draws: the CD picks each round's task
 
-**Status:** Proposed · **Date:** 2026-08-16
+**Status:** Completed · **Date:** 2026-08-16
 
 Work items are numbered `WI-n`, scoped to *this* plan document (see
 `command-side-steel-thread-plan.md`'s numbering note — WI numbers reset per plan).

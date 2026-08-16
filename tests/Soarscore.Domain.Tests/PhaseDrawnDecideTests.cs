@@ -57,7 +57,7 @@ public class PhaseDrawnDecideTests
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 12);
 
-        var result = competition.DrawPhase(3, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(3, [], DateTimeOffset.UtcNow);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.PhaseOrdinal.Should().Be(0);
@@ -85,10 +85,10 @@ public class PhaseDrawnDecideTests
     public void DrawPhase_against_an_already_drawn_phase_fails_with_a_stable_code()
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 6);
-        var first = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var first = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
         competition = competition.Apply(first.Value);
 
-        var result = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.alreadyDrawn");
@@ -101,7 +101,7 @@ public class PhaseDrawnDecideTests
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 6);
 
-        var result = competition.DrawPhase(rounds, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(rounds, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.roundsInvalid");
@@ -113,7 +113,7 @@ public class PhaseDrawnDecideTests
         // NZ N: MaxRounds = 3 (NZ.3.13.1 k), single fixed-sequence task, no GroupConstraint.
         var competition = CompetitionAdopting(SeedNzNAles123.Definition, 6);
 
-        var result = competition.DrawPhase(4, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(4, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.roundsInvalid");
@@ -125,22 +125,112 @@ public class PhaseDrawnDecideTests
         // F3B: TasksPerRound = 3 (a round is one flight each of A, B and C).
         var competition = CompetitionAdopting(SeedF3B.Definition, 12);
 
-        var result = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.unsupportedRoundComposition");
     }
 
     [Fact]
-    public void DrawPhase_against_a_catalogue_choice_composition_fails_with_a_stable_code()
+    public void DrawPhase_against_a_catalogue_choice_phase_with_no_selection_fails_with_a_stable_code()
     {
-        // F3K's preliminary phase: ChooseFromCatalogue over multiple tasks.
+        // F3K's preliminary phase: ChooseFromCatalogue, task selection required.
         var competition = CompetitionAdopting(SeedF3K.Definition, 10);
 
-        var result = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
-        result.Code.Should().Be("drawPhase.unsupportedRoundComposition");
+        result.Code.Should().Be("drawPhase.taskSelectionRequired");
+    }
+
+    [Fact]
+    public void DrawPhase_with_a_task_selection_for_a_fixed_sequence_phase_fails_with_a_stable_code()
+    {
+        var competition = CompetitionAdopting(SeedF3J.Definition, 12);
+
+        var result = competition.DrawPhase(1, ["D"], DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.taskSelectionNotPermitted");
+    }
+
+    [Fact]
+    public void DrawPhase_with_a_task_selection_count_not_matching_rounds_fails_with_a_stable_code()
+    {
+        var competition = CompetitionAdopting(SeedF3K.Definition, 10);
+
+        var result = competition.DrawPhase(5, ["A", "B", "C"], DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.taskSelectionCountMismatch");
+    }
+
+    [Fact]
+    public void DrawPhase_with_a_task_code_not_in_the_catalogue_fails_with_a_stable_code()
+    {
+        var competition = CompetitionAdopting(SeedF3K.Definition, 10);
+
+        var result = competition.DrawPhase(1, ["Z"], DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.taskNotInCatalogue");
+    }
+
+    [Fact]
+    public void DrawPhase_with_a_repeated_task_where_the_phase_requires_distinct_tasks_fails_with_a_stable_code()
+    {
+        // F3K's preliminary phase: RequireDistinctTaskPerRound (F3K.10).
+        var competition = CompetitionAdopting(SeedF3K.Definition, 10);
+
+        var result = competition.DrawPhase(5, ["A", "A", "B", "C", "D"], DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.taskSelectionNotDistinct");
+    }
+
+    [Fact]
+    public void DrawPhase_real_corpus_F3K_with_5_distinct_catalogue_tasks_succeeds_with_the_named_task_per_round()
+    {
+        var competition = CompetitionAdopting(SeedF3K.Definition, 10); // F3K.9.1 minPerGroup 5, literal
+        var selection = new[] { "A", "B", "C", "D", "E" };
+
+        var result = competition.DrawPhase(5, [.. selection], DateTimeOffset.UtcNow);
+
+        result.IsSuccess.Should().BeTrue(result.Code);
+        result.Value.Rounds.Length.Should().Be(5);
+        result.Value.Rounds.Select(r => r.TaskRounds[0].TaskRef).Should().Equal(selection);
+        foreach (var round in result.Value.Rounds)
+        {
+            var placed = round.TaskRounds[0].Groups.SelectMany(g => g.CompetitorRefs).ToArray();
+            placed.Length.Should().Be(10);
+            placed.Distinct().Count().Should().Be(10);
+        }
+    }
+
+    [Fact]
+    public void DrawPhase_real_corpus_F5K_after_binding_minPerGroup_with_catalogue_tasks_succeeds()
+    {
+        var competition = CompetitionAdopting(SeedF5K.Definition, 10);
+        var bound = competition.BindParameter("minPerGroup", MeasuredValue.Of(5m), "CD", DateTimeOffset.UtcNow);
+        bound.IsSuccess.Should().BeTrue(bound.Code);
+        competition = competition.Apply(bound.Value);
+
+        var selection = new[] { "A", "B", "C" };
+        var result = competition.DrawPhase(3, [.. selection], DateTimeOffset.UtcNow);
+
+        result.IsSuccess.Should().BeTrue(result.Code);
+        result.Value.Rounds.Select(r => r.TaskRounds[0].TaskRef).Should().Equal(selection);
+    }
+
+    [Fact]
+    public void DrawPhase_real_corpus_F5K_without_binding_minPerGroup_fails_with_a_stable_code()
+    {
+        var competition = CompetitionAdopting(SeedF5K.Definition, 10);
+
+        var result = competition.DrawPhase(3, ["A", "B", "C"], DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("drawPhase.parameterUnbound");
     }
 
     [Fact]
@@ -148,7 +238,7 @@ public class PhaseDrawnDecideTests
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 0);
 
-        var result = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.fieldEmpty");
@@ -159,7 +249,7 @@ public class PhaseDrawnDecideTests
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 5); // F3J.6.1 minimum is 6
 
-        var result = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.fieldTooSmall");
@@ -171,7 +261,7 @@ public class PhaseDrawnDecideTests
         var definition = WithUnboundMinPerGroup(SeedF3J.Definition);
         var competition = CompetitionAdopting(definition, 12);
 
-        var result = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.parameterUnbound");
@@ -188,7 +278,7 @@ public class PhaseDrawnDecideTests
             competition = competition.Apply(withdrawn.Value);
         }
 
-        var result = competition.DrawPhase(2, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(2, [], DateTimeOffset.UtcNow);
 
         result.IsSuccess.Should().BeTrue();
         foreach (var round in result.Value.Rounds)
@@ -204,7 +294,7 @@ public class PhaseDrawnDecideTests
     {
         var competition = CompetitionAdopting(SeedNzNAles123.Definition, 5);
 
-        var result = competition.DrawPhase(3, DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(3, [], DateTimeOffset.UtcNow);
 
         result.IsSuccess.Should().BeTrue();
         foreach (var round in result.Value.Rounds)

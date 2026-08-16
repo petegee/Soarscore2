@@ -99,7 +99,7 @@ public class BindParameterDecideTests
     public void BindParameter_a_CompetitionSetup_parameter_after_a_phase_is_drawn_fails_with_a_stable_code()
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 12);
-        var drawn = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var drawn = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
         competition = competition.Apply(drawn.Value);
 
         // F3J's flyoffMinRounds: CompetitionSetup, no default (SeedF3J.cs).
@@ -146,7 +146,7 @@ public class BindParameterDecideTests
     {
         var definition = WithBeforeFlyingParameter(SeedF3J.Definition);
         var competition = CompetitionAdopting(definition, 12);
-        var drawn = competition.DrawPhase(1, DateTimeOffset.UtcNow);
+        var drawn = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
         competition = competition.Apply(drawn.Value);
 
         var beforeFlying = competition.BindParameter("windSpeed", MeasuredValue.Of(4.5m), "CD", DateTimeOffset.UtcNow);

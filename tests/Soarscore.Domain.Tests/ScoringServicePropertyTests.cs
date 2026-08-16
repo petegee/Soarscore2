@@ -181,7 +181,7 @@ public class ScoringServicePropertyTests
 
         // task.Group is null (whole-field, one group), so DrawPhase needs no
         // parameter binding — see Competition.DrawPhase's minPerGroup default.
-        var drawn = competition.DrawPhase(rounds, Now);
+        var drawn = competition.DrawPhase(rounds, [], Now);
         drawn.IsSuccess.Should().BeTrue();
         competition = competition.Apply(drawn.Value);
 

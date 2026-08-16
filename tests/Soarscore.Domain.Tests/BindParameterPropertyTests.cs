@@ -100,7 +100,7 @@ public class BindParameterPropertyTests
     {
         var competition = CompetitionAdopting(definition, fieldSize);
 
-        var blocked = competition.DrawPhase(rounds, Now);
+        var blocked = competition.DrawPhase(rounds, [], Now);
         blocked.IsFailure.Should().BeTrue();
         blocked.Code.Should().Be("drawPhase.parameterUnbound");
 
@@ -108,7 +108,7 @@ public class BindParameterPropertyTests
         bound.IsSuccess.Should().BeTrue();
         competition = competition.Apply(bound.Value);
 
-        var drawn = competition.DrawPhase(rounds, Now);
+        var drawn = competition.DrawPhase(rounds, [], Now);
         drawn.IsSuccess.Should().BeTrue();
         drawn.Value.Rounds.Length.Should().Be(rounds);
 
@@ -181,7 +181,7 @@ public class BindParameterPropertyTests
 
             var finalValue = t.values[^1];
 
-            var drawn = competition.DrawPhase(t.rounds, Now);
+            var drawn = competition.DrawPhase(t.rounds, [], Now);
             drawn.IsSuccess.Should().BeTrue();
 
             var groupCount = Math.Max(1, t.field / finalValue);
