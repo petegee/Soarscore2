@@ -328,4 +328,70 @@ public class BindParameterPropertyTests
                 iter: 30);
         }
     }
+
+    // ------------------------------------------------------------ property 6
+
+    /// <summary>
+    /// Property 6 — round-scope resolution order
+    /// (kanban/completed/per-round-parameter-bindings-plan.md). For any
+    /// sequence of bindings of one parameter, each either unscoped or scoped
+    /// to some (phaseOrdinal, roundOrdinal), and any queried round:
+    /// ScoringService.FlattenParameterBindings resolves to the LAST binding
+    /// in the sequence scoped to exactly the queried round, if one exists;
+    /// failing that, the LAST unscoped binding, if one exists; failing that,
+    /// the parameter is absent from the result entirely (so ParameterResolver
+    /// falls through to the declared default, or throws). Drives
+    /// FlattenParameterBindings directly against hand-built
+    /// ImmutableArray&lt;ParameterBinding&gt; sequences — no Competition, no
+    /// BindParameter — the property that proves the resolution order itself
+    /// is right, independent of any one class fixture.
+    /// </summary>
+    [Fact]
+    public void FlattenParameterBindings_resolves_a_round_scoped_binding_over_unscoped_over_absent()
+    {
+        const int queriedPhase = 0;
+        const int queriedRound = 3;
+        const int otherRound = 7;
+
+        // 0 = unscoped, 1 = scoped to the queried round, 2 = scoped to some other round.
+        var entryGen = from kind in Gen.Int[0, 2] from value in Gen.Int[1, 1000] select (kind, value);
+
+        entryGen.Array[0, 10].Sample(entries =>
+        {
+            var bindings = entries
+                .Select(e => new ParameterBinding
+                {
+                    ParameterName = "workingTime.A",
+                    BoundValue = MeasuredValue.Of((decimal)e.value),
+                    By = "cd",
+                    At = Now,
+                    PhaseOrdinal = e.kind == 0 ? null : queriedPhase,
+                    RoundOrdinal = e.kind switch { 0 => (int?)null, 1 => queriedRound, _ => otherRound },
+                })
+                .ToImmutableArray();
+
+            var flattened = ScoringService.FlattenParameterBindings(bindings, queriedPhase, queriedRound);
+
+            var lastScopedIndex = -1;
+            var lastUnscopedIndex = -1;
+            for (var i = 0; i < entries.Length; i++)
+            {
+                if (entries[i].kind == 1) lastScopedIndex = i;
+                if (entries[i].kind == 0) lastUnscopedIndex = i;
+            }
+
+            if (lastScopedIndex >= 0)
+            {
+                flattened["workingTime.A"].Number.Should().Be(entries[lastScopedIndex].value);
+            }
+            else if (lastUnscopedIndex >= 0)
+            {
+                flattened["workingTime.A"].Number.Should().Be(entries[lastUnscopedIndex].value);
+            }
+            else
+            {
+                flattened.Should().NotContainKey("workingTime.A");
+            }
+        });
+    }
 }

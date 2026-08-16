@@ -56,6 +56,11 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
     // ALES 200's real definition needs no isolation fixture, unlike F5K's.
     private static readonly ClassDefinition NzMAles200Definition = Corpus.All.Single(c => c.FileName == "80-nz-m-ales200").Definition;
 
+    // kanban/completed/per-round-parameter-bindings-plan.md's round-scope test:
+    // F3K is the only corpus class with any ParameterBindingPoint.PerRound
+    // parameter (workingTime.A/B/E/L, maxFlight.B/L, all SeedF3K.cs).
+    private static readonly ClassDefinition F3KDefinition = Corpus.All.Single(c => c.FileName == "10-f3k").Definition;
+
     private static async Task<CompetitionId> CreateCompetitionAsync(PostgresFixture fixture, ClassDefinition definition, string name)
     {
         var publishHandler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
@@ -192,6 +197,37 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
             placed.Should().OnlyHaveUniqueItems();
             placed.Should().BeEquivalentTo(competitorIds);
         }
+    }
+
+    [Fact]
+    public async Task A_round_scoped_ParameterBound_survives_an_append_read_round_trip_through_postgres()
+    {
+        var competitionId = await CreateCompetitionAsync(fixture, F3KDefinition, "Round Scope Round Trip");
+
+        for (var i = 0; i < 10; i++)
+        {
+            await RegisterCompetitorAsync(fixture, competitionId, $"pilot-round-scope-{i}@example.com");
+        }
+
+        // F3K.11.1: round 1's task (A) references workingTime.A.
+        var drawHandler = new DrawPhaseHandler(fixture.EventStore, new SystemClock());
+        var drawn = await drawHandler.HandleAsync(
+            new DrawPhase(competitionId, 5, ["A", "B", "C", "D", "E"]), TestContext.Current.CancellationToken);
+        drawn.IsSuccess.Should().BeTrue();
+
+        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bound = await bindHandler.HandleAsync(
+            new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD Jane", PhaseOrdinal: 0, RoundOrdinal: 1),
+            TestContext.Current.CancellationToken);
+        bound.IsSuccess.Should().BeTrue();
+
+        var getHandler = new GetCompetitionHandler(fixture.EventStore);
+        var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
+        fetched.IsSuccess.Should().BeTrue();
+
+        var binding = fetched.Value.Competition.ParameterBindings.Single(b => b.ParameterName == "workingTime.A");
+        binding.PhaseOrdinal.Should().Be(0);
+        binding.RoundOrdinal.Should().Be(1);
     }
 
     [Fact]

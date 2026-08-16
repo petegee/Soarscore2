@@ -213,6 +213,78 @@ public class BindParameterHandlerTests
         second.ParameterBindings.Should().Equal(first.ParameterBindings);
     }
 
+    // Round-scope tests — kanban/completed/per-round-parameter-bindings-plan.md.
+    // Just enough to prove the handler threads PhaseOrdinal/RoundOrdinal
+    // through to Competition.BindParameter unchanged — the decide function's
+    // own validation is exhaustively covered in BindParameterDecideTests.cs.
+
+    [Fact]
+    public async Task Binding_round_scoped_against_a_non_PerRound_parameter_surfaces_the_decide_functions_code_unchanged()
+    {
+        var (store, competitionId) = SeedCompetition();
+        var handler = new BindParameterHandler(store, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD", PhaseOrdinal: 0, RoundOrdinal: 1),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundScopeNotPermitted");
+    }
+
+    [Fact]
+    public async Task Binding_round_scoped_against_the_round_whose_task_consumes_it_succeeds_and_the_appended_event_carries_the_scope()
+    {
+        var store = new FakeEventStore();
+        var competitionId = CompetitionId.New();
+        var f3kAdoptedRules = new AdoptedRules
+        {
+            Definition = SeedF3K.Definition,
+            SourceClassId = "content-hash-f3k",
+            SourceVersion = SeedF3K.Definition.Version,
+            AdoptedAt = Now,
+        };
+        var created = new CompetitionCreated(
+            competitionId, "F3K Round Scope Test", "Nowhere", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13),
+            "1", f3kAdoptedRules, Now);
+        await store.AppendAsync(competitionId.Value, ExpectedVersion.NoStream, [created], TestContext.Current.CancellationToken);
+
+        var version = 1L;
+        for (var i = 0; i < 10; i++)
+        {
+            var competitor = new Competitor
+            {
+                Id = CompetitorId.New(),
+                PersonRef = Soarscore.Domain.People.PersonId.New(),
+                CompetitorNumber = i + 1,
+                RegisteredAt = Now,
+            };
+            await store.AppendAsync(
+                competitionId.Value, ExpectedVersion.Exact(version), [new CompetitorRegistered(competitor, Now)],
+                TestContext.Current.CancellationToken);
+            version++;
+        }
+
+        // F3K.11.1: round 1's task (A) references workingTime.A.
+        var drawHandler = new DrawPhaseHandler(store, new FakeClock(Now));
+        var drawn = await drawHandler.HandleAsync(
+            new DrawPhase(competitionId, 5, ["A", "B", "C", "D", "E"]), TestContext.Current.CancellationToken);
+        drawn.IsSuccess.Should().BeTrue();
+
+        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD", PhaseOrdinal: 0, RoundOrdinal: 1),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+
+        var stream = store.Streams[competitionId.Value];
+        var bound = stream[^1].Should().BeOfType<ParameterBound>().Subject;
+        bound.Binding.ParameterName.Should().Be("workingTime.A");
+        bound.Binding.PhaseOrdinal.Should().Be(0);
+        bound.Binding.RoundOrdinal.Should().Be(1);
+    }
+
     /// <summary>
     /// Wraps a real FakeEventStore but truncates one stream's ReadStreamAsync
     /// result — standing in for a read that happened before a concurrent

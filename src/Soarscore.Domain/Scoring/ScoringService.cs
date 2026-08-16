@@ -125,7 +125,6 @@ public static class ScoringService
         IReadOnlyDictionary<EntryId, Entry> entries)
     {
         var classDef = competition.AdoptedRules.Definition;
-        var bindings = FlattenParameterBindings(competition.ParameterBindings);
 
         // competitorRef (string) → running total across every phase they score in.
         // Only phase 0 is ever drawn today (Competition.cs's DrawPhase), so this
@@ -145,6 +144,10 @@ public static class ScoringService
 
             foreach (var round in phase.Rounds)
             {
+                // Round-scoped, not task-round-scoped: ParameterBinding.RoundOrdinal
+                // names Round.Ordinal (kanban/completed/per-round-parameter-bindings-plan.md).
+                var bindings = FlattenParameterBindings(competition.ParameterBindings, phase.Ordinal, round.Ordinal);
+
                 var taskRoundData = ImmutableArray.CreateBuilder<TaskRoundData>();
 
                 foreach (var taskRound in round.TaskRounds)
@@ -266,16 +269,43 @@ public static class ScoringService
     // ---------------------------------------------------- parameter bindings
 
     /// <summary>
-    /// Flattens Competition.ParameterBindings last-write-wins by ParameterName.
-    /// Lifted here from its fourth inline copy (Competition.DrawPhase,
-    /// Competition.OpenEntry, Application.Entries.TaskResolver) so this is the
-    /// one place the flatten is written.
+    /// Flattens Competition.ParameterBindings to one value per parameter name,
+    /// the one place every caller (Competition.DrawPhase, Competition.OpenEntry,
+    /// Application.Entries.TaskResolver, Application.Queries.Scoring.ScoreTaskRound,
+    /// ScoreCompetition below) does it. Resolution order — Appendix A of
+    /// kanban/completed/catalogue-choice-draws-plan.md, discharged by
+    /// kanban/completed/per-round-parameter-bindings-plan.md: for the queried
+    /// (phaseOrdinal, roundOrdinal), the last binding scoped to exactly that
+    /// round wins; failing that, the last unscoped binding; failing that, the
+    /// parameter is simply absent from the result (ParameterResolver falls back
+    /// to the declared default, or throws). Omitting both arguments — every
+    /// caller that cannot yet know a round, i.e. DrawPhase building rounds that
+    /// do not exist yet — degrades to "unscoped bindings only", exactly today's
+    /// behaviour, since a round-scoped binding never matches a null round.
     /// </summary>
     public static IReadOnlyDictionary<string, MeasuredValue> FlattenParameterBindings(
-        ImmutableArray<ParameterBinding> bindings) =>
-        bindings
-            .GroupBy(b => b.ParameterName)
-            .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+        ImmutableArray<ParameterBinding> bindings, int? phaseOrdinal = null, int? roundOrdinal = null)
+    {
+        var result = new Dictionary<string, MeasuredValue>();
+
+        foreach (var group in bindings.GroupBy(b => b.ParameterName))
+        {
+            var roundScoped = group
+                .Where(b => b.RoundOrdinal is not null && b.PhaseOrdinal == phaseOrdinal && b.RoundOrdinal == roundOrdinal)
+                .ToImmutableArray();
+
+            var chosen = roundScoped.IsEmpty
+                ? group.Where(b => b.RoundOrdinal is null).LastOrDefault()
+                : roundScoped[^1];
+
+            if (chosen is not null)
+            {
+                result[group.Key] = chosen.BoundValue;
+            }
+        }
+
+        return result;
+    }
 
     // ---------------------------------------------------- amendment resolution
 

@@ -19,7 +19,9 @@ public sealed record BindParameter(
     CompetitionId CompetitionRef,
     string ParameterName,
     MeasuredValue Value,
-    string By) : ICommand<CompetitionId>;
+    string By,
+    int? PhaseOrdinal = null,
+    int? RoundOrdinal = null) : ICommand<CompetitionId>;
 
 public sealed class BindParameterHandler(IEventStore eventStore, IClock clock) : ICommandHandler<BindParameter, CompetitionId>
 {
@@ -38,7 +40,9 @@ public sealed class BindParameterHandler(IEventStore eventStore, IClock clock) :
         }
 
         var (competition, version) = loaded.Value;
-        var decision = competition.BindParameter(command.ParameterName, command.Value, command.By, clock.UtcNow);
+        var decision = competition.BindParameter(
+            command.ParameterName, command.Value, command.By, clock.UtcNow,
+            command.PhaseOrdinal, command.RoundOrdinal);
         if (decision.IsFailure)
         {
             return Result<CompetitionId>.Failure(decision.Code!, decision.Message!, decision.Defects);

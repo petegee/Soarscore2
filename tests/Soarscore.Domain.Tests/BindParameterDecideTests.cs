@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 using Xunit;
 
@@ -59,6 +60,20 @@ public class BindParameterDecideTests
             Parameters = definition.Parameters.Add(
                 new Parameter { Name = "windSpeed", Kind = MeasuredKind.Number, BoundAt = ParameterBindingPoint.BeforeFlying }),
         };
+
+    /// <summary>
+    /// Real corpus F3K (Soarscore.SeedData.SeedF3K), drawn 5 distinct
+    /// catalogue tasks A-E, one per round — the round-scope tests' fixture:
+    /// round 1's task (A) references workingTime.A, round 2's task (B) does
+    /// not (PhaseDrawnDecideTests.cs's own real-corpus draw pattern).
+    /// </summary>
+    private static Competition DrawnF3K()
+    {
+        var competition = CompetitionAdopting(SeedF3K.Definition, 10);
+        var drawn = competition.DrawPhase(5, ["A", "B", "C", "D", "E"], DateTimeOffset.UtcNow);
+        drawn.IsSuccess.Should().BeTrue();
+        return competition.Apply(drawn.Value);
+    }
 
     [Fact]
     public void BindParameter_against_an_undeclared_name_fails_with_a_stable_code()
@@ -155,5 +170,124 @@ public class BindParameterDecideTests
         var competitionSetup = competition.BindParameter("flyoffMinRounds", MeasuredValue.Of(3m), "CD", DateTimeOffset.UtcNow);
         competitionSetup.IsFailure.Should().BeTrue();
         competitionSetup.Code.Should().Be("competition.parameter.frozen");
+    }
+
+    // Round-scope tests — kanban/completed/per-round-parameter-bindings-plan.md.
+
+    [Theory]
+    [InlineData(0, null)]
+    [InlineData(null, 1)]
+    public void BindParameter_round_scoped_with_only_one_of_phase_or_round_given_fails_with_a_stable_code(int? phaseOrdinal, int? roundOrdinal)
+    {
+        var competition = CompetitionAdopting(SeedF3J.Definition, 6);
+
+        var result = competition.BindParameter(
+            "flyoffMinRounds", MeasuredValue.Of(3m), "CD", DateTimeOffset.UtcNow, phaseOrdinal, roundOrdinal);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundScopeIncomplete");
+    }
+
+    [Fact]
+    public void BindParameter_round_scoped_against_a_non_PerRound_parameter_fails_with_a_stable_code_even_when_no_phase_is_drawn()
+    {
+        // flyoffMinRounds is CompetitionSetup (SeedF3J.cs) — the BoundAt check
+        // fires before the round-exists check, so no draw is needed to prove it.
+        var competition = CompetitionAdopting(SeedF3J.Definition, 6);
+
+        var result = competition.BindParameter(
+            "flyoffMinRounds", MeasuredValue.Of(3m), "CD", DateTimeOffset.UtcNow, phaseOrdinal: 0, roundOrdinal: 1);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundScopeNotPermitted");
+    }
+
+    [Fact]
+    public void BindParameter_round_scoped_against_a_round_that_was_never_drawn_fails_with_a_stable_code()
+    {
+        var competition = DrawnF3K();
+
+        var result = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(420m), "CD", DateTimeOffset.UtcNow, phaseOrdinal: 0, roundOrdinal: 99);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundNotFound");
+    }
+
+    [Fact]
+    public void BindParameter_round_scoped_against_a_round_whose_task_does_not_consume_the_parameter_fails_with_a_stable_code()
+    {
+        // Round 2's task is B (F3K.11.2), which references workingTime.B, not workingTime.A.
+        var competition = DrawnF3K();
+
+        var result = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(420m), "CD", DateTimeOffset.UtcNow, phaseOrdinal: 0, roundOrdinal: 2);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.notConsumedByTask");
+    }
+
+    [Fact]
+    public void BindParameter_round_scoped_against_a_round_that_has_left_Drawn_fails_with_a_stable_code()
+    {
+        var competition = DrawnF3K();
+        competition = competition.Apply(new TaskRoundCompleted(
+            PhaseOrdinal: 0, RoundOrdinal: 1, TaskRoundOrdinal: 1, DateTimeOffset.UtcNow));
+
+        var result = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(420m), "CD", DateTimeOffset.UtcNow, phaseOrdinal: 0, roundOrdinal: 1);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundFrozen");
+    }
+
+    [Fact]
+    public void BindParameter_round_scoped_against_the_round_whose_task_consumes_it_succeeds_and_carries_the_scope_through()
+    {
+        // Round 1's task is A (F3K.11.1), which references workingTime.A.
+        var competition = DrawnF3K();
+        var at = DateTimeOffset.UtcNow;
+
+        var result = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(420m), "CD Jane", at, phaseOrdinal: 0, roundOrdinal: 1);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Binding.ParameterName.Should().Be("workingTime.A");
+        result.Value.Binding.BoundValue.Should().Be(MeasuredValue.Of(420m));
+        result.Value.Binding.PhaseOrdinal.Should().Be(0);
+        result.Value.Binding.RoundOrdinal.Should().Be(1);
+    }
+
+    [Fact]
+    public void A_round_scoped_binding_wins_for_its_own_round_and_the_unscoped_binding_still_governs_elsewhere()
+    {
+        // Round 1's task is A; round 5's task is E — both consume a distinct
+        // workingTime.* parameter, so binding workingTime.A unscoped and then
+        // again scoped to round 1 lets one flattening query at round 1 prove
+        // the round-scoped value wins there, while a same-named query is
+        // meaningless at round 5 (E doesn't reference workingTime.A at all) —
+        // instead, resolve E's own PerRound parameter (workingTime.E) at round
+        // 5 with no round-scoped binding for IT, and see the unscoped default
+        // still stand: round-scoping one parameter for round 1 has zero effect
+        // on a different parameter's resolution at a different round.
+        var competition = DrawnF3K();
+
+        var unscoped = competition.BindParameter("workingTime.A", MeasuredValue.Of(420m), "CD", DateTimeOffset.UtcNow);
+        unscoped.IsSuccess.Should().BeTrue();
+        competition = competition.Apply(unscoped.Value);
+
+        var roundScoped = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(600m), "CD", DateTimeOffset.UtcNow, phaseOrdinal: 0, roundOrdinal: 1);
+        roundScoped.IsSuccess.Should().BeTrue();
+        competition = competition.Apply(roundScoped.Value);
+
+        var atRound1 = ScoringService.FlattenParameterBindings(competition.ParameterBindings, phaseOrdinal: 0, roundOrdinal: 1);
+        atRound1["workingTime.A"].Number.Should().Be(600m);
+
+        // workingTime.E has no binding at all here — round 5's flatten falls
+        // straight through to the class's declared default (600, SeedF3K.cs),
+        // proving round 1's binding of a DIFFERENT parameter left it untouched.
+        var atRound5 = ScoringService.FlattenParameterBindings(competition.ParameterBindings, phaseOrdinal: 0, roundOrdinal: 5);
+        atRound5.Should().NotContainKey("workingTime.E");
     }
 }

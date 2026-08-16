@@ -51,3 +51,17 @@ See CLAUDE.md house-keeping rule 5.
   scenario now draws the real corpus F3K's preliminary phase naming task D
   (and three other distinct tasks) for its four rounds via a Gherkin table,
   and `AcceptanceF3KShape.cs` is deleted.
+- [ ] Round-scoped `ParameterBinding`'s freeze rule is an approximation, not the
+  rule the plan actually wanted. `kanban/completed/per-round-parameter-bindings-plan.md`
+  decided (2026-08-16, user-confirmed) to freeze a round-scoped bind once the
+  target round's `TaskRound.State` leaves `Drawn` — the only signal available
+  inside `Competition`, which holds no live flight data
+  (`src/Soarscore.Domain/Competitions/Competition.cs`'s own design note). The
+  intent was "not after that round's first flight"; nothing today transitions a
+  `TaskRound` to `InProgress` on the first `Entry` opened against it (the same
+  gap the `TaskRoundState` tech-debt item above already names), so a
+  round-scoped rebind is still silently accepted for a round mid-flight, right
+  up until `TaskRoundCompleted`/`TaskRoundAnnulled` lands. Closing this
+  properly needs either a domain event marking a task-round `InProgress` on
+  first `Entry`, or a deliberate decision that the approximation is good
+  enough for a club-scale event.

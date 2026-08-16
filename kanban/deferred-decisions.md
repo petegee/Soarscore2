@@ -22,21 +22,6 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
 - **Multi-task rounds (F3B).** `FixedSequence` with `tasksPerRound: 3`, structurally
   rejected by `Competition.DrawPhase` with `drawPhase.unsupportedRoundComposition`. A
   different problem from catalogue choice, refused at the same single check.
-- **Per-round parameter bindings.** `ParameterBinding` carries no round or phase
-  ordinal, so `ParameterBindingPoint.PerRound` is *unrepresentable*. Six parameters are
-  affected, all F3K's. **Decided 2026-08-08: deferred into the catalogue-choice story**
-  — binding "the working time for round 3" is meaningless until round 3 has a task, and
-  adding the scope alone would have unblocked nothing while F3K was independently
-  blocked by its round composition. That precondition is now discharged (rounds have
-  tasks — `kanban/completed/catalogue-choice-draws-plan.md`), but **decided 2026-08-16
-  it stays a separate follow-on thread rather than landing with the draw change** — it
-  still unblocks nothing (F3K's defaults cover every corpus scenario today; this only
-  buys a CD an override), and it touches a different set of files
-  (`ParameterBinding`/`ParameterResolver`/`TaskResolver`/`Competition.OpenEntry` all
-  growing round context). Now a planned story,
-  `kanban/backlog/per-round-parameter-bindings-plan.md`, whose shape is recorded in
-  `kanban/completed/catalogue-choice-draws-plan.md` Appendix A. Reasoning at
-  `kanban/completed/bind-parameter-steel-thread-plan.md`, finding 1.
 
 ## Competition class model
 

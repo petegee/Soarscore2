@@ -59,11 +59,9 @@ internal static class TaskResolver
                 $"Task-round references task '{taskRound.TaskRef}', which is not declared by the adopted class definition.");
         }
 
-        // Flattened last-write-wins, exactly as Competition.cs's DrawPhase and
-        // Competition.OpenEntry already do — lifted to ScoringService by
-        // kanban/completed/scoring-steel-thread-plan.md WI-3, which needed a fourth
-        // copy and made this the one place the flatten is written instead.
-        var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings);
+        // Round-scoped binding for this round wins over an unscoped one, per
+        // kanban/completed/per-round-parameter-bindings-plan.md.
+        var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings, phaseOrdinal, roundOrdinal);
 
         try
         {

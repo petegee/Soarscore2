@@ -159,6 +159,21 @@ public sealed record ParameterBinding
     public required string By { get; init; }
 
     public required DateTimeOffset At { get; init; }
+
+    /// <summary>
+    /// Both-or-neither with <see cref="RoundOrdinal"/>. Null means this binding is
+    /// unscoped — it applies wherever no round-scoped binding of the same
+    /// parameter wins (kanban/completed/catalogue-choice-draws-plan.md Appendix A's
+    /// resolution order). 0-based, matching <see cref="Phase.Ordinal"/>.
+    /// </summary>
+    public int? PhaseOrdinal { get; init; }
+
+    /// <summary>
+    /// Both-or-neither with <see cref="PhaseOrdinal"/>. 1-based, matching
+    /// <see cref="Round.Ordinal"/> — NOT <see cref="TaskRound.Ordinal"/>, which
+    /// indexes the (currently always single) task within the round.
+    /// </summary>
+    public int? RoundOrdinal { get; init; }
 }
 
 /// <summary>
@@ -568,19 +583,23 @@ public sealed record Competition
             : Result<CompetitorWithdrawn>.Success(new CompetitorWithdrawn(competitorRef, at));
     }
 
-    // Instance decide function — WI-1 (kanban/completed/bind-parameter-steel-thread-plan.md).
+    // Instance decide function — WI-1 (kanban/completed/bind-parameter-steel-thread-plan.md),
+    // round scope added by kanban/completed/per-round-parameter-bindings-plan.md.
     // Defect-chain style, like RegisterCompetitor/WithdrawCompetitor above —
     // unlike DrawPhase below, no later check needs a value computed by an
     // earlier one, so each validator re-resolves the named Parameter itself
     // rather than threading it through. Re-binding before the draw is
     // deliberately allowed and not deduped here: last-write-wins is resolved
     // at the draw's call site (Competition.cs, DrawPhase), not here.
-    public Result<ParameterBound> BindParameter(string parameterName, MeasuredValue value, string by, DateTimeOffset at)
+    public Result<ParameterBound> BindParameter(
+        string parameterName, MeasuredValue value, string by, DateTimeOffset at,
+        int? phaseOrdinal = null, int? roundOrdinal = null)
     {
         var defect = ValidateParameterDeclared(parameterName)
             ?? ValidateParameterKind(parameterName, value)
             ?? ValidateParameterValueAllowed(parameterName, value)
-            ?? ValidateParameterNotFrozen(parameterName);
+            ?? ValidateParameterNotFrozen(parameterName)
+            ?? ValidateRoundScope(parameterName, phaseOrdinal, roundOrdinal);
 
         if (defect is not null)
         {
@@ -594,6 +613,8 @@ public sealed record Competition
                 BoundValue = value,
                 By = by,
                 At = at,
+                PhaseOrdinal = phaseOrdinal,
+                RoundOrdinal = roundOrdinal,
             }));
     }
 
@@ -711,9 +732,10 @@ public sealed record Competition
             return Result<PhaseDrawn>.Failure("drawPhase.fieldEmpty", "No eligible competitors to draw.");
         }
 
-        var bindings = ParameterBindings
-            .GroupBy(b => b.ParameterName)
-            .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+        // No round context: a round-scoped binding can only name a round that
+        // already exists (ValidateRoundScope), and the rounds this draw is
+        // about to create do not exist yet — only unscoped bindings can apply.
+        var bindings = ScoringService.FlattenParameterBindings(ParameterBindings);
 
         // Resolved for every round before the builder runs, not lazily
         // inside it: the draw is atomic, so an unbound parameter on round 5
@@ -885,11 +907,9 @@ public sealed record Competition
                     "This task's timing is Fixed but declares no WorkingTime — a definition defect.");
             }
 
-            // Flattened last-write-wins, exactly as Competition.cs's DrawPhase
-            // already does for the draw.
-            var bindings = ParameterBindings
-                .GroupBy(b => b.ParameterName)
-                .ToDictionary(g => g.Key, g => g.Last().BoundValue);
+            // Round-scoped binding for THIS round wins over an unscoped one,
+            // per kanban/completed/per-round-parameter-bindings-plan.md.
+            var bindings = ScoringService.FlattenParameterBindings(ParameterBindings, phaseOrdinal, roundOrdinal);
 
             decimal resolvedWorkingTimeSeconds;
             try
@@ -988,5 +1008,69 @@ public sealed record Competition
         return parameter is not null && parameter.BoundAt == ParameterBindingPoint.CompetitionSetup && !Phases.IsEmpty
             ? new Defect("competition.parameter.frozen", "$.parameterName", $"'{parameterName}' is bound at competition setup and cannot be changed once a phase has been drawn.")
             : null;
+    }
+
+    // kanban/completed/per-round-parameter-bindings-plan.md. phaseOrdinal/roundOrdinal
+    // null-null means an unscoped bind — every parameter, PerRound or not, may
+    // still be bound unscoped (Appendix A's resolution order falls back to it).
+    // Only a genuinely round-scoped bind (both given) triggers the checks below.
+    private Defect? ValidateRoundScope(string parameterName, int? phaseOrdinal, int? roundOrdinal)
+    {
+        if (phaseOrdinal is null && roundOrdinal is null)
+        {
+            return null;
+        }
+
+        if (phaseOrdinal is null || roundOrdinal is null)
+        {
+            return new Defect(
+                "competition.parameter.roundScopeIncomplete", "$.roundOrdinal",
+                "A round-scoped binding must name both a phase and a round.");
+        }
+
+        var parameter = AdoptedRules.Definition.Parameters.FirstOrDefault(p => p.Name == parameterName);
+        if (parameter is not null && parameter.BoundAt != ParameterBindingPoint.PerRound)
+        {
+            return new Defect(
+                "competition.parameter.roundScopeNotPermitted", "$.roundOrdinal",
+                $"'{parameterName}' is not bound per round; a round-scoped binding is not permitted.");
+        }
+
+        var round = Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal)?.Rounds.FirstOrDefault(r => r.Ordinal == roundOrdinal);
+        if (round is null)
+        {
+            return new Defect(
+                "competition.parameter.roundNotFound", "$.roundOrdinal",
+                $"No round {roundOrdinal} in phase {phaseOrdinal} has been drawn.");
+        }
+
+        // Single(): every round has exactly one task-round today — multi-task
+        // rounds (F3B) are a separate, still-deferred thread (DrawPhase's
+        // drawPhase.unsupportedRoundComposition).
+        var taskRound = round.TaskRounds.Single();
+        var task = AdoptedRules.Definition.Phases.SelectMany(p => p.Tasks).First(t => t.Code == taskRound.TaskRef);
+
+        if (!ParameterResolver.TaskReferencesParameter(task, parameterName))
+        {
+            return new Defect(
+                "competition.parameter.notConsumedByTask", "$.parameterName",
+                $"Round {roundOrdinal}'s task ('{task.Code}') does not consume '{parameterName}'.");
+        }
+
+        // The freeze rule the plan left open, decided for this thread: the
+        // only signal available inside this aggregate is TaskRoundState —
+        // Competition holds no live flight data (this file's own design
+        // note), so "after that round's first flight" is approximated as
+        // "once the round is no longer Drawn". A rebind mid-round (State
+        // still Drawn, but a flight has actually opened) is not caught here —
+        // recorded as tech debt, not silently accepted as correct.
+        if (taskRound.State != TaskRoundState.Drawn)
+        {
+            return new Defect(
+                "competition.parameter.roundFrozen", "$.roundOrdinal",
+                $"Round {roundOrdinal} is {taskRound.State}; a round-scoped binding can no longer be made.");
+        }
+
+        return null;
     }
 }

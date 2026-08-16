@@ -165,13 +165,16 @@ public class CompetitionEventJsonTests
         reread.Rounds.Select(r => r.TaskRounds[0].TaskRef).Should().Equal("A", "B");
     }
 
-    private static ParameterBinding SampleParameterBinding(MeasuredValue value, DateTimeOffset? at = null) =>
+    private static ParameterBinding SampleParameterBinding(
+        MeasuredValue value, DateTimeOffset? at = null, int? phaseOrdinal = null, int? roundOrdinal = null) =>
         new()
         {
             ParameterName = "minPerGroup",
             BoundValue = value,
             By = "CD",
             At = at ?? DateTimeOffset.UtcNow,
+            PhaseOrdinal = phaseOrdinal,
+            RoundOrdinal = roundOrdinal,
         };
 
     [Fact]
@@ -198,6 +201,22 @@ public class CompetitionEventJsonTests
 
         reemitted.Should().Be(json);
         reread.Should().BeOfType<ParameterBound>();
+    }
+
+    [Fact]
+    public void ParameterBound_event_with_round_scope_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        // kanban/completed/per-round-parameter-bindings-plan.md's PhaseOrdinal/RoundOrdinal.
+        CompetitionEvent bound = new ParameterBound(SampleParameterBinding(MeasuredValue.Of(420m), phaseOrdinal: 0, roundOrdinal: 3));
+
+        var json = JsonSerializer.Serialize(bound, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        var rereadBound = reread.Should().BeOfType<ParameterBound>().Subject;
+        rereadBound.Binding.PhaseOrdinal.Should().Be(0);
+        rereadBound.Binding.RoundOrdinal.Should().Be(3);
     }
 
     [Fact]

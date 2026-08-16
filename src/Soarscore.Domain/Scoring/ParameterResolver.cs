@@ -127,6 +127,48 @@ public static class ParameterResolver
         );
     }
 
+    // ------------------------------------------------- reference walking
+
+    /// <summary>
+    /// True if <paramref name="task"/> names <paramref name="parameterName"/> in
+    /// any of the ParameterRef slots the class-diagram notation permits
+    /// (ParameterReference.cs) that live inside a TaskDefinition — Timing,
+    /// Group, a task-level Reflight override, and both ScoreTerm lists.
+    /// kanban/completed/per-round-parameter-bindings-plan.md: this is what makes
+    /// "does round N's task actually consume this parameter" checkable.
+    /// </summary>
+    public static bool TaskReferencesParameter(TaskDefinition task, string parameterName)
+    {
+        if (References(task.Timing.WorkingTime, parameterName)) return true;
+        if (References(task.Timing.PreparationTime, parameterName)) return true;
+        if (References(task.Timing.MaxLaunches, parameterName)) return true;
+        if (task.Group is not null && References(task.Group.MinPerGroup, parameterName)) return true;
+        if (task.Reflight?.MinNewGroupSize is not null && References(task.Reflight.MinNewGroupSize, parameterName)) return true;
+        if (task.Score.Any(t => ScoreTermReferences(t, parameterName))) return true;
+        if (task.ScoreNormalised.Any(t => ScoreTermReferences(t, parameterName))) return true;
+
+        return false;
+    }
+
+    private static bool References(NumberOrParam? value, string parameterName) =>
+        value is NumberOrParam.Ref r && r.ParameterName == parameterName;
+
+    private static bool ScoreTermReferences(ScoreTerm term, string parameterName) =>
+        term switch
+        {
+            RateTerm t => References(t.Cap, parameterName),
+
+            PiecewiseTerm t => References(t.Origin, parameterName)
+                || t.Bands.Any(b => References(b.From, parameterName) || References(b.To, parameterName)),
+
+            ConditionalTerm t => ScoreTermReferences(t.Then, parameterName)
+                || (t.Else is not null && ScoreTermReferences(t.Else, parameterName)),
+
+            LookupTerm or ConstantTerm => false,
+
+            _ => throw new ArgumentException($"Unknown ScoreTerm subtype: {term.GetType().Name}")
+        };
+
     // --------------------------------------------------------- private
 
     private static decimal ResolveBinding(

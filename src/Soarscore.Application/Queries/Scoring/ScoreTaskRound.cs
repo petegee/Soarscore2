@@ -105,7 +105,7 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
 
         var entries = entriesLoaded.Value;
         var classDef = competition.AdoptedRules.Definition;
-        var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings);
+        var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings, query.PhaseOrdinal, query.RoundOrdinal);
 
         var views = new List<GroupScoreView>();
 
