@@ -66,3 +66,14 @@ internal sealed class MartenEntryIndexProjection
         Marten.IDocumentOperations operations, Guid streamId, CancellationToken cancellation)
         => await operations.LoadAsync<EntrySummary>(new EntryId(streamId), cancellation);
 }
+
+// The Fisher/SQLite shim — kanban/completed/multi-backend-deployment.md WI-3.
+// Mirrors the Marten shim above exactly; the full note on why both stores need a
+// strong-typed-id load override is on People/PersonSummaryProjection.cs.
+internal sealed class FisherEntryIndexProjection
+    : EntryIndexProjection<Fisher.IDocumentSession>, Fisher.Projections.IProjection
+{
+    protected override async Task<EntrySummary?> LoadCurrentAsync(
+        Fisher.IDocumentSession operations, Guid streamId, CancellationToken cancellation)
+        => await operations.LoadAsync<EntrySummary, EntryId>(new EntryId(streamId), cancellation);
+}

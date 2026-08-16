@@ -6,6 +6,12 @@
 // calls the real handlers directly against fixture.EventStore/fixture.EntryQuery,
 // no dispatcher needed for a store-level test.
 //
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, so they now run unchanged against every backend Soarscore
+// supports — Marten/PostgreSQL and Fisher/SQLite — one concrete subclass per
+// backend at the foot of the file. Only the Postgres subclass keeps
+// Trait("Category", "Storage"); EventStoreTests.cs's header says why.
+//
 // No GetEntry query exists yet (EntrySummary.cs's doc comment: "a future work
 // item, mirroring GetCompetition") — every assertion about a folded Entry's
 // full state reads the raw stream via fixture.EventStore.ReadStreamAsync and
@@ -39,8 +45,8 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     // F5J: Fixed timing, literal (non-parameterised) Group.MinPerGroup == 6,
     // single FixedSequence/TasksPerRound==1 task per phase — the shape
@@ -54,7 +60,7 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
     // (bind-parameter-steel-thread-plan.md). Payoff scenario 4.
     private static readonly ClassDefinition NzMAles200Definition = Corpus.All.Single(c => c.FileName == "80-nz-m-ales200").Definition;
 
-    private static async Task<CompetitionId> CreateCompetitionAsync(PostgresFixture fixture, ClassDefinition definition, string name)
+    private static async Task<CompetitionId> CreateCompetitionAsync(IStoreFixture fixture, ClassDefinition definition, string name)
     {
         var publishHandler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
         var published = await publishHandler.HandleAsync(new PublishClassDefinition(definition), TestContext.Current.CancellationToken);
@@ -69,7 +75,7 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
         return created.Value;
     }
 
-    private static async Task<PersonId> RegisterPersonAsync(PostgresFixture fixture, string email)
+    private static async Task<PersonId> RegisterPersonAsync(IStoreFixture fixture, string email)
     {
         var registerHandler = new RegisterPersonHandler(fixture.EventStore, new SystemClock());
         var registered = await registerHandler.HandleAsync(
@@ -80,7 +86,7 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
         return registered.Value;
     }
 
-    private static async Task<CompetitorId> RegisterCompetitorAsync(PostgresFixture fixture, CompetitionId competitionId, string email)
+    private static async Task<CompetitorId> RegisterCompetitorAsync(IStoreFixture fixture, CompetitionId competitionId, string email)
     {
         var personId = await RegisterPersonAsync(fixture, email);
         var registerHandler = new RegisterCompetitorHandler(fixture.EventStore, new SystemClock());
@@ -97,7 +103,7 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
     /// because that type is not visible outside Soarscore.Application and no
     /// GetEntry query exists yet.
     /// </summary>
-    private static async Task<Entry> LoadEntryAsync(PostgresFixture fixture, EntryId id)
+    private static async Task<Entry> LoadEntryAsync(IStoreFixture fixture, EntryId id)
     {
         var read = await fixture.EventStore.ReadStreamAsync(id.Value, 0, TestContext.Current.CancellationToken);
         read.IsSuccess.Should().BeTrue();
@@ -297,7 +303,7 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
     /// ALES 200, whose groupSize parameter has no default.
     /// </summary>
     private static async Task RunPayoffCaptureScenarioAsync(
-        PostgresFixture fixture,
+        IStoreFixture fixture,
         ClassDefinition definition,
         string competitionName,
         decimal? bindGroupSizeTo,
@@ -435,15 +441,14 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
 
         // Drop the read model's data only — the event log, and therefore a
         // fresh fold of any Entry stream, is untouched (LADR-0001 §4.10).
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(EntrySummary), TestContext.Current.CancellationToken);
+        await fixture.DropDocumentsAsync<EntrySummary>(TestContext.Current.CancellationToken);
 
         var afterDrop = await fixture.EntryQuery.FindAsync(competitionId, null, null, null, null, null, TestContext.Current.CancellationToken);
         afterDrop.Should().BeEmpty();
 
         // Replay the whole log through the same Inline projection, on demand
         // — never the continuously-running async daemon (LADR-0001 §2).
-        using var daemon = await fixture.DocumentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync("EntryIndexProjection", TestContext.Current.CancellationToken);
+        await fixture.RebuildProjectionAsync("EntryIndexProjection", TestContext.Current.CancellationToken);
 
         var afterRebuild = await fixture.EntryQuery.FindAsync(competitionId, null, null, null, null, null, TestContext.Current.CancellationToken);
         afterRebuild.Should().BeEquivalentTo(before);
@@ -459,3 +464,8 @@ public sealed class EntryCaptureEventStoreTests(PostgresFixture fixture) : IClas
         }
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresEntryCaptureEventStoreTests(PostgresFixture fixture) : EntryCaptureEventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteEntryCaptureEventStoreTests(SqliteFixture fixture) : EntryCaptureEventStoreTests<SqliteFixture>(fixture);

@@ -4,6 +4,12 @@
 // handler tests use. Calls the real handlers directly against
 // fixture.EventStore/fixture.ClassLibraryQuery — same style as
 // MartenEventStoreTests.cs, no dispatcher needed for a store-level test.
+//
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, so they now run unchanged against every backend Soarscore
+// supports — Marten/PostgreSQL and Fisher/SQLite — one concrete subclass per
+// backend at the foot of the file. Only the Postgres subclass keeps
+// Trait("Category", "Storage"); EventStoreTests.cs's header says why.
 
 using AwesomeAssertions;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -16,8 +22,8 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class ClassDefinitionEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class ClassDefinitionEventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     // F5K: the richest payload the event log holds for this thread — every
     // ScoreTerm subtype (Rate/Lookup/Piecewise/Constant/Conditional), a
@@ -71,17 +77,21 @@ public sealed class ClassDefinitionEventStoreTests(PostgresFixture fixture) : IC
         before.Should().NotBeNull();
 
         // Drop the read model's data only — the event log is untouched (LADR-0001 §4.10).
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ClassDefinitionSummary), TestContext.Current.CancellationToken);
+        await fixture.DropDocumentsAsync<ClassDefinitionSummary>(TestContext.Current.CancellationToken);
 
         var afterDrop = await fixture.ClassLibraryQuery.FindByHashAsync(published.Value, TestContext.Current.CancellationToken);
         afterDrop.Should().BeNull();
 
         // Replay the whole log through the same Inline projection, on demand —
         // never the continuously-running async daemon (LADR-0001 §2).
-        using var daemon = await fixture.DocumentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync("ClassDefinitionSummaryProjection", TestContext.Current.CancellationToken);
+        await fixture.RebuildProjectionAsync("ClassDefinitionSummaryProjection", TestContext.Current.CancellationToken);
 
         var afterRebuild = await fixture.ClassLibraryQuery.FindByHashAsync(published.Value, TestContext.Current.CancellationToken);
         afterRebuild.Should().Be(before);
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresClassDefinitionEventStoreTests(PostgresFixture fixture) : ClassDefinitionEventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteClassDefinitionEventStoreTests(SqliteFixture fixture) : ClassDefinitionEventStoreTests<SqliteFixture>(fixture);

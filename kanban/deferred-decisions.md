@@ -33,6 +33,42 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
   `LayerRuleTests` now excludes `JasperFx` alongside `Marten` so the temptation fails
   the build rather than being rediscovered as a judgement call.
 
+- **Fisher/SQLite is built and tested, but not yet *announced* as a supported
+  deployment.** **Decided 2026-08-16** (`kanban/completed/multi-backend-deployment.md`).
+  The code ships it: `Soarscore:Store=sqlite` composes the whole system on a SQLite file,
+  and every store-backed test plus the whole BDD acceptance suite passes on it. What is
+  deliberately not done is the *claim*, because Fisher is **0.7.1** — pre-1.0, where a
+  minor bump may still be a breaking one, which is also why the package version is pinned
+  rather than floated. The story's own "Before starting" proposed exactly this split:
+  gate a deployment claim on 1.0, allow the test-store use immediately. Nothing in the
+  code changes when Fisher reaches 1.0; this is a README/§Decision sentence and a version
+  bump. LADR-0001 §8's "gated on Fisher reaching 1.0" still stands and is the reason.
+
+- **Polecat / SQL Server is not built.** **Decided 2026-08-16**
+  (`kanban/completed/multi-backend-deployment.md`). The story was raised for three
+  stores and shipped two. The shape it set out to prove — one shared adapter body plus a
+  thin composition root per backend — is proved by a *second* store; a third adds cost
+  without adding evidence until someone actually wants SQL Server. Nothing about the
+  code blocks it: `JasperFxEventStore` has four abstract members, and answering them for
+  Polecat is the whole job (`FisherEventStore.cs` is 140 lines including its comments,
+  most of them explaining findings that a third backend would not have to rediscover).
+  The one thing a Polecat author must not assume is that `AppendExpectedVersion` can be
+  inherited — see the note there; Marten and Fisher disagree, so a third store must be
+  measured, not guessed.
+
+- **`Soarscore.Infrastructure` is one assembly for both stores.** **Decided 2026-08-16**,
+  same story. A SQLite deployment therefore carries an Npgsql it never loads, and vice
+  versa. Splitting into `Soarscore.Infrastructure.Marten` / `.Fisher` costs a project per
+  store plus edits to the layer rules, the Api and three test projects, and buys a few
+  hundred KB at a scale where the whole database is a file on a laptop. Revisit if
+  Polecat lands, or if a deployment ever cares about assembly count.
+
+- **The JasperFx compliance suite is not enrolled.** **Decided 2026-08-16**, same story.
+  `JasperFx.Events.ComplianceTests` proves *Fisher* correct, which is JasperFx's job and
+  already done. Our suites' job is to prove *Soarscore* correct on Fisher — a different
+  question, answered by running every existing store-backed test and the whole BDD
+  acceptance suite against both backends.
+
 ## Draw
 
 - **Redraw / draw acceptance.** Acceptance criteria are already drafted at

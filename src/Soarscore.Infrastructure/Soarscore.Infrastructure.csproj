@@ -5,11 +5,18 @@
     <RootNamespace>Soarscore.Infrastructure</RootNamespace>
   </PropertyGroup>
 
-  <!-- LADR-0001: Marten on PostgreSQL is the only event-store adapter we build.
-       This is the one project allowed to reference Marten (§4.1-3) — the
-       IProjection shims here wire Application's plain fold functions into
-       Marten's Live/Inline aggregation; the fold logic itself stays here-free
-       of Marten types so a future SQLite adapter could reuse it unchanged. -->
+  <!-- LADR-0001 §4.1-3: this is the one project allowed to reference an event
+       store at all. It now references two — Marten/PostgreSQL and Fisher/SQLite
+       (kanban/completed/multi-backend-deployment.md). The adapter bodies
+       (JasperFxEventStore.cs, the four Document*Query.cs, the four projection
+       folds) are written against the JasperFx.Events shared contracts and name
+       neither; what is per-store is a composition root and a handful of small
+       subclasses. "A future SQLite adapter could reuse the fold logic unchanged"
+       is what the previous version of this comment predicted, and it held.
+
+       Both stores ship in one assembly rather than one per backend, so a SQLite
+       deployment carries an Npgsql it never loads. That is a deliberate trade at
+       this project's scale — see the story's "Deliberately not done". -->
 
   <ItemGroup>
     <PackageReference Include="Marten" />
@@ -18,6 +25,12 @@
          error-translation rule: nothing Marten-shaped escapes this project, but
          the Postgres SqlState underneath it is the stable signal). -->
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="Fisher" />
+    <!-- Transitive via Fisher; declared explicitly for the exact counterpart
+         reason Npgsql is — FisherEventStore.cs catches
+         Microsoft.Data.Sqlite.SqliteException directly, because the SQLite
+         extended result code underneath Fisher's wrapper is the stable signal. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" />
   </ItemGroup>
 
   <ItemGroup>

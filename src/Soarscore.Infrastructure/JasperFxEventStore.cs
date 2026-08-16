@@ -9,22 +9,34 @@
 // reach (see the abstract members below); nothing store-shaped appears in this
 // file, and nothing store-shaped escapes the pair to the Application layer.
 //
-// The `expectedVersion` argument of the version-checked
-// Append(streamId, expectedVersion, events) overload is the stream version
-// AFTER the new events land (current version + events.Count), not before. Get
-// this backwards and every mutation after the first silently asserts the wrong
-// version and either always succeeds or always fails. This is the semantics of
-// the shared JasperFx.Events.IEventOperations contract, so it holds for every
-// store implementing it — but it is not documented by the package and was
-// confirmed empirically against a running PostgreSQL before being relied on.
+// !!! The `expectedVersion` argument of the version-checked
+// Append(streamId, expectedVersion, events) overload MEANS DIFFERENT THINGS ON
+// DIFFERENT STORES, and the shared contract does not say which. On Marten it is
+// the stream version AFTER the new events land (current + events.Count); on
+// Fisher it is the current version BEFORE they land. Get it backwards and every
+// mutation after the first silently asserts the wrong version — always
+// succeeding or always failing, with no error to read.
 //
-// ExpectedVersion.Exact(v) here always means "the stream currently has v
-// events" (PersonLoader.cs's convention — v is events.Count from a prior
-// read), so the translation below is Append(streamId, v + events.Count, events).
+// This is the one place kanban/completed/jasperfx-shared-store-contracts.md was
+// wrong, and it was wrong in the most dangerous available way: it recorded the
+// Marten reading as "the semantics of the shared JasperFx.Events.IEventOperations
+// contract, so it holds for every store implementing it". It does not. Both
+// readings were established empirically, each against its own running store, and
+// neither is documented by the package.
+//
+// ExpectedVersion.Exact(v) here always means "the stream currently has v events"
+// (PersonLoader.cs's convention — v is events.Count from a prior read), so the
+// translation into whatever the store wants is AppendExpectedVersion below, and
+// it is abstract for exactly this reason.
+//
+// The safety property is unaffected either way: the guard runs inside the write
+// transaction on both stores, and both signal a violation as
+// EventStreamUnexpectedMaxEventIdException, which this class translates once.
 //
 // A store must also be configured so that the version-checked overload is
 // actually honoured — on Marten that is StoreOptions.Events.AppendMode = Rich,
-// and MartenEventStore.cs records what happens when it is not.
+// and MartenEventStore.cs records what happens when it is not. Fisher has no
+// such setting (FisherConfig.cs).
 
 using JasperFx.Events;
 using JasperFx.Events.Documents;
@@ -65,7 +77,7 @@ public abstract class JasperFxEventStore(IDocumentSessionFactory sessions) : Soa
         }
         else if (expected.IsExact)
         {
-            eventOperations.Append(streamId, expected.Version + events.Count, events);
+            eventOperations.Append(streamId, AppendExpectedVersion(expected.Version, events.Count), events);
         }
         else
         {
@@ -156,6 +168,23 @@ public abstract class JasperFxEventStore(IDocumentSessionFactory sessions) : Soa
 
     /// <summary>The read-only counterpart of <see cref="EventOperationsOf"/>.</summary>
     protected abstract IQueryEventStore EventQueriesOf(IDocumentReadOperations session);
+
+    /// <summary>
+    /// Translates <c>ExpectedVersion.Exact(currentVersion)</c> — "the stream
+    /// currently holds <paramref name="currentVersion"/> events" — into the
+    /// number this store's version-checked <c>Append</c> overload wants.
+    /// </summary>
+    /// <remarks>
+    /// Abstract, and deliberately not defaulted, because the shared contract
+    /// does not fix this and the two implementations we have disagree: Marten
+    /// wants the post-append version, Fisher the pre-append one. There is no
+    /// safe default — a wrong answer here does not throw, it quietly disables or
+    /// inverts the concurrency check — so every backend is made to state its
+    /// answer, and to prove it with the stale-version test in
+    /// tests/Soarscore.Infrastructure.Tests/EventStoreTests.cs, which fails
+    /// loudly on either mistake.
+    /// </remarks>
+    protected abstract long AppendExpectedVersion(long currentVersion, int eventCount);
 
     /// <summary>
     /// Translates a store-specific append failure into a domain failure code

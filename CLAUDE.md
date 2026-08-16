@@ -30,19 +30,26 @@ and no existing real data that needs to be preserved, or migrated.
   `ICommand`/`IQuery` handlers, the `IEventStore` / `IPeopleQuery` / `IClock`
   ports, and read-model projection functions (e.g. `PeopleProjection`).
   Depends on Domain only — never Marten.
-- `src/Soarscore.Infrastructure` — the only project allowed to reference
-  Marten: `MartenEventStore` (event append/read plus Inline projections over
-  PostgreSQL, never the async daemon — see `docs/ladr/ladr-0001-event-store.md`)
-  and the `AddSoarscoreInfrastructure` DI wiring.
+- `src/Soarscore.Infrastructure` — the only project allowed to reference **an
+  event store**, and it references two: Marten/PostgreSQL and Fisher/SQLite,
+  chosen at composition time by `Soarscore:Store` (`postgres` | `sqlite`). The
+  adapter bodies (`JasperFxEventStore`, the `Document*Query` adapters, the four
+  projection folds) are written against the store-agnostic `JasperFx.Events`
+  contracts and name neither store; what is per-backend is a composition root
+  (`MartenConfig` / `FisherConfig`) plus a handful of small subclasses. Inline
+  projections only, never the async daemon — see `docs/ladr/ladr-0001-event-store.md`.
 - `src/Soarscore.Api` — ASP.NET Core Minimal API front door.
   `MapCommand`/`MapQuery` are the only routing surface — verbs, never nouns.
 - `tests/Soarscore.Domain.Tests`, `tests/Soarscore.Application.Tests` — unit
   and property-based (CsCheck) tests driven through fakes; no store, no HTTP.
 - `tests/Soarscore.Architecture.Tests` — ArchUnitNET layer rules plus the
   route-shape reflection test (endpoints must be GET/POST only).
-- `tests/Soarscore.Infrastructure.Tests` — store-backed tests against a real
-  PostgreSQL via Testcontainers, tagged `Trait("Category", "Storage")` so a
-  fast local loop can filter them out.
+- `tests/Soarscore.Infrastructure.Tests` — store-backed tests, each written once
+  against `IStoreFixture` and run against **every** supported backend: a real
+  PostgreSQL via Testcontainers (tagged `Trait("Category", "Storage")` so a fast
+  local loop can filter them out) and a Fisher/SQLite temp file (untagged — it
+  needs no Docker and belongs in the fast loop). A backend Soarscore claims to
+  support is one that passes this whole suite, and the BDD suite, unchanged.
 - `kanban/` — the work board. Stories live in one of four lane folders and their
   plans are cited from code as `WI-n`. See "Working the board" below.
 - `docs/ladr/` — architecture decision records binding the choices above
@@ -80,6 +87,9 @@ and no existing real data that needs to be preserved, or migrated.
   **BDD/Gherkin-style acceptance tests** (Given/When/Then) exercising the
   workflow end-to-end. This is a routine part of the testing approach once a
   feature has a real user-facing workflow to cover, not an optional extra.
+  `tests/Soarscore.Acceptance.Tests` runs against one store per run, selected by
+  `SOARSCORE_TEST_STORE` (`postgres`, the default, or `sqlite`) — so proving a
+  backend means running it twice, once per store.
 - During planning, identify where **property-based testing** (CsCheck) will
   add value and be appropriate — a genuine invariant, algorithm, or class of
   input where example-based tests would leave gaps (e.g. draw fairness, score

@@ -5,6 +5,12 @@
 // fixture.EventStore/fixture.EntryQuery, no dispatcher needed for a
 // store-level test.
 //
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, so they now run unchanged against every backend Soarscore
+// supports — Marten/PostgreSQL and Fisher/SQLite — one concrete subclass per
+// backend at the foot of the file. Only the Postgres subclass keeps
+// Trait("Category", "Storage"); EventStoreTests.cs's header says why.
+//
 // F3K (10-f3k) and F5K (40-f5k) are used throughout — the two corpus classes
 // this thread's own plan exists to unblock. Both declare
 // CompositionKind.ChooseFromCatalogue phases, which Competition.DrawPhase
@@ -39,13 +45,13 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class CatalogueDrawEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class CatalogueDrawEventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     private static readonly ClassDefinition F3KDefinition = Corpus.All.Single(c => c.FileName == "10-f3k").Definition;
     private static readonly ClassDefinition F5KDefinition = Corpus.All.Single(c => c.FileName == "40-f5k").Definition;
 
-    private static async Task<CompetitionId> CreateCompetitionAsync(PostgresFixture fixture, ClassDefinition definition, string name)
+    private static async Task<CompetitionId> CreateCompetitionAsync(IStoreFixture fixture, ClassDefinition definition, string name)
     {
         var publishHandler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
         var published = await publishHandler.HandleAsync(new PublishClassDefinition(definition), TestContext.Current.CancellationToken);
@@ -60,7 +66,7 @@ public sealed class CatalogueDrawEventStoreTests(PostgresFixture fixture) : ICla
         return created.Value;
     }
 
-    private static async Task<CompetitorId> RegisterCompetitorAsync(PostgresFixture fixture, CompetitionId competitionId, string email)
+    private static async Task<CompetitorId> RegisterCompetitorAsync(IStoreFixture fixture, CompetitionId competitionId, string email)
     {
         var registerPersonHandler = new RegisterPersonHandler(fixture.EventStore, new SystemClock());
         var person = await registerPersonHandler.HandleAsync(
@@ -76,7 +82,7 @@ public sealed class CatalogueDrawEventStoreTests(PostgresFixture fixture) : ICla
         return competitor.Value;
     }
 
-    private static async Task<List<CompetitorId>> RegisterFieldAsync(PostgresFixture fixture, CompetitionId competitionId, string tag, int count)
+    private static async Task<List<CompetitorId>> RegisterFieldAsync(IStoreFixture fixture, CompetitionId competitionId, string tag, int count)
     {
         var competitorIds = new List<CompetitorId>();
         for (var i = 0; i < count; i++)
@@ -183,10 +189,9 @@ public sealed class CatalogueDrawEventStoreTests(PostgresFixture fixture) : ICla
         // Drop the read model's data only — the event log, and therefore
         // GetCompetition's fold, is untouched (LADR-0001 §4.10), the same
         // pattern DrawPhaseEventStoreTests.cs's replay test uses.
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(CompetitionSummary), TestContext.Current.CancellationToken);
+        await fixture.DropDocumentsAsync<CompetitionSummary>(TestContext.Current.CancellationToken);
 
-        using var daemon = await fixture.DocumentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync("CompetitionSummaryProjection", TestContext.Current.CancellationToken);
+        await fixture.RebuildProjectionAsync("CompetitionSummaryProjection", TestContext.Current.CancellationToken);
 
         var after = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
         after.IsSuccess.Should().BeTrue();
@@ -271,3 +276,8 @@ public sealed class CatalogueDrawEventStoreTests(PostgresFixture fixture) : ICla
         scored.Value.Scores.Should().OnlyContain(s => !s.Disqualified && s.Placing != null);
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresCatalogueDrawEventStoreTests(PostgresFixture fixture) : CatalogueDrawEventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteCatalogueDrawEventStoreTests(SqliteFixture fixture) : CatalogueDrawEventStoreTests<SqliteFixture>(fixture);

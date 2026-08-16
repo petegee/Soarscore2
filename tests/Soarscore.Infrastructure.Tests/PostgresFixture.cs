@@ -1,11 +1,17 @@
-// Test fixture for WI-9 (kanban/completed/command-side-steel-thread-plan.md): a
-// real PostgreSQL container wired up exactly the way WI-7's
-// AddSoarscoreInfrastructure does, so these tests exercise the same
-// composition as the running Api rather than a hand-assembled DocumentStore.
+// The Marten/PostgreSQL fixture — WI-9 (kanban/completed/command-side-steel-thread-plan.md),
+// generalised to IStoreFixture by kanban/completed/multi-backend-deployment.md
+// WI-6. A real PostgreSQL container wired up exactly the way
+// AddSoarscoreInfrastructure does, so these tests exercise the same composition
+// as the running Api rather than a hand-assembled DocumentStore.
 //
-// One container per test class (IClassFixture), not per test method — the
-// four tests in MartenEventStoreTests share it and use distinct emails/stream
-// ids to stay independent of each other and of test order.
+// One container per test class (IClassFixture), not per test method — the tests
+// sharing it use distinct emails/stream ids to stay independent of each other
+// and of test order.
+//
+// The store is selected in code (SoarscoreStore.Postgres) rather than through
+// configuration, so that one `dotnet test` run can host this fixture and
+// SqliteFixture side by side without a single process-wide setting deciding for
+// both.
 
 using Marten;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +26,7 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-public sealed class PostgresFixture : IAsyncLifetime
+public sealed class PostgresFixture : IStoreFixture, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine").Build();
     private ServiceProvider? _provider;
@@ -36,8 +42,17 @@ public sealed class PostgresFixture : IAsyncLifetime
     /// <summary>capture-a-score-steel-thread-plan.md WI-12 — the entry_index query port.</summary>
     public IEntryQuery EntryQuery => _provider!.GetRequiredService<IEntryQuery>();
 
-    /// <summary>Exposed only for test 4's read-model drop/rebuild — no port on IEventStore/IPeopleQuery covers it.</summary>
-    public IDocumentStore DocumentStore => _provider!.GetRequiredService<IDocumentStore>();
+    private IDocumentStore DocumentStore => _provider!.GetRequiredService<IDocumentStore>();
+
+    public Task DropDocumentsAsync<TDocument>(CancellationToken cancellationToken)
+        where TDocument : notnull =>
+        DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(TDocument), cancellationToken);
+
+    public async Task RebuildProjectionAsync(string projectionName, CancellationToken cancellationToken)
+    {
+        using var daemon = await DocumentStore.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync(projectionName, cancellationToken);
+    }
 
     public async ValueTask InitializeAsync()
     {
@@ -51,7 +66,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             .Build();
 
         var services = new ServiceCollection();
-        services.AddSoarscoreInfrastructure(configuration);
+        services.AddSoarscoreInfrastructure(configuration, SoarscoreStore.Postgres);
         _provider = services.BuildServiceProvider();
     }
 

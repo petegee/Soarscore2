@@ -26,7 +26,12 @@ public sealed class DocumentClassLibraryQuery(IDocumentSessionFactory sessions) 
 
         if (!string.IsNullOrWhiteSpace(name))
         {
-            query = query.Where(s => s.Name.Contains(name));
+            // Case-insensitive by the same decision, and for the same reason, as
+            // People/DocumentPeopleQuery.cs's SearchByNameAsync — see the note
+            // there (multi-backend-deployment.md WI-5). The two name searches on
+            // this system's query ports must not disagree about what a search
+            // means.
+            query = query.Where(s => s.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
         }
 
         if (activeOnly)

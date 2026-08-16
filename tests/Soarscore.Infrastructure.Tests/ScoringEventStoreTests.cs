@@ -5,6 +5,12 @@
 // real handlers directly against fixture.EventStore/fixture.EntryQuery, no
 // dispatcher needed for a store-level test.
 //
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, so they now run unchanged against every backend Soarscore
+// supports — Marten/PostgreSQL and Fisher/SQLite — one concrete subclass per
+// backend at the foot of the file. Only the Postgres subclass keeps
+// Trait("Category", "Storage"); EventStoreTests.cs's header says why.
+//
 // End to end through the real handlers — no shortcuts: create competition ->
 // register competitors -> draw phase -> open entries -> open flights ->
 // capture measurements -> score. This is also the one place EntryCollector's
@@ -49,8 +55,8 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class ScoringEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class ScoringEventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     private static readonly ClassDefinition F5JDefinition = Corpus.All.Single(c => c.FileName == "30-f5j").Definition;
 
@@ -58,7 +64,7 @@ public sealed class ScoringEventStoreTests(PostgresFixture fixture) : IClassFixt
 
     // ---------------------------------------------------------------- setup
 
-    private static async Task<CompetitionId> CreateCompetitionAsync(PostgresFixture fixture, string name)
+    private static async Task<CompetitionId> CreateCompetitionAsync(IStoreFixture fixture, string name)
     {
         var publishHandler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
         var published = await publishHandler.HandleAsync(new PublishClassDefinition(F5JDefinition), TestContext.Current.CancellationToken);
@@ -73,7 +79,7 @@ public sealed class ScoringEventStoreTests(PostgresFixture fixture) : IClassFixt
         return created.Value;
     }
 
-    private static async Task<CompetitorId> RegisterCompetitorAsync(PostgresFixture fixture, CompetitionId competitionId, string email)
+    private static async Task<CompetitorId> RegisterCompetitorAsync(IStoreFixture fixture, CompetitionId competitionId, string email)
     {
         var registerPersonHandler = new RegisterPersonHandler(fixture.EventStore, new SystemClock());
         var person = await registerPersonHandler.HandleAsync(
@@ -96,7 +102,7 @@ public sealed class ScoringEventStoreTests(PostgresFixture fixture) : IClassFixt
     /// raw score (see this file's header), so raw score == flightTime.
     /// </summary>
     private static async Task<EntryId> OpenAndCaptureFlightAsync(
-        PostgresFixture fixture,
+        IStoreFixture fixture,
         CompetitionId competitionId,
         int phaseOrdinal,
         int roundOrdinal,
@@ -315,3 +321,8 @@ public sealed class ScoringEventStoreTests(PostgresFixture fixture) : IClassFixt
         return placings;
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresScoringEventStoreTests(PostgresFixture fixture) : ScoringEventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteScoringEventStoreTests(SqliteFixture fixture) : ScoringEventStoreTests<SqliteFixture>(fixture);

@@ -12,6 +12,13 @@
   <ItemGroup>
     <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
     <PackageVersion Include="CsCheck" Version="4.8.0" />
+    <!-- kanban/in-progress/multi-backend-deployment.md WI-1: the SQLite backend.
+         Fisher 0.7.1 depends on JasperFx.Events 2.48.0 — the same version Marten
+         9.24.0 pulls — so the store-agnostic adapter bodies in
+         Soarscore.Infrastructure serve both without a bump on either side.
+         Deliberately NOT floated: 0.7.x is pre-1.0 and a minor bump there may
+         still be a breaking one. -->
+    <PackageVersion Include="Fisher" Version="0.7.1" />
     <!-- jasperfx-shared-store-contracts.md WI-1: 9.24.0 pulls JasperFx.Events 2.48.0,
          where the store-agnostic document contracts (IDocumentSessionFactory,
          IDocumentReadOperations/IDocumentWriteOperations, IJasperFxProjection<T>)
@@ -21,6 +28,10 @@
     <!-- Pinned to the AspNetCore.App runtime installed alongside the 10.0.110 SDK
          (LADR-0003 "API documentation": in-box, spec emitted as a build artefact). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <!-- Transitive via Fisher, pinned to match rather than float independently
+         (LADR-0003 "all versions pinned"). Referenced directly by
+         Soarscore.Infrastructure for the same reason Npgsql is — see its comment. -->
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9" />
     <!-- capture-a-score-steel-thread-plan.md WI-13: WebApplicationFactory, so the
          Reqnroll acceptance suite drives the real Soarscore.Api over real HTTP
          rather than through IDispatcher (LADR-0003 "Test entry point"'s prior

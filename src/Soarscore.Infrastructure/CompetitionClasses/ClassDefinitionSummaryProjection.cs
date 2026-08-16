@@ -62,3 +62,12 @@ internal class ClassDefinitionSummaryProjection<TOperations> : IJasperFxProjecti
 // already satisfies every member and this type exists purely so MartenConfig can register it.
 internal sealed class MartenClassDefinitionSummaryProjection
     : ClassDefinitionSummaryProjection<Marten.IDocumentOperations>, Marten.Events.Projections.IProjection;
+
+// The Fisher/SQLite shim — kanban/completed/multi-backend-deployment.md WI-3.
+// Registration marker only, and alone of the four it needs nothing else on
+// either backend: ClassDefinitionSummary.Id is a bare Guid, so the shared
+// contract's Guid identity overload reaches it directly. That the *same* one of
+// four projections is the simple one on both stores is the point — the seam is
+// the contract's, not any store's.
+internal sealed class FisherClassDefinitionSummaryProjection
+    : ClassDefinitionSummaryProjection<Fisher.IDocumentSession>, Fisher.Projections.IProjection;

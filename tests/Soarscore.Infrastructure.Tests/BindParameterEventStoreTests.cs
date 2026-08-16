@@ -5,6 +5,12 @@
 // directly against fixture.EventStore, no dispatcher needed for a
 // store-level test.
 //
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, so they now run unchanged against every backend Soarscore
+// supports — Marten/PostgreSQL and Fisher/SQLite — one concrete subclass per
+// backend at the foot of the file. Only the Postgres subclass keeps
+// Trait("Category", "Storage"); EventStoreTests.cs's header says why.
+//
 // Test 3 is the payoff test the whole plan is building towards: F5K, F5L and
 // NZ Class M ALES 200 could not be drawn before this thread because their
 // minPerGroup/groupSize parameter has no default (see the plan's Context
@@ -40,8 +46,8 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class BindParameterEventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     // F3J: literal (non-parameterised) MinPerGroup, single FixedSequence
     // task per phase — used for tests 1, 2 and 4, which do not depend on a
@@ -61,7 +67,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
     // parameter (workingTime.A/B/E/L, maxFlight.B/L, all SeedF3K.cs).
     private static readonly ClassDefinition F3KDefinition = Corpus.All.Single(c => c.FileName == "10-f3k").Definition;
 
-    private static async Task<CompetitionId> CreateCompetitionAsync(PostgresFixture fixture, ClassDefinition definition, string name)
+    private static async Task<CompetitionId> CreateCompetitionAsync(IStoreFixture fixture, ClassDefinition definition, string name)
     {
         var publishHandler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
         var published = await publishHandler.HandleAsync(new PublishClassDefinition(definition), TestContext.Current.CancellationToken);
@@ -76,7 +82,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
         return created.Value;
     }
 
-    private static async Task<PersonId> RegisterPersonAsync(PostgresFixture fixture, string email)
+    private static async Task<PersonId> RegisterPersonAsync(IStoreFixture fixture, string email)
     {
         var registerHandler = new RegisterPersonHandler(fixture.EventStore, new SystemClock());
         var registered = await registerHandler.HandleAsync(
@@ -87,7 +93,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
         return registered.Value;
     }
 
-    private static async Task<CompetitorId> RegisterCompetitorAsync(PostgresFixture fixture, CompetitionId competitionId, string email)
+    private static async Task<CompetitorId> RegisterCompetitorAsync(IStoreFixture fixture, CompetitionId competitionId, string email)
     {
         var personId = await RegisterPersonAsync(fixture, email);
         var registerHandler = new RegisterCompetitorHandler(fixture.EventStore, new SystemClock());
@@ -99,7 +105,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
     }
 
     [Fact]
-    public async Task BindParameter_survives_an_append_read_round_trip_through_postgres()
+    public async Task BindParameter_survives_an_append_read_round_trip_through_the_real_store()
     {
         var competitionId = await CreateCompetitionAsync(fixture, F3JDefinition, "Bind Round Trip");
 
@@ -200,7 +206,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
     }
 
     [Fact]
-    public async Task A_round_scoped_ParameterBound_survives_an_append_read_round_trip_through_postgres()
+    public async Task A_round_scoped_ParameterBound_survives_an_append_read_round_trip_through_the_real_store()
     {
         var competitionId = await CreateCompetitionAsync(fixture, F3KDefinition, "Round Scope Round Trip");
 
@@ -266,7 +272,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
 
         // Drop the read model's data only — the event log, and therefore
         // GetCompetition's fold, is untouched (LADR-0001 §4.10).
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(CompetitionSummary), TestContext.Current.CancellationToken);
+        await fixture.DropDocumentsAsync<CompetitionSummary>(TestContext.Current.CancellationToken);
 
         var afterDrop = await fixture.CompetitionsQuery.SearchAsync(null, null, TestContext.Current.CancellationToken);
         afterDrop.Should().NotContain(c => c.Id == competitionId);
@@ -274,8 +280,7 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
         // Replay the whole log — now including ParameterBound and PhaseDrawn
         // — through the same Inline projection, on demand, never the async
         // daemon (LADR-0001 §2).
-        using var daemon = await fixture.DocumentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync("CompetitionSummaryProjection", TestContext.Current.CancellationToken);
+        await fixture.RebuildProjectionAsync("CompetitionSummaryProjection", TestContext.Current.CancellationToken);
 
         var summaryAfter = await fixture.CompetitionsQuery.SearchAsync(null, null, TestContext.Current.CancellationToken);
         var rowAfter = summaryAfter.Single(c => c.Id == competitionId);
@@ -291,3 +296,8 @@ public sealed class BindParameterEventStoreTests(PostgresFixture fixture) : ICla
         after.Value.Should().BeEquivalentTo(before.Value);
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresBindParameterEventStoreTests(PostgresFixture fixture) : BindParameterEventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteBindParameterEventStoreTests(SqliteFixture fixture) : BindParameterEventStoreTests<SqliteFixture>(fixture);

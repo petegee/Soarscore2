@@ -18,6 +18,10 @@
          only): test 4 (read-model rebuild) needs IDocumentStore.Advanced directly,
          which is not something the IEventStore/IPeopleQuery ports expose. -->
     <PackageReference Include="Marten" />
+    <!-- Same exemption, same reason (multi-backend-deployment.md WI-6):
+         SqliteFixture needs Fisher.IDocumentStore.Advanced.Clean directly for
+         the read-model drop-and-replay test, which no port exposes. -->
+    <PackageReference Include="Fisher" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="xunit.v3" />

@@ -67,6 +67,15 @@ public sealed class MartenEventStore(IDocumentStore store) : JasperFxEventStore(
         ((IQuerySession)session).Events;
 
     /// <summary>
+    /// Marten wants the version the stream will hold AFTER the append.
+    /// Confirmed empirically against a running PostgreSQL; see
+    /// JasperFxEventStore.cs's header for why this is a per-store answer and
+    /// what happens when it is wrong.
+    /// </summary>
+    protected override long AppendExpectedVersion(long currentVersion, int eventCount) =>
+        currentVersion + eventCount;
+
+    /// <summary>
     /// The two Marten/Npgsql append failures with a domain meaning. The
     /// collision check comes first deliberately: Marten wraps some failures, so
     /// its own typed exception is the more precise signal and must be read

@@ -154,7 +154,7 @@ adoption event for replay determinism to hold.
 
 ## 8. Amendment, 2026-08-16 — the swap cost in §5 is wrong
 
-**Status: Proposed.** Nothing above is rewritten; §1–§7 stand as the reasoning that was
+**Status: Accepted.** Nothing above is rewritten; §1–§7 stand as the reasoning that was
 correct when it was written. This section records what has since changed and what it does
 and does not overturn.
 
@@ -163,6 +163,12 @@ Revised 2026-08-16 after the adapter refactor was actually built
 measured rather than estimated, and two of them moved: the projections are less portable
 than first read, and `MartenEventStore` keeps three things per-store rather than one. The
 conclusion is unchanged; the numbers behind it are firmer.
+
+Accepted 2026-08-16 when the second backend actually shipped
+(`kanban/completed/multi-backend-deployment.md`). Everything below was written from one
+store plus the shipped metadata of another; it is now written from two stores running the
+same suites. One claim did not survive that — see "The sixth seam" — and the seam count
+went from five to six.
 
 ### What changed
 
@@ -214,8 +220,34 @@ So: one shared adapter body plus a thin composition root per backend, not one bu
 switched by configuration — with the qualification that "shared body" means shared *logic*
 with a handful of narrow per-store seams, not a body a second backend inherits untouched.
 The seams are uniform in shape (an abstract or virtual member on a shared base, overridden
-by a small subclass), and there are five of them: two `.Events` accessors, the append
-exception translation, `ReadAllAsync`, and the projection load.
+by a small subclass), and there are **six** of them: two `.Events` accessors, the append
+exception translation, `ReadAllAsync`, the projection load, and `AppendExpectedVersion`.
+
+### The sixth seam — `expectedVersion` is not the same argument on two stores
+
+Found by shipping Fisher, and the one thing in this section that a reader must not skim.
+The version-checked `Append(streamId, expectedVersion, events)` overload is on the shared
+`JasperFx.Events.IEventOperations` contract, and the contract does not say what
+`expectedVersion` means. **Marten reads it as the version the stream will hold AFTER the
+append; Fisher reads it as the version it holds BEFORE.** Both established empirically,
+each against its own running store; neither is documented by its package.
+
+`kanban/completed/jasperfx-shared-store-contracts.md` recorded the Marten reading as a
+property of the shared contract "so it holds for every store implementing it". That is
+false, and it is false in the most dangerous available way: **answering it wrongly does not
+throw.** A backend that had this inverted would silently either never fail the concurrency
+check or always fail it, and every store-level test of ordinary appends would still pass.
+
+So `JasperFxEventStore.AppendExpectedVersion(currentVersion, eventCount)` is `protected
+abstract` with no default — a third backend is made to state its answer rather than
+inherit one — and the stale-version test in `tests/Soarscore.Infrastructure.Tests`
+fails loudly on either mistake, on every backend. The safety property itself is unchanged
+on both stores: the guard runs inside the write transaction either way.
+
+The general lesson is worth more than the specific bug. A shared interface that two
+implementations satisfy is not evidence that they agree about semantics the interface does
+not state, and the only reliable way to find out which is to run the same tests against
+both. That is now what `Soarscore.Infrastructure.Tests` is for.
 
 **§1's counter-case, in part.** "Install Docker, run a Postgres container is an
 acceptable ask of self-hosters, and writing a store is not an acceptable use of the
@@ -258,10 +290,29 @@ Two prerequisites, both recorded as work rather than decided here:
   follows until that bump.~~ **Done, 2026-08-16.** Marten 9.24.0 / JasperFx.Events
   2.48.0, and the adapters are on the shared contracts —
   `kanban/completed/jasperfx-shared-store-contracts.md`.
-- A support claim for three backends means the acceptance suite runs against three
+- ~~A support claim for three backends means the acceptance suite runs against three
   backends. Separately, a Fisher-backed peer of `Soarscore.Infrastructure.Tests` removes
   the Testcontainers dependency from the storage suite — worth having independently of
-  any deployment.
+  any deployment.~~ **Done for two backends, 2026-08-16.** Every store-backed test is
+  written once against `IStoreFixture` and runs against both (72 tests, 36 per store, in
+  one `dotnet test`); the BDD acceptance suite runs once per store, selected by
+  `SOARSCORE_TEST_STORE`. Not a Fisher-backed *peer* suite but the *same* suite run twice
+  — a peer would have proved Fisher works, where the point is that Soarscore works on
+  Fisher. The SQLite half needs no Docker and runs in about a second.
 
-Tracked at `kanban/backlog/jasperfx-shared-store-contracts.md` and
-`kanban/backlog/multi-backend-deployment.md`.
+### What a backend actually costs, measured
+
+Replacing §5's "1,000–1,200 LOC to rebuild" and this section's own estimate. Fisher took:
+one composition root (~110 lines, over half comment), one `JasperFxEventStore` subclass
+answering four abstract members (~140 lines, likewise), four projection shims of 3–8 lines
+each, one `switch` arm in `AddSoarscoreInfrastructure`, one package reference and one test
+fixture. **No adapter body, no query adapter, no projection fold and no test assertion
+changed.** Two things had to be discovered by building rather than by reading: Fisher does
+not create its schema lazily, and `AppendExpectedVersion`.
+
+Polecat/SQL Server is deliberately not built — see `kanban/deferred-decisions.md`. The
+shape is proved by a second store; a third adds cost without adding evidence until someone
+wants SQL Server.
+
+Tracked at `kanban/completed/jasperfx-shared-store-contracts.md` and
+`kanban/completed/multi-backend-deployment.md`.

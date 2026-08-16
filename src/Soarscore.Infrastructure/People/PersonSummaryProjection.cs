@@ -94,3 +94,23 @@ internal sealed class MartenPersonSummaryProjection
         Marten.IDocumentOperations operations, Guid streamId, CancellationToken cancellation)
         => await operations.LoadAsync<PersonSummary>(new PersonId(streamId), cancellation);
 }
+
+// The Fisher/SQLite shim — kanban/completed/multi-backend-deployment.md WI-3.
+// Fisher.Projections.IProjection is IJasperFxProjection<Fisher.IDocumentSession>
+// and declares no members of its own, so the fold above satisfies it whole; the
+// type parameter differs from Marten's only because each store names the write
+// session type it hands its projections.
+//
+// The strong-typed-id override is here for the same reason it is on the Marten
+// shim, and its presence on BOTH is the evidence for what LoadCurrentAsync's
+// comment claims: this is a limit of the shared JasperFx contract, not a Marten
+// quirk. Fisher's LoadAsync<T, TId>(TId) is the counterpart of Marten's
+// runtime-dispatching LoadAsync<T>(object) — a different way to escape the
+// Guid-only identity overloads, reaching the same place.
+internal sealed class FisherPersonSummaryProjection
+    : PersonSummaryProjection<Fisher.IDocumentSession>, Fisher.Projections.IProjection
+{
+    protected override async Task<PersonSummary?> LoadCurrentAsync(
+        Fisher.IDocumentSession operations, Guid streamId, CancellationToken cancellation)
+        => await operations.LoadAsync<PersonSummary, PersonId>(new PersonId(streamId), cancellation);
+}

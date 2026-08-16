@@ -2,12 +2,7 @@ using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Soarscore.Application;
-using Soarscore.Application.Queries.CompetitionClasses;
 using Soarscore.Application.Queries.People;
-using Soarscore.Domain.Competitions;
-using Soarscore.Domain.Entries;
-using Soarscore.Domain.People;
-using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure.CompetitionClasses;
 using Soarscore.Infrastructure.Competitions;
 using Soarscore.Infrastructure.Entries;
@@ -29,44 +24,15 @@ public static class MartenConfig
             // support it.
             opts.Events.AppendMode = EventAppendMode.Rich;
 
-            opts.Events.MapEventType<PersonRegistered>("personRegistered");
-            opts.Events.MapEventType<PersonRenamed>("personRenamed");
-            opts.Events.MapEventType<ContactDetailsChanged>("contactDetailsChanged");
-            opts.Events.MapEventType<ClubAffiliationChanged>("clubAffiliationChanged");
-
-            opts.Events.MapEventType<ClassDefinitionPublished>("classDefinitionPublished");
-            opts.Events.MapEventType<ClassDefinitionRetired>("classDefinitionRetired");
-
-            // create-competition-steel-thread-plan.md WI-4 registered CompetitionCreated.
-            // register-competitor-steel-thread-plan.md WI-5 adds CompetitorRegistered
-            // and CompetitorWithdrawn below. phase-drawn-steel-thread-plan.md WI-5
-            // adds PhaseDrawn. bind-parameter-steel-thread-plan.md WI-5 adds
-            // ParameterBound. The remaining six CompetitionEvent subtypes
-            // (ReflightGroupAppended, TaskRoundCompleted, TaskRoundAnnulled,
-            // RulesAmended, Finalised, PenaltyRecorded) are still not registered here
-            // because nothing appends them yet. Each future thread that adds a
-            // command producing one of them must add its own MapEventType line before
-            // that command can append — the JSON $kind discriminators for all eleven
-            // already exist on CompetitionEvents.cs and compile fine either way; only
-            // the registry is per-command.
-            opts.Events.MapEventType<CompetitionCreated>("competitionCreated");
-            opts.Events.MapEventType<CompetitorRegistered>("competitorRegistered");
-            opts.Events.MapEventType<CompetitorWithdrawn>("competitorWithdrawn");
-            opts.Events.MapEventType<PhaseDrawn>("phaseDrawn");
-            opts.Events.MapEventType<ParameterBound>("parameterBound");
-
-            // capture-a-score-steel-thread-plan.md WI-9 registers three of the six
-            // EntryEvent subtypes: EntryOpened, FlightOpened, MeasurementCaptured —
-            // the narrow capture slice that thread scopes itself to. The other three
-            // (MeasurementAmended, EntryAnnulled, PenaltyRecorded) are still not
-            // registered here because nothing appends them yet — they are the
-            // corrections-and-rulings thread, deliberately out of scope for capture.
-            // Same discipline as the CompetitionEvent block above: the JSON $kind
-            // discriminators for all six already exist on EntryEvents.cs and compile
-            // fine either way; only the registry is per-command.
-            opts.Events.MapEventType<EntryOpened>("entryOpened");
-            opts.Events.MapEventType<FlightOpened>("flightOpened");
-            opts.Events.MapEventType<MeasurementCaptured>("measurementCaptured");
+            // The alias table lives in SoarscoreEventTypes.cs — one list, read by
+            // every store's composition root, because these aliases are the on-disk
+            // event-type names and LADR-0001 §5's store-to-store migration is a
+            // replay that reads one store's and writes the other's. What stays here
+            // is Marten's own registration call.
+            foreach (var (type, alias) in SoarscoreEventTypes.All)
+            {
+                opts.Events.MapEventType(type, alias);
+            }
 
             // Casing and enum storage must be passed explicitly here even though
             // SoarscoreEventJson.Options already sets them: Marten's overload rebuilds

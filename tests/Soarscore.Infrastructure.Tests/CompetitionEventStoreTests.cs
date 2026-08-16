@@ -5,6 +5,12 @@
 // against fixture.EventStore/fixture.CompetitionsQuery — same style as
 // ClassDefinitionEventStoreTests.cs, no dispatcher needed for a store-level
 // test.
+//
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, so they now run unchanged against every backend Soarscore
+// supports — Marten/PostgreSQL and Fisher/SQLite — one concrete subclass per
+// backend at the foot of the file. Only the Postgres subclass keeps
+// Trait("Category", "Storage"); EventStoreTests.cs's header says why.
 
 using AwesomeAssertions;
 using Soarscore.Application;
@@ -20,8 +26,8 @@ using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class CompetitionEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class CompetitionEventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     // F5K: the richest payload the event log holds for this thread — same
     // choice as ClassDefinitionEventStoreTests.cs's RichestDefinition.
@@ -101,17 +107,21 @@ public sealed class CompetitionEventStoreTests(PostgresFixture fixture) : IClass
         before.Should().ContainSingle(c => c.Id == created.Value);
 
         // Drop the read model's data only — the event log is untouched (LADR-0001 §4.10).
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(CompetitionSummary), TestContext.Current.CancellationToken);
+        await fixture.DropDocumentsAsync<CompetitionSummary>(TestContext.Current.CancellationToken);
 
         var afterDrop = await fixture.CompetitionsQuery.SearchAsync(null, published.Value, TestContext.Current.CancellationToken);
         afterDrop.Should().BeEmpty();
 
         // Replay the whole log through the same Inline projection, on demand —
         // never the continuously-running async daemon (LADR-0001 §2).
-        using var daemon = await fixture.DocumentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync("CompetitionSummaryProjection", TestContext.Current.CancellationToken);
+        await fixture.RebuildProjectionAsync("CompetitionSummaryProjection", TestContext.Current.CancellationToken);
 
         var afterRebuild = await fixture.CompetitionsQuery.SearchAsync(null, published.Value, TestContext.Current.CancellationToken);
         afterRebuild.Should().BeEquivalentTo(before);
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresCompetitionEventStoreTests(PostgresFixture fixture) : CompetitionEventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteCompetitionEventStoreTests(SqliteFixture fixture) : CompetitionEventStoreTests<SqliteFixture>(fixture);

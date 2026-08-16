@@ -65,3 +65,22 @@ See CLAUDE.md house-keeping rule 5.
   properly needs either a domain event marking a task-round `InProgress` on
   first `Entry`, or a deliberate decision that the approximation is good
   enough for a club-scale event.
+- [ ] `FisherEventStore.ReadAllAsync` reads the whole log to return one page.
+  `kanban/completed/multi-backend-deployment.md` WI-2. Fisher has no
+  `QueryAllRawEvents()` — the LINQ-over-the-event-log surface Marten's
+  implementation orders and pages with — so the SQLite adapter filters in the
+  database (`QueryEventsAsync(e => e.Sequence >= fromPosition)`) and then sorts
+  and takes `batchSize` in memory. Acceptable today because the method has zero
+  production callers and exists for LADR-0001 §4.10's replay path, which walks
+  the whole log anyway, against a local file at club scale. If a caller ever
+  pages a large log incrementally, this needs Fisher's `IAdvancedSql` and a
+  hand-written `ORDER BY`/`LIMIT`. The Marten implementation is unaffected.
+- [ ] `FisherConfig.ConfigureDocumentStore` blocks on
+  `ApplyAllConfiguredChangesToDatabaseAsync()`. `kanban/completed/multi-backend-deployment.md`
+  WI-1. Fisher does not build its schema lazily on first use the way Marten
+  does, so a fresh database fails the first append with "no such table:
+  fi_streams" — found by the WI-6 suite. Applying the schema synchronously
+  while the store is built puts the failure at startup instead of in front of a
+  user, but `.GetAwaiter().GetResult()` in a composition root is not something
+  to leave unexamined. If `AddSoarscoreInfrastructure` ever grows an async
+  counterpart (an `IHostedService` initialiser, say), move it there.

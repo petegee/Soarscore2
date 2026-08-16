@@ -1,22 +1,33 @@
 // WI-9 (kanban/completed/command-side-steel-thread-plan.md) — the four store-backed
-// tests that carry real weight, run against a real PostgreSQL via
-// Testcontainers rather than the FakeEventStore/FakePeopleQuery doubles WI-6's
-// handler tests use. One shared container (PostgresFixture) for the whole
-// class; each test uses its own email/stream id so they stay independent.
+// tests that carry real weight, run against a real store rather than the
+// FakeEventStore/FakePeopleQuery doubles WI-6's handler tests use.
 //
-// Trait("Category", "Storage") lets these be filtered out of a fast local
-// loop (`dotnet test --filter Category!=Storage`) — they need Docker and take
-// longer than the in-memory suites.
+// kanban/completed/multi-backend-deployment.md WI-6 made these generic over
+// the fixture, and they now run against every backend Soarscore supports. These
+// four in particular are what the Fisher claim rests on: between them they cover
+// event-alias round-tripping and per-stream ordering (test 1), the
+// version-checked append and its stale-version rejection (test 2 — the one
+// Marten needs AppendMode.Rich for and Fisher needs nothing for), the unique
+// index enforced inside the append transaction with the whole thing rolled back
+// (test 3, LADR-0001 §2's entire premise), and drop-and-replay of a read model
+// through the same Inline projection under the same registered name (test 4,
+// §4.10). A backend that passes all four unchanged has earned the support claim.
+//
+// The Postgres subclass keeps Trait("Category", "Storage") so it can be filtered
+// out of a fast local loop (`dotnet test --filter Category!=Storage`) — it needs
+// Docker. The SQLite subclass carries no trait: it is a temp file, and belongs
+// in the fast loop.
 
 using AwesomeAssertions;
 using Soarscore.Application;
+using Soarscore.Application.Queries.People;
 using Soarscore.Domain.People;
 using Xunit;
 
 namespace Soarscore.Infrastructure.Tests;
 
-[Trait("Category", "Storage")]
-public sealed class MartenEventStoreTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
+public abstract class EventStoreTests<TFixture>(TFixture fixture) : IClassFixture<TFixture>
+    where TFixture : class, IStoreFixture
 {
     private static readonly DateTimeOffset At = new(2026, 8, 5, 0, 0, 0, TimeSpan.Zero);
 
@@ -105,17 +116,23 @@ public sealed class MartenEventStoreTests(PostgresFixture fixture) : IClassFixtu
 
         // Drop the read model's data only — the event log is untouched (§4.10:
         // read models are dropped and replayed, never migrated).
-        await fixture.DocumentStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Application.Queries.People.PersonSummary), TestContext.Current.CancellationToken);
+        await fixture.DropDocumentsAsync<PersonSummary>(TestContext.Current.CancellationToken);
 
         var afterDrop = await fixture.PeopleQuery.FindByEmailAsync("katherine@replay.test", TestContext.Current.CancellationToken);
         afterDrop.Should().BeNull();
 
         // Replay the whole log through the same Inline projection, on demand —
-        // never the continuously-running async daemon (LADR-0001 §2).
-        using var daemon = await fixture.DocumentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync("PersonSummaryProjection", TestContext.Current.CancellationToken);
+        // never the continuously-running async daemon (LADR-0001 §2). The name is
+        // the one each store's composition root pins at registration, and the
+        // fact that ONE name works on both is part of what this test proves.
+        await fixture.RebuildProjectionAsync("PersonSummaryProjection", TestContext.Current.CancellationToken);
 
         var afterRebuild = await fixture.PeopleQuery.FindByEmailAsync("katherine@replay.test", TestContext.Current.CancellationToken);
         afterRebuild.Should().Be(before);
     }
 }
+
+[Trait("Category", "Storage")]
+public sealed class PostgresEventStoreTests(PostgresFixture fixture) : EventStoreTests<PostgresFixture>(fixture);
+
+public sealed class SqliteEventStoreTests(SqliteFixture fixture) : EventStoreTests<SqliteFixture>(fixture);
