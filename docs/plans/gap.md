@@ -1,33 +1,33 @@
 # Gap analysis — what the codebase does not yet do
 
-**Status:** Re-verified · **Date:** 2026-08-09 · **Commit:** `900df6d`, branch `master`
+**Status:** Re-verified · **Date:** 2026-08-16 · **Commit:** `562d935`, branch `master`
 
 > **This is a point-in-time audit, not a live document.** Every claim below was
-> re-verified by reading the tree at `900df6d`, superseding the original `d273ed1`
-> snapshot. Line numbers drift on the next commit that touches a file. **Re-verify
-> before acting on any of it** — treat a `file:line` here as a starting point for a
-> grep, not as an address.
+> re-verified by reading the tree at `562d935`, superseding the `900df6d` snapshot.
+> Line numbers drift on the next commit that touches a file. **Re-verify before acting
+> on any of it** — treat a `file:line` here as a starting point for a grep, not as an
+> address.
 >
-> Test suite: green — 440 tests (Domain 236, Application 167, Architecture 7,
-> Acceptance 3, Infrastructure/Storage 27; the storage tests are filtered out of a fast
-> local loop with `dotnet test --filter "Category!=Storage"`). That is `900df6d`'s 438
-> plus the two `ClassAgnosticismTests` this re-audit added — see §6.
+> Test suite: green — 455 tests (Domain 246, Application 167, Architecture 7,
+> Acceptance 6, Infrastructure/Storage 29; the storage tests are filtered out of a fast
+> local loop with `dotnet test --filter "Category!=Storage"`). That is `900df6d`'s 440
+> plus the ten Domain property tests, three Acceptance scenarios and two Storage tests
+> `scoring-steel-thread-plan.md` added closing gap 5 — see the Update below and §5.
 >
-> The two **Update** sections below are kept as the record of how the tree got here.
-> The gap table and the per-gap sections have been rewritten against `900df6d` and
-> no longer need reading through those updates to be trusted.
+> The three **Update** sections below are kept as the record of how the tree got here.
+> The gap table and the per-gap sections have been rewritten against `562d935` and no
+> longer need reading through those updates to be trusted.
 
 ## Context
 
-Seven plans live in `docs/plans/`: `command-side`, `create-competition`,
+Eight plans live in `docs/plans/`: `command-side`, `create-competition`,
 `class-definition-adoption`, `register-competitor`, `phase-drawn`, `bind-parameter`,
-`capture-a-score`. All seven are implemented in code. Their *What this unlocks*
-sections were audited item by item, and this document is what those sections promised
-but the tree does not yet contain. An eighth, `scoring-steel-thread-plan.md`, is
-proposed and not yet started — it covers gap 5 and §6.
+`capture-a-score`, `scoring-steel-thread`. All eight are implemented in code. Their
+*What this unlocks* sections were audited item by item, and this document is what those
+sections promised but the tree does not yet contain.
 
 One documentation artefact worth noting because it misleads a reader: only
-`command-side-steel-thread-plan.md` carries `**Status:** Complete`. The other six say
+`command-side-steel-thread-plan.md` carries `**Status:** Complete`. The other seven say
 `**Status:** Proposed` despite having landed and being test-verified.
 
 Two further plan documents were **cited by shipped code but absent from HEAD** —
@@ -149,21 +149,62 @@ end-to-end-test item is resolved; the remaining §7 items are unaffected. Rows 3
 6 are unaffected by this thread — gap 5 (the orphaned scoring engine) is explicitly
 unlocked next, since Entry now produces real measurements for it to consume.
 
+## Update — 2026-08-16: `scoring-steel-thread-plan.md` implemented
+
+All twelve work items landed on `master` (commit `562d935`; the plan document itself
+still says `**Status:** Proposed`, per the pattern already noted in Context above).
+`MeasurementDigest.Resolve` (amendment resolution), the retyped `ScoringService` static
+class, a real `ScoreCompetition` (no longer a shell — it now walks
+`Competition.Phases`, builds `RoundData`/`TaskRoundData`, calls `PhaseAggregator` and
+`PenaltyEngine`, and ranks via `RankingEngine`), penalty routing
+(`GetEntryPenalties`/`GetAggregatePenalties`), `EntryCollector`
+(`src/Soarscore.Application/Queries/Entries/EntryCollector.cs`), the `ScoreTaskRound`
+and `ScoreCompetition` queries and handlers, the `/task-round-result` and
+`/competition-result` Api endpoints with matching DI registrations, CsCheck property
+tests (the seven named invariants WI-5 specified), Postgres store-backed tests
+(`ScoringEventStoreTests.cs`), and a three-scenario Reqnroll acceptance test
+(`Features/ScoringACompetition.feature`). Full solution: 455 tests passing (Domain 246,
+Application 167, Architecture 7, Acceptance 6, Infrastructure/Storage 29), 0 failures,
+clean build.
+
+**Gap 5 (the orphaned scoring engine) is closed.** All eleven files under
+`src/Soarscore.Domain/Scoring/` now have a production caller, `ScoreCompetition` is a
+real implementation rather than a shell, and a captured score is reachable as a ranked
+result over real HTTP.
+
+**Gap 6 stays closed under the new code.** `ClassAgnosticismTests` scans everything
+under `src/`, so this thread's new files (`MeasurementDigest.cs`, `EntryCollector.cs`,
+the two query files) are covered without any change to the guard test itself, and no
+class-name branching was introduced.
+
+The tech-debt item this thread was predicted to discharge did discharge: the duplicate
+`TaskRoundState` enum (`tech-debt.md`) is now resolved by an explicit, documented
+mapping inside `ScoreCompetition`, exactly as `capture-a-score-steel-thread-plan.md`
+anticipated — checked off in `tech-debt.md`.
+
+**Consequence for the gap table below:** row 5 is resolved. Rows 3, 4, 6 and 7 are
+unaffected by this thread. This closes the last of the three gaps
+(`gap.md`'s own "Sequencing" section) that stood between the system and its purpose;
+what remains is genuine choice between roughly equal-sized threads — see Sequencing
+below.
+
 ## Gap inventory
 
-| # | Gap | Nature | Consequence | Status at `900df6d` |
+| # | Gap | Nature | Consequence | Status at `562d935` |
 |---|---|---|---|---|
 | 1 | Entry aggregate has no write path | Largest gap; named by all five plan audits | **No way to capture a score.** | **Closed** — `capture-a-score` |
 | 2 | `entry_index` read model does not exist | Permitted by LADR-0001 §3, never built | No leaderboard query surface | **Closed** — `capture-a-score` |
 | 3 | Nine of seventeen domain event types are unreachable | Folds exist; no decide functions | Runtime trap, see below | Open (was 7 of 11; recounted) |
 | 4 | `BindParameter` / `ParameterBound` has no command | Live functional hole | F5K, F5L, NZ Class M cannot be drawn | **Closed** — `bind-parameter` |
-| 5 | The scoring engine is orphaned | 2,153 lines, nine files with no caller, and a deleted plan doc | **Nothing turns captured scores into results.** | Open — planned |
+| 5 | The scoring engine is orphaned | 2,153 lines, nine files with no caller, and a deleted plan doc | Nothing turned captured scores into results | **Closed** — `scoring-steel-thread` |
 | 6 | The core architectural law has no guarding test | Convention only | Regression is invisible | **Closed** — `ClassAgnosticismTests` |
 | 7 | Assorted smaller items | See §7 | — | Six of seven open |
 
-Gap 5 is now the only thing between this system and its purpose. Gaps 1, 2 and 4
-closed in sequence, and each closure moved the blocker one step further down the
-capture-to-result chain; scoring is the last link.
+Gaps 1, 2, 4 and 5 closed in sequence, and each closure moved the blocker one step
+further down the capture-to-result chain. A score can now be captured, and turned into
+a ranked result, end to end over real HTTP. What remains is §7's smaller items plus the
+three roughly-equal-sized threads named in Sequencing below — none of them blocking the
+system's core purpose the way gaps 1–5 did.
 
 ---
 
@@ -231,64 +272,60 @@ parameter resolution is ever reached. See "Catalogue-choice rounds" under the de
 list. Eight of the eleven corpus classes can be drawn today; F3K and F5K are blocked by
 catalogue choice, F3B by multi-task rounds — all three at that same single check.
 
-## 5 — The orphaned scoring engine
+## 5 — The orphaned scoring engine · **closed**
 
-Eleven files, 2,153 lines, in `src/Soarscore.Domain/Scoring/`:
+Closed by `scoring-steel-thread-plan.md`, committed (`562d935`). Eleven files, 2,153
+lines, in `src/Soarscore.Domain/Scoring/` — every one now has a production caller.
 
 | File | Lines | Production callers outside `Scoring/` |
 |---|---|---|
-| `FlightSelector.cs` | 357 | none |
-| `ParameterResolver.cs` | 295 | **three** — `Competition.DrawPhase`, `Competition.OpenEntry`, `TaskResolver` |
-| `PhaseAggregator.cs` | 250 | none |
-| `ScoringService.cs` | 249 | none |
-| `PenaltyEngine.cs` | 231 | none |
-| `FlightInterpreter.cs` | 225 | none |
-| `ScoringResultTypes.cs` | 179 | none |
-| `NormalisationEngine.cs` | 144 | none |
-| `PredicateEvaluator.cs` | 101 | none |
-| `RankingEngine.cs` | 82 | none |
-| `RoundingSupport.cs` | 40 | **one** — `Entry.CaptureMeasurement` |
+| `FlightSelector.cs` | 357 | `ScoringService.ScoreGroup` |
+| `ParameterResolver.cs` | 295 | `Competition.DrawPhase`, `Competition.OpenEntry`, `TaskResolver` |
+| `PhaseAggregator.cs` | 250 | `ScoringService.ScoreCompetition` |
+| `ScoringService.cs` | 249 | `ScoreTaskRoundHandler`, `ScoreCompetitionHandler` |
+| `PenaltyEngine.cs` | 231 | `ScoringService.ScoreCompetition` |
+| `FlightInterpreter.cs` | 225 | `ScoringService.ScoreGroup` |
+| `ScoringResultTypes.cs` | 179 | throughout `ScoringService` and the two query handlers |
+| `NormalisationEngine.cs` | 144 | `ScoringService.ScoreGroup` |
+| `PredicateEvaluator.cs` | 101 | `FlightInterpreter` |
+| `RankingEngine.cs` | 82 | `ScoringService.ScoreCompetition` |
+| `RoundingSupport.cs` | 40 | `Entry.CaptureMeasurement` |
 
-`ParameterResolver` and `RoundingSupport` were pulled into service by the
-bind-parameter and capture-a-score threads respectively; nine files still have no
-production caller at all.
+What the `scoring-steel-thread` did, against the three problems the previous audit
+found:
 
-Three problems, in order of how much they cost:
+- **`ScoreCompetition` was a shell; it is now a real implementation.** It walks
+  `competition.Phases` → `Round` → `TaskRound` → `Group`, builds `RoundData`/
+  `TaskRoundData` (a task-round enters the walk only when at least one Entry exists
+  for it — an unflown task-round is omitted, never scored as zero), calls
+  `PhaseAggregator.Aggregate` and `PenaltyEngine.ApplyAggregatePenalties`, and ranks via
+  `RankingEngine.Rank`.
+- **Amendment resolution exists.** `MeasurementDigest.Resolve` (new file) reduces a
+  `Measurement`'s amendments to an effective value: most recent by `At`, last-appended
+  on ties.
+- **Penalty routing is real.** `GetEntryPenalties`/`GetAggregatePenalties` group by
+  `InfractionType`, count occurrences, and split on `PenaltyScope`, reading
+  `Entry.Penalties` and `Competition.Penalties` respectively — both still empty in
+  practice today, since neither `PenaltyRecorded` event has a decide function yet (see
+  §3), but the routing itself is no longer a stub.
+- **`ScoringService` is `static`, not `public class`,** and its `object`/`object?`
+  *TBD* parameters are gone — retyped to `ResolvedTask`, `Entry?` and
+  `ImmutableDictionary<string, Entry>` where the engine actually reads them.
 
-~~**Its plan document was deleted, and so was its issues document.**~~ **Fixed at
-`900df6d`** — both restored from `d1ea17d`, so the eleven header citations resolve
-again and the eight design resolutions the pipeline implements (issue #4 where
-amendment resolution lives, #5 group annulment, #8 the `ByTask` drop algorithm) are
-back in the tree rather than only in git history.
+**New callers added to close the gap:** `EntryCollector`
+(`src/Soarscore.Application/Queries/Entries/EntryCollector.cs`) fans out
+`IEntryQuery.FindAsync` then folds each Entry stream, giving `ScoreCompetition` the
+`IReadOnlyDictionary<EntryId, Entry>` it needs; the `ScoreTaskRound` and
+`ScoreCompetition` Application queries and their handlers; the `/task-round-result` and
+`/competition-result` Api endpoints.
 
-**It has no caller.** Zero references to `ScoringService` from
-`src/Soarscore.Application` or `src/Soarscore.Api`. It is also the only component
-with no test file of any kind. `ParameterResolver` gained `ParameterResolverTests` with
-the bind-parameter thread; `PredicateEvaluator` has no file of its own but is covered
-inside `FlightInterpreterTests.cs:321-382`.
-
-**The nuance that makes most of it cheaper than it looks.** The `object` / `object?`
-parameters annotated *TBD* — `ScoringService.cs:26,36,91,136,205,231`,
-`FlightInterpreter.cs:30`, `FlightSelector.cs:34` — are **unused in the method
-bodies**. The engine already operates on pre-digested inputs (`resolvedMetrics`,
-`interpretedFlights`). Six of the seven public methods are complete; rescuing them
-needs an adapter that turns an Entry stream into those pre-digested inputs, not a
-redesign.
-
-**The exception, which the original snapshot missed.** `ScoreCompetition`
-(`ScoringService.cs:133-194`) is a **shell**, not a mis-typed method. It never
-populates `allTaskRoundScores` (`:146`), never calls `PhaseAggregator`, and sums an
-always-empty list at `:166`, so every competitor scores zero and is then ranked. Its
-own comment says so (`:148-149`). That method has to be written.
-
-**Two more things an adapter must reconcile**, neither visible from the file list:
-nothing in the tree resolves a `Measurement`'s `Amendments` to an effective value —
-the stub meant to do it returns `Empty` (`:204-220`) — and `RecordedPenalty(
-InfractionType, OccurrenceCount)` does not match the domain's `Penalty(InfractionType,
-Scope)`, which carries no count.
-
-> **Planned.** `scoring-steel-thread-plan.md` (2026-08-09) covers this gap, in two
-> slices: score one group, then the ranked leaderboard.
+**Test coverage, previously nonexistent, now exists at every layer:** seven named
+CsCheck property tests (amendment resolution is last-write-wins, scoring is
+order-invariant over distinct metrics, scoring is a pure function, dropping never
+raises and never over-lowers, placings are a consistent total order, id round-trip is
+lossless, every drawable corpus class scores without throwing), Postgres store-backed
+tests (`ScoringEventStoreTests.cs`), and a three-scenario Reqnroll acceptance test
+(`Features/ScoringACompetition.feature`).
 
 ## 6 — The core architectural law is unguarded · **closed**
 
@@ -388,18 +425,19 @@ defeat `RulesAmended`'s retroactive intent. Scheduled as WI-2 of
 1. ~~**`BindParameter` slice**~~ — **done 2026-08-08.** Fixed F5L and NZ Class M ALES
    200 outright; F5K still needs the catalogue-choice thread before its draw succeeds.
 2. ~~**Entry write path plus `entry_index`**~~ (gaps 1 and 2) — **done 2026-08-09.**
-3. **De-orphan the scoring engine** (gap 5) — **chosen 2026-08-09, planned in
-   `scoring-steel-thread-plan.md`, not started.** The critical path: the only remaining
-   work that advances the system's actual purpose. Two slices — score one group, then
-   the ranked leaderboard.
+3. ~~**De-orphan the scoring engine**~~ (gap 5) — **done 2026-08-16**, in
+   `scoring-steel-thread-plan.md`'s two slices (score one group, then the ranked
+   leaderboard). The critical path is closed: a captured score is now reachable as a
+   ranked result over real HTTP.
 
-What comes after is a genuine choice rather than a queue, and the three candidates are
+What comes next is a genuine choice rather than a queue, and the three candidates are
 roughly equal in size: **catalogue-choice draws** (unblocks F3K and F5K, retires the
 acceptance test's hand-authored F3K stand-in), the **second Entry thread**
 (`MeasurementAmended`, `EntryAnnulled`, `PenaltyRecorded` — the inputs the scoring
-pipeline can read but nothing can produce), and **task-round lifecycle**
-(`TaskRoundCompleted`/`Annulled`, which would let the leaderboard distinguish "not
-flown" from "flown, no result" rather than inferring it from Entry presence).
+pipeline can now read but nothing can yet produce, per §5's penalty-routing note above),
+and **task-round lifecycle** (`TaskRoundCompleted`/`Annulled`, which would let the
+leaderboard distinguish "not flown" from "flown, no result" rather than inferring it
+from Entry presence, per `tech-debt.md`'s `TaskRoundState` mapping note).
 
 One thing this ordering has consistently rejected: "close the remaining unreachable
 events" (gap 3) as a goal in itself is motion without direction — close each one when a
