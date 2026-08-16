@@ -1,9 +1,9 @@
-// The Marten adapter for IEntryQuery — kanban/completed/capture-a-score-steel-thread-plan.md
+// The document-store adapter for IEntryQuery — kanban/completed/capture-a-score-steel-thread-plan.md
 // WI-9. Reads the `entry_index` read model only; never the event log. Mirrors
-// Competitions/MartenCompetitionsQuery.cs.
+// Competitions/DocumentCompetitionsQuery.cs.
 //
 // Filtering happens in memory, over every EntrySummary row, rather than as a
-// server-side Marten `Where` on CompetitionRef/GroupRef/CompetitorRef — found
+// server-side `Where` on CompetitionRef/GroupRef/CompetitorRef — found
 // to be necessary by WI-12's store-backed tests against a real Postgres.
 // Those three properties are strong-typed ids (readonly record struct
 // wrapping Guid) serialised as a JSON object ({"value": "..."}) like any
@@ -25,16 +25,26 @@
 // entry_index is at most a few hundred rows (≤20 pilots, ≤8 rounds/day,
 // docs/non-functional-requirements.md's Key constraints).
 //
+// That finding is about the *store* underneath, which is still Marten, not
+// about this adapter's types: the LINQ provider behind Query<T>() is the
+// store's own whichever contract we express it through. A different store
+// would need the same empirical check before the in-memory filter could be
+// pushed back down to the server.
+//
 // PhaseOrdinal/RoundOrdinal/TaskRoundOrdinal are plain `int`s and remain
 // ordinary LINQ predicates — only the three id-typed filters are affected.
+//
+// Written against JasperFx's store-agnostic document contracts rather than
+// Marten's own types — kanban/completed/jasperfx-shared-store-contracts.md
+// WI-2.
 
-using Marten;
+using JasperFx.Events.Documents;
 using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Infrastructure.Entries;
 
-public sealed class MartenEntryQuery(IDocumentStore store) : IEntryQuery
+public sealed class DocumentEntryQuery(IDocumentSessionFactory sessions) : IEntryQuery
 {
     public async Task<IReadOnlyList<EntrySummary>> FindAsync(
         CompetitionId competitionRef,
@@ -45,7 +55,11 @@ public sealed class MartenEntryQuery(IDocumentStore store) : IEntryQuery
         CompetitorId? competitorRef,
         CancellationToken cancellationToken = default)
     {
-        await using var session = store.QuerySession();
+        await using var session = sessions.QuerySession();
+
+        // IReadOnlyList<EntrySummary>, not List<EntrySummary> — the shared
+        // DocumentQueryableExtensions.ToListAsync returns the read-only shape.
+        // Only LINQ-to-Objects is applied to it below, so nothing else moves.
         var all = await session.Query<EntrySummary>().ToListAsync(cancellationToken);
 
         IEnumerable<EntrySummary> results = all.Where(s => s.CompetitionRef == competitionRef);

@@ -12,7 +12,12 @@
   <ItemGroup>
     <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
     <PackageVersion Include="CsCheck" Version="4.8.0" />
-    <PackageVersion Include="Marten" Version="9.22.2" />
+    <!-- jasperfx-shared-store-contracts.md WI-1: 9.24.0 pulls JasperFx.Events 2.48.0,
+         where the store-agnostic document contracts (IDocumentSessionFactory,
+         IDocumentReadOperations/IDocumentWriteOperations, IJasperFxProjection<T>)
+         live. The adapters in Soarscore.Infrastructure are written against those,
+         not Marten's own session types. -->
+    <PackageVersion Include="Marten" Version="9.24.0" />
     <!-- Pinned to the AspNetCore.App runtime installed alongside the 10.0.110 SDK
          (LADR-0003 "API documentation": in-box, spec emitted as a build artefact). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />

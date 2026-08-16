@@ -1,6 +1,10 @@
-// The Marten adapter for IEventStore — kanban/completed/command-side-steel-thread-plan.md
-// WI-7, LADR-0001 §4.1/§4.4/§4.8. The only place a Marten or Npgsql exception
-// is caught; nothing Marten-shaped escapes this project.
+// The Marten-specific half of the IEventStore adapter —
+// kanban/completed/jasperfx-shared-store-contracts.md WI-4, originally
+// kanban/completed/command-side-steel-thread-plan.md WI-7, LADR-0001
+// §4.1/§4.4/§4.8. The portable body lives in JasperFxEventStore.cs; what is
+// left here is the four things the JasperFx shared contracts do not reach.
+// This is the only place a Marten or Npgsql exception is caught, and the only
+// file in the pair that names Marten or Npgsql at all.
 //
 // Two things here are not documented by the package and were confirmed
 // empirically against a running PostgreSQL before being relied on:
@@ -11,10 +15,6 @@
 //    it silently produces an unrelated exception instead of a clean
 //    concurrency failure. Rich mode's extra bookkeeping is immaterial at this
 //    project's scale (single-digit writes/minute, NFR).
-//  - Marten's `expectedVersion` for that overload is the stream version AFTER
-//    the new events land (current version + events.Count), not before. Get
-//    this backwards and every mutation after the first silently asserts the
-//    wrong version and either always succeeds or always fails.
 //  - Guid.Empty is not just "a stream that doesn't exist" to Marten: Append
 //    throws ArgumentOutOfRangeException for it, but FetchStreamAsync silently
 //    drops the stream-id filter entirely and returns every event across every
@@ -22,11 +22,18 @@
 //    GET /person?id=00000000-… returned another person's data, folded
 //    together with the Tombstone event from an unrelated stream). Both
 //    AppendAsync and ReadStreamAsync reject Guid.Empty before calling Marten
-//    at all, rather than leaning on that inconsistency.
+//    at all, rather than leaning on that inconsistency — the guard is in the
+//    base, applied to every backend.
 //
-// ExpectedVersion.Exact(v) here always means "the stream currently has v
-// events" (PersonLoader.cs's convention — v is events.Count from a prior
-// read), so the translation below is Append(streamId, v + events.Count, events).
+// (The third empirical finding, the meaning of `expectedVersion`, is a
+// property of the shared contract rather than of Marten, and is recorded on
+// JasperFxEventStore.cs.)
+//
+// Beware the type names: Marten.Events.IEventStoreOperations and
+// Marten.Events.IQueryEventStore derive from the JasperFx.Events interfaces of
+// exactly the same simple names, so both are written out in full below. The
+// JasperFx.Events.Documents namespace is deliberately not imported for the same
+// class of reason — its ToListAsync would collide with Marten's own.
 
 using Marten;
 using Marten.Exceptions;
@@ -36,90 +43,68 @@ using Soarscore.Domain;
 
 namespace Soarscore.Infrastructure;
 
-public sealed class MartenEventStore(IDocumentStore store) : IEventStore
+public sealed class MartenEventStore(IDocumentStore store) : JasperFxEventStore(store)
 {
-    public async Task<Result<long>> AppendAsync(
-        Guid streamId,
-        ExpectedVersion expected,
-        IReadOnlyList<IDomainEvent> events,
-        CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Marten's <c>IDocumentSession.Events</c>. The session handed back by the
+    /// shared <c>IDocumentSessionFactory.LightweightSession()</c> is a Marten
+    /// <see cref="IDocumentSession"/>; its <c>Events</c> property is a
+    /// <c>Marten.Events.IEventStoreOperations</c>, which derives from the
+    /// JasperFx contract the base is written against.
+    /// </summary>
+    protected override JasperFx.Events.IEventStoreOperations EventOperationsOf(
+        JasperFx.Events.Documents.IDocumentSessionOperations session) =>
+        ((IDocumentSession)session).Events;
+
+    /// <summary>
+    /// Marten's <c>IQuerySession.Events</c> — the read-only counterpart. A
+    /// Marten <see cref="IDocumentSession"/> is also an
+    /// <see cref="IQuerySession"/>, so this serves both the query session and
+    /// the write session.
+    /// </summary>
+    protected override JasperFx.Events.IQueryEventStore EventQueriesOf(
+        JasperFx.Events.Documents.IDocumentReadOperations session) =>
+        ((IQuerySession)session).Events;
+
+    /// <summary>
+    /// The two Marten/Npgsql append failures with a domain meaning. The
+    /// collision check comes first deliberately: Marten wraps some failures, so
+    /// its own typed exception is the more precise signal and must be read
+    /// before the generic unique-violation walk gets a chance to match. The
+    /// shared concurrency failure is handled by the base, ahead of this.
+    /// </summary>
+    protected override Result<long>? TranslateAppendException(Exception exception, Guid streamId)
     {
-        if (streamId == Guid.Empty)
-        {
-            return RejectEmptyStreamId<long>();
-        }
-
-        await using var session = store.LightweightSession();
-
-        if (expected.IsNoStream)
-        {
-            session.Events.StartStream(streamId, events);
-        }
-        else if (expected.IsExact)
-        {
-            session.Events.Append(streamId, expected.Version + events.Count, events);
-        }
-        else
-        {
-            session.Events.Append(streamId, events);
-        }
-
-        try
-        {
-            await session.SaveChangesAsync(cancellationToken);
-        }
-        catch (ExistingStreamIdCollisionException)
+        if (exception is ExistingStreamIdCollisionException)
         {
             return Result<long>.Failure(
                 "eventStore.streamAlreadyExists",
                 $"Stream {streamId} already exists — expected no stream.");
         }
-        catch (JasperFx.Events.EventStreamUnexpectedMaxEventIdException)
-        {
-            return Result<long>.Failure(
-                "eventStore.concurrencyConflict",
-                $"Stream {streamId} was modified since it was last read.");
-        }
-        catch (Exception ex) when (FindUniqueViolation(ex) is { } violation)
+
+        if (FindUniqueViolation(exception) is { } violation)
         {
             return Result<long>.Failure(
                 "eventStore.uniqueConstraintViolation",
                 $"A unique constraint was violated: {violation.ConstraintName}.");
         }
 
-        var state = await session.Events.FetchStreamStateAsync(streamId, cancellationToken);
-        return Result<long>.Success(state!.Version);
+        return null;
     }
 
-    public async Task<Result<IReadOnlyList<IDomainEvent>>> ReadStreamAsync(
-        Guid streamId,
-        long fromVersion,
-        CancellationToken cancellationToken = default)
-    {
-        if (streamId == Guid.Empty)
-        {
-            return RejectEmptyStreamId<IReadOnlyList<IDomainEvent>>();
-        }
-
-        await using var session = store.QuerySession();
-        var events = await session.Events.FetchStreamAsync(streamId, fromVersion: fromVersion, token: cancellationToken);
-
-        // Same Tombstone-filtering rule as ReadAllAsync below — Marten's
-        // high-water-mark agent can interleave its marker event into a real
-        // stream's row set, and it must not reach the Application layer.
-        IReadOnlyList<IDomainEvent> result = events
-            .Where(e => e.Data is IDomainEvent)
-            .Select(e => (IDomainEvent)e.Data)
-            .ToList();
-        return Result<IReadOnlyList<IDomainEvent>>.Success(result);
-    }
-
-    public async Task<Result<IReadOnlyList<RecordedEvent>>> ReadAllAsync(
+    /// <summary>
+    /// Per-store by decision, not by oversight —
+    /// kanban/completed/jasperfx-shared-store-contracts.md WI-4 "Decision":
+    /// the portable query API has no sequence cursor, and ordered replay
+    /// (LADR-0001 §4.10) is the only reason this method exists.
+    /// </summary>
+    public override async Task<Result<IReadOnlyList<RecordedEvent>>> ReadAllAsync(
         long fromPosition,
         int batchSize,
         CancellationToken cancellationToken = default)
     {
         await using var session = store.QuerySession();
+
         var events = await session.Events.QueryAllRawEvents()
             .Where(e => e.Sequence >= fromPosition)
             .OrderBy(e => e.Sequence)
@@ -135,10 +120,6 @@ public sealed class MartenEventStore(IDocumentStore store) : IEventStore
             .ToList();
         return Result<IReadOnlyList<RecordedEvent>>.Success(result);
     }
-
-    /// <summary>See the class comment's Guid.Empty note — rejected before Marten ever sees it.</summary>
-    private static Result<T> RejectEmptyStreamId<T>() =>
-        Result<T>.Failure("eventStore.emptyStreamId", "A stream id must not be Guid.Empty.");
 
     /// <summary>
     /// Walks the exception chain for a Postgres unique-violation (SqlState 23505). Marten

@@ -158,6 +158,12 @@ adoption event for replay determinism to hold.
 correct when it was written. This section records what has since changed and what it does
 and does not overturn.
 
+Revised 2026-08-16 after the adapter refactor was actually built
+(`kanban/completed/jasperfx-shared-store-contracts.md`). The costings below are now
+measured rather than estimated, and two of them moved: the projections are less portable
+than first read, and `MartenEventStore` keeps three things per-store rather than one. The
+conclusion is unchanged; the numbers behind it are firmer.
+
 ### What changed
 
 Two things, neither of which existed when this ADR was accepted:
@@ -183,16 +189,33 @@ rested on the premise that the session and store types are Marten's. That premis
 half false. A second backend is a NuGet package plus a composition root, not a store
 implementation:
 
-- The four query adapters (172 LOC) and the four projection bodies (172 LOC) become
-  store-agnostic outright — every member they use is on the shared contracts.
-- `MartenEventStore.cs` (161 LOC) is ~90% portable; what stays per-store is the two
-  exception translations.
+- The four query adapters (172 LOC) become store-agnostic outright — every member they
+  use is on the shared contracts. Built and confirmed; they no longer name Marten at all,
+  and are renamed `Document*Query` accordingly.
+- The four projection bodies (172 LOC) become store-agnostic **except for the document
+  load**. `IDocumentReadOperations` exposes Guid and String identity overloads only, by
+  deliberate design, and Marten binds those to its own `LoadAsync<T>(Guid)`, which
+  statically binds `TId` to `Guid` and throws `DocumentIdTypeMismatchException` for a
+  document configured with a strong-typed id. Three of our four read models have one
+  (`PersonId`, `EntryId`, `CompetitionId`), so they keep a four-line per-store load
+  override; `ClassDefinitionSummary`, keyed by a bare `Guid`, does not. This is a limit
+  of the shared contract rather than a Marten quirk — every backend storing these
+  documents under a strong-typed id needs the same override.
+- `MartenEventStore.cs` (161 LOC) is ~90% portable. What stays per-store is the two
+  exception translations, **the two `.Events` accessors** — `Events` is not on any shared
+  session contract, so reaching `IEventStoreOperations` / `IQueryEventStore` from an
+  `IDocumentSessionOperations` takes a per-store step — and **`ReadAllAsync`**, the one
+  port method with no shared equivalent (see §4.10 and the deferred-decisions entry).
 - `MartenConfig.cs` and the DI wiring (158 LOC) stay per-store **by design**. `AddMarten`
   / `AddPolecat` / `AddFisher`, `StoreOptions`, `MapEventType`, `UniqueIndex` and
   projection registration are not shared and JasperFx is not trying to share them.
 
 So: one shared adapter body plus a thin composition root per backend, not one build
-switched by configuration.
+switched by configuration — with the qualification that "shared body" means shared *logic*
+with a handful of narrow per-store seams, not a body a second backend inherits untouched.
+The seams are uniform in shape (an abstract or virtual member on a shared base, overridden
+by a small subclass), and there are five of them: two `.Events` accessors, the append
+exception translation, `ReadAllAsync`, and the projection load.
 
 **§1's counter-case, in part.** "Install Docker, run a Postgres container is an
 acceptable ask of self-hosters, and writing a store is not an acceptable use of the
@@ -230,9 +253,11 @@ Server a third on the same terms.
 
 Two prerequisites, both recorded as work rather than decided here:
 
-- We are on Marten 9.22.2 → JasperFx.Events **2.37.0**. The document contracts are
+- ~~We are on Marten 9.22.2 → JasperFx.Events **2.37.0**. The document contracts are
   2.47.0. Marten 9.24.0 pulls 2.48.0, the version Fisher is built against. Nothing
-  follows until that bump.
+  follows until that bump.~~ **Done, 2026-08-16.** Marten 9.24.0 / JasperFx.Events
+  2.48.0, and the adapters are on the shared contracts —
+  `kanban/completed/jasperfx-shared-store-contracts.md`.
 - A support claim for three backends means the acceptance suite runs against three
   backends. Separately, a Fisher-backed peer of `Soarscore.Infrastructure.Tests` removes
   the Testcontainers dependency from the storage suite — worth having independently of

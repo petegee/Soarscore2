@@ -10,6 +10,29 @@ here, carrying the reasoning across.
 
 Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has a date.
 
+## Event store
+
+- **`IEventStore.ReadAllAsync` stays, and stays per-store.** **Decided 2026-08-16**
+  (`kanban/completed/jasperfx-shared-store-contracts.md`). It is the one method on the
+  port with no equivalent on the JasperFx shared contracts, and it has zero production
+  callers — so the portability refactor had to either drop it or keep it deliberately.
+  Kept. `IReadOnlyEventStore.QueryEventsAsync` is not a substitute: flat filters plus
+  page-number paging give no sequence cursor, and therefore no replay ordering
+  guarantee, which is the entire reason LADR-0001 §4.10's replay path wants the method.
+  Deleting the port instead is a larger question — it changes what `IEventStore`
+  promises — and should be argued on its own terms rather than as a side effect of a
+  type-level refactor. It is `abstract` on `JasperFxEventStore`, so a second backend is
+  forced to answer this rather than inherit a silently-wrong implementation.
+
+- **The four query ports are not collapsed into their handlers.** **Decided
+  2026-08-16**, same story. A store-agnostic `IDocumentSessionFactory` could now appear
+  in `Application`, which would make `IPeopleQuery` / `IClassLibraryQuery` /
+  `ICompetitionsQuery` / `IEntryQuery` and their adapters redundant. Refused: LADR-0001
+  §4.2's stated reason is hexagonal dependencies pointing inward, *independently* of
+  portability, and that reason is untouched by the contracts becoming portable.
+  `LayerRuleTests` now excludes `JasperFx` alongside `Marten` so the temptation fails
+  the build rather than being rediscovered as a judgement call.
+
 ## Draw
 
 - **Redraw / draw acceptance.** Acceptance criteria are already drafted at

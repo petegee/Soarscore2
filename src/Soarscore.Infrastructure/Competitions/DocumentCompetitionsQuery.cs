@@ -1,20 +1,21 @@
-// The Marten adapter for ICompetitionsQuery — kanban/completed/create-competition-steel-thread-plan.md
+// The document-store adapter for ICompetitionsQuery — kanban/completed/create-competition-steel-thread-plan.md
 // WI-1. Reads the `competitions` read model only; never the event log.
-// Mirrors CompetitionClasses/MartenClassLibraryQuery.cs.
+// Mirrors CompetitionClasses/DocumentClassLibraryQuery.cs.
 //
-// Not registered in DI yet — that wiring is WI-4's job (this file compiles
-// standalone until then).
+// Written against JasperFx's store-agnostic document contracts rather than
+// Marten's own types — kanban/completed/jasperfx-shared-store-contracts.md
+// WI-2. The store underneath is still Marten; this class no longer names it.
 
-using Marten;
+using JasperFx.Events.Documents;
 using Soarscore.Application.Queries.Competitions;
 
 namespace Soarscore.Infrastructure.Competitions;
 
-public sealed class MartenCompetitionsQuery(IDocumentStore store) : ICompetitionsQuery
+public sealed class DocumentCompetitionsQuery(IDocumentSessionFactory sessions) : ICompetitionsQuery
 {
     public async Task<IReadOnlyList<CompetitionSummary>> SearchAsync(DateOnly? onOrAfter, string? classContentHash, CancellationToken cancellationToken = default)
     {
-        await using var session = store.QuerySession();
+        await using var session = sessions.QuerySession();
         IQueryable<CompetitionSummary> query = session.Query<CompetitionSummary>();
 
         if (onOrAfter is not null)

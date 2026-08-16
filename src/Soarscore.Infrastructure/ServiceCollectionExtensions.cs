@@ -6,6 +6,7 @@
 // MartenEventStore.cs for why). No async daemon is ever registered or started.
 
 using JasperFx.Events;
+using JasperFx.Events.Documents;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
@@ -37,11 +38,22 @@ public static class ServiceCollectionExtensions
         var store = MartenConfig.ConfigureDocumentStore(connectionString);
 
         services.AddSingleton<IDocumentStore>(store);
+
+        // jasperfx-shared-store-contracts.md WI-5: the four query adapters and
+        // JasperFxEventStore are written against JasperFx's store-agnostic
+        // IDocumentSessionFactory, not Marten's IDocumentStore. Marten's
+        // IDocumentStore *is* one (IDocumentSessionFactory<IDocumentSession,
+        // IQuerySession>), so this is a second registration of the same
+        // singleton instance under the shared contract — not a wrapper, and not
+        // a second store. Choosing which concrete store fills this slot is
+        // exactly the per-backend decision the composition root exists to make.
+        services.AddSingleton<IDocumentSessionFactory>(store);
+
         services.AddSingleton<Application.IEventStore, MartenEventStore>();
-        services.AddSingleton<IPeopleQuery, MartenPeopleQuery>();
-        services.AddSingleton<IClassLibraryQuery, MartenClassLibraryQuery>();
-        services.AddSingleton<ICompetitionsQuery, MartenCompetitionsQuery>();
-        services.AddSingleton<IEntryQuery, MartenEntryQuery>();
+        services.AddSingleton<IPeopleQuery, DocumentPeopleQuery>();
+        services.AddSingleton<IClassLibraryQuery, DocumentClassLibraryQuery>();
+        services.AddSingleton<ICompetitionsQuery, DocumentCompetitionsQuery>();
+        services.AddSingleton<IEntryQuery, DocumentEntryQuery>();
         services.AddSingleton<IClock, SystemClock>();
 
         return services;

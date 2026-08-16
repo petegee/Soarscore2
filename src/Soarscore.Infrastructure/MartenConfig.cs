@@ -83,19 +83,32 @@ public static class MartenConfig
             // one invariant the whole Inline-vs-async decision rests on.
             opts.Schema.For<PersonSummary>().UniqueIndex(x => x.Email);
 
-            opts.Projections.Add(new PersonSummaryProjection(), ProjectionLifecycle.Inline);
+            // jasperfx-shared-store-contracts.md WI-5: what gets registered here is
+            // the per-store shim (Marten*Projection), not the store-agnostic fold it
+            // derives from — Marten's registration API wants its own IProjection
+            // marker, which is the one thing JasperFx does not share.
+            //
+            // The third argument matters and is not decoration. Marten derives a
+            // projection's registered name from the instance's type name, so the shim
+            // would silently re-register `PersonSummaryProjection` as
+            // `MartenPersonSummaryProjection`. That name is the async-daemon
+            // progression key and the handle RebuildProjectionAsync takes, so letting
+            // it drift would rename existing progression rows and break every
+            // rebuild-by-name call site. Pinning it keeps the name a property of the
+            // read model rather than of whichever store-specific shim is wiring it.
+            opts.Projections.Add(new MartenPersonSummaryProjection(), ProjectionLifecycle.Inline, "PersonSummaryProjection");
 
             // WI-5 (class-definition-adoption-steel-thread-plan.md): no unique index —
             // the content hash's uniqueness is already the Marten stream key
             // (ExistingStreamIdCollisionException, handled in PublishClassDefinition.cs),
             // not a document-level constraint. Inline for read-your-own-writes, not for
             // an invariant class_library enforces.
-            opts.Projections.Add(new ClassDefinitionSummaryProjection(), ProjectionLifecycle.Inline);
+            opts.Projections.Add(new MartenClassDefinitionSummaryProjection(), ProjectionLifecycle.Inline, "ClassDefinitionSummaryProjection");
 
             // WI-4 (create-competition-steel-thread-plan.md): no unique index —
             // nothing about CompetitionSummary's fields is unique the way
             // PersonSummary.Email is.
-            opts.Projections.Add(new CompetitionSummaryProjection(), ProjectionLifecycle.Inline);
+            opts.Projections.Add(new MartenCompetitionSummaryProjection(), ProjectionLifecycle.Inline, "CompetitionSummaryProjection");
 
             // WI-9 (capture-a-score-steel-thread-plan.md): no unique index — two
             // Entries can legitimately share a (task-round, competitor) pair once
@@ -103,7 +116,7 @@ public static class MartenConfig
             // PersonSummary.Email is. Inline for read-your-own-writes on the
             // openEntry.alreadyOpen check (WI-8), not for an invariant entry_index
             // itself enforces.
-            opts.Projections.Add(new EntryIndexProjection(), ProjectionLifecycle.Inline);
+            opts.Projections.Add(new MartenEntryIndexProjection(), ProjectionLifecycle.Inline, "EntryIndexProjection");
         });
         return store;
     }

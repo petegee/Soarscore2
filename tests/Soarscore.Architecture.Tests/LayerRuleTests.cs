@@ -31,7 +31,7 @@ public sealed class LayerRuleTests
     {
         IArchRule rule = Types().That().ResideInAssembly(typeof(Person).Assembly)
             .Should().NotDependOnAny(Types(includeReferenced: true).That()
-                .ResideInAssemblyMatching(@"^(Soarscore\.Application|Soarscore\.Infrastructure|Soarscore\.Api|Marten|Npgsql)(\.|,)"))
+                .ResideInAssemblyMatching(@"^(Soarscore\.Application|Soarscore\.Infrastructure|Soarscore\.Api|Marten|Npgsql|JasperFx)(\.|,)"))
             .Because("CLAUDE.md's core architectural law and LADR-0001 §4 require the Domain layer to have zero dependencies outside the BCL.");
 
         rule.Check(Architecture);
@@ -42,8 +42,8 @@ public sealed class LayerRuleTests
     {
         IArchRule rule = Types().That().ResideInAssembly(typeof(SoarscoreEventJson).Assembly)
             .Should().NotDependOnAny(Types(includeReferenced: true).That()
-                .ResideInAssemblyMatching(@"^(Soarscore\.Infrastructure|Soarscore\.Api|Marten|Npgsql)(\.|,)"))
-            .Because("LADR-0001 §4.2: hexagonal dependencies point inward — Application defines ports, Infrastructure implements them, and IDocumentSession must never appear in Application.");
+                .ResideInAssemblyMatching(@"^(Soarscore\.Infrastructure|Soarscore\.Api|Marten|Npgsql|JasperFx)(\.|,)"))
+            .Because("LADR-0001 §4.2: hexagonal dependencies point inward — Application defines ports, Infrastructure implements them, and IDocumentSession must never appear in Application. JasperFx is excluded alongside Marten deliberately (jasperfx-shared-store-contracts.md): the store contracts being store-agnostic makes them tempting to reach for in Application, and §4.2's reason for refusing is hexagonal dependency direction, which portability does not soften.");
 
         rule.Check(Architecture);
     }

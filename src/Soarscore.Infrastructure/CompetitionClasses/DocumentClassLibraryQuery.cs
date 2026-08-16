@@ -1,23 +1,27 @@
-// The Marten adapter for IClassLibraryQuery — kanban/completed/class-definition-adoption-steel-thread-plan.md
+// The document-store adapter for IClassLibraryQuery — kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-3/WI-5. Reads the `class_library` read model only; never the event log.
-// Mirrors People/MartenPeopleQuery.cs.
+// Mirrors People/DocumentPeopleQuery.cs.
+//
+// Written against JasperFx's store-agnostic document contracts rather than
+// Marten's own types — kanban/completed/jasperfx-shared-store-contracts.md
+// WI-2. The store underneath is still Marten; this class no longer names it.
 
-using Marten;
+using JasperFx.Events.Documents;
 using Soarscore.Application.Queries.CompetitionClasses;
 
 namespace Soarscore.Infrastructure.CompetitionClasses;
 
-public sealed class MartenClassLibraryQuery(IDocumentStore store) : IClassLibraryQuery
+public sealed class DocumentClassLibraryQuery(IDocumentSessionFactory sessions) : IClassLibraryQuery
 {
     public async Task<ClassDefinitionSummary?> FindByHashAsync(string contentHash, CancellationToken cancellationToken = default)
     {
-        await using var session = store.QuerySession();
+        await using var session = sessions.QuerySession();
         return await session.Query<ClassDefinitionSummary>().FirstOrDefaultAsync(s => s.ContentHash == contentHash, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ClassDefinitionSummary>> SearchAsync(string? name, bool activeOnly, CancellationToken cancellationToken = default)
     {
-        await using var session = store.QuerySession();
+        await using var session = sessions.QuerySession();
         IQueryable<ClassDefinitionSummary> query = session.Query<ClassDefinitionSummary>();
 
         if (!string.IsNullOrWhiteSpace(name))
