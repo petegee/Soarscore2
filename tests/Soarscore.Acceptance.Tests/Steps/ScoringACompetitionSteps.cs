@@ -11,9 +11,10 @@
 // CapturingAScoreSteps' ("the F5J class is published" vs. "a published F5J
 // class definition") rather than attempting to share state across classes.
 //
-// F5J only (30-f5j) — literal MinPerGroup 6, so a 6-competitor field always
-// draws to exactly one group per round, and a real Normalise block
-// (WinnerScore 1000, HigherIsBetter, no rounding). Every flight fixes
+// F5J only (30-f5j) — literal MinPerGroup 6, so a 6-competitor field draws to
+// exactly one group per round and a 12-competitor field to two
+// (kanban/completed/multi-group-normalisation-coverage.md), and a real
+// Normalise block (WinnerScore 1000, HigherIsBetter, no rounding). Every flight fixes
 // startHeight/landingDistance/overflySeconds/touchedByCompetitor to values
 // that contribute zero to the raw score (see ScoringEventStoreTests.cs's
 // header, WI-9, for the identical convention), so raw score == flightTime
@@ -59,6 +60,11 @@ public sealed class ScoringACompetitionSteps
     // Populated by scenario 3's When step, read by its Then step.
     private readonly Dictionary<CompetitorId, decimal> _scenario3ExpectedTotals = new();
 
+    // Populated by the two-group scenario's When step, read by its Then steps:
+    // groupRef → (competitorRef → flight time), so each group's own winner is
+    // recoverable without reference to the other group's.
+    private readonly Dictionary<GroupId, Dictionary<CompetitorId, decimal>> _flightTimesByGroup = new();
+
     // ---------------------------------------------------------------- Given
 
     [Given(@"^the F5J class is published$")]
@@ -96,10 +102,46 @@ public sealed class ScoringACompetitionSteps
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
     }
 
+    /// <summary>
+    /// Makes the scenario's one-group setup explicit rather than implicit in
+    /// the helpers: F5J's literal MinPerGroup 6 (SeedF5J.cs) means a 6-pilot
+    /// field draws to exactly one group, which is what makes "the group's
+    /// winner" and "the round's winner" indistinguishable in this scenario.
+    /// Normalisation is per *group* (docs/rules/f5j.md, 5.5.11.12) — a field
+    /// large enough to draw two groups produces two competitors on 1000.
+    /// </summary>
+    [Given(@"^round (\d+) is drawn as a single group holding all (\d+) competitors$")]
+    public async Task GivenRoundIsDrawnAsASingleGroupHoldingAllCompetitors(int roundOrdinal, int count)
+    {
+        var view = await ApiClient.GetAsync<CompetitionView>(Client, $"/competition?id={_competitionId.Value}");
+        var round = view.Competition.Phases.Single().Rounds.Single(r => r.Ordinal == roundOrdinal);
+
+        round.TaskRounds.Should().ContainSingle();
+        round.TaskRounds.Single().Groups.Should().ContainSingle();
+        round.TaskRounds.Single().Groups.Single().CompetitorRefs.Should().HaveCount(count);
+    }
+
+    /// <summary>
+    /// The multi-group counterpart: 12 competitors against F5J's MinPerGroup 6
+    /// draw to two groups of 6 (PhaseDraw.BuildGroups: groupCount =
+    /// field / minPerGroup, sizes evenly split). Asserted rather than assumed,
+    /// because every later step in this scenario is about the boundary
+    /// between the two groups — if the draw ever produced one group of 12 the
+    /// scenario would still pass while testing nothing.
+    /// </summary>
+    [Given(@"^round (\d+) is drawn as (\d+) groups of (\d+) competitors$")]
+    public async Task GivenRoundIsDrawnAsGroupsOfCompetitors(int roundOrdinal, int groupCount, int perGroup)
+    {
+        var groups = await ResolveGroupsAsync(roundOrdinal);
+
+        groups.Should().HaveCount(groupCount);
+        groups.Should().AllSatisfy(g => g.CompetitorRefs.Should().HaveCount(perGroup));
+    }
+
     // ----------------------------------------------------------------- When
 
-    [When(@"^every competitor in round 1 flies with a distinct flight time$")]
-    public async Task WhenEveryCompetitorInRound1FliesWithADistinctFlightTime()
+    [When(@"^every competitor in that group flies with a distinct flight time$")]
+    public async Task WhenEveryCompetitorInThatGroupFliesWithADistinctFlightTime()
     {
         var group = await ResolveGroupAsync(roundOrdinal: 1);
         group.CompetitorRefs.Should().HaveCount(6);
@@ -110,6 +152,42 @@ public sealed class ScoringACompetitionSteps
             var flightTime = 350m + i * 50m; // 350, 400, 450, 500, 550, 600
             _scenario1FlightTimes[group.CompetitorRefs[i]] = flightTime;
             await CaptureFlightAsync(1, group.Id, group.CompetitorRefs[i], flightTime);
+        }
+    }
+
+    /// <summary>
+    /// Two groups flying in different air: group 1's times 300..400, group 2's
+    /// 480..600. Every value is a whole multiple of its own group's winner
+    /// over 1000 (750, 800, 850, 900, 950, 1000 and 800, 840, 880, 920, 960,
+    /// 1000), so the expected scores are exact decimals; and the two groups'
+    /// ranges do not overlap, so normalising the whole round against one
+    /// winner would move every score in the other group.
+    /// </summary>
+    [When(@"^every competitor flies, one group flying markedly longer times than the other$")]
+    public async Task WhenEveryCompetitorFliesOneGroupFlyingMarkedlyLongerTimes()
+    {
+        var groups = await ResolveGroupsAsync(roundOrdinal: 1);
+
+        // Group ordinal 1 → 300, 320, 340, 360, 380, 400 (winner 400).
+        // Group ordinal 2 → 480, 504, 528, 552, 576, 600 (winner 600).
+        var timesByGroupOrdinal = new Dictionary<int, decimal[]>
+        {
+            [1] = [300m, 320m, 340m, 360m, 380m, 400m],
+            [2] = [480m, 504m, 528m, 552m, 576m, 600m],
+        };
+
+        foreach (var group in groups)
+        {
+            var times = timesByGroupOrdinal[group.Ordinal];
+            var byCompetitor = new Dictionary<CompetitorId, decimal>();
+
+            for (var i = 0; i < group.CompetitorRefs.Length; i++)
+            {
+                byCompetitor[group.CompetitorRefs[i]] = times[i];
+                await CaptureFlightAsync(1, group.Id, group.CompetitorRefs[i], times[i]);
+            }
+
+            _flightTimesByGroup[group.Id] = byCompetitor;
         }
     }
 
@@ -190,8 +268,8 @@ public sealed class ScoringACompetitionSteps
 
     // ----------------------------------------------------------------- Then
 
-    [Then(@"^the task-round result for round 1 holds a normalised score for all 6 competitors$")]
-    public async Task ThenTheTaskRoundResultForRound1HoldsANormalisedScoreForAll6Competitors()
+    [Then(@"^the group's result holds a normalised score for each of its 6 competitors$")]
+    public async Task ThenTheGroupsResultHoldsANormalisedScoreForEachOfIts6Competitors()
     {
         var group = await ResolveGroupAsync(roundOrdinal: 1);
         var url = $"/task-round-result?competitionRef={_competitionId.Value}&phaseOrdinal=0&roundOrdinal=1&taskRoundOrdinal=1&groupRef={group.Id.Value}";
@@ -212,8 +290,8 @@ public sealed class ScoringACompetitionSteps
         }
     }
 
-    [Then(@"^the competitor with the longest flight time is the sole winner with the class's normalisation target of 1000$")]
-    public async Task ThenTheCompetitorWithTheLongestFlightTimeIsTheSoleWinnerWithTheNormalisationTargetOf1000()
+    [Then(@"^the competitor with the longest flight time in the group is that group's winner, scoring the class's normalisation target of 1000$")]
+    public async Task ThenTheCompetitorWithTheLongestFlightTimeInTheGroupIsThatGroupsWinner()
     {
         var group = await ResolveGroupAsync(roundOrdinal: 1);
         var url = $"/task-round-result?competitionRef={_competitionId.Value}&phaseOrdinal=0&roundOrdinal=1&taskRoundOrdinal=1&groupRef={group.Id.Value}";
@@ -224,6 +302,69 @@ public sealed class ScoringACompetitionSteps
         view.WinnerRef.Should().Be(winner);
         view.Results.Count(r => r.RawScore == 1000m).Should().Be(1);
         view.Results.Single(r => r.CompetitorRef == winner).RawScore.Should().Be(1000m);
+    }
+
+    [Then(@"^each competitor's score is their flight time relative to their own group's winner$")]
+    public async Task ThenEachCompetitorsScoreIsRelativeToTheirOwnGroupsWinner()
+    {
+        var views = await FetchAllGroupViewsAsync(roundOrdinal: 1);
+        views.Should().HaveCount(2);
+
+        foreach (var view in views)
+        {
+            var times = _flightTimesByGroup[view.GroupRef];
+            var groupWinnerTime = times.Values.Max();
+
+            view.ValidCount.Should().Be(6);
+            view.IsAnnulled.Should().BeFalse();
+            view.WinnerRef.Should().Be(times.MaxBy(kv => kv.Value).Key);
+
+            foreach (var result in view.Results)
+            {
+                result.RawScore.Should().Be(1000m * times[result.CompetitorRef] / groupWinnerTime);
+            }
+        }
+    }
+
+    [Then(@"^exactly one competitor in each group scores the class's normalisation target of 1000$")]
+    public async Task ThenExactlyOneCompetitorInEachGroupScores1000()
+    {
+        var views = await FetchAllGroupViewsAsync(roundOrdinal: 1);
+
+        foreach (var view in views)
+        {
+            view.Results.Count(r => r.RawScore == 1000m).Should().Be(1);
+        }
+
+        // The whole point of the scenario: a round of two groups has two
+        // competitors on 1000, not one. A pipeline that normalised per round
+        // would leave exactly one across the pair.
+        views.SelectMany(v => v.Results).Count(r => r.RawScore == 1000m).Should().Be(2);
+    }
+
+    /// <summary>
+    /// The explicit counterfactual. Normalising the whole round against its
+    /// single best flight time is the plausible wrong implementation; this
+    /// step computes what every score WOULD be under it and requires the
+    /// slower group's actual scores to differ, so the assertion fails loudly
+    /// rather than coincidentally agreeing.
+    /// </summary>
+    [Then(@"^nobody is normalised against the best flight time in the other group$")]
+    public async Task ThenNobodyIsNormalisedAgainstTheOtherGroupsBestFlightTime()
+    {
+        var views = await FetchAllGroupViewsAsync(roundOrdinal: 1);
+
+        var roundBestTime = _flightTimesByGroup.Values.SelectMany(t => t.Values).Max();
+
+        var slowerGroup = views.Single(v => _flightTimesByGroup[v.GroupRef].Values.Max() != roundBestTime);
+
+        foreach (var result in slowerGroup.Results)
+        {
+            var ifNormalisedAcrossTheRound =
+                1000m * _flightTimesByGroup[slowerGroup.GroupRef][result.CompetitorRef] / roundBestTime;
+
+            result.RawScore.Should().NotBe(ifNormalisedAcrossTheRound);
+        }
     }
 
     [Then(@"^the competition leaderboard excludes competitor 1's round 3 score from their final aggregate$")]
@@ -252,12 +393,28 @@ public sealed class ScoringACompetitionSteps
 
     // --------------------------------------------------------------- helpers
 
-    private async Task<Group> ResolveGroupAsync(int roundOrdinal)
+    private async Task<Group> ResolveGroupAsync(int roundOrdinal) =>
+        (await ResolveGroupsAsync(roundOrdinal)).Single(g => g.Ordinal == 1);
+
+    /// <summary>Every group drawn into the round's one task-round, in draw order.</summary>
+    private async Task<IReadOnlyList<Group>> ResolveGroupsAsync(int roundOrdinal)
     {
         var view = await ApiClient.GetAsync<CompetitionView>(Client, $"/competition?id={_competitionId.Value}");
         var phase = view.Competition.Phases.Single();
         var round = phase.Rounds.Single(r => r.Ordinal == roundOrdinal);
-        return round.TaskRounds.Single().Groups.Single(g => g.Ordinal == 1);
+        return round.TaskRounds.Single().Groups;
+    }
+
+    /// <summary>
+    /// The task-round result for every group at once — the query's groupRef is
+    /// optional, and omitting it scores every group in the task-round
+    /// (ScoreTaskRound.cs), which is the read a scorer actually does when a
+    /// whole round is on the board.
+    /// </summary>
+    private async Task<List<GroupScoreView>> FetchAllGroupViewsAsync(int roundOrdinal)
+    {
+        var url = $"/task-round-result?competitionRef={_competitionId.Value}&phaseOrdinal=0&roundOrdinal={roundOrdinal}&taskRoundOrdinal=1";
+        return await ApiClient.GetAsync<List<GroupScoreView>>(Client, url);
     }
 
     /// <summary>

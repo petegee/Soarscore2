@@ -8,9 +8,20 @@ Feature: Scoring a competition
     Given the F5J class is published
     And a competition is created adopting it, with 6 registered competitors
     And the preliminary phase is drawn for 1 round
-    When every competitor in round 1 flies with a distinct flight time
-    Then the task-round result for round 1 holds a normalised score for all 6 competitors
-    And the competitor with the longest flight time is the sole winner with the class's normalisation target of 1000
+    And round 1 is drawn as a single group holding all 6 competitors
+    When every competitor in that group flies with a distinct flight time
+    Then the group's result holds a normalised score for each of its 6 competitors
+    And the competitor with the longest flight time in the group is that group's winner, scoring the class's normalisation target of 1000
+
+  Scenario: Each group in a round is normalised against its own winner
+    Given the F5J class is published
+    And a competition is created adopting it, with 12 registered competitors
+    And the preliminary phase is drawn for 1 round
+    And round 1 is drawn as 2 groups of 6 competitors
+    When every competitor flies, one group flying markedly longer times than the other
+    Then each competitor's score is their flight time relative to their own group's winner
+    And exactly one competitor in each group scores the class's normalisation target of 1000
+    And nobody is normalised against the best flight time in the other group
 
   Scenario: The leaderboard drops a competitor's worst round
     Given the F5J class is published

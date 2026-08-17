@@ -84,3 +84,11 @@ See CLAUDE.md house-keeping rule 5.
   user, but `.GetAwaiter().GetResult()` in a composition root is not something
   to leave unexamined. If `AddSoarscoreInfrastructure` ever grows an async
   counterpart (an `IHostedService` initialiser, say), move it there.
+- [ ] The two-group normalisation scenario's counterfactual check assumes two
+  groups. `kanban/completed/multi-group-normalisation-coverage.md`. The step
+  `nobody is normalised against the best flight time in the other group`
+  (ScoringACompetitionSteps.cs) finds "the slower group" by comparing its best
+  time against the round's best, which identifies exactly one group. With three
+  or more groups it would check only that one and silently skip the rest.
+  Correct for the two-group scenario as written; generalise if a scenario ever
+  draws three groups.
