@@ -77,3 +77,44 @@ what devices people may use, or how this gets integrated with other systems
 to provide turn-key solutions. It must be as light-weight and as simple as 
 possible. No fancy, or imagined features should be added.
 
+## NFR-4 — No imposed ordering on score capture
+
+Where NFR-3 says the system makes no assumption about *how* scores are entered,
+this says it makes no assumption about *when*. **Soarscore must not impose an
+order on score capture, and must never gate the running of a contest on scores
+being up to date.** Nothing waits for round N's scores before round N+1 can
+proceed; no coordinate is unreachable because an earlier one is unrecorded.
+
+The field is chaotic, and that is normal rather than exceptional. A pilot may
+fly back-to-back across rounds — round 1 in the last group, round 2 in the
+first — or be pulled straight from their own flight to time for someone else.
+Scores get written down and entered when whoever holds them has a free moment,
+which may be immediately, an hour later, or after flying has finished for the
+day.
+
+How scores reach the system is therefore the business of whoever uses it, not
+of Soarscore. A connected field-board and timer rig feeding entries as they
+happen, pen and paper transcribed in bulk that evening, or competitors' own
+phones trickling entries in one at a time and in no particular order must all
+work equally well, and must be able to mix within one competition.
+
+Two consequences bind the design:
+
+- **Validity is structural, not temporal.** Whether a score may be recorded is
+  answered from the shape of the competition — does this coordinate exist, was
+  this competitor drawn into it, have they withdrawn — never from what has or
+  has not happened elsewhere. A draw creates every round, task-round and group
+  it covers at once, so there is no "open the next round" step to be blocked on.
+- **Results derive from what is present, not what is expected.** An unrecorded
+  task-round is absent from the result, not scored as a zero and not an error.
+  Partial data yields a partial standing, so a leaderboard is readable at any
+  moment of the day without anyone having to be up to date.
+
+**The one exception, and why it is not a contradiction.** A Contest Director may
+mark a task-round complete, which does close capture for it. That is the CD
+asserting the task-round's *scores are in and settled* — a statement about the
+data, not about the field. It is therefore always an explicit act, never a side
+effect of anything the system does on its own, and it is reversible: a score
+arriving late reopens the task-round rather than being refused. See
+[aggregate-roots.md §3](aggregate-roots.md#3-competition--the-event-structure-field-and-schedule).
+

@@ -81,6 +81,12 @@ penalties.
   flight records, never entered); the system applies the scoring
   rules — caps, bonus tables, which flight counts, over-time detection —
   consistently from the raw data
+- **Free to record when they can, not when the system says.** A Scorer may be
+  flying the next round themselves, or timing for another pilot, the moment a
+  flight ends; what they observed is often written down first and entered later,
+  in bulk or out of order. Nothing about the running of the contest may depend
+  on their being up to date — see
+  [NFR-4](non-functional-requirements.md#nfr-4--no-imposed-ordering-on-score-capture).
 
 
 

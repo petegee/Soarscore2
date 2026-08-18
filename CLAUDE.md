@@ -131,6 +131,8 @@ Backing detail: [NFR-1](docs/non-functional-requirements.md#nfr-1--one-centralis
   score sign-off; an **immutable event log of all mutations** provides
   auditability instead.
 - **Scale:** ≤ 20 pilots, ≤ 8 rounds/day, 1–2 day events;
+- **No imposed ordering on score capture:** never gate the contest on scores
+  being up to date — [NFR-4](docs/non-functional-requirements.md#nfr-4--no-imposed-ordering-on-score-capture).
 
 ## House-keeping rules
 
