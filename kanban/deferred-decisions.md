@@ -119,6 +119,33 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   notation, not an input format) and **class-definition drift detection** — both settled
   out of scope.
 
+## Score capture and corrections
+
+- **Correcting a flight's launch time is not built, and `Flight.LaunchAt` is not a
+  scoring input.** **Decided 2026-08-18** (`kanban/in-progress/amend-a-measurement.md`,
+  working WI-6). The thread began intending to close `FlightOpened`'s uncorrectable
+  `launchAt` alongside `MeasurementAmended`. A rule check reversed that: **no rule in
+  either rulebook requires the clock time at which a flight was launched.** The rule
+  map's "What the timer records" table lists flight-time precision, landing distance
+  and launch height across all seven FAI classes — durations, distances and heights,
+  no wall-clock instant. Every timing-validity rule is a captured *flag* instead:
+  `launchedInWorkingTime` (`F3K.7`), `landedWithinWindow` (`F3K.9.3`),
+  `launchedOnSignal` (`F3K.11.3`), `launchedWithin30s` (F3F). F3B Task C records
+  elapsed leg time; F5J's AMRT is a motor-run duration; reflight adjudication turns
+  on an official witnessing the hindrance.
+
+  It could not have been otherwise: deriving flight validity in the core system by
+  comparing `LaunchAt` against the working-time window is exactly the class-specific
+  leak `TimeWindow`'s doc comment (`src/Soarscore.Domain/Entries/Entry.cs:32-45`) and
+  CLAUDE.md's core architectural law forbid — the class model owns it as data, via
+  `TaskDefinition.FlightValidWhen`. So the scoring-relevant fact about a launch is a
+  `Measurement`, corrected by `MeasurementAmended` like any other, and a mistyped
+  `LaunchAt` has no scoring consequence now or later.
+
+  Do not reopen this as "the launch amendment we forgot". The follow-on question —
+  whether the field should exist at all — is a story, not a deferral:
+  `kanban/backlog/remove-flight-launchat.md`.
+
 ---
 
 ## Decisions that have since been taken up

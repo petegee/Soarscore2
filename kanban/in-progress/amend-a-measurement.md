@@ -93,11 +93,16 @@ decide this inside an implementation commit.
    `BindParameter`'s handler-side `By` — an amendment's justification is a
    substantive record of a correction, exactly the distinction
    `AnnulTaskRound`'s doc comment draws.
-2. **Launch-time corrections ride along.** `FlightOpened`'s uncorrectable
-   `launchAt` (`Entry.cs:255-261`) is closed in this thread, not deferred to a
-   second one that would re-tread every file. See finding 3 — it needs a model
-   change and therefore an approval gate (WI-6) that the measurement half does
-   not.
+2. **Launch-time corrections are NOT in this thread — decided 2026-08-18, after a
+   rule check reversed the first answer.** The initial decision was that
+   `FlightOpened`'s uncorrectable `launchAt` would ride along. Working WI-6
+   overturned it: no rule in either rulebook requires a launch instant, so there
+   is nothing to correct that matters. See finding 4, which now carries the
+   evidence. The launch half (the former WI-6…WI-9) is deleted from this plan and
+   the reasoning is recorded in `kanban/deferred-decisions.md`. The user's further
+   call — that `Flight.LaunchAt` should be removed from the model altogether — is
+   its own story, `kanban/backlog/remove-flight-launchat.md`, not a scope
+   increase here (house-keeping rule 6).
 
 ## Findings from reading the tree
 
@@ -116,22 +121,37 @@ decide this inside an implementation commit.
 2. **`EntryProjection` needs no change.** Its `_ => current` arm is deliberate
    (LADR-0001 §3: scores are never projected) and an amendment changes no
    coordinate on `EntrySummary`. Verified, so that nobody re-derives it.
-3. **A launch-time amendment is a model change, and `Amendment` cannot be
-   reused for it.** Two reasons, both hard. `Amendment.NewValue` is a
-   `MeasuredValue` — a number-or-flag — and a launch time is a `DateTimeOffset`;
-   and the class diagram binds the type to one owner,
-   `Measurement "1" *-- "0..*" Amendment : corrected by`
-   (`docs/soaring-domain-class-diagram.md:216`, mirrored at
-   `docs/aggregate-roots.md:446`), with `class Flight` carrying only `sequence`
-   and `launchAt`. Attaching corrections to a Flight is therefore a new
-   relationship in an approval-gated document. Hence WI-6.
-4. **Nothing reads `LaunchAt`.** Grepped: its only consumers are the command
-   that supplies it and the event that carries it — no scoring stage reads it.
-   So the launch-amendment half is an audit-trail fix, not a scoring fix. It is
-   still worth having (the log should not preserve a known-wrong fact as the
-   only readable one), but it means no pipeline stage has to learn about it, and
-   it sets the scope of WI-8's resolver: one method, read by tests, not a
-   pipeline change.
+3. **Nothing in either approval-gated doc models events.** `grep -c` for
+   `PhaseDrawn|ParameterBound|MeasurementCaptured|EntryOpened` returns 0 in both
+   `docs/soaring-domain-class-diagram.md` and `docs/aggregate-roots.md`: they
+   model aggregates and value objects, never the event log. So adding an event
+   never needs approval; adding a *value object* to an aggregate does. Recorded
+   because the first draft of this plan assumed the opposite and raised an
+   approval gate that did not exist.
+4. **No rulebook requires a launch instant, and `LaunchAt` is barred from ever
+   becoming a scoring input.** The original finding here was the weaker "nothing
+   reads `LaunchAt` today". Checked properly against the corpus via the
+   `fai-rules` skill, the position is structural, not incidental:
+   - The rule map's *"What the timer records"* table lists three things across all
+     seven FAI classes — flight-time precision, landing distance, launch height.
+     Durations, distances and heights. No wall-clock instant anywhere.
+   - Every timing-validity rule is expressed as a captured **flag**, not as a
+     comparison against a recorded launch time: `launchedInWorkingTime` (`F3K.7`,
+     `SeedF3K.cs:22`), `landedWithinWindow` (`F3K.9.3`), `launchedOnSignal`
+     (`F3K.11.3`, launch within 3 s of the acoustic signal), `launchedWithin30s`
+     (F3F). F3B Task C records *elapsed* leg time to 1/100 s; F5J's AMRT is a
+     30 s motor-run duration with height sampled 10 s after motor stop; reflight
+     adjudication turns on a hindrance being "noticed/witnessed by an official",
+     a judgment rather than a timestamp comparison.
+   - It could not be otherwise: deriving flight validity in the core system by
+     comparing `Flight.LaunchAt` against `Entry.WorkingTime` is precisely the
+     class-specific leak `TimeWindow`'s doc comment (`Entry.cs:32-45`) and
+     CLAUDE.md's core architectural law forbid. The class model owns this as
+     data, via `TaskDefinition.FlightValidWhen`.
+
+   So the scoring-relevant fact about a launch — "was this a false start" — is a
+   `Measurement`, already corrected by WI-1. A mistyped `LaunchAt` has no scoring
+   consequence, now or ever.
 5. **The rounding rule is a real leak risk.** `Entry.CaptureMeasurement`
    rounds the observation to `MetricDefinition.Precision` before storing it
    (`Entry.cs:340-342`), on the stated grounds that the stored value *is* the
@@ -198,67 +218,12 @@ the two that remain.
 *WI-1…WI-5 are the measurement half and need no approval. They are independently
 shippable; if WI-6 stalls, they land alone and the launch half becomes a stub.*
 
-**WI-6 — Approval gate: model the correction of a launch time.** Put to the user
-before writing WI-7. Per CLAUDE.md, `docs/soaring-domain-class-diagram.md` and
-`docs/aggregate-roots.md` cannot change without explicit approval, and finding 3
-shows the launch half needs one. The proposal to put:
-
-- Add `class LaunchAmendment { timestamp newLaunchAt, string reason, string by,
-  timestamp at }` and the relationship `Flight "1" *-- "0..*" LaunchAmendment :
-  corrected by`, mirroring `Measurement`'s existing relationship to `Amendment`
-  one level up. Plus the note `Flight` deserves in the same idiom as
-  `Measurement`'s: *"launchAt is append-only; corrections recorded as
-  LaunchAmendments"*.
-- **Why a second type rather than reusing `Amendment`:** its `newValue` is a
-  `MeasuredValue`, which cannot hold a timestamp. Widening `MeasuredValue` to
-  carry instants would push a data-entry concern into the type the whole scoring
-  vocabulary is built on — far worse than a four-field record used in one place.
-- The alternative is to reject the launch half outright and record it in
-  `deferred-decisions.md` on finding 4's grounds (nothing reads `LaunchAt`, so
-  the correction buys audit accuracy only). Present both; the user's decision 2
-  already prefers the first, but the model change is a fresh fact that decision
-  did not have.
-
-**WI-7 — `FlightAmended`, its fold, and `Entry.AmendFlight`.** Gated on WI-6.
-In `src/Soarscore.Domain/Entries/`:
-
-- `EntryEvents.cs`: `record FlightAmended(int FlightSequence, LaunchAmendment
-  Amendment) : EntryEvent`, with its `[JsonDerivedType(..., "flightAmended")]`
-  discriminator, and the header comment at line 12 extended.
-- `Entry.cs`: the `LaunchAmendment` record; `Flight.LaunchAmendments`
-  (`ImmutableArray<LaunchAmendment>`, defaulting empty, exactly as
-  `Measurement.Amendments` does); `Apply(FlightAmended)` reusing the existing
-  `ReplaceFlight` helper; the new arm in the `Apply(Entry?, EntryEvent)` switch.
-- `AmendFlight(int flightSequence, DateTimeOffset newLaunchAt, string reason,
-  string by, DateTimeOffset at)` → `Result<FlightAmended>`. Codes:
-  `entry.annulled`, `amendFlight.flightNotFound`, `amendFlight.reasonRequired`,
-  `amendFlight.byRequired`. **Nothing is checked about `newLaunchAt`** — the same
-  rule `OpenFlight` holds and for the same reason (`TimeWindow`'s doc comment,
-  `F3K.7`): the working-time window is a scoring input, not a capture gate, and
-  a check here would put a scoring rule in the core system.
-
-**WI-8 — Effective launch time, in one place.** Gated on WI-6. `MeasurementDigest`
-documents itself as the only place amendment resolution happens, and that
-sentence must stay true. Add `MeasurementDigest.EffectiveLaunchAt(Flight)` beside
-`Resolve`, applying the identical rule — latest by `At`, ties to the
-last-appended — and extend the file header to say it now resolves both kinds.
-Per finding 4 no pipeline stage calls it today; it exists so that the first
-reader of a launch time gets the corrected one rather than inventing a second
-resolution rule. Do **not** add a `Flight.EffectiveLaunchAt` property: that would
-be the second place.
-
-**WI-9 — Command, route and registration for the launch half.** Gated on WI-6.
-`AmendFlight.cs` mirroring WI-3 (no `TaskResolver` call needed — `AmendFlight`
-takes no metrics, so the handler loads only the Entry);
-`app.MapCommand<AmendFlight, EntryId>("/amend-flight")`; and
-`(typeof(FlightAmended), "flightAmended")` in `SoarscoreEventTypes`.
-
-**WI-10 — Application-layer handler tests.** Mirror
+**WI-6 — Application-layer handler tests.** Mirror
 `tests/Soarscore.Application.Tests/Commands/Entries/CaptureMeasurementHandlerTests.cs`
 for both handlers: fakes only, no store. Cover the `IClock` instant reaching the
 `Amendment.At`, and the optimistic-concurrency append.
 
-**WI-11 — Acceptance scenarios.** Add to
+**WI-7 — Acceptance scenarios.** Add to
 `tests/Soarscore.Acceptance.Tests/Features/CapturingAScore.feature`, which
 already owns the capture workflow and has the F5J fixtures these need:
 
@@ -274,7 +239,7 @@ already owns the capture workflow and has the F5J fixtures these need:
 Both stores per CLAUDE.md: run with `SOARSCORE_TEST_STORE=postgres` and
 `=sqlite`.
 
-**WI-12 — Board and floor reconciliation.**
+**WI-8 — Board and floor reconciliation.**
 
 - `tests/Soarscore.Architecture.Tests/HandlerRegistrationTests.cs` — the
   sanity floor is 17 with the comment "Seventeen commands + nine queries"
@@ -290,7 +255,9 @@ Both stores per CLAUDE.md: run with `SOARSCORE_TEST_STORE=postgres` and
   launch time in place, whereas that story changes what `sequence` means and
   needs an `fai-rules` check first. Add a line there recording that this thread
   landed without it and what it left available.
-- `kanban/tech-debt.md` — nothing to tick; record anything WI-6 defers.
+- `kanban/tech-debt.md` — nothing to tick.
+- `kanban/deferred-decisions.md` — the launch-time entry (decision 2) is written
+  when this story completes, if it is not already there.
 
 ## Property-based invariants (CsCheck)
 
@@ -322,10 +289,16 @@ path can silently diverge from the first.
 
 ## Out of scope
 
+- **Correcting a launch time**, and `FlightAmended` with it — decision 2 and
+  finding 4. Recorded in `kanban/deferred-decisions.md`.
+- **Removing `Flight.LaunchAt`** — the user's call once finding 4 landed, and a
+  larger change than this thread: it touches an event contract, the `/open-flight`
+  request body, both approval-gated docs and fifteen test files. Its own story,
+  `kanban/backlog/remove-flight-launchat.md`.
 - `EntryAnnulled` and `PenaltyRecorded` — the remainder of
-  `second-entry-thread.md`, untouched here (WI-12 re-scopes that stub).
+  `second-entry-thread.md`, untouched here (WI-8 re-scopes that stub).
 - Amending anything on the `Competition` aggregate. `RulesAmended` is a
   different act with retroactive scoring consequences and has no story yet.
 - Out-of-order flight sequences — `out-of-order-flight-entry.md`, deliberately
-  separate (WI-12).
+  separate (WI-8).
 - Any role or authorisation check, per decision 1.
