@@ -275,13 +275,22 @@ public sealed record Round
     public required ImmutableArray<TaskRound> TaskRounds { get; init; }
 
     /// <summary>
-    /// Derived, not stored: complete when every TaskRound is Complete or
-    /// Annulled, so partial annulment is handled by filtering rather than by
-    /// mutating a completion flag (soaring-domain-class-diagram.md,
-    /// "Round completion is derived"). An annulled task-round is a
-    /// resolution, not a block.
+    /// Derived, not stored: nothing left to fly here, because every TaskRound is
+    /// Complete or Annulled — so partial annulment is handled by filtering rather
+    /// than by mutating a completion flag (soaring-domain-class-diagram.md,
+    /// "Round completion is derived"). An annulled task-round is a resolution,
+    /// not a block. Answers "may the competition move on", *not* "did this round
+    /// produce a result" — see <see cref="IsFullyFlown"/>.
     /// </summary>
-    public bool IsComplete => TaskRounds.All(tr => tr.State is TaskRoundState.Complete or TaskRoundState.Annulled);
+    public bool IsCompleteOrAnnulled => TaskRounds.All(tr => tr.State is TaskRoundState.Complete or TaskRoundState.Annulled);
+
+    /// <summary>
+    /// Derived, not stored: every TaskRound was flown to a result, with none
+    /// annulled. The stricter of the pair, and the one a validity rule counts —
+    /// an annulled round resolved the competition's progress but produced no
+    /// result, so it cannot make a contest valid.
+    /// </summary>
+    public bool IsFullyFlown => TaskRounds.All(tr => tr.State is TaskRoundState.Complete);
 }
 
 /// <summary>

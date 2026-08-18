@@ -110,15 +110,17 @@ public class CompetitionTests
         finalisation.DeclaredResults[0].Promoted.Should().BeTrue();
     }
 
+    // The two predicates are asserted together on purpose: the whole reason
+    // there are two is that they disagree the moment a task-round is Annulled.
     [Theory]
-    [InlineData(TaskRoundState.Complete, TaskRoundState.Complete, true)]
-    [InlineData(TaskRoundState.Complete, TaskRoundState.Annulled, true)]
-    [InlineData(TaskRoundState.Annulled, TaskRoundState.Annulled, true)]
-    [InlineData(TaskRoundState.Complete, TaskRoundState.Drawn, false)]
-    [InlineData(TaskRoundState.Complete, TaskRoundState.InProgress, false)]
-    [InlineData(TaskRoundState.Drawn, TaskRoundState.Drawn, false)]
-    public void Round_IsComplete_reflects_taskRound_states(
-        TaskRoundState first, TaskRoundState second, bool expectedComplete)
+    [InlineData(TaskRoundState.Complete, TaskRoundState.Complete, true, true)]
+    [InlineData(TaskRoundState.Complete, TaskRoundState.Annulled, true, false)]
+    [InlineData(TaskRoundState.Annulled, TaskRoundState.Annulled, true, false)]
+    [InlineData(TaskRoundState.Complete, TaskRoundState.Drawn, false, false)]
+    [InlineData(TaskRoundState.Complete, TaskRoundState.InProgress, false, false)]
+    [InlineData(TaskRoundState.Drawn, TaskRoundState.Drawn, false, false)]
+    public void Round_completion_predicates_reflect_taskRound_states(
+        TaskRoundState first, TaskRoundState second, bool expectedCompleteOrAnnulled, bool expectedFullyFlown)
     {
         var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [CompetitorId.New()] };
 
@@ -132,6 +134,7 @@ public class CompetitionTests
             ],
         };
 
-        round.IsComplete.Should().Be(expectedComplete);
+        round.IsCompleteOrAnnulled.Should().Be(expectedCompleteOrAnnulled);
+        round.IsFullyFlown.Should().Be(expectedFullyFlown);
     }
 }

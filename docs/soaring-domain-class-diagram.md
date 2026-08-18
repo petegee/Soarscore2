@@ -87,7 +87,8 @@ classDiagram
 
     class Round {
         +int ordinal
-        +isComplete() bool
+        +isCompleteOrAnnulled() bool
+        +isFullyFlown() bool
     }
 
     class TaskRound {
@@ -1167,6 +1168,9 @@ stage reads anything new from `AdoptedRules` for it.
   revision; nothing is overwritten.
 - **Round completion is derived** from the state of its TaskRounds, so partial
   annulment is handled by filtering rather than by mutating a completion flag.
+  Two derivations, because annulment splits the question: `isCompleteOrAnnulled`
+  asks "is there anything left to fly here", while `isFullyFlown` asks "did this
+  round produce a result" — only the latter can count toward a validity rule.
 - **An Entry can be annulled by a ruling, and that is the only way a flown
   attempt stops counting.** `F3F.1.5`'s *provisional re-flight* is the case that
   forced it: under protest the competitor re-flies, and the jury afterwards

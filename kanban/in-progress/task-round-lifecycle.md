@@ -101,6 +101,24 @@ reads a finalisation back yet. See "Out of scope" below.
 
 ## Work items
 
+### WI-0 — Split the two round-completion questions (Domain) — **done**
+
+`Round.IsComplete` was named for one question and answered another: it is true
+when every task-round is Complete **or** Annulled, which means "nothing left to
+fly", not "this round produced a result". WI-3's validity gate wants the second,
+and a property named `IsComplete` sitting right next to it was a trap. Renamed
+and split before any lifecycle code lands, while it still had zero production
+callers:
+
+- `Round.IsCompleteOrAnnulled` — the existing predicate, renamed.
+- `Round.IsFullyFlown` — new; every task-round `Complete`. What WI-3 counts.
+
+`docs/soaring-domain-class-diagram.md` updated with the user's approval (the
+`Round` class members, and the "Round completion is derived" design note gains
+one sentence on why there are now two). `CompetitionTests.Round_completion_predicates_reflect_taskRound_states`
+asserts both predicates in the same theory case, since the point of the pair is
+that they diverge exactly when a task-round is `Annulled`.
+
 ### WI-1 — `Competition.CompleteTaskRound` (Domain)
 
 Instance decide function on `Competition`, returning `Result<TaskRoundCompleted>`.
@@ -150,12 +168,12 @@ drawn:
    context, exactly as `DrawPhase` does for `MinPerGroup` (`Competition.cs:738-760`).
    An unbound `param("minRounds")` (F5K, NZ Class M) fails
    `finalise.parameterUnbound`, mirroring `drawPhase.parameterUnbound`.
-2. Count rounds where **every** task-round is `Complete`. `Annulled` task-rounds
-   do **not** count toward validity — an annulled round was not flown to a result,
-   and `Round.IsComplete` (`Competition.cs:284`) deliberately treats
-   Complete-or-Annulled as "not blocking", which is a different question. This
-   distinction is the single most important line in the story; it is why
-   `Round.IsComplete` is *not* reused here.
+2. Count rounds where `Round.IsFullyFlown` — every task-round `Complete`.
+   `Annulled` task-rounds do **not** count toward validity: an annulled round
+   resolved the competition's progress but produced no result. That is a
+   different question from `Round.IsCompleteOrAnnulled`, which asks only whether
+   anything is left to fly; WI-0 gave the two questions two names so this gate
+   cannot pick up the wrong one by reading the wrong word.
 3. `Validity.MinTasks`, when populated (F3B only), counts **distinct `TaskRef`s**
    across those complete rounds.
 
