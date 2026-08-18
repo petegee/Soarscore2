@@ -63,7 +63,7 @@ public class CaptureMeasurementHandlerTests
         var opened = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitor.Id, Now).Value;
         store.AppendAsync(opened.Id.Value, ExpectedVersion.NoStream, [opened]).GetAwaiter().GetResult();
 
-        var flightOpened = new FlightOpened(1, Now.AddMinutes(1), Now.AddMinutes(1));
+        var flightOpened = new FlightOpened(1, Now.AddMinutes(1));
         store.AppendAsync(opened.Id.Value, ExpectedVersion.Exact(1), [flightOpened]).GetAwaiter().GetResult();
 
         return (store, competitionId, opened.Id);
@@ -114,7 +114,7 @@ public class CaptureMeasurementHandlerTests
             CompetitionId.New(), 0, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original, Now);
         await store.AppendAsync(entryId.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         await store.AppendAsync(
-            entryId.Value, ExpectedVersion.Exact(1), [new FlightOpened(1, Now, Now)], TestContext.Current.CancellationToken);
+            entryId.Value, ExpectedVersion.Exact(1), [new FlightOpened(1, Now)], TestContext.Current.CancellationToken);
         var handler = new CaptureMeasurementHandler(store, new FakeClock(Now));
 
         var result = await handler.HandleAsync(

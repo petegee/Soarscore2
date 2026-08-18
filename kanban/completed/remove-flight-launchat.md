@@ -1,6 +1,9 @@
 # Remove `Flight.LaunchAt`
 
-**Status:** Backlog · **Raised:** 2026-08-18
+**Status:** Completed 2026-08-18 · **Raised:** 2026-08-18
+
+**Scope, confirmed by the user: `Flight.LaunchAt` only.** `Entry.WorkingTime` was
+left exactly as it was — see "What was left alone" below.
 
 ## What
 
@@ -61,7 +64,66 @@ Small in `src`, wide in tests — verified 2026-08-18, re-check before acting.
   deployment consequence: green-field, no users, no data to migrate
   (CLAUDE.md, "Project status").
 
+## What was done
+
+The tree as built, 2026-08-18. All green: Domain 320, Application 181,
+Architecture 7, Infrastructure 80 (both backends), Acceptance 15 × 2 stores.
+
+**`src` — three files.**
+
+- `Domain/Entries/EntryEvents.cs` — `FlightOpened` is now `(int Sequence,
+  DateTimeOffset At)`.
+- `Domain/Entries/Entry.cs` — `Flight.LaunchAt` deleted; `Apply(FlightOpened)` no
+  longer sets it; `OpenFlight(int sequence, int? maxLaunches, DateTimeOffset at)`
+  lost its `launchAt` parameter. The comment block that used to explain why
+  `launchAt` was deliberately unchecked now explains why there is no timestamp at
+  all, and cites the metrics that carry launch timing instead.
+- `Application/Commands/Entries/OpenFlight.cs` — the command is now
+  `OpenFlight(EntryId EntryRef)`. Worth noting for its own sake: **opening a
+  flight now carries no caller-supplied fact whatsoever.** The only timestamp on
+  the event is `IClock`'s, which is what LADR-0001 §7 wants everywhere it can
+  have it.
+
+**Docs.** `+timestamp launchAt` removed from `class Flight` in
+`docs/soaring-domain-class-diagram.md` and `docs/aggregate-roots.md`. Nothing else
+in either document referenced it, and the glossary never did.
+
+**Tests — 18 files.** Mostly mechanical: constructor arities and dropped
+assertions. Three were not.
+
+- **`OpenFlightDecideTests`** lost
+  `OpenFlight_with_a_launch_outside_the_working_time_succeeds_finding_3_regression`.
+  It asserted that an out-of-window `launchAt` passed through untouched; with no
+  timestamp to pass through, it asserted nothing. Deleting a regression test is
+  not a thing to do quietly, so the class doc comment now records where it went
+  and why.
+- **`CaptureMeasurementDecideTests`** is where it went, as
+  `Capturing_a_false_start_observation_is_accepted_not_refused_F3K_7`. This is
+  the stronger test: it captures `launchedInWorkingTime = false` **and** a real
+  flight time on the same flight, so it proves both that the capture path accepts
+  a false start and that recording the infraction does not suppress what was
+  flown. The old test could only ever prove that a number survived a fold.
+- **The acceptance scenario** was re-expressed, not deleted, exactly as this story
+  required. *"A launch before the working time is recorded, not refused"* is now
+  *"A false start is recorded, not refused"*, driving `launchedInWorkingTime` over
+  real HTTP against the real corpus F3K. The step comment names what it guards:
+  the rule staying in the class model rather than migrating into the core system.
+
+## What was left alone
+
+**`Entry.WorkingTime`.** Scope was `LaunchAt` only, by the user's call. The
+observation that prompted the question stands and is unchanged by this story:
+`Competition.OpenEntry` constructs the `TimeWindow` (`Competition.cs:950`), `Entry`
+stores it, and scoring reads a `decimal?` working time resolved from the class
+definition (`Scoring/ScoringResultTypes.cs:171`) rather than the Entry's window.
+It is **not** the same call as `LaunchAt`, though — the *"A working time that the
+rulebook leaves open-ended"* acceptance scenario uses it to prove the model
+represents `WorkingTimeKind.UntilAllFlightsComplete` truthfully, which is
+class-model fidelity rather than scoring, and that is a real job. Anyone taking it
+up should argue it on those terms, not by analogy to this story.
+
 ## Before starting
+
 
 - **Re-express the acceptance scenario, do not delete it.**
   `tests/Soarscore.Acceptance.Tests/Features/CapturingAScore.feature`'s *"A launch

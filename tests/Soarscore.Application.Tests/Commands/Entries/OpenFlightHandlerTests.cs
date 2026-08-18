@@ -71,9 +71,8 @@ public class OpenFlightHandlerTests
     {
         var (store, _, entryId) = SeedOpenEntry();
         var handler = new OpenFlightHandler(store, new FakeClock(Now));
-        var launchAt = Now.AddMinutes(1);
 
-        var result = await handler.HandleAsync(new OpenFlight(entryId, launchAt), TestContext.Current.CancellationToken);
+        var result = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(entryId);
@@ -81,7 +80,6 @@ public class OpenFlightHandlerTests
         stream.Should().HaveCount(2); // EntryOpened + FlightOpened
         var flightOpened = stream[1].Should().BeOfType<FlightOpened>().Subject;
         flightOpened.Sequence.Should().Be(1);
-        flightOpened.LaunchAt.Should().Be(launchAt);
         flightOpened.At.Should().Be(Now);
     }
 
@@ -91,7 +89,7 @@ public class OpenFlightHandlerTests
         var store = new FakeEventStore();
         var handler = new OpenFlightHandler(store, new FakeClock(Now));
 
-        var result = await handler.HandleAsync(new OpenFlight(EntryId.New(), Now), TestContext.Current.CancellationToken);
+        var result = await handler.HandleAsync(new OpenFlight(EntryId.New()), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("entry.notFound");
@@ -109,7 +107,7 @@ public class OpenFlightHandlerTests
         await store.AppendAsync(entryId.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         var handler = new OpenFlightHandler(store, new FakeClock(Now));
 
-        var result = await handler.HandleAsync(new OpenFlight(entryId, Now.AddMinutes(1)), TestContext.Current.CancellationToken);
+        var result = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("competition.notFound");
@@ -121,12 +119,12 @@ public class OpenFlightHandlerTests
         var (store, _, entryId) = SeedOpenEntry();
         var handler = new OpenFlightHandler(store, new FakeClock(Now));
 
-        var first = await handler.HandleAsync(new OpenFlight(entryId, Now.AddMinutes(1)), TestContext.Current.CancellationToken);
+        var first = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
         first.IsSuccess.Should().BeTrue();
-        var second = await handler.HandleAsync(new OpenFlight(entryId, Now.AddMinutes(2)), TestContext.Current.CancellationToken);
+        var second = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
         second.IsSuccess.Should().BeTrue();
 
-        var third = await handler.HandleAsync(new OpenFlight(entryId, Now.AddMinutes(3)), TestContext.Current.CancellationToken);
+        var third = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
 
         third.IsFailure.Should().BeTrue();
         third.Code.Should().Be("openFlight.maxLaunchesExceeded");
@@ -140,13 +138,13 @@ public class OpenFlightHandlerTests
         // Another scorer opened flight 1 for real between this handler's
         // read and its append.
         await store.AppendAsync(
-            entryId.Value, ExpectedVersion.Exact(1), [new FlightOpened(1, Now.AddMinutes(1), Now.AddMinutes(1))],
+            entryId.Value, ExpectedVersion.Exact(1), [new FlightOpened(1, Now.AddMinutes(1))],
             TestContext.Current.CancellationToken);
 
         var staleReadStore = new StaleReadEventStore(store, entryId.Value, visibleCount: 1);
         var handler = new OpenFlightHandler(staleReadStore, new FakeClock(Now));
 
-        var result = await handler.HandleAsync(new OpenFlight(entryId, Now.AddMinutes(2)), TestContext.Current.CancellationToken);
+        var result = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("eventStore.concurrencyConflict");
@@ -158,13 +156,12 @@ public class OpenFlightHandlerTests
         var (store, _, entryId) = SeedOpenEntry();
         var priorEvents = store.Streams[entryId.Value];
         var priorState = priorEvents.Aggregate((Entry?)null, (current, e) => Entry.Apply(current, (EntryEvent)e))!;
-        var flightOpened = new FlightOpened(1, Now.AddMinutes(1), Now.AddMinutes(1));
+        var flightOpened = new FlightOpened(1, Now.AddMinutes(1));
 
         var first = priorState.Apply(flightOpened);
         var second = priorState.Apply(flightOpened);
 
         second.Flights.Select(f => f.Sequence).Should().Equal(first.Flights.Select(f => f.Sequence));
-        second.Flights.Select(f => f.LaunchAt).Should().Equal(first.Flights.Select(f => f.LaunchAt));
     }
 
     /// <summary>

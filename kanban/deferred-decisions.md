@@ -144,7 +144,7 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
 
   Do not reopen this as "the launch amendment we forgot". The follow-on question —
   whether the field should exist at all — is a story, not a deferral:
-  `kanban/backlog/remove-flight-launchat.md`.
+  `kanban/completed/remove-flight-launchat.md`.
 
 ---
 

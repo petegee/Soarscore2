@@ -39,7 +39,6 @@ public sealed class CapturingAScoreSteps
     private readonly List<CompetitorId> _competitors = [];
     private readonly Dictionary<(int Round, int Group), GroupId> _groupIds = new();
     private EntryId _entryId;
-    private DateTimeOffset _lastLaunchAt;
 
     // ---------------------------------------------------------------- Given
 
@@ -119,32 +118,27 @@ public sealed class CapturingAScoreSteps
             Client, "/open-entry", new OpenEntry(_competitionId, 0, roundOrdinal, 1, groupId, competitorId));
     }
 
-    [When(@"^the scorer opens a flight launched at (\d{1,2}:\d{2}:\d{2})$")]
-    public async Task WhenTheScorerOpensAFlightLaunchedAt(string timeOfDay)
+    [When(@"^the scorer opens a flight$")]
+    public async Task WhenTheScorerOpensAFlight()
     {
-        var time = TimeOnly.Parse(timeOfDay);
-
-        // OpenFlight never checks LaunchAt against the working time (finding
-        // 3), so which calendar day this resolves to has no bearing on
-        // whether the command succeeds — only scenario 3's own step computes
-        // a launch time relative to the entry's real WorkingTime.Start.
-        var launchAt = new DateTimeOffset(DateOnly.FromDateTime(DateTime.UtcNow), time, TimeSpan.Zero);
-        _lastLaunchAt = launchAt;
-
-        await ApiClient.PostCommandAsync<EntryId>(Client, "/open-flight", new OpenFlight(_entryId, launchAt));
+        // Opening a flight carries no caller-supplied fact at all since
+        // kanban/completed/remove-flight-launchat.md — no launch instant, and
+        // the sequence is derived from the Entry's own state.
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/open-flight", new OpenFlight(_entryId));
     }
 
-    [When(@"^the scorer opens a flight launched (\d+) minutes before the working time begins$")]
-    public async Task WhenTheScorerOpensAFlightLaunchedMinutesBeforeTheWorkingTimeBegins(int minutesBefore)
+    [When(@"^the scorer records that the launch was outside the working time$")]
+    public async Task WhenTheScorerRecordsThatTheLaunchWasOutsideTheWorkingTime()
     {
-        var entry = await EntryReader.LoadAsync(AcceptanceFixture.EventStore, _entryId, TestContext.Current.CancellationToken);
-        var launchAt = entry.WorkingTime.Start.AddMinutes(-minutesBefore);
-        _lastLaunchAt = launchAt;
-
-        // The finding-3 regression, driven over real HTTP: OpenFlight must
-        // succeed here, not be refused, even though launchAt precedes
-        // WorkingTime.Start (F3K.7).
-        await ApiClient.PostCommandAsync<EntryId>(Client, "/open-flight", new OpenFlight(_entryId, launchAt));
+        // The F3K.7 regression, driven over real HTTP. A launch before the
+        // working time began scores zero — it is not refused — and the fact
+        // travels as a captured observation the class declares
+        // (`launchedInWorkingTime`, SeedF3K.cs:22), never as a window check in
+        // the core system. This step is what stops that rule migrating out of
+        // the class model.
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "launchedInWorkingTime", MeasuredValue.Of(false)));
     }
 
     [When(@"^the scorer captures flightTime of (\d+) seconds$")]
@@ -185,13 +179,21 @@ public sealed class CapturingAScoreSteps
         entry.WorkingTime.End.Should().BeNull();
     }
 
-    [Then(@"^the flight is recorded with its launch time unchanged$")]
-    public async Task ThenTheFlightIsRecordedWithItsLaunchTimeUnchanged()
+    [Then(@"^the flight is recorded with both the false start and the flight time$")]
+    public async Task ThenTheFlightIsRecordedWithBothTheFalseStartAndTheFlightTime()
     {
         var entry = await EntryReader.LoadAsync(AcceptanceFixture.EventStore, _entryId, TestContext.Current.CancellationToken);
 
         entry.Flights.Should().ContainSingle();
-        entry.Flights[0].LaunchAt.Should().Be(_lastLaunchAt);
+        var measurements = entry.Flights[0].Measurements;
+
+        // Both facts are present: the infraction did not suppress the flight
+        // time. F3K.7 zeroes this flight at scoring time, via the class's own
+        // FlightValidWhen — the raw record still says what was flown.
+        measurements.Should().ContainSingle(m => m.Metric == "launchedInWorkingTime")
+            .Which.Value.Flag.Should().BeFalse();
+        measurements.Should().ContainSingle(m => m.Metric == "flightTime")
+            .Which.Value.Number.Should().Be(62m);
     }
 
     // --------------------------------------------------------------- helpers

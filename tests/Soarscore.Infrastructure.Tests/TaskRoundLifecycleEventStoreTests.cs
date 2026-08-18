@@ -126,7 +126,7 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
         var entryId = opened.Value;
 
         var openFlightHandler = new OpenFlightHandler(fixture.EventStore, new SystemClock());
-        var openedFlight = await openFlightHandler.HandleAsync(new OpenFlight(entryId, LaunchAt), Ct);
+        var openedFlight = await openFlightHandler.HandleAsync(new OpenFlight(entryId), Ct);
         openedFlight.IsSuccess.Should().BeTrue();
 
         var captureHandler = new CaptureMeasurementHandler(fixture.EventStore, new SystemClock());

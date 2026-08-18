@@ -137,13 +137,13 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
             entryId.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         openAppend.IsSuccess.Should().BeTrue();
 
-        var flight1 = new FlightOpened(1, openedAt.AddMinutes(1), openedAt.AddMinutes(1));
+        var flight1 = new FlightOpened(1, openedAt.AddMinutes(1));
         var measurement1 = new MeasurementCaptured(
             1, new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(180m), CapturedAt = openedAt.AddMinutes(2) });
-        var flight2 = new FlightOpened(2, openedAt.AddMinutes(3), openedAt.AddMinutes(3));
+        var flight2 = new FlightOpened(2, openedAt.AddMinutes(3));
         var measurement2 = new MeasurementCaptured(
             2, new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(210m), CapturedAt = openedAt.AddMinutes(5) });
-        var flight3 = new FlightOpened(3, openedAt.AddMinutes(6), openedAt.AddMinutes(6));
+        var flight3 = new FlightOpened(3, openedAt.AddMinutes(6));
         var measurement3 = new MeasurementCaptured(
             3, new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(240m), CapturedAt = openedAt.AddMinutes(8) });
 
@@ -170,8 +170,6 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
 
         entry.Flights.Should().HaveCount(3);
         entry.Flights.Select(f => f.Sequence).Should().Equal(1, 2, 3);
-        entry.Flights.Select(f => f.LaunchAt).Should().Equal(
-            openedAt.AddMinutes(1), openedAt.AddMinutes(3), openedAt.AddMinutes(6));
 
         foreach (var flight in entry.Flights)
         {
@@ -343,8 +341,6 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
         var openFlightHandler = new OpenFlightHandler(fixture.EventStore, new SystemClock());
         var captureHandler = new CaptureMeasurementHandler(fixture.EventStore, new SystemClock());
 
-        var launchAt = new DateTimeOffset(2026, 1, 10, 9, 3, 12, TimeSpan.Zero);
-
         foreach (var competitorRef in group1.CompetitorRefs)
         {
             // Phase.Ordinal is Phases.Length at draw time — 0 for the first
@@ -356,7 +352,7 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
             var entryId = opened.Value;
 
             var openedFlight = await openFlightHandler.HandleAsync(
-                new OpenFlight(entryId, launchAt), TestContext.Current.CancellationToken);
+                new OpenFlight(entryId), TestContext.Current.CancellationToken);
             openedFlight.IsSuccess.Should().BeTrue();
 
             // flightTime is truncated to the nearest whole second on both
@@ -371,7 +367,6 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
             var entry = await LoadEntryAsync(fixture, entryId);
             entry.CompetitorRef.Should().Be(competitorRef);
             entry.Flights.Should().ContainSingle();
-            entry.Flights[0].LaunchAt.Should().Be(launchAt);
             entry.Flights[0].Measurements.Should().ContainSingle(m => m.Metric == "flightTime");
             entry.Flights[0].Measurements[0].Value.Should().Be(MeasuredValue.Of(412m));
 

@@ -111,7 +111,8 @@ public sealed record Measurement
 }
 
 /// <summary>
-/// One attempt within an Entry's working time.
+/// One attempt within an Entry's working time. Carries no launch timestamp:
+/// see <see cref="Entry.OpenFlight"/> for why the rules never want one.
 /// </summary>
 public sealed record Flight
 {
@@ -121,8 +122,6 @@ public sealed record Flight
     /// name from this property rather than from any captured Measurement.
     /// </summary>
     public required int Sequence { get; init; }
-
-    public required DateTimeOffset LaunchAt { get; init; }
 
     public required ImmutableArray<Measurement> Measurements { get; init; }
 }
@@ -208,7 +207,6 @@ public sealed record Entry
         var flight = new Flight
         {
             Sequence = @event.Sequence,
-            LaunchAt = @event.LaunchAt,
             Measurements = [],
         };
 
@@ -254,12 +252,17 @@ public sealed record Entry
     // definition's task shape; the handler does that resolution. Null means
     // the task limits launches not at all (half the corpus).
     //
-    // Nothing is checked about launchAt — see TimeWindow's doc comment above
-    // and finding 3: F3K.7 scores an early launch rather than refusing it, so
-    // gating OpenFlight on the working-time window would put a scoring rule
-    // into the core system. A mistyped launch time cannot be corrected in
-    // this slice; FlightOpened has no amendment event (deferred, not missed).
-    public Result<FlightOpened> OpenFlight(int sequence, DateTimeOffset launchAt, int? maxLaunches, DateTimeOffset at)
+    // A Flight carries no launch timestamp — kanban/completed/remove-flight-launchat.md.
+    // It used to, unchecked, so that F3K.7's "an early launch scores zero, it is
+    // not refused" stayed a scoring rule rather than a capture gate. The rule
+    // check that story ran found the timestamp was never the right carrier of
+    // that fact: no rule in either rulebook wants a launch instant, and the
+    // classes that care about launch timing declare a metric instead —
+    // `launchedInWorkingTime` (F3K.7), `launchedOnSignal` (F3K.11.3),
+    // `launchedWithin30s` (F3F). Those are Measurements, captured and amended
+    // like any other, which is what keeps the rule in the class model where
+    // CLAUDE.md's core architectural law puts it.
+    public Result<FlightOpened> OpenFlight(int sequence, int? maxLaunches, DateTimeOffset at)
     {
         if (Annulment is not null)
         {
@@ -280,7 +283,7 @@ public sealed record Entry
                 "openFlight.maxLaunchesExceeded", $"This task allows at most {max} launches.");
         }
 
-        return Result<FlightOpened>.Success(new FlightOpened(sequence, launchAt, at));
+        return Result<FlightOpened>.Success(new FlightOpened(sequence, at));
     }
 
     // Instance decide function — WI-4 (kanban/completed/capture-a-score-steel-thread-plan.md).

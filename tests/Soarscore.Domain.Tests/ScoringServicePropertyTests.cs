@@ -107,7 +107,7 @@ public class ScoringServicePropertyTests
         var competitorRef = CompetitorId.New();
 
         var entry = OpenSampleEntry(competitorRef, groupRef)
-            .Apply(new FlightOpened(1, Now, Now));
+            .Apply(new FlightOpened(1, Now));
 
         foreach (var metric in captureOrder)
         {
@@ -198,7 +198,7 @@ public class ScoringServicePropertyTests
                         EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
                     opened.IsSuccess.Should().BeTrue();
 
-                    var entry = Entry.Create(opened.Value).Apply(new FlightOpened(1, Now, Now));
+                    var entry = Entry.Create(opened.Value).Apply(new FlightOpened(1, Now));
 
                     foreach (var metric in MetricNames)
                     {

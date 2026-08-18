@@ -101,7 +101,7 @@ decide this inside an implementation commit.
    evidence. The launch half (the former WI-6…WI-9) is deleted from this plan and
    the reasoning is recorded in `kanban/deferred-decisions.md`. The user's further
    call — that `Flight.LaunchAt` should be removed from the model altogether — is
-   its own story, `kanban/backlog/remove-flight-launchat.md`, not a scope
+   its own story, `kanban/completed/remove-flight-launchat.md`, not a scope
    increase here (house-keeping rule 6).
 
 ## Findings from reading the tree
@@ -294,7 +294,7 @@ path can silently diverge from the first.
 - **Removing `Flight.LaunchAt`** — the user's call once finding 4 landed, and a
   larger change than this thread: it touches an event contract, the `/open-flight`
   request body, both approval-gated docs and fifteen test files. Its own story,
-  `kanban/backlog/remove-flight-launchat.md`.
+  `kanban/completed/remove-flight-launchat.md`.
 - `EntryAnnulled` and `PenaltyRecorded` — the remainder of
   `second-entry-thread.md`, untouched here (WI-8 re-scopes that stub).
 - Amending anything on the `Competition` aggregate. `RulesAmended` is a

@@ -54,7 +54,6 @@ public sealed record EntryOpened(
 /// <summary>Appends a new, initially empty Flight at the given sequence.</summary>
 public sealed record FlightOpened(
     int Sequence,
-    DateTimeOffset LaunchAt,
     DateTimeOffset At) : EntryEvent;
 
 /// <summary>Appends a raw Measurement to the Flight matching <see cref="FlightSequence"/>.</summary>

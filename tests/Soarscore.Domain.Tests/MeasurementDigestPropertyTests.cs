@@ -48,7 +48,7 @@ public class MeasurementDigestPropertyTests
                 CapturedAt = Base,
                 Amendments = t.amendments.ToImmutableArray(),
             };
-            var flight = new Flight { Sequence = 1, LaunchAt = Base, Measurements = ImmutableArray.Create(measurement) };
+            var flight = new Flight { Sequence = 1, Measurements = ImmutableArray.Create(measurement) };
 
             var resolved = MeasurementDigest.Resolve(flight);
 

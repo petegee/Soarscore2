@@ -7,9 +7,10 @@
 //
 // No Sequence parameter: the handler derives it as Flights.Length + 1, so
 // Entry.OpenFlight's contiguity check (WI-3) guards a fold bug, not the
-// caller. LaunchAt is caller-supplied — a timekeeper's observed fact, not
-// the moment the POST arrived (LADR-0001 §7) — everything else timestamped
-// here comes from IClock.
+// caller. No LaunchAt either — kanban/completed/remove-flight-launchat.md
+// removed it, since no rule wants a launch instant and the classes that care
+// about launch timing declare a metric instead. Opening a flight now carries
+// no caller-supplied fact at all; the only timestamp is IClock's.
 
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
@@ -18,7 +19,7 @@ using Soarscore.Domain.Entries;
 
 namespace Soarscore.Application.Commands.Entries;
 
-public sealed record OpenFlight(EntryId EntryRef, DateTimeOffset LaunchAt) : ICommand<EntryId>;
+public sealed record OpenFlight(EntryId EntryRef) : ICommand<EntryId>;
 
 public sealed class OpenFlightHandler(IEventStore eventStore, IClock clock) : ICommandHandler<OpenFlight, EntryId>
 {
@@ -47,7 +48,7 @@ public sealed class OpenFlightHandler(IEventStore eventStore, IClock clock) : IC
         }
 
         var sequence = entry.Flights.Length + 1;
-        var decision = entry.OpenFlight(sequence, command.LaunchAt, resolvedTask.Value.Timing.MaxLaunches, clock.UtcNow);
+        var decision = entry.OpenFlight(sequence, resolvedTask.Value.Timing.MaxLaunches, clock.UtcNow);
         if (decision.IsFailure)
         {
             return Result<EntryId>.Failure(decision.Code!, decision.Message!, decision.Defects);

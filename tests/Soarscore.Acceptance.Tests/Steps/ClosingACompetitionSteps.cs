@@ -363,7 +363,7 @@ public sealed class ClosingACompetitionSteps
         var entryId = await ApiClient.PostCommandAsync<EntryId>(
             Client, "/open-entry", new OpenEntry(_competitionId, 0, roundOrdinal, 1, groupRef, competitorRef));
 
-        await ApiClient.PostCommandAsync<EntryId>(Client, "/open-flight", new OpenFlight(entryId, LaunchAt));
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/open-flight", new OpenFlight(entryId));
 
         await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(flightTime));
         await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));

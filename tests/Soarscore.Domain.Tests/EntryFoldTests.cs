@@ -50,13 +50,11 @@ public class EntryFoldTests
     public void FlightOpened_appends_an_initially_empty_flight()
     {
         var entry = Entry.Create(SampleOpened(DateTimeOffset.UtcNow));
-        var launchAt = DateTimeOffset.UtcNow;
 
-        var updated = entry.Apply(new FlightOpened(1, launchAt, DateTimeOffset.UtcNow));
+        var updated = entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
 
         var flight = updated.Flights.Should().ContainSingle().Which;
         flight.Sequence.Should().Be(1);
-        flight.LaunchAt.Should().Be(launchAt);
         flight.Measurements.Should().BeEmpty();
     }
 
@@ -64,7 +62,7 @@ public class EntryFoldTests
     public void FlightOpened_against_no_current_entry_throws()
     {
         FluentActions.Invoking(() =>
-            Entry.Apply(null, new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)))
+            Entry.Apply(null, new FlightOpened(1, DateTimeOffset.UtcNow)))
             .Should().Throw<ArgumentException>();
     }
 
@@ -72,8 +70,8 @@ public class EntryFoldTests
     public void MeasurementCaptured_appends_a_measurement_to_the_matching_flight()
     {
         var entry = Entry.Create(SampleOpened(DateTimeOffset.UtcNow));
-        entry = entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
-        entry = entry.Apply(new FlightOpened(2, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        entry = entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
+        entry = entry.Apply(new FlightOpened(2, DateTimeOffset.UtcNow));
 
         var measurement = new Measurement
         {
@@ -110,7 +108,7 @@ public class EntryFoldTests
     public void MeasurementAmended_appends_an_amendment_to_the_matching_measurement()
     {
         var entry = Entry.Create(SampleOpened(DateTimeOffset.UtcNow));
-        entry = entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        entry = entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
 
         var timeMeasurement = new Measurement
         {
@@ -215,7 +213,7 @@ public class EntryFoldTests
         // Belt-and-braces on the dispatcher itself (not just the per-event overloads).
         EntryEvent[] mutationEvents =
         [
-            new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            new FlightOpened(1, DateTimeOffset.UtcNow),
             new MeasurementCaptured(1, new Measurement { Metric = "x", Value = MeasuredValue.Of(1m), CapturedAt = DateTimeOffset.UtcNow }),
             new MeasurementAmended(1, "x", new Amendment { NewValue = MeasuredValue.Of(1m), Reason = "n/a", By = "n/a", At = DateTimeOffset.UtcNow }),
             new EntryAnnulled(new Annulment { Reason = "n/a", By = "n/a", At = DateTimeOffset.UtcNow }),
@@ -245,7 +243,7 @@ public class EntryFoldTests
         EntryEvent[] stream =
         [
             SampleOpened(openedAt),
-            new FlightOpened(1, launchAt, launchAt),
+            new FlightOpened(1, launchAt),
             new MeasurementCaptured(1, measurement),
             new MeasurementAmended(1, "flightTime", amendment),
             new Entries.PenaltyRecorded(penalty),

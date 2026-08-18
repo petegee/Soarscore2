@@ -7,7 +7,7 @@ Feature: Capturing a score
     And a competition adopting it with 6 registered competitors
     And a drawn preliminary phase of 4 rounds
     When the scorer opens an entry for competitor 3 in round 1, group 1
-    And the scorer opens a flight launched at 10:03:12
+    And the scorer opens a flight
     And the scorer captures flightTime of 412 seconds
     Then the entry holds one flight with a flightTime of 412
     And the entry appears in the index for round 1, group 1
@@ -20,7 +20,7 @@ Feature: Capturing a score
     When the scorer opens an entry for competitor 1 in round 1, group 1
     Then the entry's working time has no end
 
-  Scenario: A launch before the working time is recorded, not refused
+  Scenario: A false start is recorded, not refused
     Given a published F3K class definition
     And a competition adopting it with 6 registered competitors
     And a drawn preliminary phase with these tasks
@@ -30,5 +30,7 @@ Feature: Capturing a score
       | 3     | B    |
       | 4     | C    |
     When the scorer opens an entry for competitor 2 in round 1, group 1
-    And the scorer opens a flight launched 5 minutes before the working time begins
-    Then the flight is recorded with its launch time unchanged
+    And the scorer opens a flight
+    And the scorer records that the launch was outside the working time
+    And the scorer captures flightTime of 62 seconds
+    Then the flight is recorded with both the false start and the flight time

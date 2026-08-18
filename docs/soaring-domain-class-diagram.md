@@ -120,7 +120,6 @@ classDiagram
 
     class Flight {
         +int sequence
-        +timestamp launchAt
     }
 
     class Measurement {

@@ -30,7 +30,7 @@ public class EntryLoaderTests
         var store = new FakeEventStore();
         var opened = new EntryOpened(
             id, SampleWorkingTime, CompetitionId.New(), 1, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original, Now);
-        var flightOpened = new FlightOpened(1, Now.AddMinutes(1), Now.AddMinutes(1));
+        var flightOpened = new FlightOpened(1, Now.AddMinutes(1));
         await store.AppendAsync(id.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         await store.AppendAsync(id.Value, ExpectedVersion.Exact(1), [flightOpened], TestContext.Current.CancellationToken);
 

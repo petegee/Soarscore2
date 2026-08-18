@@ -248,7 +248,7 @@ public abstract class CatalogueDrawEventStoreTests<TFixture>(TFixture fixture) :
                 var entryId = opened.Value;
 
                 var openedFlight = await openFlightHandler.HandleAsync(
-                    new OpenFlight(entryId, launchAt), TestContext.Current.CancellationToken);
+                    new OpenFlight(entryId), TestContext.Current.CancellationToken);
                 openedFlight.IsSuccess.Should().BeTrue($"{openedFlight.Code}: {openedFlight.Message}");
 
                 async Task CaptureAsync(string metric, MeasuredValue value)

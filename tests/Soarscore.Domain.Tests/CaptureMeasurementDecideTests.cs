@@ -13,6 +13,17 @@ namespace Soarscore.Domain.Tests;
 /// code, plus success for both MeasuredKind variants, plus rounding applied
 /// at each RoundingMode — Truncate in particular, against an F3K-shaped
 /// 0.1 s flightTime metric (finding 4).
+///
+/// Also home to the F3K.7 regression test, which moved here from
+/// OpenFlightDecideTests when kanban/completed/remove-flight-launchat.md removed
+/// Flight.LaunchAt. "A launch before the working time scores zero, it is not
+/// refused" is a rule about a captured fact, not about a timestamp: the classes
+/// that care declare a metric — `launchedInWorkingTime` (F3K.7),
+/// `launchedOnSignal` (F3K.11.3), `launchedWithin30s` (F3F) — and
+/// TaskDefinition.FlightValidWhen turns it into a zero at scoring time. The
+/// capture path must therefore accept the false-start observation rather than
+/// reject it, which is what keeps the rule in the class model where CLAUDE.md's
+/// core architectural law puts it.
 /// </summary>
 public class CaptureMeasurementDecideTests
 {
@@ -41,8 +52,15 @@ public class CaptureMeasurementDecideTests
         Kind = MeasuredKind.Flag,
     };
 
+    /// <summary>F3K.7's false-start observation, shaped as SeedF3K.cs:22 declares it.</summary>
+    private static readonly MetricDefinition LaunchedInWorkingTimeMetric = new()
+    {
+        Name = "launchedInWorkingTime",
+        Kind = MeasuredKind.Flag,
+    };
+
     private static readonly ImmutableArray<MetricDefinition> SampleMetrics =
-        [FlightTimeMetric, LandedInDefinedAreaMetric];
+        [FlightTimeMetric, LandedInDefinedAreaMetric, LaunchedInWorkingTimeMetric];
 
     private static Entry EntryWithOneOpenFlight()
     {
@@ -50,7 +68,7 @@ public class CaptureMeasurementDecideTests
             SampleId, SampleWorkingTime, SampleCompetition, 1, 1, 1,
             SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
 
-        return entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        return entry.Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
     }
 
     [Fact]
@@ -191,5 +209,37 @@ public class CaptureMeasurementDecideTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Measurement.Value.Should().Be(MeasuredValue.Of(false));
+    }
+
+    /// <summary>
+    /// The F3K.7 regression test, relocated from OpenFlightDecideTests by
+    /// kanban/completed/remove-flight-launchat.md. A flight launched before the
+    /// working time began is a scored outcome, never a refused capture: the
+    /// observation goes in as `launchedInWorkingTime = false` alongside a real
+    /// flight time, and it is FlightValidWhen — class data — that zeroes the
+    /// flight later. If this ever fails, the core system has started ruling on
+    /// launch timing itself.
+    /// </summary>
+    [Fact]
+    public void Capturing_a_false_start_observation_is_accepted_not_refused_F3K_7()
+    {
+        var entry = EntryWithOneOpenFlight();
+        var at = new DateTimeOffset(2026, 1, 10, 9, 3, 5, TimeSpan.Zero);
+
+        var falseStart = entry.CaptureMeasurement(
+            1, "launchedInWorkingTime", MeasuredValue.Of(false), at, SampleMetrics);
+
+        falseStart.IsSuccess.Should().BeTrue();
+        falseStart.Value.Measurement.Value.Flag.Should().BeFalse();
+
+        // And the flight it belongs to still records its time — a false start is
+        // scored, so the raw record must carry what was flown, not be truncated
+        // to the infraction.
+        var withFalseStart = entry.Apply(falseStart.Value);
+        var flightTime = withFalseStart.CaptureMeasurement(
+            1, "flightTime", MeasuredValue.Of(62.4m), at, SampleMetrics);
+
+        flightTime.IsSuccess.Should().BeTrue();
+        flightTime.Value.Measurement.Value.Number.Should().Be(62.4m);
     }
 }

@@ -200,7 +200,7 @@ public class FinaliseCompetitionPropertyTests
                         EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
                     opened.IsSuccess.Should().BeTrue();
 
-                    var flightOpened = new FlightOpened(1, Now, Now);
+                    var flightOpened = new FlightOpened(1, Now);
                     var entryEvents = new List<IDomainEvent> { opened.Value, flightOpened };
                     var entry = Entry.Create(opened.Value).Apply(flightOpened);
 

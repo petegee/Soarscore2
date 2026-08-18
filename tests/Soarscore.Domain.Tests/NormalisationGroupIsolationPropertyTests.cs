@@ -195,7 +195,7 @@ public class NormalisationGroupIsolationPropertyTests
                     EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
                 opened.IsSuccess.Should().BeTrue();
 
-                var entry = Entry.Create(opened.Value).Apply(new FlightOpened(1, Now, Now));
+                var entry = Entry.Create(opened.Value).Apply(new FlightOpened(1, Now));
 
                 var captured = entry.CaptureMeasurement(
                     1, Metric, MeasuredValue.Of(timeFor(competitorRef)), Now, MetricDefs);

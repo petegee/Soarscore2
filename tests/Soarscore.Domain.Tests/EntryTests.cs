@@ -36,7 +36,6 @@ public class EntryTests
                 new Flight
                 {
                     Sequence = 1,
-                    LaunchAt = Now.AddMinutes(1),
                     Measurements = ImmutableArray.Create(
                         new Measurement
                         {
@@ -55,7 +54,6 @@ public class EntryTests
                 new Flight
                 {
                     Sequence = 2,
-                    LaunchAt = Now.AddMinutes(5),
                     Measurements = ImmutableArray.Create(
                         new Measurement
                         {
@@ -129,7 +127,6 @@ public class EntryTests
                 new Flight
                 {
                     Sequence = 1,
-                    LaunchAt = Now.AddMinutes(1),
                     Measurements = ImmutableArray.Create(
                         new Measurement
                         {
@@ -166,7 +163,6 @@ public class EntryTests
                 new Flight
                 {
                     Sequence = 1,
-                    LaunchAt = Now.AddMinutes(1),
                     Measurements = ImmutableArray.Create(
                         new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(90m), CapturedAt = Now }
                     ),
@@ -199,7 +195,6 @@ public class EntryTests
             new Flight
             {
                 Sequence = 1,
-                LaunchAt = Now.AddMinutes(1),
                 Measurements = ImmutableArray.Create(
                     new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(120m), CapturedAt = Now }
                 ),

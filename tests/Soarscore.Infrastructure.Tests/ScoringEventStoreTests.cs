@@ -119,7 +119,7 @@ public abstract class ScoringEventStoreTests<TFixture>(TFixture fixture) : IClas
         var entryId = opened.Value;
 
         var openFlightHandler = new OpenFlightHandler(fixture.EventStore, new SystemClock());
-        var openedFlight = await openFlightHandler.HandleAsync(new OpenFlight(entryId, LaunchAt), TestContext.Current.CancellationToken);
+        var openedFlight = await openFlightHandler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
         openedFlight.IsSuccess.Should().BeTrue();
 
         var captureHandler = new CaptureMeasurementHandler(fixture.EventStore, new SystemClock());

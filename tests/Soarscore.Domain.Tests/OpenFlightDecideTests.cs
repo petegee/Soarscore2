@@ -9,9 +9,16 @@ namespace Soarscore.Domain.Tests;
 /// <summary>
 /// Decide-function tests for <see cref="Entry.OpenFlight"/> —
 /// kanban/completed/capture-a-score-steel-thread-plan.md WI-3. One per failure
-/// code, plus success, plus the sequence advancing across successive folds,
-/// plus the finding-3 regression test: a launch outside the working time is
-/// recorded, not refused.
+/// code, plus success, plus the sequence advancing across successive folds.
+///
+/// The finding-3 regression test — a launch outside the working time is
+/// recorded, not refused — used to live here, asserting that OpenFlight passed
+/// an out-of-window launchAt through untouched. It moved to
+/// CaptureMeasurementDecideTests when kanban/completed/remove-flight-launchat.md
+/// removed the timestamp: OpenFlight now receives no launch instant at all, so
+/// it has nothing to gate on and the assertion had nothing left to say. The
+/// rule it guarded (F3K.7) travels as the `launchedInWorkingTime` metric, and
+/// the test guards it there.
 /// </summary>
 public class OpenFlightDecideTests
 {
@@ -40,7 +47,7 @@ public class OpenFlightDecideTests
     {
         var entry = AnnulledEntry();
 
-        var result = entry.OpenFlight(1, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+        var result = entry.OpenFlight(1, maxLaunches: null, at: DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("entry.annulled");
@@ -51,7 +58,7 @@ public class OpenFlightDecideTests
     {
         var entry = OpenEntry();
 
-        var result = entry.OpenFlight(2, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+        var result = entry.OpenFlight(2, maxLaunches: null, at: DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openFlight.sequenceOutOfOrder");
@@ -61,28 +68,26 @@ public class OpenFlightDecideTests
     public void OpenFlight_beyond_maxLaunches_fails_with_a_stable_code()
     {
         var entry = OpenEntry();
-        var first = entry.OpenFlight(1, DateTimeOffset.UtcNow, maxLaunches: 1, at: DateTimeOffset.UtcNow);
+        var first = entry.OpenFlight(1, maxLaunches: 1, at: DateTimeOffset.UtcNow);
         first.IsSuccess.Should().BeTrue();
         entry = entry.Apply(first.Value);
 
-        var second = entry.OpenFlight(2, DateTimeOffset.UtcNow, maxLaunches: 1, at: DateTimeOffset.UtcNow);
+        var second = entry.OpenFlight(2, maxLaunches: 1, at: DateTimeOffset.UtcNow);
 
         second.IsFailure.Should().BeTrue();
         second.Code.Should().Be("openFlight.maxLaunchesExceeded");
     }
 
     [Fact]
-    public void OpenFlight_succeeds_and_carries_sequence_and_launchAt_through()
+    public void OpenFlight_succeeds_and_carries_sequence_and_the_clock_instant_through()
     {
         var entry = OpenEntry();
-        var launchAt = new DateTimeOffset(2026, 1, 10, 9, 3, 0, TimeSpan.Zero);
         var at = new DateTimeOffset(2026, 1, 10, 9, 3, 5, TimeSpan.Zero);
 
-        var result = entry.OpenFlight(1, launchAt, maxLaunches: null, at: at);
+        var result = entry.OpenFlight(1, maxLaunches: null, at: at);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Sequence.Should().Be(1);
-        result.Value.LaunchAt.Should().Be(launchAt);
         result.Value.At.Should().Be(at);
     }
 
@@ -93,7 +98,7 @@ public class OpenFlightDecideTests
 
         for (var sequence = 1; sequence <= 6; sequence++)
         {
-            var result = entry.OpenFlight(sequence, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+            var result = entry.OpenFlight(sequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
             result.IsSuccess.Should().BeTrue();
             entry = entry.Apply(result.Value);
         }
@@ -106,47 +111,21 @@ public class OpenFlightDecideTests
     {
         var entry = OpenEntry();
 
-        var first = entry.OpenFlight(1, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+        var first = entry.OpenFlight(1, maxLaunches: null, at: DateTimeOffset.UtcNow);
         first.IsSuccess.Should().BeTrue();
         first.Value.Sequence.Should().Be(1);
         entry = entry.Apply(first.Value);
 
-        var second = entry.OpenFlight(2, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+        var second = entry.OpenFlight(2, maxLaunches: null, at: DateTimeOffset.UtcNow);
         second.IsSuccess.Should().BeTrue();
         second.Value.Sequence.Should().Be(2);
         entry = entry.Apply(second.Value);
 
-        var third = entry.OpenFlight(3, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+        var third = entry.OpenFlight(3, maxLaunches: null, at: DateTimeOffset.UtcNow);
         third.IsSuccess.Should().BeTrue();
         third.Value.Sequence.Should().Be(3);
         entry = entry.Apply(third.Value);
 
         entry.Flights.Select(f => f.Sequence).Should().Equal(1, 2, 3);
-    }
-
-    /// <summary>
-    /// The finding-3 regression test: F3K.7 scores a launch before the
-    /// working time begins, it does not refuse it. OpenFlight must not gate
-    /// on the working-time window — a launch minutes before Start (and one
-    /// after End) both succeed here.
-    /// </summary>
-    [Fact]
-    public void OpenFlight_with_a_launch_outside_the_working_time_succeeds_finding_3_regression()
-    {
-        var entry = OpenEntry();
-        var beforeWorkingTime = SampleWorkingTime.Start.AddMinutes(-5);
-
-        var early = entry.OpenFlight(1, beforeWorkingTime, maxLaunches: null, at: DateTimeOffset.UtcNow);
-
-        early.IsSuccess.Should().BeTrue();
-        early.Value.LaunchAt.Should().Be(beforeWorkingTime);
-        entry = entry.Apply(early.Value);
-
-        var afterWorkingTime = SampleWorkingTime.End!.Value.AddMinutes(5);
-
-        var late = entry.OpenFlight(2, afterWorkingTime, maxLaunches: null, at: DateTimeOffset.UtcNow);
-
-        late.IsSuccess.Should().BeTrue();
-        late.Value.LaunchAt.Should().Be(afterWorkingTime);
     }
 }

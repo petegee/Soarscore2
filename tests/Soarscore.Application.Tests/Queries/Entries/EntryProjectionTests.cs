@@ -62,7 +62,7 @@ public class EntryProjectionTests
     {
         var summary = EntryProjection.Apply(null, SampleOpened())!;
 
-        var result = EntryProjection.Apply(summary, new FlightOpened(1, Now, Now));
+        var result = EntryProjection.Apply(summary, new FlightOpened(1, Now));
 
         result.Should().BeSameAs(summary);
     }

@@ -76,7 +76,7 @@ public class EntryModelBasedFoldTests
             actual =>
             {
                 var sequence = actual.Value.Flights.Length + 1;
-                actual.Value = actual.Value.Apply(new FlightOpened(sequence, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+                actual.Value = actual.Value.Apply(new FlightOpened(sequence, DateTimeOffset.UtcNow));
             },
             model => model.Flights.Add(new FlightModel { Sequence = model.Flights.Count + 1, Measurements = [] }));
 

@@ -155,7 +155,7 @@ public class ScoringCorpusPropertyTests
 
                     var entry = Entry.Create(opened.Value);
 
-                    var flightOpened = entry.OpenFlight(1, Now, maxLaunches: null, at: Now);
+                    var flightOpened = entry.OpenFlight(1, maxLaunches: null, at: Now);
                     flightOpened.IsSuccess.Should().BeTrue($"{seedClass.FileName}: {flightOpened.Code}");
                     entry = entry.Apply(flightOpened.Value);
 

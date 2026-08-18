@@ -42,7 +42,7 @@ public class EntryCapturePropertyTests
             SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
 
     private static Entry OpenSampleEntryWithOneFlight() =>
-        OpenSampleEntry().Apply(new FlightOpened(1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        OpenSampleEntry().Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
 
     // ============================================================ invariant 1
     // Capture is append-only: folding the events an accepted OpenFlight /
@@ -94,7 +94,6 @@ public class EntryCapturePropertyTests
                     var flightAfter = after[i];
 
                     flightAfter.Sequence.Should().Be(flightBefore.Sequence);
-                    flightAfter.LaunchAt.Should().Be(flightBefore.LaunchAt);
                     flightAfter.Measurements.Length.Should().BeGreaterThanOrEqualTo(flightBefore.Measurements.Length);
 
                     for (var m = 0; m < flightBefore.Measurements.Length; m++)
@@ -109,7 +108,7 @@ public class EntryCapturePropertyTests
     private static Entry ApplyOpenFlightStep(Entry entry)
     {
         var sequence = entry.Flights.Length + 1;
-        var result = entry.OpenFlight(sequence, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+        var result = entry.OpenFlight(sequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
         return result.IsSuccess ? entry.Apply(result.Value) : entry;
     }
 
@@ -153,7 +152,7 @@ public class EntryCapturePropertyTests
             {
                 var attemptedSequence = entry.Flights.Length + 1 + delta;
                 var result = entry.OpenFlight(
-                    attemptedSequence, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+                    attemptedSequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
 
                 if (result.IsSuccess)
                 {
@@ -213,7 +212,7 @@ public class EntryCapturePropertyTests
 
         for (var sequence = 1; sequence <= acceptCount; sequence++)
         {
-            var result = entry.OpenFlight(sequence, DateTimeOffset.UtcNow, maxLaunches, at: DateTimeOffset.UtcNow);
+            var result = entry.OpenFlight(sequence, maxLaunches, at: DateTimeOffset.UtcNow);
             result.IsSuccess.Should().BeTrue();
             entry = entry.Apply(result.Value);
         }
@@ -222,7 +221,7 @@ public class EntryCapturePropertyTests
 
         if (maxLaunches is not null)
         {
-            var next = entry.OpenFlight(acceptCount + 1, DateTimeOffset.UtcNow, maxLaunches, at: DateTimeOffset.UtcNow);
+            var next = entry.OpenFlight(acceptCount + 1, maxLaunches, at: DateTimeOffset.UtcNow);
             next.IsFailure.Should().BeTrue();
             next.Code.Should().Be("openFlight.maxLaunchesExceeded");
         }
@@ -342,7 +341,7 @@ public class EntryCapturePropertyTests
             {
                 var sequence = actual.Value.Flights.Length + 1;
                 var result = actual.Value.OpenFlight(
-                    sequence, DateTimeOffset.UtcNow, maxLaunches: null, at: DateTimeOffset.UtcNow);
+                    sequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
                 actual.Value = actual.Value.Apply(result.Value);
             },
             model => model.Flights.Add(new DecideFlightModel { Sequence = model.Flights.Count + 1, Measurements = [] }));
