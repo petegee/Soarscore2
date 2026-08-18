@@ -474,6 +474,13 @@ floor), and record what this thread defers (below) in
   flew". The CD says so. Per the governing principle this is not a deferral — it
   is a standing stance, and a later thread proposing to infer it should reopen
   that section rather than treat this bullet as an unfinished item.
+- **Deriving completion from recorded data.** Asked directly (user, 2026-08-18):
+  once every metric for a task-round's groups is entered, is it complete? No —
+  presence of data can prove a task-round is *not* ready, but absence can never
+  prove it is, because a pilot who took three of five allowed launches, a metric
+  legitimately absent, and a `NoResult` all look identical to "not typed in yet".
+  What *is* worth building is a read-side indicator that shows the CD what is
+  recorded without ever deciding: `kanban/backlog/entry-completeness-indicator.md`.
 - **Correcting a captured measurement, and out-of-order flight entry.** Found by
   this thread's ordering audit, raised as `kanban/backlog/amend-a-measurement.md`
   and `kanban/backlog/out-of-order-flight-entry.md` (house-keeping rule 6). Both
