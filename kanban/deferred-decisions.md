@@ -146,52 +146,6 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   whether the field should exist at all — is a story, not a deferral:
   `kanban/completed/remove-flight-launchat.md`.
 
-- **`Entry.WorkingTime` was NOT removed alongside `Flight.LaunchAt`, and the user is
-  not persuaded it earns its place.** **Recorded 2026-08-18**
-  (`kanban/completed/remove-flight-launchat.md`). Scope for that story was
-  `LaunchAt` only, so the window stayed — but it stayed *unexamined*, not
-  vindicated, and the doubt is recorded here so the next person meets it rather
-  than assumes the field survived on merit.
-
-  The doubt, in the user's terms: **a scorer never captures it.** That is exactly
-  right, and the code is more pointed than "unread". `Competition.OpenEntry`
-  manufactures the window from the clock —
-  `new TimeWindow { Start = at, End = at.AddSeconds(resolvedWorkingTimeSeconds) }`
-  (`src/Soarscore.Domain/Competitions/Competition.cs:950`), where `at` is
-  `clock.UtcNow` at the moment the `OpenEntry` command is *processed*. Nobody
-  observes it and nobody types it.
-
-  Which makes it worse than merely unused under
-  [NFR-4](../docs/non-functional-requirements.md#nfr-4--no-imposed-ordering-on-score-capture).
-  That requirement exists because entries legitimately arrive from paper
-  transcribed in bulk at the end of the day, or from twenty phones at random. Every
-  one of those workflows stamps a working time that has nothing to do with when the
-  group actually flew: bulk entry at 9pm gives twenty entries a 9pm working time.
-  A field that is systematically wrong in the project's own headline workflow is a
-  liability, not just dead weight — someone will eventually read it and believe it.
-
-  **Two things are load-bearing and a removal must keep them.** They are about
-  *resolving* the declared working time, not about *storing* the resulting window:
-
-  - `openEntry.workingTimeUndeclared` — a `Fixed`-timing task that declares no
-    `WorkingTime` is a definition defect, and this is where it surfaces.
-  - `openEntry.parameterUnbound` — resolving the declared working time is what
-    forces a CD-parameter working time to be bound before entries can open (the
-    F5K case). Delete the resolution and that gate goes with it, silently.
-
-  **One thing reads it**, the acceptance scenario *"A working time that the rulebook
-  leaves open-ended"*, which asserts `End is null` for NZ Class M. That is
-  class-model fidelity — proving `WorkingTimeKind.UntilAllFlightsComplete` is
-  represented truthfully rather than defaulted — and it is a real job, but it is a
-  job about the *class definition*, and it could be tested against the definition
-  instead of against a stored window.
-
-  So this is a live question, not a settled non-decision: the honest reading is that
-  the window is probably not needed, the resolution certainly is, and separating the
-  two is the work. It becomes a `backlog/` story when someone takes it up, and the
-  reasoning above carries across. Do not remove it by analogy to `LaunchAt` without
-  answering the two defect codes first.
-
 ---
 
 ## Decisions that have since been taken up

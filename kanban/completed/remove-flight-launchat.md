@@ -126,9 +126,9 @@ The user recorded a standing doubt about it on the same day, and it is sharper t
 the one this story answered: the window is not captured by anyone, it is
 manufactured from `clock.UtcNow` at the moment `OpenEntry` is processed
 (`Competition.cs:950`), which under NFR-4's bulk retrospective entry is
-systematically wrong rather than merely unused. See
-`kanban/deferred-decisions.md`, "Score capture and corrections", which also names
-the two defect codes any removal must preserve.
+systematically wrong rather than merely unused. That doubt is now its own story —
+`kanban/backlog/remove-stored-working-time.md` — which carries the reasoning and
+names the two defect codes any removal must preserve.
 
 ## Before starting
 
