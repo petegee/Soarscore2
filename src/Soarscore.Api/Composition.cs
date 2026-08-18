@@ -89,6 +89,10 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<WithdrawCompetitor, CompetitorId>, WithdrawCompetitorHandler>();
         builder.Services.AddScoped<ICommandHandler<DrawPhase, CompetitionId>, DrawPhaseHandler>();
         builder.Services.AddScoped<ICommandHandler<BindParameter, CompetitionId>, BindParameterHandler>();
+        builder.Services.AddScoped<ICommandHandler<CompleteTaskRound, CompetitionId>, CompleteTaskRoundHandler>();
+        builder.Services.AddScoped<ICommandHandler<ReopenTaskRound, CompetitionId>, ReopenTaskRoundHandler>();
+        builder.Services.AddScoped<ICommandHandler<AnnulTaskRound, CompetitionId>, AnnulTaskRoundHandler>();
+        builder.Services.AddScoped<ICommandHandler<FinaliseCompetition, CompetitionId>, FinaliseCompetitionHandler>();
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
 

@@ -242,6 +242,38 @@ public class BindParameterDecideTests
     }
 
     [Fact]
+    public void BindParameter_round_scoped_against_a_still_Drawn_round_that_has_flights_open_fails_with_a_stable_code()
+    {
+        // kanban/completed/task-round-lifecycle.md WI-9. The half the freeze
+        // rule was missing: a rebind after flying has started but before the
+        // round is marked complete used to be silently accepted. roundHasEntries
+        // is resolved by the handler (Competition holds no Entry data) and
+        // passed in, exactly as AdoptedRules is. A distinct code from
+        // roundFrozen — a CD can act on the difference.
+        var competition = DrawnF3K();
+
+        var result = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(420m), "CD", DateTimeOffset.UtcNow,
+            phaseOrdinal: 0, roundOrdinal: 1, roundHasEntries: true);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundInProgress");
+    }
+
+    [Fact]
+    public void BindParameter_unscoped_is_unaffected_by_a_round_having_flights_open()
+    {
+        // The unscoped path never asks the question — and the handler never
+        // runs the query that answers it.
+        var competition = DrawnF3K();
+
+        var result = competition.BindParameter(
+            "workingTime.A", MeasuredValue.Of(420m), "CD", DateTimeOffset.UtcNow, roundHasEntries: true);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
     public void BindParameter_round_scoped_against_the_round_whose_task_consumes_it_succeeds_and_carries_the_scope_through()
     {
         // Round 1's task is A (F3K.11.1), which references workingTime.A.

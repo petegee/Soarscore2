@@ -26,6 +26,10 @@ public static class Commands
         app.MapCommand<WithdrawCompetitor, CompetitorId>("/withdraw-competitor");
         app.MapCommand<DrawPhase, CompetitionId>("/draw-phase");
         app.MapCommand<BindParameter, CompetitionId>("/bind-parameter");
+        app.MapCommand<CompleteTaskRound, CompetitionId>("/complete-task-round");
+        app.MapCommand<ReopenTaskRound, CompetitionId>("/reopen-task-round");
+        app.MapCommand<AnnulTaskRound, CompetitionId>("/annul-task-round");
+        app.MapCommand<FinaliseCompetition, CompetitionId>("/finalise-competition");
 
         app.MapCommand<OpenEntry, EntryId>("/open-entry");
         app.MapCommand<OpenFlight, EntryId>("/open-flight");

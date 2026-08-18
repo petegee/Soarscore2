@@ -14,10 +14,10 @@ namespace Soarscore.Application.Tests.Queries.Competitions;
 public class FindCompetitionsHandlerTests
 {
     private static readonly CompetitionSummary Nationals = new(
-        CompetitionId.New(), "Nationals", "Taupo", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13), "F3J", "hash-f3j");
+        CompetitionId.New(), "Nationals", "Taupo", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13), "F3J", "hash-f3j", "created");
 
     private static readonly CompetitionSummary ClubDay = new(
-        CompetitionId.New(), "Club Day", "Auckland", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 1), "F3K", "hash-f3k");
+        CompetitionId.New(), "Club Day", "Auckland", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 1), "F3K", "hash-f3k", "created");
 
     [Fact]
     public async Task FindCompetitions_with_no_filters_returns_every_competition()

@@ -217,9 +217,26 @@ public static class ScoringService
                         }
                     }
 
-                    var state = taskRound.State == Competitions.TaskRoundState.Annulled
-                        ? TaskRoundState.Annulled
-                        : TaskRoundState.Complete;
+                    // Total over the write-side states, with no `else`: the
+                    // old one existed only because nothing could emit
+                    // TaskRoundCompleted, so every state that was not
+                    // Annulled collapsed to Complete by default
+                    // (kanban/completed/task-round-lifecycle.md WI-4).
+                    //
+                    // Drawn/InProgress still score as Complete, but now as a
+                    // deliberate choice rather than an artefact: this is the
+                    // provisional leaderboard, and a task-round with entries
+                    // present is scored on what has been captured so far.
+                    // Entries-absent task-rounds never reach here at all —
+                    // the finding-5 filter above skipped them.
+                    var state = taskRound.State switch
+                    {
+                        Competitions.TaskRoundState.Annulled => TaskRoundState.Annulled,
+                        Competitions.TaskRoundState.Complete => TaskRoundState.Complete,
+                        Competitions.TaskRoundState.Drawn or Competitions.TaskRoundState.InProgress => TaskRoundState.Complete,
+                        _ => throw new ArgumentOutOfRangeException(
+                            nameof(competition), taskRound.State, "Unknown TaskRoundState."),
+                    };
 
                     taskRoundData.Add(new TaskRoundData(taskRound.Ordinal, taskRound.TaskRef, state));
                 }

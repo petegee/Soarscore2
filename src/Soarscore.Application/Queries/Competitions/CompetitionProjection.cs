@@ -11,10 +11,12 @@ public static class CompetitionProjection
 {
     /// <summary>
     /// Folds one <see cref="CompetitionEvent"/> onto the current summary, or
-    /// creates it from <see cref="CompetitionCreated"/>. Only
-    /// <see cref="CompetitionCreated"/> is reachable this thread — the other
-    /// ten subtypes in the union (see CompetitionEvents.cs / Competition.Apply)
-    /// have no command producing them yet.
+    /// creates it from <see cref="CompetitionCreated"/>, or advances its
+    /// <see cref="CompetitionSummary.State"/>.
+    ///
+    /// Only competition-scope <see cref="Finalised"/> moves the state:
+    /// phase-scope finalisation freezes one phase and names who was promoted,
+    /// which is not the competition being over.
     ///
     /// The default arm is deliberately <c>_ =&gt; current</c> (pass-through),
     /// not <c>throw</c>, unlike PeopleProjection's and ClassDefinitionProjection's
@@ -30,7 +32,11 @@ public static class CompetitionProjection
         @event switch
         {
             CompetitionCreated e => new CompetitionSummary(
-                e.Id, e.Name, e.Location, e.StartDate, e.EndDate, e.AdoptedRules.Definition.Name, e.AdoptedRules.SourceClassId),
+                e.Id, e.Name, e.Location, e.StartDate, e.EndDate,
+                e.AdoptedRules.Definition.Name, e.AdoptedRules.SourceClassId, "created"),
+            PhaseDrawn when current is not null => current with { State = "drawn" },
+            Finalised e when current is not null && e.Finalisation.Scope == FinalisationScope.Competition =>
+                current with { State = "finalised" },
             _ => current,
         };
 }

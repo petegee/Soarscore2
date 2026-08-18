@@ -10,16 +10,23 @@ namespace Soarscore.Domain.Tests;
 /// <summary>
 /// Property-based tests for <see cref="Competition"/>'s private ReplaceTaskRound
 /// navigation (LADR-0003: CsCheck) — the ordinal-addressed find-and-replace
-/// across Phase/Round/TaskRound that ReflightGroupAppended, TaskRoundCompleted
-/// and TaskRoundAnnulled all share. CompetitionFoldTests exercises it through
+/// across Phase/Round/TaskRound that ReflightGroupAppended, TaskRoundCompleted,
+/// TaskRoundAnnulled and TaskRoundReopened all share. CompetitionFoldTests
+/// exercises it through
 /// two or three fixed, hand-built shapes; this generates the shape (how many
 /// phases, rounds and task-rounds) and the target ordinal, and checks the
 /// general claim: mutating the addressed TaskRound changes exactly that node
 /// and leaves every other Phase/Round/TaskRound in the tree untouched.
+/// <para>
+/// TaskRoundReopened joined the set in kanban/completed/task-round-lifecycle.md
+/// WI-2b. Its case pre-completes the target task-round before the reopen folds,
+/// so the assertion is a real Complete -> Drawn transition rather than the
+/// Drawn -> Drawn no-op a freshly built shape would give.
+/// </para>
 /// </summary>
 public class CompetitionReplaceTaskRoundPropertyTests
 {
-    private enum EventKind { AppendGroup, Complete, Annul }
+    private enum EventKind { AppendGroup, Complete, Annul, Reopen }
 
     private static readonly Gen<(
         int phaseCount,
@@ -35,7 +42,7 @@ public class CompetitionReplaceTaskRoundPropertyTests
         from targetPhase in Gen.Int[1, phaseCount]
         from targetRound in Gen.Int[1, roundsPerPhase]
         from targetTaskRound in Gen.Int[1, taskRoundsPerRound]
-        from kind in Gen.OneOfConst(EventKind.AppendGroup, EventKind.Complete, EventKind.Annul)
+        from kind in Gen.OneOfConst(EventKind.AppendGroup, EventKind.Complete, EventKind.Annul, EventKind.Reopen)
         select (phaseCount, roundsPerPhase, taskRoundsPerRound, targetPhase, targetRound, targetTaskRound, kind);
 
     [Fact]
@@ -44,8 +51,18 @@ public class CompetitionReplaceTaskRoundPropertyTests
         Scenario.Sample(t =>
         {
             var before = BuildCompetition(t.phaseCount, t.roundsPerPhase, t.taskRoundsPerRound);
-            var beforeFlat = Flatten(before);
             var target = (t.targetPhase, t.targetRound, t.targetTaskRound);
+
+            // Reopen needs a closed task-round to act on, so the target is
+            // completed first — that completion is part of the starting state,
+            // not part of what this property measures.
+            if (t.kind == EventKind.Reopen)
+            {
+                before = before.Apply(new TaskRoundCompleted(
+                    t.targetPhase, t.targetRound, t.targetTaskRound, DateTimeOffset.UtcNow));
+            }
+
+            var beforeFlat = Flatten(before);
 
             var after = t.kind switch
             {
@@ -56,6 +73,8 @@ public class CompetitionReplaceTaskRoundPropertyTests
                 EventKind.Complete => before.Apply(new TaskRoundCompleted(
                     t.targetPhase, t.targetRound, t.targetTaskRound, DateTimeOffset.UtcNow)),
                 EventKind.Annul => before.Apply(new TaskRoundAnnulled(
+                    t.targetPhase, t.targetRound, t.targetTaskRound, "test", DateTimeOffset.UtcNow)),
+                EventKind.Reopen => before.Apply(new TaskRoundReopened(
                     t.targetPhase, t.targetRound, t.targetTaskRound, "test", DateTimeOffset.UtcNow)),
                 _ => throw new InvalidOperationException(),
             };
@@ -87,6 +106,10 @@ public class CompetitionReplaceTaskRoundPropertyTests
                     && afterFlat[target].Groups.SequenceEqual(beforeFlat[target].Groups),
                 EventKind.Annul =>
                     afterFlat[target].State == TaskRoundState.Annulled
+                    && afterFlat[target].Groups.SequenceEqual(beforeFlat[target].Groups),
+                EventKind.Reopen =>
+                    beforeFlat[target].State == TaskRoundState.Complete
+                    && afterFlat[target].State == TaskRoundState.Drawn
                     && afterFlat[target].Groups.SequenceEqual(beforeFlat[target].Groups),
                 _ => false,
             };

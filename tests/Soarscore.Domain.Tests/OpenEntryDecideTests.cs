@@ -131,6 +131,57 @@ public class OpenEntryDecideTests
         result.Code.Should().Be("openEntry.taskRoundClosed");
     }
 
+    // kanban/completed/task-round-lifecycle.md WI-10: the theory above builds
+    // its closed state by hand, which is all that was possible while nothing
+    // could emit TaskRoundCompleted or TaskRoundAnnulled. These three drive the
+    // check the way the system now does — through the real events — so the
+    // dormant check at Competition.cs's OpenEntry gets its first end-to-end
+    // proof, including that a reopening lifts it again (NFR-4: a late score is
+    // never permanently locked out).
+
+    [Fact]
+    public void OpenEntry_after_the_task_round_is_completed_fails_with_taskRoundClosed()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
+        competition = competition.Apply(new TaskRoundCompleted(0, 1, 1, at));
+
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.taskRoundClosed");
+    }
+
+    [Fact]
+    public void OpenEntry_after_the_task_round_is_annulled_fails_with_taskRoundClosed()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
+        competition = competition.Apply(new TaskRoundAnnulled(0, 1, 1, "Winch failure", at));
+
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.taskRoundClosed");
+    }
+
+    [Theory]
+    [InlineData(TaskRoundState.Complete)]
+    [InlineData(TaskRoundState.Annulled)]
+    public void OpenEntry_succeeds_again_once_the_task_round_is_reopened(TaskRoundState closedAs)
+    {
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
+        competition = closedAs is TaskRoundState.Complete
+            ? competition.Apply(new TaskRoundCompleted(0, 1, 1, at))
+            : competition.Apply(new TaskRoundAnnulled(0, 1, 1, "Winch failure", at));
+        competition = competition.Apply(new TaskRoundReopened(0, 1, 1, "Score handed in that evening", at));
+
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
     [Fact]
     public void OpenEntry_for_a_competitor_not_drawn_into_the_group_fails_with_a_stable_code()
     {

@@ -8,6 +8,7 @@
 // authorisation claim, so its only handler-level obligation is "non-empty",
 // checked before the decide function runs.
 
+using Soarscore.Application.Queries.Entries;
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
@@ -23,7 +24,8 @@ public sealed record BindParameter(
     int? PhaseOrdinal = null,
     int? RoundOrdinal = null) : ICommand<CompetitionId>;
 
-public sealed class BindParameterHandler(IEventStore eventStore, IClock clock) : ICommandHandler<BindParameter, CompetitionId>
+public sealed class BindParameterHandler(IEventStore eventStore, IEntryQuery entryQuery, IClock clock)
+    : ICommandHandler<BindParameter, CompetitionId>
 {
     public async Task<Result<CompetitionId>> HandleAsync(BindParameter command, CancellationToken cancellationToken)
     {
@@ -40,9 +42,23 @@ public sealed class BindParameterHandler(IEventStore eventStore, IClock clock) :
         }
 
         var (competition, version) = loaded.Value;
+
+        // "Has this round actually started flying" — the fact
+        // Competition cannot answer for itself, resolved here and passed in
+        // (kanban/completed/task-round-lifecycle.md WI-9). Only for a genuinely
+        // round-scoped bind: an unscoped one can never be round-frozen, so it
+        // takes no extra query.
+        var roundHasEntries = false;
+        if (command.PhaseOrdinal is { } phaseOrdinal && command.RoundOrdinal is { } roundOrdinal)
+        {
+            var entries = await entryQuery.FindAsync(
+                command.CompetitionRef, phaseOrdinal, roundOrdinal, null, null, null, cancellationToken);
+            roundHasEntries = entries.Count > 0;
+        }
+
         var decision = competition.BindParameter(
             command.ParameterName, command.Value, command.By, clock.UtcNow,
-            command.PhaseOrdinal, command.RoundOrdinal);
+            command.PhaseOrdinal, command.RoundOrdinal, roundHasEntries);
         if (decision.IsFailure)
         {
             return Result<CompetitionId>.Failure(decision.Code!, decision.Message!, decision.Defects);

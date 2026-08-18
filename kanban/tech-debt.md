@@ -21,6 +21,14 @@ See CLAUDE.md house-keeping rule 5.
   because nothing yet transitions a task-round to `Complete` on the Competition side
   (`TaskRoundCompleted` has no decide function); the entries-present test is what
   the leaderboard means "provisional, over rounds flown so far" instead of that.
+  **Superseded 2026-08-18 by `kanban/completed/task-round-lifecycle.md` WI-4**, which
+  gave `TaskRoundCompleted` a decide function and so made `Complete` a state the
+  mapping can actually receive. The catch-all `else` is gone: the switch is now total
+  over all four write-side states. `Drawn`/`InProgress` still map to
+  `Scoring.TaskRoundState.Complete`, but as the provisional leaderboard's deliberate
+  choice — score what has been captured so far — rather than as an artefact of an
+  unreachable event. The entries-present filter is unchanged and still carries the
+  "provisional, over rounds flown so far" meaning.
 - [ ] `Competition.OpenEntry`'s inline task walk vs. `TaskResolver`. WI-8
   (kanban/completed/capture-a-score-steel-thread-plan.md) extracted the
   phase→round→task-round→task traversal into
@@ -51,7 +59,7 @@ See CLAUDE.md house-keeping rule 5.
   scenario now draws the real corpus F3K's preliminary phase naming task D
   (and three other distinct tasks) for its four rounds via a Gherkin table,
   and `AcceptanceF3KShape.cs` is deleted.
-- [ ] Round-scoped `ParameterBinding`'s freeze rule is an approximation, not the
+- [x] Round-scoped `ParameterBinding`'s freeze rule is an approximation, not the
   rule the plan actually wanted. `kanban/completed/per-round-parameter-bindings-plan.md`
   decided (2026-08-16, user-confirmed) to freeze a round-scoped bind once the
   target round's `TaskRound.State` leaves `Drawn` — the only signal available
@@ -65,6 +73,17 @@ See CLAUDE.md house-keeping rule 5.
   properly needs either a domain event marking a task-round `InProgress` on
   first `Entry`, or a deliberate decision that the approximation is good
   enough for a club-scale event.
+  **Discharged 2026-08-18 by `kanban/completed/task-round-lifecycle.md` WI-9**, and by
+  neither of those two routes. A `TaskRoundInProgress` event was considered and
+  rejected (that plan's decision 1: it would make `OpenEntryHandler` append to two
+  streams on the highest-volume write path, for a signal already derivable, that
+  nothing would read). Instead `Competition.BindParameter` takes a trailing
+  `bool roundHasEntries`, which `BindParameterHandler` resolves from `IEntryQuery` —
+  and only for a genuinely round-scoped bind, so the unscoped path takes no extra
+  query. The freeze is now `State != Drawn || roundHasEntries`, with a second defect
+  code `competition.parameter.roundInProgress` for the new half. The aggregate
+  boundary holds: `Competition` receives an already-resolved fact, exactly as it
+  receives an already-resolved `AdoptedRules`, and still holds no live flight data.
 - [ ] `FisherEventStore.ReadAllAsync` reads the whole log to return one page.
   `kanban/completed/multi-backend-deployment.md` WI-2. Fisher has no
   `QueryAllRawEvents()` — the LINQ-over-the-event-log surface Marten's
@@ -92,3 +111,16 @@ See CLAUDE.md house-keeping rule 5.
   or more groups it would check only that one and silently skip the rest.
   Correct for the two-group scenario as written; generalise if a scenario ever
   draws three groups.
+- [ ] Solution-level parallel test runs can flake in Marten's schema migration.
+  Seen once while implementing `kanban/completed/task-round-lifecycle.md` WI-10 and
+  not reproduced since: a solution-wide `dotnet test` failed all fifteen acceptance
+  scenarios with a `NullReferenceException` from
+  `Marten.ValueTypeMemberSource.TryResolve` → `ComputedIndex.buildColumns`, raised
+  out of `MartenPersonSummaryProjection.LoadCurrentAsync` during schema migration on
+  the very first `/publish-class-definition`. Unrelated to task-round work — it
+  fires before any lifecycle event exists, in the People projection's computed
+  index — and every targeted re-run of the same suite passed, on both stores. The
+  likely cause is that a solution-level run starts five test projects in parallel,
+  each racing its own Testcontainer and its own first-touch schema migration. Left
+  unfixed because nothing was diagnosed, only observed; recorded so the next person
+  to see red on CI checks here before chasing their own change.

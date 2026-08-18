@@ -3,9 +3,9 @@
 // The setup and shape of one event: its field, its rulebook copy, and its
 // phase/round/task-round/group schedule. Created up front (CompetitionCreated
 // + PhaseDrawn) and only lightly mutated afterwards — register or withdraw a
-// competitor, append a reflight group, annul a task-round, amend the rules,
-// bind a parameter, finalise, record a penalty. Eleven events total, mirroring
-// aggregate-roots.md §3's mutation list one-for-one.
+// competitor, append a reflight group, complete / annul / reopen a task-round,
+// amend the rules, bind a parameter, finalise, record a penalty. Twelve events
+// total, mirroring aggregate-roots.md §3's mutation list one-for-one.
 //
 // Event payloads reuse Domain's own value-object records (AdoptedRules,
 // RulesAmendment, ParameterBinding, Finalisation, Competitor, Group, Round,
@@ -27,6 +27,7 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(ReflightGroupAppended), "reflightGroupAppended")]
 [JsonDerivedType(typeof(TaskRoundCompleted), "taskRoundCompleted")]
 [JsonDerivedType(typeof(TaskRoundAnnulled), "taskRoundAnnulled")]
+[JsonDerivedType(typeof(TaskRoundReopened), "taskRoundReopened")]
 [JsonDerivedType(typeof(RulesAmended), "rulesAmended")]
 [JsonDerivedType(typeof(ParameterBound), "parameterBound")]
 [JsonDerivedType(typeof(Finalised), "finalised")]
@@ -81,6 +82,13 @@ public sealed record ReflightGroupAppended(
     Group Group,
     DateTimeOffset At) : CompetitionEvent;
 
+/// <summary>
+/// The CD asserting that this task-round's scores are in and settled — never a
+/// side effect of anything, and never inferred from the field
+/// (kanban/completed/task-round-lifecycle.md, "The governing principle").
+/// Reversible by <see cref="TaskRoundReopened"/>, which is what lets it close
+/// score capture without ever locking a late score out for good.
+/// </summary>
 public sealed record TaskRoundCompleted(
     int PhaseOrdinal,
     int RoundOrdinal,
@@ -92,6 +100,20 @@ public sealed record TaskRoundCompleted(
 /// no Reason field, this is not folded into the aggregate's shape.
 /// </summary>
 public sealed record TaskRoundAnnulled(
+    int PhaseOrdinal,
+    int RoundOrdinal,
+    int TaskRoundOrdinal,
+    string Reason,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// Returns a Complete or Annulled task-round to Drawn, so a score that arrives
+/// late is accepted rather than refused — NFR-4, and the reason completion is
+/// allowed to close capture at all. <paramref name="Reason"/> is carried for
+/// audit only, not folded: TaskRoundAnnulled's precedent, so a reopening is an
+/// auditable act rather than a silent write.
+/// </summary>
+public sealed record TaskRoundReopened(
     int PhaseOrdinal,
     int RoundOrdinal,
     int TaskRoundOrdinal,

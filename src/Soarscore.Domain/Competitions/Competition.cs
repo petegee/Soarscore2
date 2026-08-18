@@ -423,6 +423,13 @@ public sealed record Competition
             @event.TaskRoundOrdinal,
             taskRound => taskRound with { State = TaskRoundState.Annulled });
 
+    public Competition Apply(TaskRoundReopened @event) =>
+        ReplaceTaskRound(
+            @event.PhaseOrdinal,
+            @event.RoundOrdinal,
+            @event.TaskRoundOrdinal,
+            taskRound => taskRound with { State = TaskRoundState.Drawn });
+
     public Competition Apply(RulesAmended @event) =>
         this with { RulesAmendments = RulesAmendments.Add(@event.Amendment) };
 
@@ -436,8 +443,9 @@ public sealed record Competition
         this with { Penalties = Penalties.Add(@event.Penalty) };
 
     /// <summary>
-    /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted and
-    /// TaskRoundAnnulled: find the Phase/Round/TaskRound by ordinal — never by
+    /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted,
+    /// TaskRoundAnnulled and TaskRoundReopened: find the Phase/Round/TaskRound
+    /// by ordinal — never by
     /// array index — rebuild the three containing arrays with the mutated
     /// TaskRound in place, and leave everything else untouched.
     /// </summary>
@@ -494,6 +502,7 @@ public sealed record Competition
             ReflightGroupAppended e => Require(current, e).Apply(e),
             TaskRoundCompleted e => Require(current, e).Apply(e),
             TaskRoundAnnulled e => Require(current, e).Apply(e),
+            TaskRoundReopened e => Require(current, e).Apply(e),
             RulesAmended e => Require(current, e).Apply(e),
             ParameterBound e => Require(current, e).Apply(e),
             Finalised e => Require(current, e).Apply(e),
@@ -600,15 +609,22 @@ public sealed record Competition
     // rather than threading it through. Re-binding before the draw is
     // deliberately allowed and not deduped here: last-write-wins is resolved
     // at the draw's call site (Competition.cs, DrawPhase), not here.
+    //
+    // roundHasEntries is an already-resolved fact the handler supplies from
+    // IEntryQuery — the aggregate boundary holds exactly as it does for
+    // AdoptedRules: Competition still holds no live flight data, it is simply
+    // told one bool about it (kanban/completed/task-round-lifecycle.md WI-9).
+    // Defaulted so unscoped binds, which cannot be round-frozen anyway, take
+    // no extra query.
     public Result<ParameterBound> BindParameter(
         string parameterName, MeasuredValue value, string by, DateTimeOffset at,
-        int? phaseOrdinal = null, int? roundOrdinal = null)
+        int? phaseOrdinal = null, int? roundOrdinal = null, bool roundHasEntries = false)
     {
         var defect = ValidateParameterDeclared(parameterName)
             ?? ValidateParameterKind(parameterName, value)
             ?? ValidateParameterValueAllowed(parameterName, value)
             ?? ValidateParameterNotFrozen(parameterName)
-            ?? ValidateRoundScope(parameterName, phaseOrdinal, roundOrdinal);
+            ?? ValidateRoundScope(parameterName, phaseOrdinal, roundOrdinal, roundHasEntries);
 
         if (defect is not null)
         {
@@ -954,6 +970,230 @@ public sealed record Competition
             at));
     }
 
+    // Task-round lifecycle decide functions — WI-1/WI-2/WI-2b
+    // (kanban/completed/task-round-lifecycle.md). Defect-chain style, like
+    // RegisterCompetitor/WithdrawCompetitor: no later check needs a value an
+    // earlier one computed, only the task-round they all share.
+    //
+    // Deliberately absent from all three: any "has every group flown" check
+    // (Competition holds no Entry data, and the CD is the authority on when a
+    // round's scores are in) and any ordering check across rounds — rounds are
+    // not required to complete in order, or at all (NFR-4). None of the three
+    // is ever emitted as a side effect of anything; only its own command
+    // produces it.
+
+    public Result<TaskRoundCompleted> CompleteTaskRound(
+        int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal, DateTimeOffset at)
+    {
+        var taskRound = FindTaskRound(phaseOrdinal, roundOrdinal, taskRoundOrdinal);
+
+        var defect = TaskRoundFound(taskRound, "completeTaskRound")
+            ?? (taskRound!.State switch
+            {
+                TaskRoundState.Complete => new Defect(
+                    "completeTaskRound.alreadyComplete", "$.taskRoundOrdinal",
+                    "This task-round is already complete."),
+
+                // An annulment is a resolution, not a way-station: an annulled
+                // task-round is reopened first, never completed in place.
+                TaskRoundState.Annulled => new Defect(
+                    "completeTaskRound.annulled", "$.taskRoundOrdinal",
+                    "This task-round is annulled; reopen it before completing it."),
+                _ => null,
+            });
+
+        return defect is not null
+            ? Result<TaskRoundCompleted>.Failure(defect.Code, defect.Message)
+            : Result<TaskRoundCompleted>.Success(
+                new TaskRoundCompleted(phaseOrdinal, roundOrdinal, taskRoundOrdinal, at));
+    }
+
+    /// <summary>
+    /// A Complete task-round MAY be annulled — the reverse of
+    /// <see cref="CompleteTaskRound"/>'s rule: a round read out and then found
+    /// faulty is the ordinary case. <paramref name="reason"/> is validated here
+    /// rather than in the handler (unlike BindParameter's <c>By</c>) because it
+    /// is a substantive record of a ruling, not an audit breadcrumb.
+    /// </summary>
+    public Result<TaskRoundAnnulled> AnnulTaskRound(
+        int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal, string reason, DateTimeOffset at)
+    {
+        var taskRound = FindTaskRound(phaseOrdinal, roundOrdinal, taskRoundOrdinal);
+
+        var defect = TaskRoundFound(taskRound, "annulTaskRound")
+            ?? (taskRound!.State is TaskRoundState.Annulled
+                ? new Defect("annulTaskRound.alreadyAnnulled", "$.taskRoundOrdinal", "This task-round is already annulled.")
+                : null)
+            ?? ReasonGiven(reason, "annulTaskRound");
+
+        return defect is not null
+            ? Result<TaskRoundAnnulled>.Failure(defect.Code, defect.Message)
+            : Result<TaskRoundAnnulled>.Success(
+                new TaskRoundAnnulled(phaseOrdinal, roundOrdinal, taskRoundOrdinal, reason, at));
+    }
+
+    /// <summary>
+    /// Complete → Drawn and Annulled → Drawn are BOTH permitted: an annulment
+    /// made in error is as correctable as a premature completion, and refusing
+    /// the second would reintroduce exactly the dead end this event exists to
+    /// remove.
+    /// <para>
+    /// Reopening does not touch any <see cref="Finalisation"/>. A competition
+    /// finalised and then reopened at the round level will have a declared
+    /// result that no longer matches the derived one — that divergence being
+    /// visible is the entire point of storing <see cref="DeclaredResult"/>s.
+    /// </para>
+    /// </summary>
+    public Result<TaskRoundReopened> ReopenTaskRound(
+        int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal, string reason, DateTimeOffset at)
+    {
+        var taskRound = FindTaskRound(phaseOrdinal, roundOrdinal, taskRoundOrdinal);
+
+        var defect = TaskRoundFound(taskRound, "reopenTaskRound")
+            ?? (taskRound!.State is TaskRoundState.Complete or TaskRoundState.Annulled
+                ? null
+                : new Defect("reopenTaskRound.notClosed", "$.taskRoundOrdinal", $"This task-round is {taskRound.State}; there is nothing to reopen."))
+            ?? ReasonGiven(reason, "reopenTaskRound");
+
+        return defect is not null
+            ? Result<TaskRoundReopened>.Failure(defect.Code, defect.Message)
+            : Result<TaskRoundReopened>.Success(
+                new TaskRoundReopened(phaseOrdinal, roundOrdinal, taskRoundOrdinal, reason, at));
+    }
+
+    private TaskRound? FindTaskRound(int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal) =>
+        Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal)
+            ?.Rounds.FirstOrDefault(r => r.Ordinal == roundOrdinal)
+            ?.TaskRounds.FirstOrDefault(tr => tr.Ordinal == taskRoundOrdinal);
+
+    // One code per command rather than one shared code, so a caller can tell
+    // which command rejected without reading the message.
+    private static Defect? TaskRoundFound(TaskRound? taskRound, string command) =>
+        taskRound is null
+            ? new Defect($"{command}.taskRoundNotFound", "$.taskRoundOrdinal", "No task-round at these phase/round/task-round ordinals.")
+            : null;
+
+    private static Defect? ReasonGiven(string reason, string command) =>
+        string.IsNullOrWhiteSpace(reason)
+            ? new Defect($"{command}.reasonRequired", "$.reason", "A reason is required — it is the recorded ruling, not an audit breadcrumb.")
+            : null;
+
+    // Instance decide function — WI-3 (kanban/completed/task-round-lifecycle.md).
+    // DrawPhase's early-return style, not the Defect chain above: the validity
+    // check needs the resolved MinRounds and the per-phase completed-round
+    // counts, and the happy path needs neither again but the checks build on
+    // each other.
+    //
+    // The gate is entirely data-driven off PhaseDefinition.Validity — the row
+    // that varies across classes (F3J 4, F3K 5, F5J 4, F5L 4, F3B "1 round +
+    // 1 task", F5K a CD parameter) is a field of the class model, never a
+    // branch here (CLAUDE.md's core architectural law).
+    //
+    // DeclaredResults arrives already computed: the handler scores the
+    // competition and maps the result, exactly as this aggregate receives an
+    // already-resolved AdoptedRules rather than reaching out for one.
+    public Result<Finalised> Finalise(ImmutableArray<DeclaredResult> declaredResults, string by, DateTimeOffset at)
+    {
+        if (string.IsNullOrWhiteSpace(by))
+        {
+            return Result<Finalised>.Failure(
+                "finalise.byRequired", "By is required — a self-declared CD name, not an authorisation claim.");
+        }
+
+        // Finalisation.DeclaredResults is 1..*.
+        if (declaredResults.IsEmpty)
+        {
+            return Result<Finalised>.Failure(
+                "finalise.noResults", "A finalisation must declare at least one result.");
+        }
+
+        if (Finalisations.Any(f => f.Scope == FinalisationScope.Competition))
+        {
+            return Result<Finalised>.Failure(
+                "finalise.alreadyFinalised", "This competition has already been finalised.");
+        }
+
+        // No round context: MinRounds is a phase-level datum, exactly as
+        // DrawPhase resolves MinPerGroup with no round context.
+        var bindings = ScoringService.FlattenParameterBindings(ParameterBindings);
+
+        // The plan (WI-3) predicted this needed no Phases.IsEmpty check —
+        // "an undrawn competition has zero complete rounds and fails
+        // notEnoughRounds". That reasoning was wrong and the tests caught it:
+        // the gate below is a loop over Phases, so with no phases the body
+        // never runs and the class's MinRounds is never consulted. Same defect
+        // code, because it is the same fact about the same competition: it has
+        // flown nothing.
+        if (Phases.IsEmpty)
+        {
+            return Result<Finalised>.Failure(
+                "finalise.notEnoughRounds", "No phase has been drawn, so no round has been flown to a result.");
+        }
+
+        foreach (var phase in Phases)
+        {
+            // Positional index, matching ScoringService — Phase.Ordinal is the
+            // 0-based position PhaseDrawn assigned it, NOT a lookup by
+            // PhaseDefinition.Ordinal, which is the rulebook's own (often
+            // 1-based) numbering and an unrelated scheme. See DrawPhase's
+            // fuller note on the same distinction.
+            var validity = AdoptedRules.Definition.Phases[phase.Ordinal].Validity;
+
+            decimal minRounds;
+            try
+            {
+                minRounds = ParameterResolver.Resolve(validity.MinRounds, bindings, AdoptedRules.Definition.Parameters);
+            }
+            catch (UnresolvedParameterException ex)
+            {
+                return Result<Finalised>.Failure("finalise.parameterUnbound", $"Phase {phase.Ordinal}: {ex.Message}");
+            }
+
+            // IsFullyFlown, not IsCompleteOrAnnulled: an annulled round
+            // resolved the competition's progress but produced no result, so
+            // it cannot make a contest valid. WI-0 gave the two questions two
+            // names so this gate cannot pick up the wrong one.
+            var flownRounds = phase.Rounds.Where(r => r.IsFullyFlown).ToImmutableArray();
+
+            if (flownRounds.Length < minRounds)
+            {
+                return Result<Finalised>.Failure(
+                    "finalise.notEnoughRounds",
+                    $"Phase {phase.Ordinal}: {flownRounds.Length} round(s) flown to a result, but the class requires {minRounds}.");
+            }
+
+            if (validity.MinTasks is { } minTasks)
+            {
+                var distinctTasks = flownRounds
+                    .SelectMany(r => r.TaskRounds)
+                    .Select(tr => tr.TaskRef)
+                    .Distinct()
+                    .Count();
+
+                if (distinctTasks < minTasks)
+                {
+                    return Result<Finalised>.Failure(
+                        "finalise.notEnoughTasks",
+                        $"Phase {phase.Ordinal}: {distinctTasks} distinct task(s) flown to a result, but the class requires {minTasks}.");
+                }
+            }
+        }
+
+        var finalisation = new Finalisation
+        {
+            Scope = FinalisationScope.Competition,
+            // Always 1 this thread — alreadyFinalised above rejects a second.
+            // Written generically so reopening (revision >= 2) needs no change
+            // here when it lands.
+            Revision = Finalisations.Count(f => f.Scope == FinalisationScope.Competition) + 1,
+            By = by,
+            At = at,
+            DeclaredResults = declaredResults,
+        };
+
+        return Result<Finalised>.Success(new Finalised(finalisation));
+    }
+
     // Compares against *all* competitors, including withdrawn ones — a
     // withdrawal is not a re-entry ticket (invariant 1, the plan's Context).
     private Defect? ValidateNotAlreadyRegistered(PersonId personRef) =>
@@ -1023,7 +1263,7 @@ public sealed record Competition
     // null-null means an unscoped bind — every parameter, PerRound or not, may
     // still be bound unscoped (Appendix A's resolution order falls back to it).
     // Only a genuinely round-scoped bind (both given) triggers the checks below.
-    private Defect? ValidateRoundScope(string parameterName, int? phaseOrdinal, int? roundOrdinal)
+    private Defect? ValidateRoundScope(string parameterName, int? phaseOrdinal, int? roundOrdinal, bool roundHasEntries)
     {
         if (phaseOrdinal is null && roundOrdinal is null)
         {
@@ -1066,18 +1306,25 @@ public sealed record Competition
                 $"Round {roundOrdinal}'s task ('{task.Code}') does not consume '{parameterName}'.");
         }
 
-        // The freeze rule the plan left open, decided for this thread: the
-        // only signal available inside this aggregate is TaskRoundState —
-        // Competition holds no live flight data (this file's own design
-        // note), so "after that round's first flight" is approximated as
-        // "once the round is no longer Drawn". A rebind mid-round (State
-        // still Drawn, but a flight has actually opened) is not caught here —
-        // recorded as tech debt, not silently accepted as correct.
+        // The freeze rule, in the two halves it was always meant to have:
+        // the round is closed (per-round-parameter-bindings-plan.md's original
+        // approximation), or flying has actually started in it. The second
+        // half closed that plan's recorded gap — a rebind after a flight had
+        // opened but before the round was marked complete used to be silently
+        // accepted (task-round-lifecycle.md WI-9). Two codes, not one: they
+        // are different situations and a CD can act on the difference.
         if (taskRound.State != TaskRoundState.Drawn)
         {
             return new Defect(
                 "competition.parameter.roundFrozen", "$.roundOrdinal",
                 $"Round {roundOrdinal} is {taskRound.State}; a round-scoped binding can no longer be made.");
+        }
+
+        if (roundHasEntries)
+        {
+            return new Defect(
+                "competition.parameter.roundInProgress", "$.roundOrdinal",
+                $"Round {roundOrdinal} has flights already opened; a round-scoped binding can no longer be made.");
         }
 
         return null;

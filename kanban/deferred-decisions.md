@@ -82,6 +82,37 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
   rejected by `Competition.DrawPhase` with `drawPhase.unsupportedRoundComposition`. A
   different problem from catalogue choice, refused at the same single check.
 
+## Task-round lifecycle and finalisation
+
+Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
+
+- **Phase-scope finalisation and `PromotionRule`.** `Finalisation.Scope` discriminates
+  Phase and Competition; only Competition is built. Phase scope exists to name who was
+  *promoted* into the next phase, and no second phase can be drawn
+  (`Competition.DrawPhase` fails on `!Phases.IsEmpty`), so `PromotionRule` has nothing to
+  promote into. `DeclaredResult.Promoted` is written `false` throughout.
+- **Reopening a finalisation (revision ≥ 2).** The model supports it
+  (`Finalisation.Revision`, "nothing is overwritten") and `Competition.Finalise` computes
+  `Revision` generically, but no read model or query surfaces a finalisation, so a second
+  revision would be write-only. Becomes a backlog stub if a CD asks for it.
+- **Blocking score capture on `Finalised`.** `OpenEntry` closes on task-round state,
+  which is the right granularity. A competition-level write lock is a separate concern
+  and no rule requires one.
+- **`TaskRoundState.InProgress` stays unreachable.** A `TaskRoundInProgress` event
+  emitted on the first Entry opened was considered and rejected: it would make
+  `OpenEntryHandler` append to two streams on the highest-volume write path, for a signal
+  that is already derivable and that nothing reads. The debt it was meant to close was
+  closed differently — see `kanban/tech-debt.md`'s round-scoped-rebind item.
+- **Automatic completion, and deriving completion from recorded data.** *Not* deferrals
+  but a standing stance, recorded here so it is not mistaken for an unfinished item:
+  nothing infers "the round is done because everyone flew" — the CD says so (NFR-4).
+  Presence of data can prove a task-round is *not* ready; absence can never prove it is,
+  because a pilot who took three of five allowed launches, a metric legitimately absent,
+  and a `NoResult` all look identical to "not typed in yet". A later thread proposing to
+  infer completion should reopen that plan's governing-principle section rather than
+  treat this as an open box. The read-side indicator that shows without deciding is
+  `kanban/backlog/entry-completeness-indicator.md`.
+
 ## Competition class model
 
 - **The `.class` notation parser** (`docs/competition-class-notation.md` is a writing

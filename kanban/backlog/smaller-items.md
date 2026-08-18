@@ -12,11 +12,15 @@ before acting, this list is not self-updating.
   it — but nothing produces it. So `CreateCompetition`'s
   `createCompetition.classDefinitionRetired` branch is reachable only by tests
   hand-appending the event (`CompetitionEventStoreTests.cs`).
-- [ ] **No `State` column on the `competitions` read model.**
+- [x] **No `State` column on the `competitions` read model.**
   `create-competition-steel-thread-plan.md` predicted it would arrive with `PhaseDrawn`.
-  `PhaseDrawn` landed; the column did not — `CompetitionSummary.cs` still carries the
-  "deliberately excludes a State column" note and `CompetitionProjection` still returns
-  `_ => current`.
+  `PhaseDrawn` landed; the column did not — `CompetitionSummary.cs` still carried the
+  "deliberately excludes a State column" note and `CompetitionProjection` still returned
+  `_ => current`. Taken opportunistically by `kanban/completed/task-round-lifecycle.md`
+  WI-8, once `Finalised` gave the column a third value to hold: `CompetitionCreated` →
+  `"created"`, `PhaseDrawn` → `"drawn"`, competition-scope `Finalised` → `"finalised"`.
+  Phase-scope `Finalised` deliberately does not move it, and the `_ => current` default
+  arm stays for the reason its doc comment gives.
 - [ ] **`EvaluatorVersion` is a hard-coded literal** — `"1"` at
   `CreateCompetition.cs:36`, flagged as a deferred decision in that file's own header.
 - [ ] **No competitor-count column and no by-name joined view** on `CompetitionSummary`,
@@ -28,9 +32,12 @@ before acting, this list is not self-updating.
   `.claude/skills/fai-rules/references/compliance-check.md` never mentions the API; it
   routes only to `docs/rules/`. Compliance is checkable against authored text, never
   against what was actually POSTed.
-- [ ] **Stale sanity-floor comment** in
-  `tests/Soarscore.Architecture.Tests/HandlerRegistrationTests.cs` — says "ten commands
-  and four queries" against thirteen and seven.
+- [x] **Stale sanity-floor comment** in
+  `tests/Soarscore.Architecture.Tests/HandlerRegistrationTests.cs` — said "ten commands
+  and four queries" against thirteen and seven. Corrected by
+  `kanban/completed/task-round-lifecycle.md` WI-6, which was already editing the routing
+  surface: seventeen commands and nine queries, and the floor raised from 10 to 17 so it
+  keeps catching a reflection technique that has silently stopped matching.
 
 ## Unclaimed
 

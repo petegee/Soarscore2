@@ -47,15 +47,19 @@ internal static class SoarscoreEventTypes
         // create-competition-steel-thread-plan.md WI-4 registered CompetitionCreated;
         // register-competitor-steel-thread-plan.md WI-5 the next two;
         // phase-drawn-steel-thread-plan.md WI-5 PhaseDrawn;
-        // bind-parameter-steel-thread-plan.md WI-5 ParameterBound. The remaining six
-        // CompetitionEvent subtypes (ReflightGroupAppended, TaskRoundCompleted,
-        // TaskRoundAnnulled, RulesAmended, Finalised, PenaltyRecorded) are absent
-        // because nothing appends them yet.
+        // bind-parameter-steel-thread-plan.md WI-5 ParameterBound;
+        // task-round-lifecycle.md WI-7 the last four. The remaining three
+        // CompetitionEvent subtypes (ReflightGroupAppended, RulesAmended,
+        // PenaltyRecorded) are absent because nothing appends them yet.
         (typeof(CompetitionCreated), "competitionCreated"),
         (typeof(CompetitorRegistered), "competitorRegistered"),
         (typeof(CompetitorWithdrawn), "competitorWithdrawn"),
         (typeof(PhaseDrawn), "phaseDrawn"),
         (typeof(ParameterBound), "parameterBound"),
+        (typeof(TaskRoundCompleted), "taskRoundCompleted"),
+        (typeof(TaskRoundAnnulled), "taskRoundAnnulled"),
+        (typeof(TaskRoundReopened), "taskRoundReopened"),
+        (typeof(Finalised), "finalised"),
 
         // capture-a-score-steel-thread-plan.md WI-9 — three of the six EntryEvent
         // subtypes, the narrow capture slice that thread scoped itself to. The other

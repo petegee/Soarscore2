@@ -1,10 +1,16 @@
 // kanban/completed/create-competition-steel-thread-plan.md WI-1's pass-through
 // property: CompetitionProjection.Apply's default arm (`_ => current`) must
-// hold for every one of the ten CompetitionEvent subtypes other than
-// CompetitionCreated, not just the one hand-picked example
-// CompetitionProjectionTests.cs already covers. Complements that file's fixed
-// example the same way ClassDefinitionProjectionPropertyTests.cs complements
+// hold for every CompetitionEvent subtype the projection does not read, not
+// just the one hand-picked example CompetitionProjectionTests.cs already
+// covers. Complements that file's fixed example the same way
+// ClassDefinitionProjectionPropertyTests.cs complements
 // ClassDefinitionProjectionTests.cs.
+//
+// task-round-lifecycle.md WI-8 gave the projection a State column, so PhaseDrawn
+// and competition-scope Finalised are no longer pass-through and leave this list.
+// The Finalised instance below stays, deliberately, at PHASE scope: freezing one
+// phase and naming who was promoted is not the competition being over, and this
+// property is what pins that distinction.
 
 using System.Collections.Immutable;
 using CsCheck;
@@ -34,6 +40,7 @@ public class CompetitionProjectionPropertyTests
         from endOffset in Gen.Int[0, 3650]
         from className in Gen.String[1, 40]
         from classContentHash in Gen.String[1, 64]
+        from state in Gen.OneOfConst("created", "drawn", "finalised")
         select new CompetitionSummary(
             new CompetitionId(id),
             name,
@@ -41,7 +48,8 @@ public class CompetitionProjectionPropertyTests
             new DateOnly(2020, 1, 1).AddDays(startOffset),
             new DateOnly(2020, 1, 1).AddDays(endOffset),
             className,
-            classContentHash);
+            classContentHash,
+            state);
 
     [Fact]
     public void Any_out_of_scope_event_type_against_any_summary_leaves_it_unchanged()
@@ -101,10 +109,10 @@ public class CompetitionProjectionPropertyTests
         [
             new CompetitorRegistered(competitor, at),
             new CompetitorWithdrawn(competitor.Id, at),
-            new PhaseDrawn(1, PhaseType.Preliminary, draw, [round], at),
             new ReflightGroupAppended(1, 1, 1, group, at),
             new TaskRoundCompleted(1, 1, 1, at),
             new TaskRoundAnnulled(1, 1, 1, "wind out of limits", at),
+            new TaskRoundReopened(1, 1, 1, "a late score arrived", at),
             new RulesAmended(rulesAmendment),
             new ParameterBound(parameterBinding),
             new Finalised(finalisation),

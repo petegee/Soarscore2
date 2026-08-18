@@ -1,6 +1,6 @@
 # Plan — Task-round lifecycle: `TaskRoundCompleted` / `TaskRoundReopened` / `TaskRoundAnnulled` / `Finalised`
 
-**Status:** In progress — planned, not yet built · **Raised:** 2026-08-16 · **Planned:** 2026-08-17 · **Revised:** 2026-08-18
+**Status:** Complete — built and verified 2026-08-18 · **Raised:** 2026-08-16 · **Planned:** 2026-08-17 · **Revised:** 2026-08-18
 
 ## What
 
@@ -270,8 +270,15 @@ drawn:
 `Revision` is `Finalisations.Count(competition-scope) + 1`, so it is always 1 this
 thread and needs no revisiting when reopening lands.
 
-**Not** a `Phases.IsEmpty` check of its own: an undrawn competition has zero
-complete rounds and fails `notEnoughRounds` with a truthful message.
+~~**Not** a `Phases.IsEmpty` check of its own: an undrawn competition has zero
+complete rounds and fails `notEnoughRounds` with a truthful message.~~
+
+**Corrected during implementation.** That reasoning was wrong, and WI-10's
+`FinaliseDecideTests` caught it: the gate is a loop over `Phases`, so with no
+phases the body never runs and the class's `MinRounds` is never consulted — an
+undrawn competition finalised cleanly. An explicit `Phases.IsEmpty` check was
+added, returning the *same* `finalise.notEnoughRounds` code, because it is the
+same fact about the same competition: it has flown nothing.
 
 ### WI-4 — `ScoringService` stops inferring (Domain)
 
@@ -445,6 +452,26 @@ then R2 G1 and enters both later, in the wrong order — and is the scenario tha
 should fail loudly if a future thread adds sequencing. The third is its
 companion, and the reason `TaskRoundReopened` exists. The fifth proves
 `ValidityRule` is live and class-driven; the sixth is invariant B end-to-end.
+
+### WI-10 — as built
+
+Landed as planned, with three notes worth keeping:
+
+- **`finalise.notEnoughTasks` is unreachable from the corpus as authored.** F3B is
+  the only class populating `MinTasks`, at 1, and a round only counts toward
+  validity when every task-round in it is `Complete` — so any counted round already
+  contributes ≥ 1 distinct task. The test raises F3B's `MinTasks` to 3 through a
+  documented definition variation, the same technique `WithUnboundMinPerGroup` uses.
+  The code path is correct; nothing in the corpus can exercise it.
+- **Invariant B's disqualification branch is never taken** by generated samples: the
+  synthetic class declares no penalties, so no sample produces a disqualified
+  competitor. The assertion covers both branches and would catch a mapping
+  regression the moment penalties exist, which needs `PenaltyRecorded` — still one of
+  WI-7's three unregistered subtypes.
+- **Invariants A and C were mutation-checked for non-vacuity** — weakening A's oracle
+  to count annulled rounds as flown, and neutralising C's expected-closure map, each
+  made its test fail. Invariant B carries a standing non-empty guard for the same
+  reason.
 
 ### WI-11 — Board reconciliation
 

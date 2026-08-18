@@ -313,7 +313,7 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
 
         if (bindGroupSizeTo is { } groupSize)
         {
-            var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+            var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
             var bound = await bindHandler.HandleAsync(
                 new BindParameter(competitionId, "groupSize", MeasuredValue.Of(groupSize), "CD Jane"),
                 TestContext.Current.CancellationToken);

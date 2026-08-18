@@ -109,7 +109,7 @@ public abstract class BindParameterEventStoreTests<TFixture>(TFixture fixture) :
     {
         var competitionId = await CreateCompetitionAsync(fixture, F3JDefinition, "Bind Round Trip");
 
-        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var bound = await bindHandler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD Jane"),
             TestContext.Current.CancellationToken);
@@ -131,7 +131,7 @@ public abstract class BindParameterEventStoreTests<TFixture>(TFixture fixture) :
     {
         var competitionId = await CreateCompetitionAsync(fixture, F3JDefinition, "Bind Twice");
 
-        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var first = await bindHandler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD Jane"),
             TestContext.Current.CancellationToken);
@@ -174,7 +174,7 @@ public abstract class BindParameterEventStoreTests<TFixture>(TFixture fixture) :
         blocked.IsFailure.Should().BeTrue();
         blocked.Code.Should().Be("drawPhase.parameterUnbound");
 
-        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var bound = await bindHandler.HandleAsync(
             new BindParameter(competitionId, "groupSize", MeasuredValue.Of(6m), "CD Jane"),
             TestContext.Current.CancellationToken);
@@ -221,7 +221,7 @@ public abstract class BindParameterEventStoreTests<TFixture>(TFixture fixture) :
             new DrawPhase(competitionId, 5, ["A", "B", "C", "D", "E"]), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
 
-        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var bound = await bindHandler.HandleAsync(
             new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD Jane", PhaseOrdinal: 0, RoundOrdinal: 1),
             TestContext.Current.CancellationToken);
@@ -246,7 +246,7 @@ public abstract class BindParameterEventStoreTests<TFixture>(TFixture fixture) :
             await RegisterCompetitorAsync(fixture, competitionId, $"pilot-replay-bind-{i}@example.com");
         }
 
-        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var bound = await bindHandler.HandleAsync(
             new BindParameter(competitionId, "groupSize", MeasuredValue.Of(5m), "CD Jane"),
             TestContext.Current.CancellationToken);

@@ -219,6 +219,55 @@ public class CompetitionEventJsonTests
         rereadBound.Binding.RoundOrdinal.Should().Be(3);
     }
 
+    // kanban/completed/task-round-lifecycle.md WI-10 — the three task-round
+    // lifecycle events. TaskRoundReopened is the one new event of that thread,
+    // so its discriminator is asserted explicitly as well as round-tripped:
+    // an unregistered or mistyped alias fails at runtime on both backends
+    // (LADR-0001 §4.8), which is precisely what a serialisation test is here
+    // to catch before a store ever sees it.
+
+    [Fact]
+    public void TaskRoundCompleted_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent completed = new TaskRoundCompleted(0, 3, 1, DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(completed, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"taskRoundCompleted\"");
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<TaskRoundCompleted>().Which.Should().Be(completed);
+    }
+
+    [Fact]
+    public void TaskRoundAnnulled_round_trips_its_Reason_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent annulled = new TaskRoundAnnulled(0, 3, 1, "Winch failure affected group 2", DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(annulled, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"taskRoundAnnulled\"");
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<TaskRoundAnnulled>().Which.Should().Be(annulled);
+    }
+
+    [Fact]
+    public void TaskRoundReopened_round_trips_its_Reason_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent reopened = new TaskRoundReopened(0, 3, 1, "Late score from group 1", DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(reopened, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"taskRoundReopened\"");
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<TaskRoundReopened>().Which.Should().Be(reopened);
+    }
+
     [Fact]
     public void Finalised_event_round_trips_with_decimal_aggregate_as_a_json_string()
     {

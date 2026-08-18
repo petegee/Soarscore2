@@ -10,13 +10,19 @@
 using AwesomeAssertions;
 using Soarscore.Application;
 using Soarscore.Application.Commands.Competitions;
+using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
 
 using Soarscore.Application.Tests.Shared.Competitions;
+// Only the entry double: WI-9 gave BindParameterHandler an IEntryQuery, so
+// its "has this round started flying" lookup has something to ask. Aliased
+// rather than a plain using — Shared/Entries has a FakeEventStore of its own.
+using FakeEntryQuery = Soarscore.Application.Tests.Shared.Entries.FakeEntryQuery;
 
 namespace Soarscore.Application.Tests.Commands.Competitions;
 
@@ -49,7 +55,7 @@ public class BindParameterHandlerTests
     public async Task Binding_a_declared_parameter_succeeds_and_appends_exactly_one_event_at_the_next_version()
     {
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD Jane"),
@@ -73,7 +79,7 @@ public class BindParameterHandlerTests
     public async Task Binding_against_an_unknown_competition_fails_with_competition_notFound()
     {
         var store = new FakeEventStore();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(CompetitionId.New(), "flyoffMinRounds", MeasuredValue.Of(3m), "CD"),
@@ -87,7 +93,7 @@ public class BindParameterHandlerTests
     public async Task Binding_an_undeclared_parameter_name_surfaces_the_decide_functions_code_unchanged()
     {
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "notAThing", MeasuredValue.Of(5m), "CD"),
@@ -103,7 +109,7 @@ public class BindParameterHandlerTests
     public async Task Binding_with_an_empty_or_whitespace_By_fails_with_competition_parameter_byRequired_before_the_decide_function_runs(string by)
     {
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), by),
@@ -121,7 +127,7 @@ public class BindParameterHandlerTests
     {
         // F3J's carryPenalties is a Flag parameter (SeedF3J.cs).
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "carryPenalties", MeasuredValue.Of(5m), "CD"),
@@ -135,7 +141,7 @@ public class BindParameterHandlerTests
     public async Task Binding_a_CompetitionSetup_parameter_after_a_phase_is_drawn_surfaces_frozen_unchanged()
     {
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         // Enough field to draw. Register 12 competitors then draw.
         var version = 1L;
@@ -181,7 +187,7 @@ public class BindParameterHandlerTests
             TestContext.Current.CancellationToken);
 
         var staleReadStore = new StaleReadEventStore(store, competitionId.Value, visibleCount: 1);
-        var handler = new BindParameterHandler(staleReadStore, new FakeClock(Now));
+        var handler = new BindParameterHandler(staleReadStore, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD"),
@@ -195,7 +201,7 @@ public class BindParameterHandlerTests
     public async Task Appended_ParameterBound_folds_idempotently_when_applied_twice()
     {
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD Jane"),
@@ -222,7 +228,7 @@ public class BindParameterHandlerTests
     public async Task Binding_round_scoped_against_a_non_PerRound_parameter_surfaces_the_decide_functions_code_unchanged()
     {
         var (store, competitionId) = SeedCompetition();
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD", PhaseOrdinal: 0, RoundOrdinal: 1),
@@ -234,6 +240,75 @@ public class BindParameterHandlerTests
 
     [Fact]
     public async Task Binding_round_scoped_against_the_round_whose_task_consumes_it_succeeds_and_the_appended_event_carries_the_scope()
+    {
+        // F3K.11.1: round 1's task (A) references workingTime.A.
+        var (store, competitionId) = await SeedDrawnF3KAsync();
+
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD", PhaseOrdinal: 0, RoundOrdinal: 1),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+
+        var stream = store.Streams[competitionId.Value];
+        var bound = stream[^1].Should().BeOfType<ParameterBound>().Subject;
+        bound.Binding.ParameterName.Should().Be("workingTime.A");
+        bound.Binding.PhaseOrdinal.Should().Be(0);
+        bound.Binding.RoundOrdinal.Should().Be(1);
+    }
+
+    // WI-9 — kanban/completed/task-round-lifecycle.md. The handler, not the
+    // aggregate, answers "has this round actually started flying": it asks
+    // IEntryQuery and passes the resolved bool into Competition.BindParameter.
+    // These two prove the resolution, not the rule — the rule itself is covered
+    // in BindParameterDecideTests.cs.
+
+    [Fact]
+    public async Task Binding_round_scoped_against_a_round_with_an_entry_open_fails_with_competition_parameter_roundInProgress()
+    {
+        var (store, competitionId) = await SeedDrawnF3KAsync();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            EntryId.New(), competitionId, 0, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original));
+        var handler = new BindParameterHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD", PhaseOrdinal: 0, RoundOrdinal: 1),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.roundInProgress");
+
+        // Nothing appended: the last event is still the draw.
+        store.Streams[competitionId.Value][^1].Should().BeOfType<PhaseDrawn>();
+    }
+
+    [Fact]
+    public async Task Binding_unscoped_still_succeeds_with_entries_present_because_the_query_is_never_asked()
+    {
+        var (store, competitionId) = await SeedDrawnF3KAsync();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            EntryId.New(), competitionId, 0, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original));
+        var handler = new BindParameterHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD"),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+        var bound = store.Streams[competitionId.Value][^1].Should().BeOfType<ParameterBound>().Subject;
+        bound.Binding.PhaseOrdinal.Should().BeNull();
+        bound.Binding.RoundOrdinal.Should().BeNull();
+    }
+
+    /// <summary>
+    /// F3K adopted, 10 competitors registered, five rounds drawn A-E — round 1's
+    /// task (A) consumes workingTime.A (F3K.11.1), the PerRound parameter the
+    /// round-scope tests bind.
+    /// </summary>
+    private static async Task<(FakeEventStore Store, CompetitionId CompetitionId)> SeedDrawnF3KAsync()
     {
         var store = new FakeEventStore();
         var competitionId = CompetitionId.New();
@@ -265,24 +340,12 @@ public class BindParameterHandlerTests
             version++;
         }
 
-        // F3K.11.1: round 1's task (A) references workingTime.A.
         var drawHandler = new DrawPhaseHandler(store, new FakeClock(Now));
         var drawn = await drawHandler.HandleAsync(
             new DrawPhase(competitionId, 5, ["A", "B", "C", "D", "E"]), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
 
-        var handler = new BindParameterHandler(store, new FakeClock(Now));
-        var result = await handler.HandleAsync(
-            new BindParameter(competitionId, "workingTime.A", MeasuredValue.Of(420m), "CD", PhaseOrdinal: 0, RoundOrdinal: 1),
-            TestContext.Current.CancellationToken);
-
-        result.IsSuccess.Should().BeTrue();
-
-        var stream = store.Streams[competitionId.Value];
-        var bound = stream[^1].Should().BeOfType<ParameterBound>().Subject;
-        bound.Binding.ParameterName.Should().Be("workingTime.A");
-        bound.Binding.PhaseOrdinal.Should().Be(0);
-        bound.Binding.RoundOrdinal.Should().Be(1);
+        return (store, competitionId);
     }
 
     /// <summary>

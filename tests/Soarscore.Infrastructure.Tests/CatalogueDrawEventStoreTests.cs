@@ -145,7 +145,7 @@ public abstract class CatalogueDrawEventStoreTests<TFixture>(TFixture fixture) :
         beforeBind.IsFailure.Should().BeTrue();
         beforeBind.Code.Should().Be("drawPhase.parameterUnbound");
 
-        var bindHandler = new BindParameterHandler(fixture.EventStore, new SystemClock());
+        var bindHandler = new BindParameterHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var bound = await bindHandler.HandleAsync(
             new BindParameter(competitionId, "minPerGroup", MeasuredValue.Of(5m), "cd"), TestContext.Current.CancellationToken);
         bound.IsSuccess.Should().BeTrue($"{bound.Code}: {bound.Message}");
