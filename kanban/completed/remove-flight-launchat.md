@@ -122,6 +122,14 @@ represents `WorkingTimeKind.UntilAllFlightsComplete` truthfully, which is
 class-model fidelity rather than scoring, and that is a real job. Anyone taking it
 up should argue it on those terms, not by analogy to this story.
 
+The user recorded a standing doubt about it on the same day, and it is sharper than
+the one this story answered: the window is not captured by anyone, it is
+manufactured from `clock.UtcNow` at the moment `OpenEntry` is processed
+(`Competition.cs:950`), which under NFR-4's bulk retrospective entry is
+systematically wrong rather than merely unused. See
+`kanban/deferred-decisions.md`, "Score capture and corrections", which also names
+the two defect codes any removal must preserve.
+
 ## Before starting
 
 
