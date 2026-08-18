@@ -1,14 +1,14 @@
-# Plan — Task-round lifecycle: `TaskRoundCompleted` / `TaskRoundAnnulled` / `Finalised`
+# Plan — Task-round lifecycle: `TaskRoundCompleted` / `TaskRoundReopened` / `TaskRoundAnnulled` / `Finalised`
 
-**Status:** In progress — planned, not yet built · **Raised:** 2026-08-16 · **Planned:** 2026-08-17
+**Status:** In progress — planned, not yet built · **Raised:** 2026-08-16 · **Planned:** 2026-08-17 · **Revised:** 2026-08-18
 
 ## What
 
 Three mapped, folded, unreachable `CompetitionEvent` types get decide functions,
-commands, handlers and endpoints: `TaskRoundCompleted`, `TaskRoundAnnulled` and
-`Finalised` (competition scope only). Nothing transitions a task-round off
-`Drawn` today, so a task-round's state is inferred rather than recorded, and a
-competition cannot be closed at all.
+commands, handlers and endpoints — `TaskRoundCompleted`, `TaskRoundAnnulled` and
+`Finalised` (competition scope only) — plus one new event, `TaskRoundReopened`.
+Nothing transitions a task-round off `Drawn` today, so a task-round's state is
+inferred rather than recorded, and a competition cannot be closed at all.
 
 ## Why it matters
 
@@ -61,20 +61,61 @@ this thread goes first.
   `AnnulTaskRound` carries a free-text `Reason` for audit and imposes no
   eligibility test of its own.
 
-## Two decisions taken up front
+## The governing principle: the system does not order score capture
 
-### 1. `TaskRoundState.InProgress` stays unreachable — no twelfth event
+Raised by the user 2026-08-18 and binding on everything below. On-field
+proceedings are chaotic by nature: pilots fly back-to-back across rounds
+(R1 G3, then R2 G1), get pulled away to time for someone else, and enter their
+scores when they can — retrospectively, in bulk, or not until the evening. How
+scores reach the system is **not this system's business**: it may be a connected
+field-board and timer rig, pen and paper transcribed at the end of the day, or
+twenty phones trickling in at random. Soarscore must not dictate any of it.
+
+The write model already honours this and it must stay that way:
+
+- A phase draws **all** its rounds at once (`drawPhase.alreadyDrawn`,
+  `Competition.cs:645`), so every task-round and group exists from the moment of
+  the draw. There is no "open round N" step that round N+1 waits on.
+- `OpenEntry`'s checks are **structural, not temporal** (`Competition.cs:857-895`):
+  does this coordinate exist, was this competitor drawn into it, have they
+  withdrawn. Nothing asks what happened in any other round.
+- The leaderboard is derived from **what is present, not what is expected** —
+  `ScoringService`'s entries-present filter (`ScoringService.cs:161-166`) omits an
+  unentered task-round rather than scoring it zero. Partial data yields a partial
+  result, never an error.
+
+This story is the first that could take that away, because
+`openEntry.taskRoundClosed` (`Competition.cs:883`) is dormant only for want of
+something to emit `TaskRoundCompleted`. Hence the stance, carried into WI-1/WI-2b:
+
+> **Completion is the CD asserting that a task-round's scores are in and settled
+> — not a statement about the field.** Only a human knows the difference between
+> "15 of 20 entered" and "5 people haven't got round to it", which is why the
+> assertion is worth having and why it cannot be inferred. And because it is an
+> assertion about *data*, it must be **reversible** and never automatic: nothing
+> completes a task-round as a side effect, and a score arriving late reopens the
+> round rather than being refused.
+
+Recorded in `docs/aggregate-roots.md` §3 (user-approved 2026-08-18), so the next
+thread inherits the reasoning rather than rediscovering it.
+
+**Two constraints found during this audit are out of scope here and raised as
+their own stories** — both pre-date this work, and both bite retrospective entry
+harder than anything in this thread: `kanban/backlog/amend-a-measurement.md` and
+`kanban/backlog/out-of-order-flight-entry.md`.
+
+## Three decisions taken up front
+
+### 1. `TaskRoundState.InProgress` stays unreachable — but `TaskRoundReopened` is added
 
 `InProgress` is a folded enum member (`Competition.cs:105`) nothing can produce.
 The rejected alternative was a `TaskRoundInProgress` event emitted on the first
 Entry opened in a task-round. Declined because:
 
-- `CompetitionEvents.cs:7` states **eleven events, mirroring
-  `docs/aggregate-roots.md` §3's mutation list one-for-one**. A twelfth is a
-  `/docs` change needing approval (CLAUDE.md house-keeping rule 4), for a state
-  with no consumer.
 - It would make `OpenEntryHandler` append to two streams — the Entry stream and
-  the Competition stream — for a signal that is already derivable.
+  the Competition stream — on the highest-volume write path in the system, for a
+  signal that is already derivable.
+- The state has no consumer: nothing reads `InProgress` and nothing would.
 
 The debt it was meant to close is closed differently and better, in **WI-9**:
 `kanban/tech-debt.md`'s round-scoped-rebind item wants "has this round actually
@@ -86,6 +127,19 @@ and passes a bool into the decide function.
 
 `InProgress` is therefore left in the enum and documented as reachable by no
 event, the same way `Draw.Status` carries an undefined vocabulary.
+
+**A twelfth event is added, but a different one.** `CompetitionEvents.cs:7`
+states eleven events mirroring `docs/aggregate-roots.md` §3's mutation list
+one-for-one, so growing the list is a `/docs` change needing approval (CLAUDE.md
+house-keeping rule 4). Approval given 2026-08-18 for **`TaskRoundReopened`**, and
+§3 updated in the same breath. The alternative considered and rejected was to
+delete the `openEntry.taskRoundClosed` check outright and make completion purely
+informational — cheaper, and it needs no event, but then a genuinely finished
+round silently accepts a late write that changes an already-declared result.
+Reopening keeps closure meaningful *and* keeps the late score possible, at the
+cost of one event; the reopening is an auditable act rather than a silent write,
+which is the whole reason to prefer it. The `Reason`-carrying shape of
+`TaskRoundAnnulled` is the precedent.
 
 ### 2. Finalisation is competition-scope only this thread
 
@@ -132,8 +186,10 @@ early-return style — no later check needs a value computed by an earlier one.
 | `completeTaskRound.annulled` | state is `Annulled` — an annulment is a resolution, not a way-station |
 
 Deliberately **no** "every group has flown" check: `Competition` holds no Entry
-data, and the CD is the authority on when a round is done. Deliberately **no**
-ordering check across rounds — rounds are not required to complete in order.
+data, and the CD is the authority on when a round's scores are in. Deliberately
+**no** ordering check across rounds — rounds are not required to complete in
+order, or at all. Per the governing principle, this is never emitted as a side
+effect of anything; only the explicit command produces it.
 
 ### WI-2 — `Competition.AnnulTaskRound` (Domain)
 
@@ -151,6 +207,31 @@ audit only and is not folded into the aggregate — `TaskRound` has no `Reason`
 field, per `CompetitionEvents.cs:90-93`. `Reason` is validated in the decide
 function, not the handler, because unlike `BindParameter`'s `By` it is a
 substantive record of a ruling rather than an audit breadcrumb.
+
+### WI-2b — `Competition.ReopenTaskRound` (Domain) — **new**
+
+The event the governing principle requires, and the reason completion is allowed
+to close capture at all. A new `CompetitionEvent` subtype,
+`TaskRoundReopened(int PhaseOrdinal, int RoundOrdinal, int TaskRoundOrdinal,
+string Reason, DateTimeOffset At)`, JSON discriminator `taskRoundReopened`,
+folded through the same `ReplaceTaskRound` helper back to `Drawn`.
+
+| Code | Condition |
+|---|---|
+| `reopenTaskRound.taskRoundNotFound` | no phase/round/task-round at these ordinals |
+| `reopenTaskRound.notClosed` | state is `Drawn` — nothing to reopen |
+| `reopenTaskRound.reasonRequired` | `Reason` blank |
+
+`Complete → Drawn` and `Annulled → Drawn` are **both** permitted: an annulment
+made in error is as correctable as a premature completion, and refusing the
+second would reintroduce exactly the dead end this event exists to remove.
+`Reason` is carried for audit only, not folded — `TaskRoundAnnulled`'s precedent.
+
+Reopening a task-round does **not** touch any `Finalisation`. A competition
+finalised and then reopened at the round level will have a declared result that
+no longer matches the derived one — which is invariant B's business to detect,
+not this decide function's to prevent. That divergence being *visible* is the
+entire point of storing `DeclaredResults` (`Competition.cs:198-202`).
 
 ### WI-3 — `Competition.Finalise` (Domain)
 
@@ -219,12 +300,13 @@ here, and its replacement note recorded.
 
 ### WI-5 — Commands and handlers (Application)
 
-Three, in `src/Soarscore.Application/Commands/Competitions/`:
+Four, in `src/Soarscore.Application/Commands/Competitions/`:
 
 - `CompleteTaskRound(CompetitionRef, PhaseOrdinal, RoundOrdinal, TaskRoundOrdinal)`
   → `ICommand<CompetitionId>`. Plain `BindParameter` template:
   `CompetitionLoader.LoadAsync` → decide → `AppendAsync` at `ExpectedVersion.Exact`.
 - `AnnulTaskRound(..., Reason)` → same.
+- `ReopenTaskRound(..., Reason)` → same.
 - `FinaliseCompetition(CompetitionRef, By)` → the one non-trivial handler. It must
   compute `DeclaredResults`, which means doing what `ScoreCompetitionHandler` does:
   `CompetitionLoader.LoadAsync` → `EntryCollector.CollectAsync` →
@@ -243,23 +325,26 @@ Three, in `src/Soarscore.Application/Commands/Competitions/`:
 
 ```
 app.MapCommand<CompleteTaskRound,    CompetitionId>("/complete-task-round");
+app.MapCommand<ReopenTaskRound,      CompetitionId>("/reopen-task-round");
 app.MapCommand<AnnulTaskRound,       CompetitionId>("/annul-task-round");
 app.MapCommand<FinaliseCompetition,  CompetitionId>("/finalise-competition");
 ```
 
-Three matching `AddScoped<ICommandHandler<,>>` lines in `Composition.cs`. Note the
+Four matching `AddScoped<ICommandHandler<,>>` lines in `Composition.cs`. Note the
 sanity floor in `tests/Soarscore.Architecture.Tests/HandlerRegistrationTests.cs`
-goes 13 → 16 commands; its stale "ten commands and four queries" comment is
+goes 13 → 17 commands; its stale "ten commands and four queries" comment is
 corrected in the same edit, discharging one `kanban/backlog/smaller-items.md` bullet
 opportunistically (rule: take one when a thread is already touching that file).
 
 ### WI-7 — Event-type registration (Infrastructure)
 
-Three lines in `SoarscoreEventTypes.All` with the aliases the JSON contracts
-already declare (`CompetitionEvents.cs:28-32`): `taskRoundCompleted`,
-`taskRoundAnnulled`, `finalised`. The comment at `:50-53` narrows from six
-unregistered subtypes to three (`ReflightGroupAppended`, `RulesAmended`,
-`PenaltyRecorded`). One list, both backends — no `MartenConfig`/`FisherConfig` edit.
+Four lines in `SoarscoreEventTypes.All`: three with the aliases the JSON
+contracts already declare (`CompetitionEvents.cs:28-32`) — `taskRoundCompleted`,
+`taskRoundAnnulled`, `finalised` — plus `taskRoundReopened`, whose discriminator
+WI-2b adds alongside them. The comment at `:50-53` narrows from six unregistered
+subtypes to three (`ReflightGroupAppended`, `RulesAmended`, `PenaltyRecorded`),
+and the header's "eleven events" count goes to twelve. One list, both backends —
+no `MartenConfig`/`FisherConfig` edit.
 
 ### WI-8 — The `State` column on `competitions` (Application/Infrastructure)
 
@@ -296,12 +381,12 @@ exactly as it receives an already-resolved `AdoptedRules` (`Competition.cs:502-5
 ### WI-10 — Tests
 
 **Domain example-based** (`tests/Soarscore.Domain.Tests/`): one new file,
-`TaskRoundLifecycleDecideTests.cs` — one case per defect code above (nine), plus
+`TaskRoundLifecycleDecideTests.cs` — one case per defect code above (twelve), plus
 success cases; and `FinaliseDecideTests.cs` for the validity gate, including the
 F3B `MinTasks` case and the F5K unbound-`minRounds` case. Extend
 `OpenEntryDecideTests.cs` to assert `openEntry.taskRoundClosed` now actually fires
-after a completion and after an annulment — the dead check at `Competition.cs:871`
-gets its first real test.
+after a completion and after an annulment — the dead check at `Competition.cs:883`
+gets its first real test — and that it stops firing after a reopen.
 
 **Property-based** (CsCheck), with the invariants named up front per CLAUDE.md:
 
@@ -320,18 +405,23 @@ gets its first real test.
   (`Competition.cs:198-202`: "Answers 'what was declared', never 'what is the
   score' … can always be re-derived and compared against what was published"),
   turned into an executable claim.
-- **Invariant C — completion closes capture.** For any drawn shape and any
-  task-round, after `TaskRoundCompleted` or `TaskRoundAnnulled` folds, `OpenEntry`
-  into that task-round fails for every competitor drawn into it, and `OpenEntry`
-  into every *other* task-round is unaffected.
+- **Invariant C — closure is scoped, and always revocable.** For any drawn shape
+  and any task-round: after `TaskRoundCompleted` or `TaskRoundAnnulled` folds,
+  `OpenEntry` into that task-round fails for every competitor drawn into it,
+  while `OpenEntry` into every *other* task-round is unaffected — and after
+  `TaskRoundReopened` folds, `OpenEntry` succeeds again for exactly the
+  competitors it would have accepted before the closure. Generated over the shape,
+  the target ordinal, and the close/reopen sequence, so no arrangement of
+  closures can strand a task-round. The second half is the governing principle
+  expressed as a test: a late score is never permanently locked out.
 
 The fold-side "mutates exactly one node" invariant is **already covered** by
 `CompetitionReplaceTaskRoundPropertyTests.cs`, which generates the shape and the
 target ordinal across all three `ReplaceTaskRound` events — not duplicated here.
 
-**Serialization**: three cases in `CompetitionEventJsonTests.cs`.
+**Serialization**: three new cases in `CompetitionEventJsonTests.cs`.
 `Finalised` already has one (`:223-242`) covering the decimal-as-string aggregate;
-add `TaskRoundCompleted` and `TaskRoundAnnulled` round-trips.
+add `TaskRoundCompleted`, `TaskRoundAnnulled` and `TaskRoundReopened` round-trips.
 
 **Store-backed** (`tests/Soarscore.Infrastructure.Tests/`): a new
 `TaskRoundLifecycleEventStoreTests.cs` written once against `IStoreFixture`, so it
@@ -342,14 +432,19 @@ Fisher/SQLite. This is the test that would have caught an unregistered event typ
 `ClosingACompetition.feature`, run twice (`SOARSCORE_TEST_STORE=postgres|sqlite`):
 
 ```gherkin
+Scenario: Scores are captured out of round order, and every one is accepted
 Scenario: A round is closed and no further scores can be captured for it
+Scenario: A late score is entered after its round was closed, by reopening it
 Scenario: An annulled round is excluded from the leaderboard
 Scenario: A competition cannot be finalised before its class's minimum rounds are flown
 Scenario: A finalised competition declares the same results the leaderboard shows
 ```
 
-The third scenario is the one that proves `ValidityRule` is live and class-driven;
-the fourth is invariant B at the workflow level.
+The first is the governing principle at the workflow level — a pilot flies R1 G3
+then R2 G1 and enters both later, in the wrong order — and is the scenario that
+should fail loudly if a future thread adds sequencing. The third is its
+companion, and the reason `TaskRoundReopened` exists. The fifth proves
+`ValidityRule` is live and class-driven; the sixth is invariant B end-to-end.
 
 ### WI-11 — Board reconciliation
 
@@ -376,7 +471,13 @@ floor), and record what this thread defers (below) in
 - **`ReflightGroupAppended`.** `kanban/backlog/reflight-groups.md`, unblocked by
   this thread.
 - **Automatic completion.** Nothing infers "the round is done because everyone
-  flew". The CD says so. Revisit only if the field asks.
+  flew". The CD says so. Per the governing principle this is not a deferral — it
+  is a standing stance, and a later thread proposing to infer it should reopen
+  that section rather than treat this bullet as an unfinished item.
+- **Correcting a captured measurement, and out-of-order flight entry.** Found by
+  this thread's ordering audit, raised as `kanban/backlog/amend-a-measurement.md`
+  and `kanban/backlog/out-of-order-flight-entry.md` (house-keeping rule 6). Both
+  live in the `Entry` aggregate, not `Competition`, and neither blocks this work.
 
 ## Risks
 

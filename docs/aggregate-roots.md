@@ -199,8 +199,12 @@ one consistent set, and registration writes are low-volume — the contention
 argument that pushes Entry out does not apply here. Created up front and only
 lightly mutated afterwards (register or withdraw a competitor, append a
 reflight group, annul a task-round). It holds no live flight data — Entries reference their Group and
-Competitor by id from outside. Task-round completion and annulment live here;
-scoring reads this structure but writes nothing back to it.
+Competitor by id from outside. Task-round completion, annulment and reopening
+live here; scoring reads this structure but writes nothing back to it.
+Completion is **reversible by design**: it is the CD asserting that a
+task-round's scores are in and settled, not a statement about the field, so a
+score arriving late must be able to reopen it rather than be refused. Nothing
+completes a task-round as a side effect — only the explicit act.
 
 It also holds three things that make results reproducible:
 
