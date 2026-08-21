@@ -36,3 +36,24 @@ Feature: Scoring a competition
     And the preliminary phase is drawn for 3 rounds
     When every competitor flies rounds 1 and 2, and nobody flies round 3
     Then the competition leaderboard scores every competitor as the sum of rounds 1 and 2 only
+
+  Scenario: An annulled attempt scores no result and its replacement stands
+    Given the F5J class is published
+    And a competition is created adopting it, with 6 registered competitors
+    And the preliminary phase is drawn for 1 round
+    When competitor 1's first attempt is annulled and replaced by a re-flight
+    Then the competitor's group result reflects the replacement's flight time, not the annulled attempt's
+
+  Scenario: A flight-scoped penalty zeroes the penalised attempt
+    Given the F5J class is published
+    And a competition is created adopting it, with 6 registered competitors
+    And the preliminary phase is drawn for 1 round
+    When every competitor flies, competitor 1 committing a launch-outside-corridor infraction
+    Then competitor 1's group result is no result, and the group's winner still scores 1000
+
+  Scenario: An aggregate penalty deducts from its subject only
+    Given the F5J class is published
+    And a competition is created adopting it, with 6 registered competitors
+    And the preliminary phase is drawn for 1 round
+    When every competitor flies and a 300-point safety penalty is recorded against competitor 1
+    Then competitor 1's leaderboard score is 300 lower, and every other competitor's is unchanged

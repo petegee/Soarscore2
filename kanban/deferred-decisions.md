@@ -146,6 +146,19 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   whether the field should exist at all — is a story, not a deferral:
   `kanban/completed/remove-flight-launchat.md`.
 
+## Annulments and penalties
+
+- **The task-round coordinate on an aggregate penalty is recorded but read by
+  nothing.** **Decided 2026-08-21** (`kanban/completed/annul-and-penalise-the-second-entry-thread.md`).
+  F3B.1.7.b asks for a deduction "listed on the score sheet of the round in which
+  the penalisation was applied", so `Penalty.TaskRound` records the coordinate when
+  the client supplies it and the decide function validates it exists — but no
+  score-sheet report exists to read it. The deferred half is that report; the
+  recorded coordinate itself is correct to keep (it is data the rules ask to
+  associate with the infraction, and retrofitting it later would be expensive once
+  penalties are in real logs). Reopen as a `backlog/` story if a score-sheet read
+  surface is wanted; today the audit trail is the stream itself.
+
 ---
 
 ## Decisions that have since been taken up

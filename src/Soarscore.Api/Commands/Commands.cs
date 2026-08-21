@@ -30,11 +30,14 @@ public static class Commands
         app.MapCommand<ReopenTaskRound, CompetitionId>("/reopen-task-round");
         app.MapCommand<AnnulTaskRound, CompetitionId>("/annul-task-round");
         app.MapCommand<FinaliseCompetition, CompetitionId>("/finalise-competition");
+        app.MapCommand<RecordCompetitionPenalty, CompetitionId>("/record-competition-penalty");
 
         app.MapCommand<OpenEntry, EntryId>("/open-entry");
         app.MapCommand<OpenFlight, EntryId>("/open-flight");
         app.MapCommand<CaptureMeasurement, EntryId>("/capture-measurement");
         app.MapCommand<AmendMeasurement, EntryId>("/amend-measurement");
+        app.MapCommand<AnnulEntry, EntryId>("/annul-entry");
+        app.MapCommand<RecordEntryPenalty, EntryId>("/record-entry-penalty");
 
         return app;
     }

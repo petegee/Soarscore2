@@ -48,9 +48,13 @@ internal static class SoarscoreEventTypes
         // register-competitor-steel-thread-plan.md WI-5 the next two;
         // phase-drawn-steel-thread-plan.md WI-5 PhaseDrawn;
         // bind-parameter-steel-thread-plan.md WI-5 ParameterBound;
-        // task-round-lifecycle.md WI-7 the last four. The remaining three
-        // CompetitionEvent subtypes (ReflightGroupAppended, RulesAmended,
-        // PenaltyRecorded) are absent because nothing appends them yet.
+        // task-round-lifecycle.md WI-7 the next four;
+        // annul-and-penalise-the-second-entry-thread.md WI-9 the Competition-scoped
+        // PenaltyRecorded (alias "competitionPenaltyRecorded" — decision 5: it is
+        // a different CLR type from the Entry-scoped PenaltyRecorded and cannot
+        // share "penaltyRecorded" as an on-disk identity). The remaining two
+        // CompetitionEvent subtypes (ReflightGroupAppended, RulesAmended) are
+        // absent because nothing appends them yet.
         (typeof(CompetitionCreated), "competitionCreated"),
         (typeof(CompetitorRegistered), "competitorRegistered"),
         (typeof(CompetitorWithdrawn), "competitorWithdrawn"),
@@ -60,17 +64,19 @@ internal static class SoarscoreEventTypes
         (typeof(TaskRoundAnnulled), "taskRoundAnnulled"),
         (typeof(TaskRoundReopened), "taskRoundReopened"),
         (typeof(Finalised), "finalised"),
+        (typeof(Soarscore.Domain.Competitions.PenaltyRecorded), "competitionPenaltyRecorded"),
 
         // capture-a-score-steel-thread-plan.md WI-9 registered the narrow capture
         // slice: EntryOpened, FlightOpened, MeasurementCaptured.
         // amend-a-measurement.md WI-5 registered MeasurementAmended (the event a
-        // correction appends). The remaining two EntryEvent subtypes
-        // (EntryAnnulled, PenaltyRecorded) are the rest of the second Entry
-        // thread — kanban/backlog/annul-and-penalise-the-second-entry-thread.md —
-        // deliberately still unregistered because nothing appends them yet.
+        // correction appends). annul-and-penalise-the-second-entry-thread.md WI-9
+        // registered EntryAnnulled and the Entry-scoped PenaltyRecorded (alias
+        // "entryPenaltyRecorded" — see the Competition block's note above).
         (typeof(EntryOpened), "entryOpened"),
         (typeof(FlightOpened), "flightOpened"),
         (typeof(MeasurementCaptured), "measurementCaptured"),
         (typeof(MeasurementAmended), "measurementAmended"),
+        (typeof(EntryAnnulled), "entryAnnulled"),
+        (typeof(Soarscore.Domain.Entries.PenaltyRecorded), "entryPenaltyRecorded"),
     ];
 }

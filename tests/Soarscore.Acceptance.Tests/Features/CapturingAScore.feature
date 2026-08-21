@@ -46,3 +46,22 @@ Feature: Capturing a score
     And the corrected competitor scores 824, the mistyped 4120 having been replaced
     And the entry still holds the other metrics captured alongside the flight time
     And the original 4120 is still readable next to the correction
+
+  Scenario: An entry is annulled by a recorded ruling
+    Given a published F5J class definition
+    And a competition adopting it with 6 registered competitors
+    And a drawn preliminary phase of 4 rounds
+    When the scorer opens an entry for competitor 3 in round 1, group 1
+    And the scorer opens a flight
+    And the scorer captures flightTime of 412 seconds
+    And the jury annuls the entry for a recorded reason
+    Then the entry still holds the flight time and carries the recorded annulment
+    And a further capture against the annulled entry is refused
+
+  Scenario: An undeclared infraction type is refused
+    Given a published F5J class definition
+    And a competition adopting it with 6 registered competitors
+    And a drawn preliminary phase of 4 rounds
+    When the scorer opens an entry for competitor 3 in round 1, group 1
+    And the scorer records an entry penalty with an undeclared infraction type
+    Then the penalty is refused as an undeclared infraction type

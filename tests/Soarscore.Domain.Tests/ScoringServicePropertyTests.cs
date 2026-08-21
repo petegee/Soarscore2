@@ -212,4 +212,182 @@ public class ScoringServicePropertyTests
 
         return (competition, entries);
     }
+
+    // ============================================================ WI-5 aggregate penalties
+    // Subject-filtered aggregate penalties — kanban/in-progress/annul-and-penalise-the-second-entry-thread.md
+    // WI-5. Before the Penalty payload gained a CompetitorRef, every
+    // TaskRound/Competition-scoped penalty deducted from every competitor in
+    // the field (finding 2). These facts and P4 pin the fix: an aggregate
+    // penalty lands on its subject alone.
+
+    private static readonly ImmutableArray<PenaltyDefinition> AggregatePenaltyDefs =
+    [
+        new() { InfractionType = "safetyZone", Effects = [new(PenaltyEffect.DeductPoints, 300)] },
+        new() { InfractionType = "disqualify", Effects = [new(PenaltyEffect.Disqualify)] },
+    ];
+
+    private static readonly Gen<(string InfractionType, int SubjectIndex)> AggregatePenaltyFactGen =
+        from infractionType in Gen.OneOfConst("safetyZone", "disqualify")
+        from subjectIndex in Gen.Int[0, 2]
+        select (infractionType, subjectIndex);
+
+    /// <summary>
+    /// A field of <paramref name="fieldSize"/> competitors, each scoring a clean
+    /// 100 aggregate (the synthetic task's raw == sum of metric values), adopting
+    /// a class whose penalties are <paramref name="penalties"/>. Starts with no
+    /// recorded competition penalties — the caller sets <c>Competition.Penalties</c>
+    /// via <c>with</c> once it knows the competitor ids (returned in registration
+    /// == draw order).
+    /// </summary>
+    private static (Competition Competition, Dictionary<EntryId, Entry> Entries, List<CompetitorId> Competitors)
+        BuildCompetitionWithPenalties(
+            int fieldSize,
+            ImmutableArray<PenaltyDefinition> penalties)
+    {
+        var task = MakeTask();
+        var classDefinition = MakeClassDefinition(task) with { Penalties = penalties };
+
+        var adoptedRules = new AdoptedRules
+        {
+            Definition = classDefinition,
+            SourceClassId = "content-hash-synthetic",
+            SourceVersion = classDefinition.Version,
+            AdoptedAt = Now,
+        };
+        var created = new CompetitionCreated(
+            CompetitionId.New(), "Aggregate Penalty Test Comp", "Nowhere",
+            new DateOnly(2026, 3, 14), new DateOnly(2026, 3, 15),
+            "1.0.0", adoptedRules, Now);
+
+        var competition = Competition.Create(created);
+        var competitorIds = new List<CompetitorId>();
+
+        for (var i = 0; i < fieldSize; i++)
+        {
+            var id = CompetitorId.New();
+            var registered = competition.RegisterCompetitor(id, PersonId.New(), Now);
+            competition = competition.Apply(registered.Value);
+            competitorIds.Add(id);
+        }
+
+        var drawn = competition.DrawPhase(1, [], Now);
+        drawn.IsSuccess.Should().BeTrue();
+        competition = competition.Apply(drawn.Value);
+
+        var entries = new Dictionary<EntryId, Entry>();
+
+        foreach (var round in competition.Phases[0].Rounds)
+        {
+            var taskRound = round.TaskRounds[0];
+            foreach (var group in taskRound.Groups)
+            {
+                foreach (var competitorRef in group.CompetitorRefs)
+                {
+                    var opened = competition.OpenEntry(
+                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
+                    opened.IsSuccess.Should().BeTrue();
+
+                    var entry = Entry.Create(opened.Value).Apply(new FlightOpened(1, Now));
+                    foreach (var metric in MetricNames)
+                    {
+                        var captured = entry.CaptureMeasurement(1, metric, MeasuredValue.Of(ValueFor(metric)), Now, MetricDefs);
+                        entry = entry.Apply(captured.Value);
+                    }
+
+                    entries[entry.Id] = entry;
+                }
+            }
+        }
+
+        return (competition, entries, competitorIds);
+    }
+
+    private static CompetitionResult Score(Competition competition, Dictionary<EntryId, Entry> entries)
+    {
+        var result = ScoringService.ScoreCompetition(competition, entries);
+        result.IsSuccess.Should().BeTrue();
+        return result.Value;
+    }
+
+    [Fact]
+    public void A_deduct_points_penalty_lands_on_its_subject_only()
+    {
+        var (competition, entries, competitors) = BuildCompetitionWithPenalties(2, AggregatePenaltyDefs);
+        competition = competition with
+        {
+            Penalties = [new Penalty { InfractionType = "safetyZone", Scope = PenaltyScope.Competition, CompetitorRef = competitors[0] }],
+        };
+
+        var result = Score(competition, entries);
+
+        result.Scores[competitors[0].ToString()].Score.Should().Be(100m - 300m);
+        result.Scores[competitors[0].ToString()].Disqualified.Should().BeFalse();
+        // The other competitor's total is untouched: 100, not -200.
+        result.Scores[competitors[1].ToString()].Score.Should().Be(100m);
+        result.Scores[competitors[1].ToString()].Disqualified.Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_disqualify_penalty_flags_only_its_subject()
+    {
+        var (competition, entries, competitors) = BuildCompetitionWithPenalties(2, AggregatePenaltyDefs);
+        competition = competition with
+        {
+            Penalties = [new Penalty { InfractionType = "disqualify", Scope = PenaltyScope.Competition, CompetitorRef = competitors[0] }],
+        };
+
+        var result = Score(competition, entries);
+
+        result.Scores[competitors[0].ToString()].Disqualified.Should().BeTrue();
+        result.Scores[competitors[1].ToString()].Disqualified.Should().BeFalse();
+    }
+
+    // ------------------------------------------------------- P4
+    // Subject isolation (partition invariance): for any set of competition-stream
+    // penalties with arbitrary subjects, each competitor's aggregate deduction is
+    // identical to the deduction computed from that competitor's own penalties
+    // alone. The invariant decision 1 exists to make true — before the subject
+    // filter, every penalty hit every competitor (finding 2).
+
+    [Fact]
+    public void Aggregate_penalties_are_subject_isolated()
+    {
+        AggregatePenaltyFactGen.Array[1, 6].Sample(facts =>
+        {
+            var (competition, entries, competitors) = BuildCompetitionWithPenalties(3, AggregatePenaltyDefs);
+
+            // Fold the generated penalties onto the competition aggregate.
+            var penalties = ImmutableArray.CreateBuilder<Penalty>(facts.Length);
+            foreach (var (infractionType, subjectIndex) in facts)
+            {
+                penalties.Add(new Penalty
+                {
+                    InfractionType = infractionType,
+                    Scope = PenaltyScope.Competition,
+                    CompetitorRef = competitors[subjectIndex],
+                });
+            }
+
+            competition = competition with { Penalties = penalties.ToImmutable() };
+            var result = Score(competition, entries);
+
+            // Partition oracle: for each competitor, the deduction is exactly what
+            // their own penalties alone would produce.
+            for (var i = 0; i < competitors.Count; i++)
+            {
+                var subject = competitors[i];
+                var ownPenalties = penalties
+                    .Where(p => p.CompetitorRef == subject)
+                    .GroupBy(p => p.InfractionType)
+                    .Select(g => new RecordedPenalty(g.Key, g.Count()))
+                    .ToImmutableArray();
+
+                var expected = PenaltyEngine.ApplyAggregatePenalties(100m, ownPenalties, AggregatePenaltyDefs);
+
+                var score = result.Scores[subject.ToString()];
+                score.Score.Should().Be(100m - expected.Deduction);
+                score.Disqualified.Should().Be(expected.Disqualified);
+            }
+        });
+    }
 }

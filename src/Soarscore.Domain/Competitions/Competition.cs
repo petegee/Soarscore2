@@ -1187,6 +1187,86 @@ public sealed record Competition
         return Result<Finalised>.Success(new Finalised(finalisation));
     }
 
+    // Instance decide function — WI-4 (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md).
+    // Defect-chain style, like WithdrawCompetitor: no later check needs a value
+    // an earlier one computed. Reads AdoptedRules.Definition.Penalties from its
+    // own state — the same self-service read OpenEntry makes of AdoptedRules;
+    // unlike Entry, Competition holds the adopted rules. Deliberately no
+    // finalisation gate (an aggregate penalty is a ruling about recorded
+    // results, and the ordinary case is a protest after the contest looked
+    // finished — NFR-4's world, the same stance as decision 6's annulment
+    // note) and no withdrawn check (decision 8: withdrawal leaves scores
+    // intact, so an aggregate deduction against a withdrawn competitor's
+    // accumulated score still deducts).
+    public Result<PenaltyRecorded> RecordPenalty(Penalty penalty)
+    {
+        var defect = ValidatePenaltyScope(penalty)
+            ?? ValidateCompetitorSubject(penalty)
+            ?? ValidateCompetitorExists(penalty.CompetitorRef!.Value)
+            ?? ValidateTaskRoundCoordinate(penalty.TaskRound)
+            ?? ValidateInfractionType(penalty.InfractionType)
+            ?? ValidateByNotBlank(penalty.By);
+
+        return defect is not null
+            ? Result<PenaltyRecorded>.Failure(defect.Code, defect.Message)
+            : Result<PenaltyRecorded>.Success(new PenaltyRecorded(penalty));
+    }
+
+    private static Defect? ValidatePenaltyScope(Penalty penalty) =>
+        penalty.Scope is PenaltyScope.TaskRound or PenaltyScope.Competition
+            ? null
+            : new Defect("recordPenalty.wrongScope", "$.scope",
+                $"A penalty recorded against a Competition must be TaskRound or Competition scoped; got {penalty.Scope}.");
+
+    private static Defect? ValidateCompetitorSubject(Penalty penalty) =>
+        penalty.CompetitorRef is null
+            ? new Defect("recordPenalty.competitorRequired", "$.competitorRef",
+                "A TaskRound/Competition-scoped penalty must name the competitor it is against.")
+            : null;
+
+    private Defect? ValidateTaskRoundCoordinate(TaskRoundCoordinate? coordinate)
+    {
+        if (coordinate is null)
+        {
+            return null;
+        }
+
+        var phase = Phases.FirstOrDefault(p => p.Ordinal == coordinate.PhaseOrdinal);
+        if (phase is null)
+        {
+            return new Defect("recordPenalty.taskRoundNotFound", "$.taskRound",
+                $"No phase has been drawn with ordinal {coordinate.PhaseOrdinal}.");
+        }
+
+        var round = phase.Rounds.FirstOrDefault(r => r.Ordinal == coordinate.RoundOrdinal);
+        if (round is null)
+        {
+            return new Defect("recordPenalty.taskRoundNotFound", "$.taskRound",
+                $"No round with ordinal {coordinate.RoundOrdinal} in phase {coordinate.PhaseOrdinal}.");
+        }
+
+        var taskRound = round.TaskRounds.FirstOrDefault(tr => tr.Ordinal == coordinate.TaskRoundOrdinal);
+        if (taskRound is null)
+        {
+            return new Defect("recordPenalty.taskRoundNotFound", "$.taskRound",
+                $"No task-round with ordinal {coordinate.TaskRoundOrdinal} in round {coordinate.RoundOrdinal}.");
+        }
+
+        return null;
+    }
+
+    private Defect? ValidateInfractionType(string infractionType) =>
+        AdoptedRules.Definition.Penalties.Any(d => d.InfractionType == infractionType)
+            ? null
+            : new Defect("recordPenalty.infractionTypeNotDeclared", "$.infractionType",
+                $"'{infractionType}' is not an infraction type declared by the adopted class definition.");
+
+    private static Defect? ValidateByNotBlank(string? by) =>
+        by is not null && string.IsNullOrWhiteSpace(by)
+            ? new Defect("recordPenalty.byBlank", "$.by",
+                "By, when supplied, must not be blank — an absent By is fine, a blank one is a typo.")
+            : null;
+
     // Compares against *all* competitors, including withdrawn ones — a
     // withdrawal is not a re-entry ticket (invariant 1, the plan's Context).
     private Defect? ValidateNotAlreadyRegistered(PersonId personRef) =>

@@ -115,7 +115,8 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 .Where(e => e.PhaseOrdinal == query.PhaseOrdinal
                          && e.RoundOrdinal == query.RoundOrdinal
                          && e.TaskRoundOrdinal == query.TaskRoundOrdinal
-                         && e.GroupRef == group.Id)
+                         && e.GroupRef == group.Id
+                         && e.Annulment is null)
                 .ToImmutableDictionary(e => e.CompetitorRef.ToString(), e => e);
 
             // A group nobody has flown yet contributes no view — mirrors

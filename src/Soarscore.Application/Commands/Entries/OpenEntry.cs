@@ -13,8 +13,19 @@
 // do not say", silence 2) — a re-flight really is a second Entry for the
 // same task-round/competitor, so the failure message below must not imply
 // the rules forbid a second one, only that an Original one is already open.
+//
+// Annulment-aware (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md
+// WI-6): the index deliberately carries "the coordinate and nothing else"
+// (EntrySummary.cs's header) — no annulled flag, because a stream load already
+// answers that question. So when the index reports an Original-role Entry, the
+// handler loads that stream (typically one) and refuses only if it is live —
+// i.e. not annulled. The F3F.1.5 provisional shape (annul the first attempt,
+// re-open a second) is exactly what this permits. The index stays
+// coordinate-only; EntryProjectionTests's assertion that EntryAnnulled leaves
+// the summary unchanged stays true.
 
 using Soarscore.Application.Shared.Competitions;
+using Soarscore.Application.Shared.Entries;
 using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
@@ -47,11 +58,26 @@ public sealed class OpenEntryHandler(IEventStore eventStore, IEntryQuery entryQu
             groupRef: null,
             command.CompetitorRef,
             cancellationToken);
-        if (existing.Any(e => e.Role == ReflightRole.Original))
+
+        // Only a *live* Original-role Entry blocks a new open: an annulled one
+        // is a ruling that the attempt does not count, and the F3F.1.5 shape
+        // re-opens a fresh attempt after annulling the provisional one. The
+        // index is coordinate-only, so live/annulled is answered by a stream
+        // load, not the projection.
+        foreach (var original in existing.Where(e => e.Role == ReflightRole.Original))
         {
-            return Result<EntryId>.Failure(
-                "openEntry.alreadyOpen",
-                "An entry is already open for this competitor in this task-round.");
+            var loadedEntry = await EntryLoader.LoadAsync(eventStore, original.Id, cancellationToken);
+            if (loadedEntry.IsFailure)
+            {
+                return Result<EntryId>.Failure(loadedEntry.Code!, loadedEntry.Message!, loadedEntry.Defects);
+            }
+
+            if (loadedEntry.Value.Entry.Annulment is null)
+            {
+                return Result<EntryId>.Failure(
+                    "openEntry.alreadyOpen",
+                    "An entry is already open for this competitor in this task-round.");
+            }
         }
 
         var id = EntryId.New();

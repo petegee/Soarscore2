@@ -93,6 +93,7 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<ReopenTaskRound, CompetitionId>, ReopenTaskRoundHandler>();
         builder.Services.AddScoped<ICommandHandler<AnnulTaskRound, CompetitionId>, AnnulTaskRoundHandler>();
         builder.Services.AddScoped<ICommandHandler<FinaliseCompetition, CompetitionId>, FinaliseCompetitionHandler>();
+        builder.Services.AddScoped<ICommandHandler<RecordCompetitionPenalty, CompetitionId>, RecordCompetitionPenaltyHandler>();
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
 
@@ -100,6 +101,8 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<OpenFlight, EntryId>, OpenFlightHandler>();
         builder.Services.AddScoped<ICommandHandler<CaptureMeasurement, EntryId>, CaptureMeasurementHandler>();
         builder.Services.AddScoped<ICommandHandler<AmendMeasurement, EntryId>, AmendMeasurementHandler>();
+        builder.Services.AddScoped<ICommandHandler<AnnulEntry, EntryId>, AnnulEntryHandler>();
+        builder.Services.AddScoped<ICommandHandler<RecordEntryPenalty, EntryId>, RecordEntryPenaltyHandler>();
         builder.Services.AddScoped<IQueryHandler<FindEntries, IReadOnlyList<EntrySummary>>, FindEntriesHandler>();
 
         builder.Services.AddScoped<IQueryHandler<ScoreTaskRound, IReadOnlyList<GroupScoreView>>, ScoreTaskRoundHandler>();

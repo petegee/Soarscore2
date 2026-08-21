@@ -20,6 +20,7 @@ using Soarscore.Application.Commands.People;
 using Soarscore.Application.Queries.Competitions;
 using Soarscore.Application.Queries.Entries;
 using Soarscore.Application.Queries.Scoring;
+using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
@@ -46,6 +47,9 @@ public sealed class CapturingAScoreSteps
     // competitor ordinal — the correction must be assertable back against the
     // specific entry it was made on, not the last entry opened.
     private readonly Dictionary<int, EntryId> _entryIds = new();
+
+    // Populated by the refused-penalty scenario's When step, read by its Then.
+    private HttpResponseMessage? _rawResponse;
 
     // ---------------------------------------------------------------- Given
 
@@ -182,6 +186,22 @@ public sealed class CapturingAScoreSteps
                 "mistyped the flight time", "the contest director"));
     }
 
+    [When(@"^the jury annuls the entry for a recorded reason$")]
+    public async Task WhenTheJuryAnnullsTheEntryForARecordedReason()
+    {
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/annul-entry",
+            new AnnulEntry(_entryId, "the competitor re-flew under protest", "the jury"));
+    }
+
+    [When(@"^the scorer records an entry penalty with an undeclared infraction type$")]
+    public async Task WhenTheScorerRecordsAnEntryPenaltyWithAnUndeclaredInfractionType()
+    {
+        _rawResponse = await ApiClient.PostCommandRawAsync(
+            Client, "/record-entry-penalty",
+            new RecordEntryPenalty(_entryId, "madeUp", PenaltyScope.Flight, null));
+    }
+
     // ----------------------------------------------------------------- Then
 
     [Then(@"^the entry holds one flight with a flightTime of (\d+)$")]
@@ -303,6 +323,40 @@ public sealed class CapturingAScoreSteps
         amendment.By.Should().Be("the contest director");
     }
 
+    [Then(@"^the entry still holds the flight time and carries the recorded annulment$")]
+    public async Task ThenTheEntryStillHoldsTheFlightTimeAndCarriesTheRecordedAnnulment()
+    {
+        var entry = await EntryReader.LoadAsync(AcceptanceFixture.EventStore, _entryId, TestContext.Current.CancellationToken);
+
+        // Append-only: the captured flight time survives the annulment.
+        entry.Flights.Should().ContainSingle();
+        entry.Flights[0].Measurements.Should().ContainSingle(m => m.Metric == "flightTime");
+        entry.Flights[0].Measurements[0].Value.Should().Be(MeasuredValue.Of(412m));
+
+        // The ruling is recorded beside the data, not an overwrite of it.
+        entry.Annulment.Should().NotBeNull();
+        entry.Annulment!.Reason.Should().Be("the competitor re-flew under protest");
+        entry.Annulment.By.Should().Be("the jury");
+    }
+
+    [Then(@"^a further capture against the annulled entry is refused$")]
+    public async Task ThenAFurtherCaptureAgainstTheAnnulledEntryIsRefused()
+    {
+        var response = await ApiClient.PostCommandRawAsync(
+            Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "startHeight", MeasuredValue.Of(0m)));
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        (await ReadProblemTitleAsync(response)).Should().Be("entry.annulled");
+    }
+
+    [Then(@"^the penalty is refused as an undeclared infraction type$")]
+    public async Task ThenThePenaltyIsRefusedAsAnUndeclaredInfractionType()
+    {
+        _rawResponse!.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        (await ReadProblemTitleAsync(_rawResponse)).Should().Be("recordPenalty.infractionTypeNotDeclared");
+    }
+
     // --------------------------------------------------------------- helpers
 
     /// <summary>
@@ -343,6 +397,12 @@ public sealed class CapturingAScoreSteps
 
         _groupIds[key] = group.Id;
         return group.Id;
+    }
+
+    private static async Task<string> ReadProblemTitleAsync(HttpResponseMessage response)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("title").GetString()!;
     }
 
     private static ClassDefinition ResolveDefinition(string className) => className switch

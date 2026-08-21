@@ -192,8 +192,14 @@ public static class ScoringService
 
                     foreach (var group in taskRound.Groups)
                     {
+                        // Annulled entries are excluded from group scoring: they
+                        // produce NoResult (FlightSelector step 0) and, more
+                        // importantly, an annulled attempt alongside its live
+                        // replacement is the F3F.1.5 shape — two Entries for one
+                        // competitor+task-round, which would collide as duplicate
+                        // dictionary keys. The replacement is the one that scores.
                         var groupEntries = taskRoundEntries
-                            .Where(e => e.GroupRef == group.Id)
+                            .Where(e => e.GroupRef == group.Id && e.Annulment is null)
                             .ToImmutableDictionary(e => e.CompetitorRef.ToString(), e => e);
 
                         // A competitor drawn into a group with no Entry
@@ -260,12 +266,17 @@ public static class ScoringService
             }
         }
 
-        var aggregatePenalties = GetAggregatePenalties(competition.Penalties);
-
         var finalScores = ImmutableArray.CreateBuilder<FinalCompetitorScore>(totalsByCompetitor.Count);
 
         foreach (var (competitorRef, totalScore) in totalsByCompetitor)
         {
+            // Subject-filtered: a Competition/TaskRound-scoped penalty names the
+            // competitor it is against (Penalty.CompetitorRef), so each
+            // competitor is deducted only their own penalties — never the whole
+            // field's. See kanban/in-progress/annul-and-penalise-the-second-entry-thread.md
+            // finding 2: before the subject field existed, every aggregate
+            // penalty hit every competitor.
+            var aggregatePenalties = GetAggregatePenalties(competition.Penalties, competitorRef);
             var penaltyResult = PenaltyEngine.ApplyAggregatePenalties(totalScore, aggregatePenalties, classDef.Penalties);
 
             finalScores.Add(new FinalCompetitorScore(
@@ -359,13 +370,18 @@ public static class ScoringService
 
     /// <summary>
     /// Extract TaskRound/Competition-scoped penalties from the Competition
-    /// aggregate, grouped by infraction type and counted. Penalty carries no
-    /// competitor reference at this scope — a Competition/TaskRound-scoped
-    /// penalty applies uniformly, the same set for every competitor.
+    /// aggregate, grouped by infraction type and counted — filtered to the one
+    /// <paramref name="competitorRef"/> that is their subject. Since the Penalty
+    /// payload gained a <c>CompetitorRef</c>
+    /// (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md), an
+    /// aggregate penalty applies to its subject alone, never uniformly to the
+    /// whole field.
     /// </summary>
-    private static ImmutableArray<RecordedPenalty> GetAggregatePenalties(ImmutableArray<Penalty> competitionPenalties) =>
+    private static ImmutableArray<RecordedPenalty> GetAggregatePenalties(
+        ImmutableArray<Penalty> competitionPenalties, string competitorRef) =>
         competitionPenalties
             .Where(p => p.Scope is PenaltyScope.TaskRound or PenaltyScope.Competition)
+            .Where(p => p.CompetitorRef is { } subject && subject.ToString() == competitorRef)
             .GroupBy(p => p.InfractionType)
             .Select(g => new RecordedPenalty(g.Key, g.Count()))
             .ToImmutableArray();

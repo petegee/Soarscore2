@@ -292,6 +292,9 @@ classDiagram
     class Penalty {
         +string infractionType
         +PenaltyScope scope
+        +string? by
+        +CompetitorId? competitorRef
+        +TaskRoundCoordinate? taskRound
     }
     class CompetitionClass {
         <<external root>>
@@ -420,6 +423,9 @@ classDiagram
     class Penalty {
         +string infractionType
         +PenaltyScope scope
+        +string? by
+        +CompetitorId? competitorRef
+        +TaskRoundCoordinate? taskRound
     }
     class Group {
         <<Competition aggregate>>

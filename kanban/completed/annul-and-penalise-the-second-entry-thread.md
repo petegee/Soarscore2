@@ -1,6 +1,30 @@
 # Story — The second Entry thread (annul and penalise)
 
-**Status:** In progress — implementing · **Raised:** 2026-08-16 · **Re-scoped:** 2026-08-18 · **Planned:** 2026-08-21
+**Status:** Completed — implemented 2026-08-21 · **Raised:** 2026-08-16 · **Re-scoped:** 2026-08-18 · **Planned:** 2026-08-21
+
+## Implementation notes (deviations from the plan as written)
+
+Two deviations, both discovered while building, recorded so the plan's
+assumptions do not mislead a later reader:
+
+- **WI-5 found a scoring bug the plan did not anticipate.** The plan's WI-10
+  annul+replace scenario requires an annulled Entry and its live replacement to
+  coexist for one competitor+task-round. Both `ScoringService.ScoreCompetition`
+  and `ScoreTaskRoundHandler` built `groupEntries` keyed by `CompetitorRef` with
+  `ToImmutableDictionary`, so the second Entry collided as a duplicate key before
+  the annulled Entry's `NoResult` was ever read. Fixed by excluding annulled
+  Entries from `groupEntries` (`&& e.Annulment is null`) in both places — the
+  replacement is the one that scores. Pinned by
+  `tests/Soarscore.Domain.Tests/ScoringServiceAnnulmentTests.cs`.
+- **WI-10's penalty scenarios use F5J, not F5K.** The plan named F5K for finding
+  5 (it declares a ZeroFlight, a ZeroRound and a 300-point DeductPoints in one
+  class). F5J declares the same two kinds the scenarios actually need — a
+  ZeroFlight (`launchOutsideCorridor`) and a 300-point `DeductPoints`
+  (`safetyAreaInfringement`) — and was already wired into the acceptance steps
+  (`ResolveDefinition`, `CaptureFlightAsync`), so the scenarios reuse that rather
+  than adding a second corpus class's full-flight capture and parameter binding.
+  The class used is a detail; the scenarios exercise the same commands, events and
+  store round-trip either way.
 
 ## What
 

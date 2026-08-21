@@ -29,10 +29,12 @@ using Soarscore.Application.Commands.Entries;
 using Soarscore.Application.Commands.People;
 using Soarscore.Application.Queries.Competitions;
 using Soarscore.Application.Queries.Scoring;
+using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 
 namespace Soarscore.Acceptance.Tests.Steps;
@@ -64,6 +66,14 @@ public sealed class ScoringACompetitionSteps
     // groupRef → (competitorRef → flight time), so each group's own winner is
     // recoverable without reference to the other group's.
     private readonly Dictionary<GroupId, Dictionary<CompetitorId, decimal>> _flightTimesByGroup = new();
+
+    // Populated by the penalty/annulment scenarios' When steps, read by their
+    // Then steps (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md WI-10).
+    private CompetitorId _annulReplacementCompetitor;
+    private CompetitorId _flightPenaltyCompetitor;
+    private CompetitorId _flightPenaltyWinner;
+    private CompetitorId _aggregatePenaltyCompetitor;
+    private readonly Dictionary<CompetitorId, decimal> _aggregateScenarioTimes = new();
 
     // ---------------------------------------------------------------- Given
 
@@ -266,6 +276,102 @@ public sealed class ScoringACompetitionSteps
         }
     }
 
+    /// <summary>
+    /// The F3F.1.5 provisional re-flight shape, exercised end to end: a
+    /// competitor's first attempt is captured, a second open is refused while
+    /// that attempt is live (openEntry.alreadyOpen), the attempt is annulled,
+    /// and a replacement opens and flies — scoring the replacement, not the
+    /// annulled attempt.
+    /// </summary>
+    [When(@"^competitor 1's first attempt is annulled and replaced by a re-flight$")]
+    public async Task WhenCompetitor1sFirstAttemptIsAnnulledAndReplacedByAReFlight()
+    {
+        var group = await ResolveGroupAsync(roundOrdinal: 1);
+        var competitor = group.CompetitorRefs[0];
+
+        // First attempt: a full flight at 400 s.
+        var firstEntryId = await CaptureFlightAsync(1, group.Id, competitor, 400m);
+
+        // A second open before the annulment is refused — the bookkeeping half
+        // of the re-flight rule, exercised over real HTTP (WI-6).
+        var refused = await ApiClient.PostCommandRawAsync(
+            Client, "/open-entry", new OpenEntry(_competitionId, 0, 1, 1, group.Id, competitor));
+        refused.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        (await ReadProblemTitleAsync(refused)).Should().Be("openEntry.alreadyOpen");
+
+        // The jury annuls the provisional attempt.
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/annul-entry",
+            new AnnulEntry(firstEntryId, "the competitor re-flew under protest", "the jury"));
+
+        // The replacement opens and flies 500 s — now the group's longest.
+        await CaptureFlightAsync(1, group.Id, competitor, 500m);
+
+        // The other five fly shorter, distinct times.
+        var others = group.CompetitorRefs.Where(c => c != competitor).ToArray();
+        var times = new decimal[] { 100m, 150m, 200m, 250m, 300m };
+        for (var i = 0; i < others.Length; i++)
+        {
+            await CaptureFlightAsync(1, group.Id, others[i], times[i]);
+        }
+
+        _annulReplacementCompetitor = competitor;
+    }
+
+    [When(@"^every competitor flies, competitor 1 committing a launch-outside-corridor infraction$")]
+    public async Task WhenEveryCompetitorFliesCompetitor1CommittingALaunchOutsideCorridorInfraction()
+    {
+        var group = await ResolveGroupAsync(roundOrdinal: 1);
+        var penalised = group.CompetitorRefs[0];
+
+        // Times chosen so normalised scores are exact (winner 400 → ×2.5): the
+        // penalised competitor flies 300 (mid-field, never the winner), the rest
+        // 320..400, so zeroing the penalised attempt does not move the winner.
+        var times = new decimal[] { 300m, 320m, 340m, 360m, 380m, 400m };
+        EntryId penalisedEntryId = default;
+        for (var i = 0; i < group.CompetitorRefs.Length; i++)
+        {
+            var entryId = await CaptureFlightAsync(1, group.Id, group.CompetitorRefs[i], times[i]);
+            if (i == 0)
+            {
+                penalisedEntryId = entryId;
+            }
+        }
+
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/record-entry-penalty",
+            new RecordEntryPenalty(penalisedEntryId, "launchOutsideCorridor", PenaltyScope.Flight, "the scorer"));
+
+        _flightPenaltyCompetitor = penalised;
+        _flightPenaltyWinner = group.CompetitorRefs[5];
+    }
+
+    [When(@"^every competitor flies and a 300-point safety penalty is recorded against competitor 1$")]
+    public async Task WhenEveryCompetitorFliesAndA300PointSafetyPenaltyIsRecordedAgainstCompetitor1()
+    {
+        var group = await ResolveGroupAsync(roundOrdinal: 1);
+        var penalised = group.CompetitorRefs[0];
+
+        // Skill constant per competitor (winner 500 → normalised == 2 * skill).
+        var times = group.CompetitorRefs
+            .Select((c, i) => (c, skill: 250m + i * 50m))
+            .ToArray();
+
+        foreach (var (competitorRef, skill) in times)
+        {
+            await CaptureFlightAsync(1, group.Id, competitorRef, skill);
+            _aggregateScenarioTimes[competitorRef] = 2m * skill;
+        }
+
+        // The 300-point safety penalty, Competition-scoped, against competitor 1.
+        await ApiClient.PostCommandAsync<CompetitionId>(
+            Client, "/record-competition-penalty",
+            new RecordCompetitionPenalty(_competitionId, "safetyAreaInfringement", PenaltyScope.Competition,
+                penalised, new TaskRoundCoordinate(0, 1, 1), "the contest director"));
+
+        _aggregatePenaltyCompetitor = penalised;
+    }
+
     // ----------------------------------------------------------------- Then
 
     [Then(@"^the group's result holds a normalised score for each of its 6 competitors$")]
@@ -391,7 +497,60 @@ public sealed class ScoringACompetitionSteps
         }
     }
 
+    [Then(@"^the competitor's group result reflects the replacement's flight time, not the annulled attempt's$")]
+    public async Task ThenTheCompetitorsGroupResultReflectsTheReplacementFlightTime()
+    {
+        var view = (await FetchAllGroupViewsAsync(roundOrdinal: 1)).Single();
+
+        // The replacement (500 s) is the group's best flight → 1000; the
+        // annulled 400 s contributed nothing.
+        var result = view.Results.Single(r => r.CompetitorRef == _annulReplacementCompetitor);
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be(1000m);
+        view.WinnerRef.Should().Be(_annulReplacementCompetitor);
+    }
+
+    [Then(@"^competitor 1's group result is no result, and the group's winner still scores 1000$")]
+    public async Task ThenCompetitor1sGroupResultIsNoResultAndTheGroupsWinnerStillScores1000()
+    {
+        var view = (await FetchAllGroupViewsAsync(roundOrdinal: 1)).Single();
+
+        var penalised = view.Results.Single(r => r.CompetitorRef == _flightPenaltyCompetitor);
+        penalised.State.Should().Be(TaskResultState.NoResult);
+        penalised.RawScore.Should().Be(0m);
+
+        var winner = view.Results.Single(r => r.CompetitorRef == _flightPenaltyWinner);
+        winner.RawScore.Should().Be(1000m);
+        view.WinnerRef.Should().Be(_flightPenaltyWinner);
+    }
+
+    [Then(@"^competitor 1's leaderboard score is 300 lower, and every other competitor's is unchanged$")]
+    public async Task ThenCompetitor1sLeaderboardScoreIs300LowerAndEveryOtherCompetitorsIsUnchanged()
+    {
+        var view = await ApiClient.GetAsync<CompetitionScoreView>(Client, $"/competition-result?competitionRef={_competitionId.Value}");
+
+        foreach (var score in view.Scores)
+        {
+            score.Disqualified.Should().BeFalse();
+
+            if (score.CompetitorRef == _aggregatePenaltyCompetitor)
+            {
+                score.Score.Should().Be(_aggregateScenarioTimes[score.CompetitorRef] - 300m);
+            }
+            else
+            {
+                score.Score.Should().Be(_aggregateScenarioTimes[score.CompetitorRef]);
+            }
+        }
+    }
+
     // --------------------------------------------------------------- helpers
+
+    private static async Task<string> ReadProblemTitleAsync(HttpResponseMessage response)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("title").GetString()!;
+    }
 
     private async Task<Group> ResolveGroupAsync(int roundOrdinal) =>
         (await ResolveGroupsAsync(roundOrdinal)).Single(g => g.Ordinal == 1);

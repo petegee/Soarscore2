@@ -66,9 +66,9 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Nineteen commands + nine queries
-        // are mapped as of amend-a-measurement.md WI-8.
-        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(19);
+        // test below would vacuously pass. Twenty-two commands + nine queries
+        // are mapped as of annul-and-penalise-the-second-entry-thread.md WI-8.
+        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(22);
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;

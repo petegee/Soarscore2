@@ -138,9 +138,15 @@ public class OpenEntryHandlerTests
     public async Task Opening_a_second_entry_for_the_same_competitor_and_task_round_fails_with_openEntry_alreadyOpen()
     {
         var (store, competitionId, competitors, groupRef) = SeedDrawnCompetition();
+        var existingId = EntryId.New();
+        // The index reports an Original entry, and its stream holds a live
+        // (non-annulled) EntryOpened — so a new open is refused.
         var entryQuery = new FakeEntryQuery();
         entryQuery.Seed(new EntrySummary(
-            EntryId.New(), competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original));
+            existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, Now)],
+            TestContext.Current.CancellationToken);
         var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
 
         var result = await handler.HandleAsync(
@@ -152,6 +158,31 @@ public class OpenEntryHandlerTests
         // that an Original one is already open (a re-flight legitimately
         // opens a second Entry for the same competitor/task-round).
         result.Message.Should().NotContain("rule");
+    }
+
+    [Fact]
+    public async Task An_annulled_original_entry_does_not_block_a_new_open()
+    {
+        // The F3F.1.5 provisional re-flight shape: the competitor re-flies under
+        // protest, the jury annuls the first attempt, and a second Original
+        // Entry opens for the same competitor/task-round.
+        var (store, competitionId, competitors, groupRef) = SeedDrawnCompetition();
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, Now)],
+            TestContext.Current.CancellationToken);
+        await store.AppendAsync(existingId.Value, ExpectedVersion.Exact(1),
+            [new EntryAnnulled(new Annulment { Reason = "protest", By = "the jury", At = Now })],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 1, 1, groupRef, competitors[0]), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
     }
 
     [Fact]

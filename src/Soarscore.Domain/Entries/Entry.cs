@@ -424,6 +424,87 @@ public sealed record Entry
         return Result<MeasurementAmended>.Success(new MeasurementAmended(flightSequence, metric, amendment));
     }
 
+    // Instance decide function — WI-2 (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md).
+    // A ruling, not an infraction with a modelled cost: there is nothing to
+    // validate against the class definition, and deliberately no gate on
+    // task-round state (an annulment is a ruling *about* recorded data, and the
+    // ordinary case is a protest after the round looked finished — NFR-4's
+    // world). Re-annulment is allowed: the fold overwrites, which is the right
+    // semantics for a jury revising a ruling (P2 holds it true). Reason and By
+    // are validated here, not in the handler, exactly as AmendMeasurement does:
+    // a ruling's justification is a substantive record, not an audit breadcrumb.
+    public Result<EntryAnnulled> AnnulEntry(string reason, string by, DateTimeOffset at)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result<EntryAnnulled>.Failure(
+                "annulEntry.reasonRequired",
+                "A reason is required — it is the recorded ruling, not an audit breadcrumb.");
+        }
+
+        if (string.IsNullOrWhiteSpace(by))
+        {
+            return Result<EntryAnnulled>.Failure(
+                "annulEntry.byRequired", "By is required — a self-declared jury name, not an authorisation claim.");
+        }
+
+        return Result<EntryAnnulled>.Success(new EntryAnnulled(new Annulment
+        {
+            Reason = reason,
+            By = by,
+            At = at,
+        }));
+    }
+
+    // Instance decide function — WI-3 (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md).
+    // penaltyDefinitions arrives already resolved from the Competition's
+    // AdoptedRules.Definition.Penalties — Entry never learns which class it is
+    // flying under, exactly as CaptureMeasurement's metrics parameter. The
+    // write path rejects an infraction type the class does not declare
+    // (recordPenalty.infractionTypeNotDeclared) rather than letting
+    // PenaltyEngine silently skip it at read time — the CD believes they
+    // penalised someone and nothing happens. The engine's read-side tolerance
+    // stays: it is the safety net for events already in a log.
+    public Result<PenaltyRecorded> RecordPenalty(
+        Penalty penalty, ImmutableArray<PenaltyDefinition> penaltyDefinitions)
+    {
+        if (Annulment is not null)
+        {
+            return Result<PenaltyRecorded>.Failure(
+                "entry.annulled", "This Entry has been annulled and cannot record a penalty.");
+        }
+
+        if (penalty.Scope is not (PenaltyScope.Flight or PenaltyScope.Entry))
+        {
+            return Result<PenaltyRecorded>.Failure(
+                "recordPenalty.wrongScope",
+                $"A penalty recorded against an Entry must be Flight or Entry scoped; got {penalty.Scope}.");
+        }
+
+        if (penalty.CompetitorRef is not null || penalty.TaskRound is not null)
+        {
+            return Result<PenaltyRecorded>.Failure(
+                "recordPenalty.subjectNotAllowed",
+                "The Entry is its own subject and coordinate; an Entry-scoped penalty must not carry a CompetitorRef or a TaskRound.");
+        }
+
+        if (!penaltyDefinitions.Any(d => d.InfractionType == penalty.InfractionType))
+        {
+            return Result<PenaltyRecorded>.Failure(
+                "recordPenalty.infractionTypeNotDeclared",
+                $"'{penalty.InfractionType}' is not an infraction type declared by the adopted class definition.");
+        }
+
+        if (penalty.By is not null && string.IsNullOrWhiteSpace(penalty.By))
+        {
+            return Result<PenaltyRecorded>.Failure(
+                "recordPenalty.byBlank",
+                "By, when supplied, must not be blank — an absent By is fine, a blank one is a typo.");
+        }
+
+        return Result<PenaltyRecorded>.Success(new PenaltyRecorded(penalty));
+    }
+
     /// <summary>Finds the Flight matching <paramref name="sequence"/> and replaces it via <paramref name="update"/>.</summary>
     private static ImmutableArray<Flight> ReplaceFlight(
         ImmutableArray<Flight> flights,
