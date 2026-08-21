@@ -42,6 +42,14 @@ is a pilot on a phone rather than a scorer working down a card.
 - Cross-check the F3K rules via the `fai-rules` skill for whether launch *order*
   within a task carries any scoring meaning of its own — if it does, this is a
   domain constraint rather than a data-entry one and the story changes shape.
-- Related but separate: `kanban/backlog/amend-a-measurement.md`. Both are
+- Related but separate: `kanban/completed/amend-a-measurement.md`. Both are
   "retrospective entry is a first-class workflow" problems in the `Entry`
-  aggregate, and they may want to land together.
+  aggregate, and they were initially thought to want to land together.
+- **Landed without this thread (2026-08-18).** `amend-a-measurement.md` completed
+  its measurement half and did NOT fold this in. WI-7 of that plan corrects a
+  launch *time* in place, which is a different act: it leaves `sequence` meaning
+  "which launch this was" untouched, whereas this story changes what `sequence`
+  means and needs an `fai-rules` cross-check on whether launch order carries
+  scoring weight of its own (see the first "Before starting" bullet above).
+  Nothing about this story's shape changed as a result; the work it described is
+  still open.

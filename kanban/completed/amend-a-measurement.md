@@ -1,6 +1,6 @@
 # Amend a captured measurement
 
-**Status:** In progress · **Raised:** 2026-08-18 · **Planned:** 2026-08-18
+**Status:** Completed · **Raised:** 2026-08-18 · **Planned:** 2026-08-18 · **Completed:** 2026-08-21
 
 ## What
 

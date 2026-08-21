@@ -19,10 +19,12 @@ using Soarscore.Application.Commands.Entries;
 using Soarscore.Application.Commands.People;
 using Soarscore.Application.Queries.Competitions;
 using Soarscore.Application.Queries.Entries;
+using Soarscore.Application.Queries.Scoring;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 using Xunit;
 
@@ -39,6 +41,11 @@ public sealed class CapturingAScoreSteps
     private readonly List<CompetitorId> _competitors = [];
     private readonly Dictionary<(int Round, int Group), GroupId> _groupIds = new();
     private EntryId _entryId;
+
+    // Populated by the amend scenario's full-flight When step, keyed by
+    // competitor ordinal — the correction must be assertable back against the
+    // specific entry it was made on, not the last entry opened.
+    private readonly Dictionary<int, EntryId> _entryIds = new();
 
     // ---------------------------------------------------------------- Given
 
@@ -84,7 +91,7 @@ public sealed class CapturingAScoreSteps
             new BindParameter(_competitionId, "groupSize", MeasuredValue.Of((decimal)groupSize), "The contest director"));
     }
 
-    [Given(@"^a drawn preliminary phase of (\d+) rounds$")]
+    [Given(@"^a drawn preliminary phase of (\d+) rounds?$")]
     public async Task GivenADrawnPreliminaryPhaseOfRounds(int rounds)
     {
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
@@ -148,6 +155,33 @@ public sealed class CapturingAScoreSteps
             Client, "/capture-measurement", new CaptureMeasurement(_entryId, 1, "flightTime", MeasuredValue.Of((decimal)seconds)));
     }
 
+    /// <summary>
+    /// The amend scenario's composite When: opens competitor's entry and its
+    /// one flight, captures a flight time, then captures the rest of F5J's
+    /// declared metrics (each contributing zero to the raw score, so raw ==
+    /// flightTime — the same convention ScoringACompetitionSteps.cs's header
+    /// records). Keeping the corresponding EntryId by competitor ordinal lets
+    /// the Then steps read the exact entry the correction was made on.
+    /// </summary>
+    [When(@"^the scorer records a full F5J flight for competitor (\d+) with a flight time of (\d+) seconds$")]
+    public async Task WhenTheScorerRecordsAFullF5JFlightForCompetitor(int competitorOrdinal, int seconds)
+    {
+        await WhenTheScorerOpensAnEntryForCompetitorInRoundGroup(competitorOrdinal, 1, 1);
+        _entryIds[competitorOrdinal] = _entryId;
+        await WhenTheScorerOpensAFlight();
+        await WhenTheScorerCapturesFlightTimeOfSeconds(seconds);
+        await CaptureTheOtherF5JMetricsAsync();
+    }
+
+    [When(@"^the scorer corrects the flight time to (\d+) seconds$")]
+    public async Task WhenTheScorerCorrectsTheFlightTimeToSeconds(int seconds)
+    {
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/amend-measurement",
+            new AmendMeasurement(_entryId, 1, "flightTime", MeasuredValue.Of((decimal)seconds),
+                "mistyped the flight time", "the contest director"));
+    }
+
     // ----------------------------------------------------------------- Then
 
     [Then(@"^the entry holds one flight with a flightTime of (\d+)$")]
@@ -196,7 +230,83 @@ public sealed class CapturingAScoreSteps
             .Which.Value.Number.Should().Be(62m);
     }
 
+    [Then(@"^the winner of the group is competitor (\d+)$")]
+    public async Task ThenTheWinnerOfTheGroupIsCompetitor(int competitorOrdinal)
+    {
+        var view = (await TaskRoundResultAsync()).Single();
+
+        view.WinnerRef.Should().Be(_competitors[competitorOrdinal - 1]);
+    }
+
+    [Then(@"^the corrected competitor scores (\d+), the mistyped (\d+) having been replaced$")]
+    public async Task ThenTheCorrectedCompetitorScoresTheMistypedHavingBeenReplaced(int expectedScore, int _)
+    {
+        var view = (await TaskRoundResultAsync()).Single();
+        var result = view.Results.Single(r => r.CompetitorRef == _competitors[0]);
+
+        // The score is built from the corrected 412, not the mistyped 4120: if
+        // the correction had not landed, the (capped) 600 would have won the
+        // group instead. 1000 * 412 / 400 == 1030.
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be((decimal)expectedScore);
+    }
+
+    [Then(@"^the entry still holds the other metrics captured alongside the flight time$")]
+    public async Task ThenTheEntryStillHoldsTheOtherMetricsCapturedAlongsideTheFlightTime()
+    {
+        // The story's whole point: today's only remedy — annulling the whole
+        // Entry — would destroy these. A correction must leave them intact.
+        var entry = await EntryReader.LoadAsync(AcceptanceFixture.EventStore, _entryIds[1], TestContext.Current.CancellationToken);
+
+        var measurements = entry.Flights[0].Measurements;
+        measurements.Should().ContainSingle(m => m.Metric == "flightTime");
+        measurements.Should().Contain(m => m.Metric == "startHeight");
+        measurements.Should().Contain(m => m.Metric == "startHeightRecorded");
+        measurements.Should().Contain(m => m.Metric == "overflySeconds");
+        measurements.Should().Contain(m => m.Metric == "touchedByCompetitor");
+        measurements.Should().Contain(m => m.Metric == "landingDistance");
+    }
+
+    [Then(@"^the original (\d+) is still readable next to the correction$")]
+    public async Task ThenTheOriginalValueIsStillReadableNextToTheCorrection(int originalValue)
+    {
+        // The append-only promise, asserted end to end: the mistyped original
+        // survives, and the recorded correction names who fixed it and why.
+        var entry = await EntryReader.LoadAsync(AcceptanceFixture.EventStore, _entryIds[1], TestContext.Current.CancellationToken);
+
+        var measurement = entry.Flights[0].Measurements.Single(m => m.Metric == "flightTime");
+        measurement.Value.Should().Be(MeasuredValue.Of((decimal)originalValue));
+
+        var amendment = measurement.Amendments.Should().ContainSingle().Subject;
+        amendment.NewValue.Should().Be(MeasuredValue.Of(412m));
+        amendment.Reason.Should().Be("mistyped the flight time");
+        amendment.By.Should().Be("the contest director");
+    }
+
     // --------------------------------------------------------------- helpers
+
+    /// <summary>
+    /// Captures the rest of F5J's declared metrics on the current entry's
+    /// flight, each fixed to a value contributing zero to the raw score (so raw
+    /// == flightTime) — the same convention ScoringACompetitionSteps.cs uses.
+    /// </summary>
+    private async Task CaptureTheOtherF5JMetricsAsync()
+    {
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "startHeight", MeasuredValue.Of(0m)));
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "startHeightRecorded", MeasuredValue.Of(true)));
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "overflySeconds", MeasuredValue.Of(0m)));
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "touchedByCompetitor", MeasuredValue.Of(false)));
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, 1, "landingDistance", MeasuredValue.Of(100m))); // beyond the last row -> Rest(0)
+    }
+
+    private async Task<List<GroupScoreView>> TaskRoundResultAsync() =>
+        await ApiClient.GetAsync<List<GroupScoreView>>(Client,
+            $"/task-round-result?competitionRef={_competitionId.Value}&phaseOrdinal=0&roundOrdinal=1&taskRoundOrdinal=1");
 
     private async Task<GroupId> ResolveGroupIdAsync(int roundOrdinal, int groupOrdinal)
     {

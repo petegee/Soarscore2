@@ -34,6 +34,7 @@ public static class Commands
         app.MapCommand<OpenEntry, EntryId>("/open-entry");
         app.MapCommand<OpenFlight, EntryId>("/open-flight");
         app.MapCommand<CaptureMeasurement, EntryId>("/capture-measurement");
+        app.MapCommand<AmendMeasurement, EntryId>("/amend-measurement");
 
         return app;
     }

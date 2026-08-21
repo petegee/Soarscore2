@@ -61,12 +61,16 @@ internal static class SoarscoreEventTypes
         (typeof(TaskRoundReopened), "taskRoundReopened"),
         (typeof(Finalised), "finalised"),
 
-        // capture-a-score-steel-thread-plan.md WI-9 — three of the six EntryEvent
-        // subtypes, the narrow capture slice that thread scoped itself to. The other
-        // three (MeasurementAmended, EntryAnnulled, PenaltyRecorded) are the
-        // corrections-and-rulings thread, deliberately out of scope for capture.
+        // capture-a-score-steel-thread-plan.md WI-9 registered the narrow capture
+        // slice: EntryOpened, FlightOpened, MeasurementCaptured.
+        // amend-a-measurement.md WI-5 registered MeasurementAmended (the event a
+        // correction appends). The remaining two EntryEvent subtypes
+        // (EntryAnnulled, PenaltyRecorded) are the rest of the second Entry
+        // thread — kanban/backlog/annul-and-penalise-the-second-entry-thread.md —
+        // deliberately still unregistered because nothing appends them yet.
         (typeof(EntryOpened), "entryOpened"),
         (typeof(FlightOpened), "flightOpened"),
         (typeof(MeasurementCaptured), "measurementCaptured"),
+        (typeof(MeasurementAmended), "measurementAmended"),
     ];
 }

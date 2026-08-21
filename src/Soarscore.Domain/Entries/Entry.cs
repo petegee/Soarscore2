@@ -324,10 +324,12 @@ public sealed record Entry
                 $"'{metric}' is a {metricDefinition.Kind} metric; the captured value is a {value.Kind}.");
         }
 
-        // A second value for the same metric is a correction, MeasurementAmended's
-        // job — which does not exist yet (out of scope, see the plan's Scope
-        // section). This is what makes the aggregate's append-only promise
-        // enforceable rather than aspirational.
+        // A second value for the same metric is a correction, which
+        // AmendMeasurement (below) emits as a MeasurementAmended rather than a
+        // second capture. This is what makes the aggregate's append-only
+        // promise enforceable rather than aspirational: a first value is a
+        // capture, every subsequent one is an amendment, and neither can
+        // impersonate the other.
         if (flight.Measurements.Any(m => m.Metric == metric))
         {
             return Result<MeasurementCaptured>.Failure(
@@ -352,6 +354,96 @@ public sealed record Entry
         };
 
         return Result<MeasurementCaptured>.Success(new MeasurementCaptured(flightSequence, measurement));
+    }
+
+    // Instance decide function — WI-1 (kanban/completed/amend-a-measurement.md).
+    // The correcting counterpart to CaptureMeasurement above: a metric already
+    // captured on a
+    // flight is amended (appends a MeasurementAmended) rather than captured
+    // again. metrics arrives already resolved from the task's declared
+    // MetricDefinitions, exactly as it does for capture — Entry never learns
+    // which class it is flying under. Reason and By are validated here, not in
+    // the handler, following Competition.AnnulTaskRound's ReasonGiven and
+    // Competition.Finalise's byRequired rather than BindParameter's
+    // handler-side By: an amendment's justification is a substantive record of
+    // a correction, not an audit breadcrumb (amend-a-measurement.md, decision
+    // 1). At comes from IClock in the handler; the write path enforces nobody's
+    // role — the corrector may be anyone, recorded rather than refused.
+    public Result<MeasurementAmended> AmendMeasurement(
+        int flightSequence,
+        string metric,
+        MeasuredValue newValue,
+        string reason,
+        string by,
+        DateTimeOffset at,
+        ImmutableArray<MetricDefinition> metrics)
+    {
+        if (Annulment is not null)
+        {
+            return Result<MeasurementAmended>.Failure(
+                "entry.annulled", "This Entry has been annulled and cannot record further measurements.");
+        }
+
+        var flight = Flights.FirstOrDefault(f => f.Sequence == flightSequence);
+        if (flight is null)
+        {
+            return Result<MeasurementAmended>.Failure(
+                "amendMeasurement.flightNotFound", $"No flight with sequence {flightSequence} has been opened.");
+        }
+
+        var measurement = flight.Measurements.FirstOrDefault(m => m.Metric == metric);
+        if (measurement is null)
+        {
+            return Result<MeasurementAmended>.Failure(
+                "amendMeasurement.notCaptured",
+                $"'{metric}' has not been captured for flight {flightSequence}; there is nothing to amend. " +
+                "A first value is a capture, not an amendment.");
+        }
+
+        var metricDefinition = metrics.FirstOrDefault(m => m.Name == metric);
+        if (metricDefinition is null)
+        {
+            return Result<MeasurementAmended>.Failure(
+                "amendMeasurement.metricNotDeclared", $"'{metric}' is not a metric declared by this task.");
+        }
+
+        if (newValue.Kind != metricDefinition.Kind)
+        {
+            return Result<MeasurementAmended>.Failure(
+                "amendMeasurement.kindMismatch",
+                $"'{metric}' is a {metricDefinition.Kind} metric; the amended value is a {newValue.Kind}.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result<MeasurementAmended>.Failure(
+                "amendMeasurement.reasonRequired",
+                "A reason is required — it is the recorded justification for the correction, not an audit breadcrumb.");
+        }
+
+        if (string.IsNullOrWhiteSpace(by))
+        {
+            return Result<MeasurementAmended>.Failure(
+                "amendMeasurement.byRequired", "By is required — a self-declared corrector's name, not an authorisation claim.");
+        }
+
+        // Round the corrected value per the metric's declared precision,
+        // identical to CaptureMeasurement's stored-value rule (finding 5): the
+        // stored value IS the raw observation, so a correction carries no
+        // precision a capture cannot.
+        var correctedValue = metricDefinition.Precision is { } precision && newValue.Number is { } number
+            ? newValue with { Number = RoundingSupport.ApplyRounding(number, precision) }
+            : newValue;
+
+        var amendment = new Amendment
+        {
+            NewValue = correctedValue,
+            Reason = reason,
+            By = by,
+            At = at,
+        };
+
+        return Result<MeasurementAmended>.Success(new MeasurementAmended(flightSequence, metric, amendment));
     }
 
     /// <summary>Finds the Flight matching <paramref name="sequence"/> and replaces it via <paramref name="update"/>.</summary>

@@ -34,3 +34,15 @@ Feature: Capturing a score
     And the scorer records that the launch was outside the working time
     And the scorer captures flightTime of 62 seconds
     Then the flight is recorded with both the false start and the flight time
+
+  Scenario: A mistyped flight time is corrected without annulling the entry
+    Given a published F5J class definition
+    And a competition adopting it with 6 registered competitors
+    And a drawn preliminary phase of 1 round
+    When the scorer records a full F5J flight for competitor 1 with a flight time of 4120 seconds
+    And the scorer corrects the flight time to 412 seconds
+    And the scorer records a full F5J flight for competitor 2 with a flight time of 500 seconds
+    Then the winner of the group is competitor 2
+    And the corrected competitor scores 824, the mistyped 4120 having been replaced
+    And the entry still holds the other metrics captured alongside the flight time
+    And the original 4120 is still readable next to the correction
