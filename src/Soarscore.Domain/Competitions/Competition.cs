@@ -922,7 +922,6 @@ public sealed record Competition
             .SelectMany(p => p.Tasks)
             .First(t => t.Code == taskRound.TaskRef);
 
-        TimeWindow workingTime;
         if (task.Timing.Kind == WorkingTimeKind.Fixed)
         {
             if (task.Timing.WorkingTime is not { } declaredWorkingTime)
@@ -936,30 +935,24 @@ public sealed record Competition
             // per kanban/completed/per-round-parameter-bindings-plan.md.
             var bindings = ScoringService.FlattenParameterBindings(ParameterBindings, phaseOrdinal, roundOrdinal);
 
-            decimal resolvedWorkingTimeSeconds;
             try
             {
-                resolvedWorkingTimeSeconds = ParameterResolver.Resolve(
+                // Validation only, deliberately: the resolved seconds are discarded. The
+                // call exists for its two failure modes — openEntry.workingTimeUndeclared
+                // above, and openEntry.parameterUnbound here, which is what forces a
+                // CD-parameter working time (F5K) to be bound before entries can open.
+                // No window is stored: remove-stored-working-time.md.
+                _ = ParameterResolver.Resolve(
                     declaredWorkingTime, bindings, AdoptedRules.Definition.Parameters);
             }
             catch (UnresolvedParameterException ex)
             {
                 return Result<EntryOpened>.Failure("openEntry.parameterUnbound", ex.Message);
             }
-
-            workingTime = new TimeWindow { Start = at, End = at.AddSeconds((double)resolvedWorkingTimeSeconds) };
-        }
-        else
-        {
-            // UntilAllFlightsComplete: not a class datum at all — the round
-            // ends when the last flight does (Entries/Entry.cs, TimeWindow's
-            // doc comment).
-            workingTime = new TimeWindow { Start = at, End = null };
         }
 
         return Result<EntryOpened>.Success(new EntryOpened(
             id,
-            workingTime,
             Id,
             phaseOrdinal,
             roundOrdinal,

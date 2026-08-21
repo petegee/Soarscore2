@@ -1,11 +1,21 @@
 // The Entry aggregate — docs/aggregate-roots.md §4, cross-checked against
 // docs/soaring-domain-class-diagram.md §1.
 //
-// One competitor's working-time window and everything captured in it: an
-// ordered list of Flights, each with raw Measurements (append-only, corrected
-// by Amendments, never overwritten). Isolating this as its own aggregate is
-// what keeps concurrent scorer writes — the live capture path — from
-// contending with the rest of the Competition.
+// One competitor's record for one task-round and everything captured in it:
+// an ordered list of Flights, each with raw Measurements (append-only,
+// corrected by Amendments, never overwritten). Isolating this as its own
+// aggregate is what keeps concurrent scorer writes — the live capture path —
+// from contending with the rest of the Competition.
+//
+// Flight times are NOT checked against any working time at capture: `F3K.7`
+// is explicit that a launch before the working time begins is scored zero,
+// not refused, and the flight runs "until a landing … or the working time
+// expires" — the working time is a scoring input, not a capture gate. The
+// class model owns launch-timing rules as data via
+// `TaskDefinition.FlightValidWhen` (CLAUDE.md's core architectural law). The
+// system no longer stores a window at all (remove-stored-working-time.md), so
+// there is nothing for capture to check against — the strongest form of the
+// same argument (kanban/completed/remove-flight-launchat.md).
 //
 // CompetitionRef, GroupRef and CompetitorRef reach across the aggregate
 // boundary into the Competition aggregate by id only (CompetitionId, GroupId,
@@ -27,34 +37,6 @@ public readonly record struct EntryId(Guid Value)
     public static EntryId New() => new(Guid.CreateVersion7());
 
     public override string ToString() => Value.ToString();
-}
-
-/// <summary>
-/// The working-time window a competitor flies within. Not expanded in either
-/// diagram — abbreviated away the same as several of ClassDefinition's own
-/// value objects. Flight times captured within the owning Entry are NOT
-/// checked against this window at capture. `F3K.7` is explicit that a launch
-/// before the working time begins is scored zero, not refused — and it makes
-/// the working time a scoring input, not a capture gate, in the other
-/// direction too: the flight runs "until a landing … or the working time
-/// expires". Encoding a reject-outside-window check in
-/// <see cref="Entry.OpenFlight"/> would put a scoring rule into the core
-/// system (CLAUDE.md's core architectural law); the class model already owns
-/// this as data, via `TaskDefinition.FlightValidWhen`
-/// (kanban/completed/capture-a-score-steel-thread-plan.md, finding 3).
-/// </summary>
-public sealed record TimeWindow
-{
-    public required DateTimeOffset Start { get; init; }
-
-    /// <summary>
-    /// Null under WorkingTimeKind.UntilAllFlightsComplete: the working time
-    /// is not a class datum at all, the round ends when the last flight does
-    /// (ScoringVocabulary.cs, TaskTiming.WorkingTime). Absence is the only
-    /// truthful encoding — the same rule absent Normalisation and absent
-    /// GroupConstraint follow.
-    /// </summary>
-    public DateTimeOffset? End { get; init; }
 }
 
 /// <summary>
@@ -111,7 +93,7 @@ public sealed record Measurement
 }
 
 /// <summary>
-/// One attempt within an Entry's working time. Carries no launch timestamp:
+/// One attempt within the task-round's working time. Carries no launch timestamp:
 /// see <see cref="Entry.OpenFlight"/> for why the rules never want one.
 /// </summary>
 public sealed record Flight
@@ -139,8 +121,7 @@ public sealed record Flight
 public enum ReflightRole { Original, Entitled, Filler }
 
 /// <summary>
-/// The aggregate root: one competitor's live flying record for one working-time
-/// window. <see cref="CompetitorRef"/> identifies the Competitor registration
+/// The aggregate root: one competitor's live flying record for one task-round. <see cref="CompetitorRef"/> identifies the Competitor registration
 /// inside the Competition aggregate — the record that carries the competitor
 /// number scorers name/id captures with, and the link back to the Person.
 /// Referencing an internal entity of another aggregate by id is legal here
@@ -150,8 +131,6 @@ public enum ReflightRole { Original, Entitled, Filler }
 public sealed record Entry
 {
     public required EntryId Id { get; init; }
-
-    public required TimeWindow WorkingTime { get; init; }
 
     /// <summary>The Competition this Entry belongs to.</summary>
     public required CompetitionId CompetitionRef { get; init; }
@@ -188,7 +167,6 @@ public sealed record Entry
     public static Entry Create(EntryOpened @event) => new()
     {
         Id = @event.Id,
-        WorkingTime = @event.WorkingTime,
         CompetitionRef = @event.CompetitionRef,
         PhaseOrdinal = @event.PhaseOrdinal,
         RoundOrdinal = @event.RoundOrdinal,

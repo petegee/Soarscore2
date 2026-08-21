@@ -205,12 +205,32 @@ public sealed class CapturingAScoreSteps
         matches.Should().ContainSingle(e => e.Id == _entryId);
     }
 
-    [Then(@"^the entry's working time has no end$")]
-    public async Task ThenTheEntrysWorkingTimeHasNoEnd()
+    [Then(@"^the task leaves the working time open-ended$")]
+    public async Task ThenTheTaskLeavesTheWorkingTimeOpenEnded()
     {
-        var entry = await EntryReader.LoadAsync(AcceptanceFixture.EventStore, _entryId, TestContext.Current.CancellationToken);
+        // Absence is the truthful encoding under UntilAllFlightsComplete: the
+        // round ends when the last flight does, so there is no stored
+        // clock-stamped window to check (removed by
+        // kanban/completed/remove-stored-working-time.md — it was manufactured
+        // from whoever-opened-the-entry's wall clock, never a fact anyone
+        // observed). The truth now lives where the rule does — the adopted
+        // class definition: the timing kind leaves the working time open, and
+        // the model encodes that as genuine absence, a null, not a default.
+        var view = await ApiClient.GetAsync<CompetitionView>(Client, $"/competition?id={_competitionId.Value}");
+        var competition = view.Competition;
 
-        entry.WorkingTime.End.Should().BeNull();
+        // The same ordinals the When step opened the entry against — phase 0,
+        // round 1, task-round 1 (Competition.Phase is 0-based at draw time;
+        // Round and TaskRound are 1-based; see WhenTheScorerOpensAnEntry...).
+        var phase = competition.Phases.Single(p => p.Ordinal == 0);
+        var round = phase.Rounds.Single(r => r.Ordinal == 1);
+        var taskRound = round.TaskRounds.Single(tr => tr.Ordinal == 1);
+        var task = competition.AdoptedRules.Definition.Phases
+            .SelectMany(p => p.Tasks)
+            .First(t => t.Code == taskRound.TaskRef);
+
+        task.Timing.Kind.Should().Be(WorkingTimeKind.UntilAllFlightsComplete);
+        task.Timing.WorkingTime.Should().BeNull();
     }
 
     [Then(@"^the flight is recorded with both the false start and the flight time$")]

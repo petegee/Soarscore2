@@ -104,7 +104,6 @@ classDiagram
 
     class Entry {
         <<aggregate root>>
-        +TimeWindow workingTime
         +int phaseOrdinal
         +int roundOrdinal
         +int taskRoundOrdinal
@@ -1097,8 +1096,8 @@ stage reads anything new from `AdoptedRules` for it.
   adoption check that guards it is that a `Normalisation` requires a
   `GroupConstraint`.
 - **A working time's end is optional, and its absence is a statement too.**
-  `TimeWindow.end` is null under `WorkingTimeKind.UntilAllFlightsComplete` — the
-  round ends when the last flight does, not at a moment anyone can name in
+  `TaskTiming.workingTime` is null under `WorkingTimeKind.UntilAllFlightsComplete`
+  — the round ends when the last flight does, not at a moment anyone can name in
   advance (F3F, F3K task C, NZ Class M ALES 200, NZ Class M NDC). This is the
   same rule absent `Normalisation` and absent `GroupConstraint` already
   follow: recording a guessed end time would be a fabricated fact, not a

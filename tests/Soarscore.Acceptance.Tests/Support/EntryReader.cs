@@ -1,7 +1,7 @@
 // kanban/completed/capture-a-score-steel-thread-plan.md WI-13. No GetEntry query
 // exists yet (EntrySummary.cs: "a future work item, mirroring GetCompetition"),
 // so a Then step asserting an Entry's full folded state — a flight, a
-// measurement, a null TimeWindow.End — has no HTTP surface to read it from.
+// measurement, a flight — has no HTTP surface to read it from.
 // Reads the raw stream directly and folds it with the public
 // Entry.Apply, exactly EntryCaptureEventStoreTests.cs's own LoadEntryAsync
 // (WI-12) — the same internal-EntryLoader shape, inlined here because

@@ -21,11 +21,12 @@
 //
 // Tests 3 and 4 are the payoff test the whole plan is building towards, run
 // twice: once under a Fixed-timing class (F5J) and once under NZ Class M
-// ALES 200, which is UntilAllFlightsComplete AND parameter-bound (groupSize)
-// — the only case in the corpus that exercises finding 2's null
-// TimeWindow.End and the bind-parameter thread's ParameterResolver together
-// in one scenario (the resolver fires for the draw's groupSize binding; the
-// null End comes from Competition.OpenEntry's UntilAllFlightsComplete arm).
+// ALES 200 — UntilAllFlightsComplete AND parameter-bound (groupSize). Scenario
+// 4's point survives the removal of the stored window (remove-stored-working-time.md
+// WI-3): the draw resolves the groupSize binding, so groupSize must be bound
+// before any entry can even be drawn and opened, and once it is, the open
+// succeeds under UntilAllFlightsComplete timing (whose WorkingTime is null —
+// no Fixed-time arm fires for it).
 
 using AwesomeAssertions;
 using Soarscore.Application;
@@ -55,9 +56,9 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
     // test, the replay test and payoff scenario 3 (Fixed timing).
     private static readonly ClassDefinition F5JDefinition = Corpus.All.Single(c => c.FileName == "30-f5j").Definition;
 
-    // NZ Class M ALES 200 — UntilAllFlightsComplete timing (TimeWindow.End is
-    // null, finding 2) AND groupSize is a bound parameter with no default
-    // (bind-parameter-steel-thread-plan.md). Payoff scenario 4.
+    // NZ Class M ALES 200 — UntilAllFlightsComplete timing (WorkingTime is
+    // null, not a class datum) AND groupSize is a bound parameter with no
+    // default (bind-parameter-steel-thread-plan.md). Payoff scenario 4.
     private static readonly ClassDefinition NzMAles200Definition = Corpus.All.Single(c => c.FileName == "80-nz-m-ales200").Definition;
 
     private static async Task<CompetitionId> CreateCompetitionAsync(IStoreFixture fixture, ClassDefinition definition, string name)
@@ -123,7 +124,6 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
 
         var opened = new EntryOpened(
             entryId,
-            new TimeWindow { Start = openedAt, End = openedAt.AddMinutes(10) },
             competitionRef,
             1,
             1,
@@ -164,8 +164,6 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
         entry.GroupRef.Should().Be(groupRef);
         entry.CompetitorRef.Should().Be(competitorRef);
         entry.Role.Should().Be(ReflightRole.Original);
-        entry.WorkingTime.Start.Should().Be(openedAt);
-        entry.WorkingTime.End.Should().Be(openedAt.AddMinutes(10));
         entry.Annulment.Should().BeNull();
 
         entry.Flights.Should().HaveCount(3);
@@ -304,8 +302,7 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
         IStoreFixture fixture,
         ClassDefinition definition,
         string competitionName,
-        decimal? bindGroupSizeTo,
-        bool expectNullWorkingTimeEnd)
+        decimal? bindGroupSizeTo)
     {
         var competitionId = await CreateCompetitionAsync(fixture, definition, competitionName);
 
@@ -370,15 +367,6 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
             entry.Flights[0].Measurements.Should().ContainSingle(m => m.Metric == "flightTime");
             entry.Flights[0].Measurements[0].Value.Should().Be(MeasuredValue.Of(412m));
 
-            if (expectNullWorkingTimeEnd)
-            {
-                entry.WorkingTime.End.Should().BeNull();
-            }
-            else
-            {
-                entry.WorkingTime.End.Should().NotBeNull();
-            }
-
             var indexed = await fixture.EntryQuery.FindAsync(
                 competitionId, 0, 1, 1, group1.Id, competitorRef, TestContext.Current.CancellationToken);
             indexed.Should().ContainSingle(e => e.Id == entryId);
@@ -389,14 +377,14 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
     public async Task Payoff_capture_end_to_end_under_Fixed_timing_F5J()
     {
         await RunPayoffCaptureScenarioAsync(
-            fixture, F5JDefinition, "Payoff F5J", bindGroupSizeTo: null, expectNullWorkingTimeEnd: false);
+            fixture, F5JDefinition, "Payoff F5J", bindGroupSizeTo: null);
     }
 
     [Fact]
     public async Task Payoff_capture_end_to_end_under_NZ_Class_M_ALES_200_UntilAllFlightsComplete_and_parameter_bound()
     {
         await RunPayoffCaptureScenarioAsync(
-            fixture, NzMAles200Definition, "Payoff NZ M", bindGroupSizeTo: 6m, expectNullWorkingTimeEnd: true);
+            fixture, NzMAles200Definition, "Payoff NZ M", bindGroupSizeTo: 6m);
     }
 
     // ---- 5. entry_index dropped and fully replayed lands identical ---------

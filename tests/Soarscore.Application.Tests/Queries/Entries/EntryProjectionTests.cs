@@ -20,16 +20,9 @@ public class EntryProjectionTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 8, 9, 0, 0, TimeSpan.Zero);
 
-    private static readonly TimeWindow SampleWorkingTime = new()
-    {
-        Start = Now,
-        End = Now.AddMinutes(10),
-    };
-
     private static EntryOpened SampleOpened() =>
         new(
             EntryId.New(),
-            SampleWorkingTime,
             CompetitionId.New(),
             1,
             2,

@@ -29,12 +29,6 @@ public class AmendMeasurementDecideTests
     private static readonly GroupId SampleGroup = GroupId.New();
     private static readonly CompetitorId SampleCompetitor = CompetitorId.New();
 
-    private static readonly TimeWindow SampleWorkingTime = new()
-    {
-        Start = new DateTimeOffset(2026, 1, 10, 9, 0, 0, TimeSpan.Zero),
-        End = new DateTimeOffset(2026, 1, 10, 9, 10, 0, TimeSpan.Zero),
-    };
-
     /// <summary>F3K-shaped Truncate 0.1 s flightTime — the same metric CaptureMeasurementDecideTests uses.</summary>
     private static readonly MetricDefinition FlightTimeMetric = new()
     {
@@ -55,7 +49,7 @@ public class AmendMeasurementDecideTests
 
     private static Entry WithOneOpenFlight() =>
         Entry.Create(new EntryOpened(
-            SampleId, SampleWorkingTime, SampleCompetition, 1, 1, 1,
+            SampleId, SampleCompetition, 1, 1, 1,
             SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow))
         .Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
 

@@ -71,7 +71,6 @@ public class ScoringServicePropertyTests
     private static Entry OpenSampleEntry(CompetitorId competitorRef, GroupId groupRef) =>
         Entry.Create(new EntryOpened(
             EntryId.New(),
-            new TimeWindow { Start = Now, End = Now.AddSeconds(600) },
             CompetitionId.New(), 0, 1, 1,
             groupRef, competitorRef, ReflightRole.Original, Now));
 

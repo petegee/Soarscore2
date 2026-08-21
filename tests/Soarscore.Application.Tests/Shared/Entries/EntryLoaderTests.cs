@@ -17,19 +17,13 @@ public class EntryLoaderTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 8, 9, 0, 0, TimeSpan.Zero);
 
-    private static readonly TimeWindow SampleWorkingTime = new()
-    {
-        Start = Now,
-        End = Now.AddMinutes(10),
-    };
-
     [Fact]
     public async Task LoadAsync_for_an_existing_stream_returns_the_folded_entry_and_its_version()
     {
         var id = EntryId.New();
         var store = new FakeEventStore();
         var opened = new EntryOpened(
-            id, SampleWorkingTime, CompetitionId.New(), 1, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original, Now);
+            id, CompetitionId.New(), 1, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original, Now);
         var flightOpened = new FlightOpened(1, Now.AddMinutes(1));
         await store.AppendAsync(id.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         await store.AppendAsync(id.Value, ExpectedVersion.Exact(1), [flightOpened], TestContext.Current.CancellationToken);

@@ -128,7 +128,6 @@ public class AmendMeasurementHandlerTests
         var entryId = EntryId.New();
         var opened = new EntryOpened(
             entryId,
-            new TimeWindow { Start = Now, End = Now.AddSeconds(600) },
             CompetitionId.New(), 0, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original, Now);
         await store.AppendAsync(entryId.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         await store.AppendAsync(entryId.Value, ExpectedVersion.Exact(1), [new FlightOpened(1, Now)], TestContext.Current.CancellationToken);

@@ -18,7 +18,7 @@ Feature: Capturing a score
     And groupSize bound to 6 by the contest director
     And a drawn preliminary phase of 4 rounds
     When the scorer opens an entry for competitor 1 in round 1, group 1
-    Then the entry's working time has no end
+    Then the task leaves the working time open-ended
 
   Scenario: A false start is recorded, not refused
     Given a published F3K class definition

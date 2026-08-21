@@ -343,8 +343,8 @@ classDiagram
 
 ## 4. Entry — the live flying record
 
-One competitor's working-time window and everything captured in it. This is what
-the scorers directly update: an ordered list of Flights, each with raw
+One competitor's record for one task-round and everything captured in it. This is
+what the scorers directly update: an ordered list of Flights, each with raw
 Measurements (append-only, corrected by Amendments, never overwritten). A
 Measurement's value may be a number or a plain flag — the rules require
 observations such as *landed in the defined area* or *score card signed*
@@ -379,17 +379,10 @@ measurement against the task's declared metrics means loading the Competition
 and scanning every phase → round → task-round → group for the matching id, on
 the highest-volume write in the system; with it, the walk is direct.
 
-`workingTime.end` is nullable: it is null whenever the class leaves the round
-open-ended (`WorkingTimeKind.UntilAllFlightsComplete`) rather than stating a
-fixed length, because no one knows when an open-ended working time will end at
-the moment it opens. Absence is the truthful encoding, the same choice already
-made for an absent `Normalisation` or `GroupConstraint`.
-
 ```mermaid
 classDiagram
     direction TB
     class Entry {
-        +TimeWindow workingTime
         +competitionId competitionRef
         +int phaseOrdinal
         +int roundOrdinal

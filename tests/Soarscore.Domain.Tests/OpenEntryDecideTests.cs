@@ -19,6 +19,8 @@ namespace Soarscore.Domain.Tests;
 /// ChooseFromCatalogue) — so the Phase/Round/TaskRound/Group shape is
 /// hand-built directly, the same way CompetitionReplaceTaskRoundPropertyTests
 /// does for its own navigation tests.
+// The until-all-flights-complete success path and the two parameterised
+// working-time resolution tests moved to ResolvedWorkingTimeTests.cs (WI-4).
 /// </summary>
 public class OpenEntryDecideTests
 {
@@ -246,8 +248,6 @@ public class OpenEntryDecideTests
         var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.WorkingTime.Start.Should().Be(at);
-        result.Value.WorkingTime.End.Should().Be(at.AddSeconds(600));
         result.Value.CompetitionRef.Should().Be(competition.Id);
         result.Value.PhaseOrdinal.Should().Be(0);
         result.Value.RoundOrdinal.Should().Be(1);
@@ -255,48 +255,5 @@ public class OpenEntryDecideTests
         result.Value.GroupRef.Should().Be(groupRef);
         result.Value.CompetitorRef.Should().Be(competitors[0]);
         result.Value.Role.Should().Be(ReflightRole.Original);
-    }
-
-    [Fact]
-    public void OpenEntry_under_UntilAllFlightsComplete_leaves_the_window_end_null()
-    {
-        var at = DateTimeOffset.UtcNow;
-        // F3K TaskC is the corpus's only UntilAllFlightsComplete task (finding 2).
-        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3K.Definition, "C", 1, at);
-
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.WorkingTime.Start.Should().Be(at);
-        result.Value.WorkingTime.End.Should().BeNull();
-    }
-
-    [Fact]
-    public void OpenEntry_resolves_a_parameterised_WorkingTime_from_a_binding()
-    {
-        var at = DateTimeOffset.UtcNow;
-        // F3K TaskA's workingTime.A defaults to 600 s with allowed values [420, 600].
-        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3K.Definition, "A", 1, at);
-
-        var bound = competition.BindParameter("workingTime.A", MeasuredValue.Of(420m), "CD", at);
-        competition = competition.Apply(bound.Value);
-
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.WorkingTime.End.Should().Be(at.AddSeconds(420));
-    }
-
-    [Fact]
-    public void OpenEntry_resolves_a_parameterised_WorkingTime_from_its_declared_default()
-    {
-        var at = DateTimeOffset.UtcNow;
-        // Same task, no binding this time — falls back to workingTime.A's declared default of 600 s.
-        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3K.Definition, "A", 1, at);
-
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.WorkingTime.End.Should().Be(at.AddSeconds(600));
     }
 }

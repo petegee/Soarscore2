@@ -30,15 +30,9 @@ public class EntryCapturePropertyTests
     private static readonly GroupId SampleGroup = GroupId.New();
     private static readonly CompetitorId SampleCompetitor = CompetitorId.New();
 
-    private static readonly TimeWindow SampleWorkingTime = new()
-    {
-        Start = new DateTimeOffset(2026, 1, 10, 9, 0, 0, TimeSpan.Zero),
-        End = new DateTimeOffset(2026, 1, 10, 9, 10, 0, TimeSpan.Zero),
-    };
-
     private static Entry OpenSampleEntry() =>
         Entry.Create(new EntryOpened(
-            SampleId, SampleWorkingTime, SampleCompetition, 1, 1, 1,
+            SampleId, SampleCompetition, 1, 1, 1,
             SampleGroup, SampleCompetitor, ReflightRole.Original, DateTimeOffset.UtcNow));
 
     private static Entry OpenSampleEntryWithOneFlight() =>

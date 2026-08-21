@@ -24,7 +24,6 @@ public class EntryTests
         var entry = new Entry
         {
             Id = EntryId.New(),
-            WorkingTime = new TimeWindow { Start = Now, End = Now.AddMinutes(10) },
             CompetitionRef = CompetitionId.New(),
             PhaseOrdinal = 1,
             RoundOrdinal = 1,
@@ -109,7 +108,6 @@ public class EntryTests
         var entry = new Entry
         {
             Id = EntryId.New(),
-            WorkingTime = new TimeWindow { Start = Now, End = Now.AddMinutes(10) },
             CompetitionRef = CompetitionId.New(),
             PhaseOrdinal = 1,
             RoundOrdinal = 1,
@@ -151,7 +149,6 @@ public class EntryTests
         var entitled = new Entry
         {
             Id = EntryId.New(),
-            WorkingTime = new TimeWindow { Start = Now, End = Now.AddMinutes(10) },
             CompetitionRef = CompetitionId.New(),
             PhaseOrdinal = 1,
             RoundOrdinal = 1,
@@ -190,7 +187,6 @@ public class EntryTests
         var competitionRef = CompetitionId.New();
         var groupRef = GroupId.New();
         var competitorRef = CompetitorId.New();
-        var window = new TimeWindow { Start = Now, End = Now.AddMinutes(10) };
         var flights = ImmutableArray.Create(
             new Flight
             {
@@ -203,14 +199,14 @@ public class EntryTests
 
         var a = new Entry
         {
-            Id = id, WorkingTime = window, CompetitionRef = competitionRef,
+            Id = id, CompetitionRef = competitionRef,
             PhaseOrdinal = 1, RoundOrdinal = 1, TaskRoundOrdinal = 1,
             GroupRef = groupRef, CompetitorRef = competitorRef,
             Role = ReflightRole.Original, Flights = flights,
         };
         var b = new Entry
         {
-            Id = id, WorkingTime = window, CompetitionRef = competitionRef,
+            Id = id, CompetitionRef = competitionRef,
             PhaseOrdinal = 1, RoundOrdinal = 1, TaskRoundOrdinal = 1,
             GroupRef = groupRef, CompetitorRef = competitorRef,
             Role = ReflightRole.Original, Flights = flights,

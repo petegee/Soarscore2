@@ -102,7 +102,6 @@ public class OpenFlightHandlerTests
         var entryId = EntryId.New();
         var opened = new EntryOpened(
             entryId,
-            new TimeWindow { Start = Now, End = Now.AddSeconds(600) },
             CompetitionId.New(), 0, 1, 1, GroupId.New(), CompetitorId.New(), ReflightRole.Original, Now);
         await store.AppendAsync(entryId.Value, ExpectedVersion.NoStream, [opened], TestContext.Current.CancellationToken);
         var handler = new OpenFlightHandler(store, new FakeClock(Now));

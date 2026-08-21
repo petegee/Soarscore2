@@ -104,8 +104,6 @@ public class OpenEntryHandlerTests
         opened.GroupRef.Should().Be(groupRef);
         opened.CompetitorRef.Should().Be(competitors[0]);
         opened.Role.Should().Be(ReflightRole.Original);
-        opened.WorkingTime.Start.Should().Be(Now);
-        opened.WorkingTime.End.Should().Be(Now.AddSeconds(600));
     }
 
     [Fact]
@@ -199,7 +197,6 @@ public class OpenEntryHandlerTests
         var (_, competitionId, competitors, groupRef) = SeedDrawnCompetition();
         var opened = new EntryOpened(
             EntryId.New(),
-            new TimeWindow { Start = Now, End = Now.AddSeconds(600) },
             competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, Now);
 
         var first = EntryProjection.Apply(null, opened);

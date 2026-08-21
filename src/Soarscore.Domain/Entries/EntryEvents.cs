@@ -1,12 +1,12 @@
 // Event contracts for the Entry aggregate — docs/aggregate-roots.md §4.
 //
-// One competitor's working-time window and everything captured in it: an
-// ordered list of Flights, each with raw Measurements — append-only,
+// One competitor's record for one task-round and everything captured in it:
+// an ordered list of Flights, each with raw Measurements — append-only,
 // corrected by Amendments, never overwritten. Six events, directly derived
 // from that shape:
 //
-//   EntryOpened          — the creation event. Opens the working-time window
-//     for one competitor against one Group, under one ReflightRole.
+//   EntryOpened          — the creation event. Opens one competitor's record
+//     for one task-round against one Group, under one ReflightRole.
 //   FlightOpened         — appends a new, initially empty Flight.
 //   MeasurementCaptured  — appends a raw Measurement to a Flight.
 //   MeasurementAmended   — appends an Amendment to an existing Measurement,
@@ -17,8 +17,8 @@
 //     Competition-scoped penalties belong to the Competition aggregate, not
 //     here (aggregate-roots.md §4).
 //
-// Every payload reuses Domain's own value-object records (TimeWindow,
-// Measurement, Amendment, Annulment, Penalty) directly rather than redefining
+// Every payload reuses Domain's own value-object records (Measurement,
+// Amendment, Annulment, Penalty) directly rather than redefining
 // their shapes — same convention as ClassDefinitionEvents.cs.
 
 using System.Text.Json.Serialization;
@@ -38,10 +38,9 @@ public abstract record EntryEvent : IDomainEvent
     private protected EntryEvent() { }
 }
 
-/// <summary>The creation event: opens one competitor's working-time window.</summary>
+/// <summary>The creation event: opens one competitor's record for one task-round.</summary>
 public sealed record EntryOpened(
     EntryId Id,
-    TimeWindow WorkingTime,
     CompetitionId CompetitionRef,
     int PhaseOrdinal,
     int RoundOrdinal,

@@ -52,12 +52,6 @@ public class EntryModelBasedFoldTests
         public required Entry Value { get; set; }
     }
 
-    private static readonly TimeWindow SampleWorkingTime = new()
-    {
-        Start = new DateTimeOffset(2026, 1, 10, 9, 0, 0, TimeSpan.Zero),
-        End = new DateTimeOffset(2026, 1, 10, 9, 10, 0, TimeSpan.Zero),
-    };
-
     // A wide raw index, reduced modulo the *current* live flight count inside
     // each operation — the count isn't known when the Gen is built, only when
     // the operation actually runs against whatever state came before it.
@@ -156,7 +150,7 @@ public class EntryModelBasedFoldTests
         Gen.Int[0, 0].Select(_ =>
         {
             var entry = Entry.Create(new EntryOpened(
-                EntryId.New(), SampleWorkingTime, CompetitionId.New(), 1, 1, 1,
+                EntryId.New(), CompetitionId.New(), 1, 1, 1,
                 GroupId.New(), CompetitorId.New(), ReflightRole.Original, DateTimeOffset.UtcNow));
 
             return (new Actual { Value = entry }, new Model());

@@ -14,8 +14,8 @@
 //     ServiceProvider, exactly PostgresFixture's own shape — needed only
 //     because no GetEntry HTTP query exists yet (EntrySummary.cs's doc
 //     comment: "a future work item, mirroring GetCompetition"), so a Then
-//     step asserting an Entry's full folded state (a flight, a measurement,
-//     a null TimeWindow.End) has no HTTP surface to read it from and falls
+//     step asserting an Entry's full folded state (a flight, a measurement)
+//     has no HTTP surface to read it from and falls
 //     back to the same raw-stream-read-and-fold
 //     EntryCaptureEventStoreTests.cs's LoadEntryAsync already uses.
 //
