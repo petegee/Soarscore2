@@ -100,7 +100,7 @@ public class TaskRoundClosurePropertyTests
                 foreach (var competitorRef in group.CompetitorRefs)
                 {
                     var result = competition.OpenEntry(
-                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
+                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, ReflightRole.Original, Now);
 
                     probe[(round.Ordinal, group.Id, competitorRef)] = result.IsSuccess ? Accepted : result.Code!;
                 }

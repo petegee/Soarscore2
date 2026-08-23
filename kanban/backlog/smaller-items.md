@@ -41,10 +41,9 @@ before acting, this list is not self-updating.
 
 ## Unclaimed
 
-`RulesAmended` is mapped, folded and unreachable, and is the one such event no backlog
-story covers — the other unreachable events belong to `task-round-lifecycle`,
-`reflight-groups` or `second-entry-thread`. Amending a rulebook mid-competition is a
-real CD action with retroactive scoring consequences (see
-`kanban/deferred-decisions.md`'s `Parameter.DefaultValue` note, which turns on exactly
-that intent), so it needs a story of its own before it needs code — not an item on this
-list.
+`RulesAmended` is mapped, folded and unreachable, and is now the ONLY events-to event
+covering anything in the tree — `reflight-groups` took `ReflightGroupAppended`, leaving
+`RulesAmended` alone. Amending a rulebook mid-competition is a real CD action with
+retroactive scoring consequences (see `kanban/deferred-decisions.md`'s
+`Parameter.DefaultValue` note, which turns on exactly that intent), so it needs a
+story of its own before it needs code — not an item on this list.

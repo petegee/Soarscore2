@@ -92,7 +92,7 @@ public class ScoringServiceAnnulmentTests
     private static Entry CaptureEntry(
         Competition competition, GroupId group, CompetitorId competitorRef, int multiplier)
     {
-        var opened = competition.OpenEntry(EntryId.New(), 0, 1, 1, group, competitorRef, Now).Value;
+        var opened = competition.OpenEntry(EntryId.New(), 0, 1, 1, group, competitorRef, ReflightRole.Original, Now).Value;
         var entry = Entry.Create(opened).Apply(new FlightOpened(1, Now));
 
         foreach (var metric in MetricNames)

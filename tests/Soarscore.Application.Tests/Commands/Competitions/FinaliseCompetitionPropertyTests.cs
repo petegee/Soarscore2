@@ -197,7 +197,7 @@ public class FinaliseCompetitionPropertyTests
                 foreach (var competitorRef in group.CompetitorRefs)
                 {
                     var opened = competition.OpenEntry(
-                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
+                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, ReflightRole.Original, Now);
                     opened.IsSuccess.Should().BeTrue();
 
                     var flightOpened = new FlightOpened(1, Now);

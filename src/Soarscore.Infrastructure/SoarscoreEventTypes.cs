@@ -52,9 +52,10 @@ internal static class SoarscoreEventTypes
         // annul-and-penalise-the-second-entry-thread.md WI-9 the Competition-scoped
         // PenaltyRecorded (alias "competitionPenaltyRecorded" — decision 5: it is
         // a different CLR type from the Entry-scoped PenaltyRecorded and cannot
-        // share "penaltyRecorded" as an on-disk identity). The remaining two
-        // CompetitionEvent subtypes (ReflightGroupAppended, RulesAmended) are
-        // absent because nothing appends them yet.
+        // share "penaltyRecorded" as an on-disk identity).
+        // reflight-groups.md WI-4 registered ReflightGroupAppended — the only
+        // CompetitionEvent now still absent is RulesAmended, because nothing
+        // appends it yet.
         (typeof(CompetitionCreated), "competitionCreated"),
         (typeof(CompetitorRegistered), "competitorRegistered"),
         (typeof(CompetitorWithdrawn), "competitorWithdrawn"),
@@ -65,6 +66,7 @@ internal static class SoarscoreEventTypes
         (typeof(TaskRoundReopened), "taskRoundReopened"),
         (typeof(Finalised), "finalised"),
         (typeof(Soarscore.Domain.Competitions.PenaltyRecorded), "competitionPenaltyRecorded"),
+        (typeof(ReflightGroupAppended), "reflightGroupAppended"),
 
         // capture-a-score-steel-thread-plan.md WI-9 registered the narrow capture
         // slice: EntryOpened, FlightOpened, MeasurementCaptured.

@@ -109,11 +109,12 @@ public abstract class ScoringEventStoreTests<TFixture>(TFixture fixture) : IClas
         int taskRoundOrdinal,
         GroupId groupRef,
         CompetitorId competitorRef,
-        decimal flightTime)
+        decimal flightTime,
+        ReflightRole role = ReflightRole.Original)
     {
         var openEntryHandler = new OpenEntryHandler(fixture.EventStore, fixture.EntryQuery, new SystemClock());
         var opened = await openEntryHandler.HandleAsync(
-            new OpenEntry(competitionId, phaseOrdinal, roundOrdinal, taskRoundOrdinal, groupRef, competitorRef),
+            new OpenEntry(competitionId, phaseOrdinal, roundOrdinal, taskRoundOrdinal, groupRef, competitorRef, role),
             TestContext.Current.CancellationToken);
         opened.IsSuccess.Should().BeTrue($"{opened.Code}: {opened.Message}");
         var entryId = opened.Value;
@@ -204,6 +205,67 @@ public abstract class ScoringEventStoreTests<TFixture>(TFixture fixture) : IClas
         // The winner's own normalised score is exactly the class's normalisation
         // target (5.5.11.12 m, WinnerScore 1000) — SeedF5J.cs's own comment.
         view.Results.Single(r => r.CompetitorRef == winner.Key).RawScore.Should().Be(1000m);
+    }
+
+    [Fact]
+    public async Task ScoreTaskRoundHandler_returns_an_entitled_reflight_as_a_second_row_for_the_same_group()
+    {
+        // kanban/in-progress/reflight-groups.md WI-7: a group holding an
+        // Original and an Entitled entry from one competitor returns two rows,
+        // each with its own Role and the correct winner — the collapse to one
+        // score is the aggregate's job, not this per-group view's.
+        var competitionId = await CreateCompetitionAsync(fixture, "Reflight Group View");
+
+        var competitorIds = new List<CompetitorId>();
+        for (var i = 0; i < 6; i++)
+        {
+            competitorIds.Add(await RegisterCompetitorAsync(fixture, competitionId, $"pilot-reflight-{i}@example.com"));
+        }
+
+        var drawHandler = new DrawPhaseHandler(fixture.EventStore, new SystemClock());
+        var drawn = await drawHandler.HandleAsync(new DrawPhase(competitionId, 1), TestContext.Current.CancellationToken);
+        drawn.IsSuccess.Should().BeTrue();
+
+        var getHandler = new GetCompetitionHandler(fixture.EventStore);
+        var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
+        fetched.IsSuccess.Should().BeTrue();
+        var group = fetched.Value.Competition.Phases.Single().Rounds.Single().TaskRounds.Single().Groups.Single();
+
+        // competitorIds[0] is the entitled re-flyer: they hold an Original
+        // entry (500) and, against the SAME group, an Entitled re-flight (450 —
+        // worse, as the rules allow). Everyone else flies one Original at a
+        // rising flightTime (350, 400, 450, 500, 550).
+        var entitled = competitorIds[0];
+        await OpenAndCaptureFlightAsync(fixture, competitionId, 0, 1, 1, group.Id, entitled, 500m);
+        await OpenAndCaptureFlightAsync(fixture, competitionId, 0, 1, 1, group.Id, entitled, 450m, ReflightRole.Entitled);
+        var others = competitorIds.Skip(1).ToList();
+        foreach (var (i, competitorRef) in others.Select((c, i) => (i, c)))
+        {
+            // All strictly below the entitled competitor's 500, so the Original
+            // 500 row is the unambiguous top of the group and thus the winner.
+            await OpenAndCaptureFlightAsync(fixture, competitionId, 0, 1, 1, group.Id, competitorRef, 300m + i * 40m);
+        }
+
+        var scoreHandler = new ScoreTaskRoundHandler(fixture.EventStore, fixture.EntryQuery);
+        var scored = await scoreHandler.HandleAsync(
+            new ScoreTaskRound(competitionId, 0, 1, 1, null), TestContext.Current.CancellationToken);
+        scored.IsSuccess.Should().BeTrue($"{scored.Code}: {scored.Message}");
+
+        scored.Value.Should().ContainSingle();
+        var view = scored.Value[0];
+
+        // Seven rows: six competitors, one of whom appears twice.
+        view.Results.Should().HaveCount(7);
+        view.Results.Where(r => r.CompetitorRef == entitled && r.Role == ReflightRole.Original).Should().ContainSingle();
+        view.Results.Where(r => r.CompetitorRef == entitled && r.Role == ReflightRole.Entitled).Should().ContainSingle();
+
+        // The entitled competitor's original (500) is that group's top raw score,
+        // so the winner is that row; the Entitled row (450) is the worse of the
+        // two, exactly as an entitled re-flight may be.
+        view.WinnerRef.Should().Be(entitled);
+        var originalRow = view.Results.Single(r => r.CompetitorRef == entitled && r.Role == ReflightRole.Original);
+        var entitledRow = view.Results.Single(r => r.CompetitorRef == entitled && r.Role == ReflightRole.Entitled);
+        entitledRow.RawScore.Should().BeLessThan(originalRow.RawScore);
     }
 
     // ---- 2. A real ranked leaderboard, fanning out across 2 rounds x 2 groups

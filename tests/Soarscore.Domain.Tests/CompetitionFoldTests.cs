@@ -157,7 +157,7 @@ public class CompetitionFoldTests
         var competition = CompetitionWithOneTaskRound();
         var newGroup = new Group { Id = GroupId.New(), Ordinal = 2, CompetitorRefs = [CompetitorId.New()] };
 
-        var updated = competition.Apply(new ReflightGroupAppended(1, 1, 1, newGroup, DateTimeOffset.UtcNow));
+        var updated = competition.Apply(new ReflightGroupAppended(1, 1, 1, newGroup, "Mid-air collision", DateTimeOffset.UtcNow));
 
         var taskRound = updated.Phases[0].Rounds[0].TaskRounds[0];
         taskRound.Groups.Length.Should().Be(2);
@@ -303,7 +303,7 @@ public class CompetitionFoldTests
             created,
             new CompetitorRegistered(competitorA, createdAt),
             new PhaseDrawn(1, PhaseType.Preliminary, draw, [round], createdAt),
-            new ReflightGroupAppended(1, 1, 1, reflightGroup, createdAt),
+            new ReflightGroupAppended(1, 1, 1, reflightGroup, "Mid-air collision", createdAt),
             new TaskRoundCompleted(1, 1, 1, createdAt),
             new PenaltyRecorded(penalty),
             new CompetitorWithdrawn(competitorA.Id, createdAt.AddHours(1)),

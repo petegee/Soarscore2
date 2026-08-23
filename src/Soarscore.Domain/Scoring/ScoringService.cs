@@ -74,7 +74,13 @@ public static class ScoringService
     /// <param name="groupRef">Group identifier (stringified GroupId — finding 3).</param>
     /// <param name="task">The task definition (unresolved — parameters are resolved here).</param>
     /// <param name="classDef">The class definition (for penalty definitions).</param>
-    /// <param name="entries">CompetitorRef (stringified CompetitorId) → Entry.</param>
+    /// <param name="entries">
+    /// The entries to score, keyed caller-chosen (reflight-groups.md WI-6b):
+    /// the ordinary key is CompetitorRef (stringified), but under reflights the
+    /// caller keys BY ENTRY (ReflightSelector.EntryKey) so one competitor's
+    /// two live entries both normalise (decision 3). The dictionary key simply
+    /// names the result row.
+    /// </param>
     /// <param name="parameterBindings">Bound parameter values (from Competition.ParameterBindings).</param>
     public static GroupResult ScoreGroup(
         string groupRef,
@@ -165,17 +171,28 @@ public static class ScoringService
                     if (taskRoundEntries.Count == 0)
                         continue;
 
-                    var reflightOffender = taskRoundEntries
-                        .GroupBy(e => e.CompetitorRef)
-                        .FirstOrDefault(g => g.Count(e => e.Annulment is null) > 1);
-
-                    if (reflightOffender is not null)
+                    // The reflight shape guard (reflight-groups.md WI-6b, replacing the old
+                    // score.reflightNotSupported refusal): each competitor's
+                    // LIVE entries must be one entry of any role, or exactly
+                    // one Original plus exactly one reflight-role entry.
+                    // ReflightSelector owns the shape law; this walks the guard
+                    // per competitor.
+                    foreach (var competitorGroup in taskRoundEntries.GroupBy(e => e.CompetitorRef))
                     {
-                        return Result<CompetitionResult>.Failure(
-                            "score.reflightNotSupported",
-                            $"Competitor {reflightOffender.Key} has more than one non-annulled Entry for "
-                            + $"phase {phase.Ordinal}/round {round.Ordinal}/task-round {taskRound.Ordinal}. "
-                            + "Reflight scoring (entitled/filler selection) is not yet supported.");
+                        var roles = competitorGroup
+                            .Where(e => e.Annulment is null)
+                            .Select(e => e.Role)
+                            .ToList();
+
+                        if (!ReflightSelector.ShapePermits(roles))
+                        {
+                            return Result<CompetitionResult>.Failure(
+                                "score.reflightShapeUnsupported",
+                                $"Competitor {competitorGroup.Key} holds {roles.Count} live entries for "
+                                + $"phase {phase.Ordinal}/round {round.Ordinal}/task-round {taskRound.Ordinal} "
+                                + $"(roles: {string.Join(", ", roles)}). Expected one entry, or an Original "
+                                + "paired with one reflight-role entry.");
+                        }
                     }
 
                     var taskDefinition = classDef.Phases
@@ -190,37 +207,75 @@ public static class ScoringService
                             + "by the adopted class definition.");
                     }
 
+                    var reflightRule = taskDefinition.Reflight ?? classDef.Reflight;
+
+                    // Candidates per competitor across every group of this
+                    // task-round: one (role, normalised score) tuple per LIVE
+                    // entry. Candidate collection is per-entry (a competitor
+                    // may hold two live entries in one group — the Original
+                    // competing for the 1000 basis beside its reflight role,
+                    // decision 3); the collapse to ONE score per competitor
+                    // happens after the group loop (invariant R1, finding 9).
+                    var candidatesByCompetitor = new Dictionary<string, List<(ReflightRole Role, decimal Score)>>();
+
                     foreach (var group in taskRound.Groups)
                     {
                         // Annulled entries are excluded from group scoring: they
                         // produce NoResult (FlightSelector step 0) and, more
                         // importantly, an annulled attempt alongside its live
-                        // replacement is the F3F.1.5 shape — two Entries for one
-                        // competitor+task-round, which would collide as duplicate
-                        // dictionary keys. The replacement is the one that scores.
+                        // replacement is the F3F.1.5 shape — the replacement is
+                        // the one that scores.
+                        //
+                        // Keyed BY ENTRY (finding 7): the old competitor-string
+                        // key collides when a competitor holds two live entries
+                        // in one group, which is the legal reflight shape.
                         var groupEntries = taskRoundEntries
                             .Where(e => e.GroupRef == group.Id && e.Annulment is null)
-                            .ToImmutableDictionary(e => e.CompetitorRef.ToString(), e => e);
+                            .ToImmutableDictionary(e => ReflightSelector.EntryKey(e), e => e);
 
                         // A competitor drawn into a group with no Entry
-                        // contributes no TaskRoundScore — absent, not zero.
+                        // contributes no candidate — absent, not zero.
                         if (groupEntries.IsEmpty)
                             continue;
 
                         var groupResult = ScoreGroup(
                             group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings);
 
-                        foreach (var (competitorRef, taskResult) in groupResult.Results)
+                        foreach (var (entryKey, taskResult) in groupResult.Results)
                         {
-                            if (!scoresByCompetitor.TryGetValue(competitorRef, out var list))
+                            var entry = groupEntries[entryKey];
+                            var competitorRef = entry.CompetitorRef.ToString();
+
+                            if (!candidatesByCompetitor.TryGetValue(competitorRef, out var list))
                             {
                                 list = [];
-                                scoresByCompetitor[competitorRef] = list;
+                                candidatesByCompetitor[competitorRef] = list;
                             }
 
-                            list.Add(new TaskRoundScore(
-                                taskRound.TaskRef, round.Ordinal, taskRound.Ordinal, taskResult.RawScore));
+                            list.Add((entry.Role, taskResult.RawScore));
                         }
+                    }
+
+                    // Collapse to ONE TaskRoundScore per competitor per
+                    // task-round (invariant R1 — finding 9), so the aggregate's
+                    // keying at the phase close cannot see a duplicate.
+                    foreach (var (competitorRef, candidates) in candidatesByCompetitor)
+                    {
+                        var selected = ReflightSelector.Select(candidates, reflightRule);
+                        if (selected.IsFailure)
+                        {
+                            return Result<CompetitionResult>.Failure(
+                                selected.Code!, selected.Message!, selected.Defects);
+                        }
+
+                        if (!scoresByCompetitor.TryGetValue(competitorRef, out var list))
+                        {
+                            list = [];
+                            scoresByCompetitor[competitorRef] = list;
+                        }
+
+                        list.Add(new TaskRoundScore(
+                            taskRound.TaskRef, round.Ordinal, taskRound.Ordinal, selected.Value));
                     }
 
                     // Total over the write-side states, with no `else`: the

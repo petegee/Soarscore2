@@ -856,6 +856,11 @@ public sealed record Competition
     // Deliberately absent: an "already open" check (a read-model concern —
     // see the plan's WI-8) and any PreparationTime handling (no domain
     // representation for a preparation window exists yet — out of scope).
+    // The entry's ReflightRole is data, not a ruling this aggregate makes:
+    // whether a competitor is entitled or a filler is a witnessed CD ruling
+    // recorded as the role at open and as Reason on the reflight append
+    // (kanban/in-progress/reflight-groups.md WI-3) — Competition cannot
+    // adjudicate it, any more than it can hold Entry data.
     public Result<EntryOpened> OpenEntry(
         EntryId id,
         int phaseOrdinal,
@@ -863,6 +868,7 @@ public sealed record Competition
         int taskRoundOrdinal,
         GroupId groupRef,
         CompetitorId competitorRef,
+        ReflightRole role,
         DateTimeOffset at)
     {
         var phase = Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal);
@@ -959,7 +965,7 @@ public sealed record Competition
             taskRoundOrdinal,
             groupRef,
             competitorRef,
-            ReflightRole.Original,
+            role,
             at));
     }
 
@@ -1052,6 +1058,137 @@ public sealed record Competition
             ? Result<TaskRoundReopened>.Failure(defect.Code, defect.Message)
             : Result<TaskRoundReopened>.Success(
                 new TaskRoundReopened(phaseOrdinal, roundOrdinal, taskRoundOrdinal, reason, at));
+    }
+
+    // Instance decide function — WI-2 (kanban/in-progress/reflight-groups.md).
+    // Early-return style, like DrawPhase/OpenEntry: later checks need the rule
+    // and the resolved MinNewGroupSize that earlier ones computed, and the
+    // happy path needs the resolved rule again to build the event.
+    //
+    // Deliberately absent (mirroring the lifecycle functions' own omissions):
+    // any check that a member already flew this task-round, that an entitled
+    // member exists, or that a member already holds a reflight entry —
+    // Competition holds no Entry data (its own design note above, OpenEntry);
+    // entitlement and membership are CD rulings recorded as `Reason` and as
+    // Entry `Role`s, and the duplicate-reflight guard is WI-5's, on the Entry
+    // side, where the data lives.
+    public Result<ReflightGroupAppended> AppendReflightGroup(
+        int phaseOrdinal,
+        int roundOrdinal,
+        int taskRoundOrdinal,
+        ImmutableArray<CompetitorId> members,
+        string reason,
+        DateTimeOffset at)
+    {
+        var taskRound = FindTaskRound(phaseOrdinal, roundOrdinal, taskRoundOrdinal);
+        if (taskRound is null)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.taskRoundNotFound",
+                "No task-round at these phase/round/task-round ordinals.");
+        }
+
+        // Annulled refuses; Complete/Drawn/InProgress all allow — the
+        // protest-driven reflight after a round is read out is the ordinary
+        // late case (planner's call, reflight-groups.md).
+        if (taskRound.State is TaskRoundState.Annulled)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.taskRoundAnnulled",
+                "This task-round is annulled; reopen it before appending a reflight group.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.reasonRequired",
+                "A reason is required — it is the recorded entitlement ruling, not an audit breadcrumb.");
+        }
+
+        // TaskRound.TaskRef is the task's Code — the one stable handle (see
+        // OpenEntry's own note). The class-level default, overridden per-task
+        // where the task declares one (F19).
+        var task = AdoptedRules.Definition.Phases
+            .SelectMany(p => p.Tasks)
+            .First(t => t.Code == taskRound.TaskRef);
+        var rule = task.Reflight ?? AdoptedRules.Definition.Reflight;
+
+        if (rule.MinNewGroupSize is null)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.newGroupNeverFormed",
+                "This class never forms new reflight groups; the re-flyer rejoins the running order (F26).");
+        }
+
+        // Belt and braces: a hypothetical class declaring both a non-null min
+        // and a NotPermitted selection. The seed corpus's null-min classes
+        // (F3F.1.5, NZ N/P) ordinarily refuse above already.
+        if (rule.EntitledScores is ReflightSelection.NotPermitted
+            || rule.OthersScore is ReflightSelection.NotPermitted)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.notPermitted",
+                "This class permits no re-flight at all.");
+        }
+
+        var bindings = ScoringService.FlattenParameterBindings(ParameterBindings, phaseOrdinal, roundOrdinal);
+
+        decimal resolvedMin;
+        try
+        {
+            resolvedMin = ParameterResolver.Resolve(rule.MinNewGroupSize, bindings, AdoptedRules.Definition.Parameters);
+        }
+        catch (UnresolvedParameterException ex)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.parameterUnbound", ex.Message);
+        }
+
+        if (members.IsEmpty)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.membersEmpty",
+                "A reflight group must name at least one member.");
+        }
+
+        if (members.Any(m => !Competitors.Any(c => c.Id == m)))
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.memberNotRegistered",
+                "A reflight group member is not a registered competitor in this competition.");
+        }
+
+        if (members.Any(m => Competitors.First(c => c.Id == m).WithdrawnAt is not null))
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.memberWithdrawn",
+                "A reflight group member has withdrawn.");
+        }
+
+        if (members.Distinct().Count() != members.Length)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.memberDuplicated",
+                "A reflight group names the same competitor more than once.");
+        }
+
+        var minNewGroupSize = (int)resolvedMin;
+        if (members.Length < minNewGroupSize)
+        {
+            return Result<ReflightGroupAppended>.Failure(
+                "appendReflightGroup.groupTooSmall",
+                $"A reflight group needs at least {minNewGroupSize} members; got {members.Length}.");
+        }
+
+        var group = new Group
+        {
+            Id = GroupId.New(),
+            Ordinal = taskRound.Groups.Length + 1,
+            CompetitorRefs = members,
+        };
+
+        return Result<ReflightGroupAppended>.Success(
+            new ReflightGroupAppended(phaseOrdinal, roundOrdinal, taskRoundOrdinal, group, reason, at));
     }
 
     private TaskRound? FindTaskRound(int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal) =>

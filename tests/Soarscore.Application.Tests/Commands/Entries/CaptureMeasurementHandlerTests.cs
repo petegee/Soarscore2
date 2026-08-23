@@ -60,7 +60,7 @@ public class CaptureMeasurementHandlerTests
 
         var competitionEvents = store.Streams[competitionId.Value];
         var competition = competitionEvents.Aggregate((Competition?)null, (current, e) => Competition.Apply(current, (CompetitionEvent)e))!;
-        var opened = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitor.Id, Now).Value;
+        var opened = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitor.Id, ReflightRole.Original, Now).Value;
         store.AppendAsync(opened.Id.Value, ExpectedVersion.NoStream, [opened]).GetAwaiter().GetResult();
 
         var flightOpened = new FlightOpened(1, Now.AddMinutes(1));

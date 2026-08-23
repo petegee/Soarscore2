@@ -150,7 +150,7 @@ public class ScoringCorpusPropertyTests
                 foreach (var competitorRef in group.CompetitorRefs)
                 {
                     var opened = competition.OpenEntry(
-                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, Now);
+                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, ReflightRole.Original, Now);
                     opened.IsSuccess.Should().BeTrue($"{seedClass.FileName}: {opened.Code}");
 
                     var entry = Entry.Create(opened.Value);

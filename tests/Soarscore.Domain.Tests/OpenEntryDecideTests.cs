@@ -77,7 +77,7 @@ public class OpenEntryDecideTests
         var at = DateTimeOffset.UtcNow;
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 2, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 99, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 99, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.phaseNotDrawn");
@@ -89,7 +89,7 @@ public class OpenEntryDecideTests
         var at = DateTimeOffset.UtcNow;
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 2, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 99, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 99, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.roundNotFound");
@@ -101,7 +101,7 @@ public class OpenEntryDecideTests
         var at = DateTimeOffset.UtcNow;
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 2, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 99, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 99, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.taskRoundNotFound");
@@ -113,7 +113,7 @@ public class OpenEntryDecideTests
         var at = DateTimeOffset.UtcNow;
         var (competition, competitors, _) = BuildDrawnCompetition(SeedF3J.Definition, "D", 2, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, GroupId.New(), competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, GroupId.New(), competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.groupNotFound");
@@ -127,7 +127,7 @@ public class OpenEntryDecideTests
         var at = DateTimeOffset.UtcNow;
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 2, at, state);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.taskRoundClosed");
@@ -148,7 +148,7 @@ public class OpenEntryDecideTests
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
         competition = competition.Apply(new TaskRoundCompleted(0, 1, 1, at));
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.taskRoundClosed");
@@ -161,7 +161,7 @@ public class OpenEntryDecideTests
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
         competition = competition.Apply(new TaskRoundAnnulled(0, 1, 1, "Winch failure", at));
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.taskRoundClosed");
@@ -179,7 +179,7 @@ public class OpenEntryDecideTests
             : competition.Apply(new TaskRoundAnnulled(0, 1, 1, "Winch failure", at));
         competition = competition.Apply(new TaskRoundReopened(0, 1, 1, "Score handed in that evening", at));
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -191,7 +191,7 @@ public class OpenEntryDecideTests
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 2, at);
 
         // competitors[1] was registered but not placed in the (single-member) group.
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[1], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[1], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.competitorNotDrawn");
@@ -206,7 +206,7 @@ public class OpenEntryDecideTests
         var withdrawn = competition.WithdrawCompetitor(competitors[0], at);
         competition = competition.Apply(withdrawn.Value);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.competitorWithdrawn");
@@ -219,7 +219,7 @@ public class OpenEntryDecideTests
         var definition = WithUndeclaredWorkingTime(SeedF3J.Definition);
         var (competition, competitors, groupRef) = BuildDrawnCompetition(definition, "D", 1, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.workingTimeUndeclared");
@@ -232,7 +232,7 @@ public class OpenEntryDecideTests
         // NZ N's roundDuration is BeforeFlying-bound with no declared default (NZ.3.13.1 k).
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedNzNAles123.Definition, "D", 1, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("openEntry.parameterUnbound");
@@ -245,7 +245,7 @@ public class OpenEntryDecideTests
         // F3J.6.2 b: TaskD's WorkingTime is a literal 600 s, no parameter involved.
         var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
 
-        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], at);
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, at);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.CompetitionRef.Should().Be(competition.Id);
@@ -256,4 +256,23 @@ public class OpenEntryDecideTests
         result.Value.CompetitorRef.Should().Be(competitors[0]);
         result.Value.Role.Should().Be(ReflightRole.Original);
     }
+
+    [Theory]
+    [InlineData(ReflightRole.Original)]
+    [InlineData(ReflightRole.Entitled)]
+    [InlineData(ReflightRole.Filler)]
+    public void OpenEntry_round_trips_the_supplied_role_into_the_event(ReflightRole role)
+    {
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, groupRef) = BuildDrawnCompetition(SeedF3J.Definition, "D", 1, at);
+
+        var result = competition.OpenEntry(EntryId.New(), 0, 1, 1, groupRef, competitors[0], role, at);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Role.Should().Be(role);
+    }
+
+    // kanban/in-progress/reflight-groups.md WI-3. The role is a ruling
+    // recorded as data, not validated here — every existing fact above is
+    // unchanged because the handler supplies ReflightRole.Original (WI-5).
 }

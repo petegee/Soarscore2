@@ -74,12 +74,18 @@ public sealed record PhaseDrawn(
     ImmutableArray<Round> Rounds,
     DateTimeOffset At) : CompetitionEvent;
 
-/// <summary>A reflight group appended to an existing task-round.</summary>
+/// <summary>
+/// A reflight group appended to an existing task-round.
+/// <paramref name="Reason"/> records the entitlement basis (collision,
+/// hindrance, timing failure — F5J 5.5.11.6 b); audit-only, exactly like
+/// TaskRoundAnnulled's.
+/// </summary>
 public sealed record ReflightGroupAppended(
     int PhaseOrdinal,
     int RoundOrdinal,
     int TaskRoundOrdinal,
     Group Group,
+    string Reason,
     DateTimeOffset At) : CompetitionEvent;
 
 /// <summary>

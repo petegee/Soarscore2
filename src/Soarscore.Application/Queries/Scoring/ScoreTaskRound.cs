@@ -13,13 +13,19 @@ using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Application.Queries.Scoring;
 
-/// <summary>One competitor's result within a scored group.</summary>
+/// <summary>One competitor's result within a scored group. A competitor with two
+/// live entries in one group (the reflight shape) appears twice — once per
+/// Entry — distinguished by <see cref="Role"/>. Collapse to one score per
+/// task-round is the aggregate's job (ScoreCompetition), not this per-group
+/// view's (reflight-groups.md WI-7).</summary>
 public sealed record CompetitorTaskResultView(
     CompetitorId CompetitorRef,
+    ReflightRole Role,
     TaskResultState State,
     decimal RawScore);
 
@@ -111,13 +117,19 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
 
         foreach (var group in groups)
         {
+            // Keyed BY ENTRY (reflight-groups.md WI-7, finding 7): a competitor
+            // may hold two live entries in one group (the reflight shape), so
+            // the old competitor-string key would collide — and would also
+            // silently drop one of the two rows the per-group view must report
+            // honestly (planner's call). The side map decodes the results'
+            // entry keys back to the Entry for the view rows.
             var groupEntries = entries.Values
                 .Where(e => e.PhaseOrdinal == query.PhaseOrdinal
                          && e.RoundOrdinal == query.RoundOrdinal
                          && e.TaskRoundOrdinal == query.TaskRoundOrdinal
                          && e.GroupRef == group.Id
                          && e.Annulment is null)
-                .ToImmutableDictionary(e => e.CompetitorRef.ToString(), e => e);
+                .ToImmutableDictionary(e => ReflightSelector.EntryKey(e), e => e);
 
             // A group nobody has flown yet contributes no view — mirrors
             // ScoreCompetition's "absent, not zero" rule (finding 5).
@@ -127,23 +139,31 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
             var groupResult = ScoringService.ScoreGroup(
                 group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings);
 
-            views.Add(MapGroupResult(group.Id, groupResult));
+            views.Add(MapGroupResult(group.Id, groupResult, groupEntries));
         }
 
         return Result<IReadOnlyList<GroupScoreView>>.Success(views);
     }
 
-    private static GroupScoreView MapGroupResult(GroupId groupRef, GroupResult result)
+    private static GroupScoreView MapGroupResult(
+        GroupId groupRef,
+        GroupResult result,
+        IReadOnlyDictionary<string, Entry> entriesByKey)
     {
         var results = result.Results
             .Select(kv => new CompetitorTaskResultView(
-                CompetitorId.Parse(kv.Key, null), kv.Value.State, kv.Value.RawScore))
+                entriesByKey[kv.Key].CompetitorRef,
+                entriesByKey[kv.Key].Role,
+                kv.Value.State,
+                kv.Value.RawScore))
             .ToImmutableArray();
 
         return new GroupScoreView(
             GroupRef: groupRef,
             Results: results,
-            WinnerRef: result.WinnerRef is { } winner ? CompetitorId.Parse(winner, null) : null,
+            WinnerRef: result.WinnerRef is { } winner && entriesByKey.ContainsKey(winner)
+                ? entriesByKey[winner].CompetitorRef
+                : null,
             ValidCount: result.ValidCount,
             IsAnnulled: result.IsAnnulled);
     }

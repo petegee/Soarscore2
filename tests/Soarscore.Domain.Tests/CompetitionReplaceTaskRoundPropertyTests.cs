@@ -69,6 +69,7 @@ public class CompetitionReplaceTaskRoundPropertyTests
                 EventKind.AppendGroup => before.Apply(new ReflightGroupAppended(
                     t.targetPhase, t.targetRound, t.targetTaskRound,
                     new Group { Id = GroupId.New(), Ordinal = 99, CompetitorRefs = [CompetitorId.New()] },
+                    "Mid-air collision",
                     DateTimeOffset.UtcNow)),
                 EventKind.Complete => before.Apply(new TaskRoundCompleted(
                     t.targetPhase, t.targetRound, t.targetTaskRound, DateTimeOffset.UtcNow)),

@@ -186,16 +186,90 @@ public class OpenEntryHandlerTests
     }
 
     [Fact]
-    public async Task A_Filler_or_Entitled_entry_already_open_does_not_block_a_second_Original_open()
+    public async Task A_live_Filler_entry_blocks_a_new_Original_open()
     {
+        // reflight-groups.md WI-5 flips the pre-reflight behaviour: an
+        // Original open is now blocked by ANY live entry of ANY role, not
+        // just by a live Original.
         var (store, competitionId, competitors, groupRef) = SeedDrawnCompetition();
+        var existingId = EntryId.New();
         var entryQuery = new FakeEntryQuery();
         entryQuery.Seed(new EntrySummary(
-            EntryId.New(), competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Filler));
+            existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Filler));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Filler, Now)],
+            TestContext.Current.CancellationToken);
         var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
 
         var result = await handler.HandleAsync(
             new OpenEntry(competitionId, 0, 1, 1, groupRef, competitors[0]), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.alreadyOpen");
+    }
+
+    [Fact]
+    public async Task A_live_Original_does_not_block_an_Entitled_open()
+    {
+        // The reflight shape: the entitled competitor holds a live Original
+        // and opens their Entitled re-flight against it.
+        var (store, competitionId, competitors, groupRef) = SeedDrawnCompetition();
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Original, Now)],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task A_second_live_Entitled_entry_is_blocked_with_reflightAlreadyOpen()
+    {
+        var (store, competitionId, competitors, groupRef) = SeedDrawnCompetition();
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled, Now)],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.reflightAlreadyOpen");
+    }
+
+    [Fact]
+    public async Task An_annulled_Entitled_entry_does_not_block_a_new_Entitled_open()
+    {
+        var (store, competitionId, competitors, groupRef) = SeedDrawnCompetition();
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled, Now)],
+            TestContext.Current.CancellationToken);
+        await store.AppendAsync(existingId.Value, ExpectedVersion.Exact(1),
+            [new EntryAnnulled(new Annulment { Reason = "withdrawn ruling", By = "the jury", At = Now })],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 1, 1, groupRef, competitors[0], ReflightRole.Entitled),
+            TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
     }

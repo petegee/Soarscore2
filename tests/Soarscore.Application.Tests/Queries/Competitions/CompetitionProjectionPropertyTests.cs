@@ -109,7 +109,7 @@ public class CompetitionProjectionPropertyTests
         [
             new CompetitorRegistered(competitor, at),
             new CompetitorWithdrawn(competitor.Id, at),
-            new ReflightGroupAppended(1, 1, 1, group, at),
+            new ReflightGroupAppended(1, 1, 1, group, "Mid-air collision", at),
             new TaskRoundCompleted(1, 1, 1, at),
             new TaskRoundAnnulled(1, 1, 1, "wind out of limits", at),
             new TaskRoundReopened(1, 1, 1, "a late score arrived", at),

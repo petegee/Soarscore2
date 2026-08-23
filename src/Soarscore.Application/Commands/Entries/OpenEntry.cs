@@ -23,6 +23,13 @@
 // re-open a second) is exactly what this permits. The index stays
 // coordinate-only; EntryProjectionTests's assertion that EntryAnnulled leaves
 // the summary unchanged stays true.
+//
+// Reflight-aware (kanban/in-progress/reflight-groups.md WI-5): OpenEntry
+// gains an optional ReflightRole (default Original — every existing caller is
+// unchanged), and the guard loads the stream for every entry the index returns
+// for the coordinator, whatever their role. Original opens block on any live
+// entry; Entitled/Filler opens block only on a live reflight-role entry, so
+// the ORIGINAL + one reflight-role pairing is the permitted reflight shape.
 
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
@@ -35,7 +42,8 @@ namespace Soarscore.Application.Commands.Entries;
 
 public sealed record OpenEntry(
     CompetitionId CompetitionRef, int PhaseOrdinal, int RoundOrdinal,
-    int TaskRoundOrdinal, GroupId GroupRef, CompetitorId CompetitorRef) : ICommand<EntryId>;
+    int TaskRoundOrdinal, GroupId GroupRef, CompetitorId CompetitorRef,
+    ReflightRole Role = ReflightRole.Original) : ICommand<EntryId>;
 
 public sealed class OpenEntryHandler(IEventStore eventStore, IEntryQuery entryQuery, IClock clock)
     : ICommandHandler<OpenEntry, EntryId>
@@ -59,24 +67,43 @@ public sealed class OpenEntryHandler(IEventStore eventStore, IEntryQuery entryQu
             command.CompetitorRef,
             cancellationToken);
 
-        // Only a *live* Original-role Entry blocks a new open: an annulled one
-        // is a ruling that the attempt does not count, and the F3F.1.5 shape
-        // re-opens a fresh attempt after annulling the provisional one. The
-        // index is coordinate-only, so live/annulled is answered by a stream
-        // load, not the projection.
-        foreach (var original in existing.Where(e => e.Role == ReflightRole.Original))
+        // The reflight-aware guard (kanban/in-progress/reflight-groups.md
+        // WI-5). Load the stream for every entry the index returns for this
+        // competitor+task-round (not just Original-role ones — the index
+        // carries Role but live/annulled needs a stream load, the existing
+        // stance). Then:
+        //   Original open: any live entry of ANY role blocks (alreadyOpen).
+        //   Entitled/Filler open: any live reflight-role entry blocks
+        //   (reflightAlreadyOpen — a competitor not allocated the new attempt
+        //   is not entitled to another working time, F3K.9.6 / 5.5.11.6 iv);
+        //   a live Original does NOT block — that is the reflight shape.
+        // Annulled entries of any role never block (unchanged).
+        foreach (var existingEntry in existing)
         {
-            var loadedEntry = await EntryLoader.LoadAsync(eventStore, original.Id, cancellationToken);
+            var loadedEntry = await EntryLoader.LoadAsync(eventStore, existingEntry.Id, cancellationToken);
             if (loadedEntry.IsFailure)
             {
                 return Result<EntryId>.Failure(loadedEntry.Code!, loadedEntry.Message!, loadedEntry.Defects);
             }
 
-            if (loadedEntry.Value.Entry.Annulment is null)
+            if (loadedEntry.Value.Entry.Annulment is not null)
+            {
+                continue;
+            }
+
+            if (command.Role == ReflightRole.Original)
             {
                 return Result<EntryId>.Failure(
                     "openEntry.alreadyOpen",
                     "An entry is already open for this competitor in this task-round.");
+            }
+
+            if (existingEntry.Role is ReflightRole.Entitled or ReflightRole.Filler)
+            {
+                return Result<EntryId>.Failure(
+                    "openEntry.reflightAlreadyOpen",
+                    "This competitor already has a live reflight-role entry in this task-round; "
+                    + "a competitor who was not allocated the new attempt is not entitled to another working time.");
             }
         }
 
@@ -88,6 +115,7 @@ public sealed class OpenEntryHandler(IEventStore eventStore, IEntryQuery entryQu
             command.TaskRoundOrdinal,
             command.GroupRef,
             command.CompetitorRef,
+            command.Role,
             clock.UtcNow);
         if (decision.IsFailure)
         {

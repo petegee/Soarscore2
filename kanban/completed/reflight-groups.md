@@ -1,6 +1,6 @@
 # Story — Reflights: `ReflightGroupAppended`
 
-**Status:** In progress · **Raised:** 2026-08-16 · **Planned:** 2026-08-21 · **In flight:** 2026-08-24
+**Status:** Complete — built and verified 2026-08-24 · **Raised:** 2026-08-16 · **Planned:** 2026-08-21 · **In flight:** 2026-08-24
 
 ## What
 
