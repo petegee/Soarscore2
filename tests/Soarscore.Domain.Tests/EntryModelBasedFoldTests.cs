@@ -21,6 +21,14 @@ namespace Soarscore.Domain.Tests;
 /// not the captured values themselves, because the fold's only interesting
 /// behaviour is which node an event's Sequence/Metric addressing reaches,
 /// not what MeasuredValue it carries.
+///
+/// Since out-of-order opens are legal (kanban/in-progress/
+/// out-of-order-flight-entry.md WI-4), the OpenFlight operation generates
+/// unused positive sequences from a bounded range rather than Length+1, so
+/// gaps arise; the model mirrors the fold by inserting each flight into its
+/// Sequence-sorted position (WI-4), keeping StructurallyEqual's positional
+/// walk valid because both sides ascend by Sequence. Measurement addressing
+/// therefore indexes into the sorted list instead of assuming 1..n.
 /// </summary>
 public class EntryModelBasedFoldTests
 {
@@ -57,6 +65,13 @@ public class EntryModelBasedFoldTests
     // the operation actually runs against whatever state came before it.
     private static readonly Gen<int> Pick = Gen.Int[0, 999];
 
+    // The bounded positive range open sequences are drawn from (WI-4): wide
+    // enough that a walk produces gaps and out-of-order inserts. When every
+    // value is taken the operation becomes a no-op on both sides, in lockstep.
+    private const int GeneratedSequenceRange = 8;
+
+    private static readonly Gen<int> SequenceAttempt = Gen.Int[1, GeneratedSequenceRange];
+
     private static readonly Gen<string> Metric = Gen.OneOfConst("flightTime", "landingBonus", "distance");
 
     private static readonly Gen<decimal> NumericValue = Gen.Int[0, 100_000].Select(i => i / 100m);
@@ -65,14 +80,51 @@ public class EntryModelBasedFoldTests
         Gen.OneOfConst("outside course", "late launch", "boundary violation");
 
     private static readonly GenOperation<Actual, Model> OpenFlight =
-        Gen.Operation<Actual, Model>(
-            "OpenFlight",
-            actual =>
+        SequenceAttempt.Operation<Actual, Model>(
+            pick => $"OpenFlight({pick}→unused)",
+            (actual, pick) =>
             {
-                var sequence = actual.Value.Flights.Length + 1;
+                if (actual.Value.Flights.Length >= GeneratedSequenceRange)
+                {
+                    return;
+                }
+
+                var sequence = NextUnused(pick, actual.Value.Flights.Select(f => f.Sequence));
                 actual.Value = actual.Value.Apply(new FlightOpened(sequence, DateTimeOffset.UtcNow));
             },
-            model => model.Flights.Add(new FlightModel { Sequence = model.Flights.Count + 1, Measurements = [] }));
+            (model, pick) =>
+            {
+                if (model.Flights.Count >= GeneratedSequenceRange)
+                {
+                    return;
+                }
+
+                InsertFlight(model, NextUnused(pick, model.Flights.Select(f => f.Sequence)));
+            });
+
+    /// <summary>
+    /// The first unused sequence at or (wrapping) after <paramref name="start"/>
+    /// within <see cref="GeneratedSequenceRange"/>; callers guarantee fewer
+    /// than that many flights exist, so this terminates.
+    /// </summary>
+    private static int NextUnused(int start, IEnumerable<int> taken)
+    {
+        var sequence = start;
+        while (taken.Contains(sequence))
+        {
+            sequence = (sequence % GeneratedSequenceRange) + 1;
+        }
+
+        return sequence;
+    }
+
+    /// <summary>Mirrors Entry.Apply(FlightOpened): insert at the first flight whose Sequence is greater.</summary>
+    private static void InsertFlight(Model model, int sequence)
+    {
+        var index = model.Flights.FindIndex(f => f.Sequence > sequence);
+        model.Flights.Insert(index < 0 ? model.Flights.Count : index,
+            new FlightModel { Sequence = sequence, Measurements = [] });
+    }
 
     private static readonly GenOperation<Actual, Model> CaptureMeasurement =
         (from pick in Pick from metric in Metric from value in NumericValue select (pick, metric, value))
@@ -85,7 +137,10 @@ public class EntryModelBasedFoldTests
                     return;
                 }
 
-                var sequence = (p.pick % actual.Value.Flights.Length) + 1;
+                // Position INTO the sorted flight list, then take that
+                // flight's sequence: with gaps legal, count arithmetic no
+                // longer names a flight (out-of-order-flight-entry.md WI-4).
+                var sequence = actual.Value.Flights[p.pick % actual.Value.Flights.Length].Sequence;
                 actual.Value = actual.Value.Apply(new MeasurementCaptured(
                     sequence,
                     new Measurement { Metric = p.metric, Value = MeasuredValue.Of(p.value), CapturedAt = DateTimeOffset.UtcNow }));
@@ -97,8 +152,7 @@ public class EntryModelBasedFoldTests
                     return;
                 }
 
-                var sequence = (p.pick % model.Flights.Count) + 1;
-                var flight = model.Flights.Single(f => f.Sequence == sequence);
+                var flight = model.Flights[p.pick % model.Flights.Count];
                 flight.Measurements.Add(new MeasurementModel { Metric = p.metric, AmendmentCount = 0 });
             });
 
@@ -113,7 +167,7 @@ public class EntryModelBasedFoldTests
                     return;
                 }
 
-                var sequence = (p.pick % actual.Value.Flights.Length) + 1;
+                var sequence = actual.Value.Flights[p.pick % actual.Value.Flights.Length].Sequence;
                 actual.Value = actual.Value.Apply(new MeasurementAmended(
                     sequence,
                     p.metric,
@@ -126,8 +180,7 @@ public class EntryModelBasedFoldTests
                     return;
                 }
 
-                var sequence = (p.pick % model.Flights.Count) + 1;
-                var flight = model.Flights.Single(f => f.Sequence == sequence);
+                var flight = model.Flights[p.pick % model.Flights.Count];
                 foreach (var measurement in flight.Measurements.Where(m => m.Metric == p.metric))
                 {
                     measurement.AmendmentCount++;

@@ -159,6 +159,45 @@ public sealed class CapturingAScoreSteps
             Client, "/capture-measurement", new CaptureMeasurement(_entryId, 1, "flightTime", MeasuredValue.Of((decimal)seconds)));
     }
 
+    // WI-6 (kanban/in-progress/out-of-order-flight-entry.md, decision 4): the
+    // explicit launch label. Sequence is "which launch this was", not when it
+    // was typed — posting 2 before 1 must be accepted, which is that story's
+    // whole point.
+    [When(@"^the scorer opens flight (\d+)$")]
+    public async Task WhenTheScorerOpensFlight(int sequence)
+    {
+        await ApiClient.PostCommandAsync<EntryId>(Client, "/open-flight", new OpenFlight(_entryId, sequence));
+    }
+
+    // WI-6. "Valid" carries every fact the task's FlightValidWhen demands
+    // (SeedF3K.cs: launchedInWorkingTime per F3K.7, landedWithinWindow per
+    // F3K.9.3). A flight missing either is silently zeroed at scoring while
+    // still counting as Valid — so without these flags the out-of-order
+    // scenarios below could pass on all-zero cards.
+    [When(@"^the scorer records a valid (\d+) second flight on flight (\d+)$")]
+    public async Task WhenTheScorerRecordsAValidSecondFlightOnFlight(int seconds, int sequence)
+    {
+        foreach (var flag in new[] { "launchedInWorkingTime", "landedWithinWindow" })
+        {
+            await ApiClient.PostCommandAsync<EntryId>(
+                Client, "/capture-measurement",
+                new CaptureMeasurement(_entryId, sequence, flag, MeasuredValue.Of(true)));
+        }
+
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/capture-measurement",
+            new CaptureMeasurement(_entryId, sequence, "flightTime", MeasuredValue.Of((decimal)seconds)));
+    }
+
+    // WI-6, the duplicate refusal: raw response held for its Then to inspect,
+    // mirroring the undeclared-penalty pair at the bottom of this file.
+    [When(@"^the scorer opens flight (\d+) again$")]
+    public async Task WhenTheScorerOpensFlightAgain(int sequence)
+    {
+        _rawResponse = await ApiClient.PostCommandRawAsync(
+            Client, "/open-flight", new OpenFlight(_entryId, sequence));
+    }
+
     /// <summary>
     /// The amend scenario's composite When: opens competitor's entry and its
     /// one flight, captures a flight time, then captures the rest of F5J's
@@ -355,6 +394,44 @@ public sealed class CapturingAScoreSteps
     {
         _rawResponse!.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
         (await ReadProblemTitleAsync(_rawResponse)).Should().Be("recordPenalty.infractionTypeNotDeclared");
+    }
+
+    // WI-6. Identical captured values under F3K's winner-scores-1000
+    // normalisation must land on exactly 1000 apiece: Task D sums both
+    // launches, so any order-dependence in how either card's flights were
+    // read or accepted would break the tie apart.
+    [Then(@"^both competitors score identically in the group result$")]
+    public async Task ThenBothCompetitorsScoreIdenticallyInTheGroupResult()
+    {
+        var view = (await TaskRoundResultAsync()).Single();
+        var first = view.Results.Single(r => r.CompetitorRef == _competitors[0]);
+        var second = view.Results.Single(r => r.CompetitorRef == _competitors[1]);
+
+        first.State.Should().Be(TaskResultState.Valid);
+        second.State.Should().Be(TaskResultState.Valid);
+        first.RawScore.Should().Be(second.RawScore);
+        first.RawScore.Should().Be(1000m);
+    }
+
+    // WI-6, the positional-selection regression (the story's finding 2, killed
+    // by decision 3's sequence-sorted fold): 500 == 1000 * 120 / 240 only falls
+    // out if LAUNCH 2's time was scored. Had selection followed typing recency,
+    // both cards would read 120 and this row would sit at 1000 beside its rival.
+    [Then(@"^competitor (\d+) scores (\d+) against that last-launch flight$")]
+    public async Task ThenCompetitorScoresAgainstThatLastLaunchFlight(int competitorOrdinal, int expectedScore)
+    {
+        var view = (await TaskRoundResultAsync()).Single();
+        var result = view.Results.Single(r => r.CompetitorRef == _competitors[competitorOrdinal - 1]);
+
+        result.State.Should().Be(TaskResultState.Valid);
+        result.RawScore.Should().Be((decimal)expectedScore);
+    }
+
+    [Then(@"^the second open is refused as a duplicated launch$")]
+    public async Task ThenTheSecondOpenIsRefusedAsADuplicatedLaunch()
+    {
+        _rawResponse!.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        (await ReadProblemTitleAsync(_rawResponse)).Should().Be("openFlight.duplicateSequence");
     }
 
     // --------------------------------------------------------------- helpers

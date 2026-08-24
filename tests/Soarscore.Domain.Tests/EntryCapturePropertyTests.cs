@@ -13,9 +13,11 @@ namespace Soarscore.Domain.Tests;
 /// <summary>
 /// Property tests for the Entry capture decide functions
 /// (<see cref="Entry.OpenFlight"/>, <see cref="Entry.CaptureMeasurement"/>) —
-/// kanban/completed/capture-a-score-steel-thread-plan.md WI-5. Five invariants,
-/// each its own named test so a failure names the invariant that broke, not
-/// just "a test failed".
+/// kanban/completed/capture-a-score-steel-thread-plan.md WI-5, updated by
+/// kanban/in-progress/out-of-order-flight-entry.md WI-4/WI-5 (flights may now
+/// be opened out of order; the fold keeps Flights ascending by Sequence).
+/// Each test is a named invariant so a failure names the invariant that broke,
+/// not just "a test failed".
 ///
 /// Invariants 3 and 4 are generic over <see cref="Corpus.All"/> rather than a
 /// hard-coded class list — the same technique BindParameterPropertyTests'
@@ -45,6 +47,11 @@ public class EntryCapturePropertyTests
     // every earlier element stays exactly as it was. Entry.cs:76-81 and
     // aggregate-roots.md §4 both state this in prose; this is the first test
     // to exercise it against the write path.
+    //
+    // Flights are compared BY SEQUENCE across before/after, not by position:
+    // since out-of-order opens are legal (out-of-order-flight-entry.md WI-4)
+    // the sorted fold can insert mid-list and reorder positions, so an index
+    // walk would compare the wrong flights.
 
     private enum StepKind { OpenFlight, CaptureMeasurement }
 
@@ -52,6 +59,10 @@ public class EntryCapturePropertyTests
 
     private static readonly ImmutableArray<MetricDefinition> SampleMetricDefs =
         [.. SampleMetricNames.Select(name => new MetricDefinition { Name = name, Kind = MeasuredKind.Number })];
+
+    // The small positive range open attempts are drawn from (WI-4): wide
+    // enough that a walk produces gaps and out-of-order inserts.
+    private const int GeneratedSequenceRange = 8;
 
     private static readonly Gen<(StepKind Kind, int Pick, int MetricIndex)> AppendOnlyStep =
         from kind in Gen.OneOfConst(StepKind.OpenFlight, StepKind.CaptureMeasurement)
@@ -71,7 +82,7 @@ public class EntryCapturePropertyTests
                 var before = entry.Flights;
 
                 entry = step.Kind == StepKind.OpenFlight
-                    ? ApplyOpenFlightStep(entry)
+                    ? ApplyOpenFlightStep(entry, step.Pick)
                     : ApplyCaptureMeasurementStep(entry, step.Pick, step.MetricIndex);
 
                 var after = entry.Flights;
@@ -81,13 +92,12 @@ public class EntryCapturePropertyTests
 
                 // Every flight present before is unchanged in its own fields,
                 // and its Measurements only ever grows — never loses or
-                // rewrites an earlier element.
-                for (var i = 0; i < before.Length; i++)
+                // rewrites an earlier element. Matched by Sequence because
+                // insertion may have moved positions.
+                foreach (var flightBefore in before)
                 {
-                    var flightBefore = before[i];
-                    var flightAfter = after[i];
+                    var flightAfter = after.Single(f => f.Sequence == flightBefore.Sequence);
 
-                    flightAfter.Sequence.Should().Be(flightBefore.Sequence);
                     flightAfter.Measurements.Length.Should().BeGreaterThanOrEqualTo(flightBefore.Measurements.Length);
 
                     for (var m = 0; m < flightBefore.Measurements.Length; m++)
@@ -99,9 +109,19 @@ public class EntryCapturePropertyTests
         });
     }
 
-    private static Entry ApplyOpenFlightStep(Entry entry)
+    private static Entry ApplyOpenFlightStep(Entry entry, int pick)
     {
-        var sequence = entry.Flights.Length + 1;
+        if (entry.Flights.Length >= GeneratedSequenceRange)
+        {
+            return entry;
+        }
+
+        // An arbitrary unused positive value in the range — not Length+1,
+        // which contiguity used to force (out-of-order-flight-entry.md WI-4).
+        // Skipping taken values keeps every attempt accepted, so this walk
+        // exercises insertion positions rather than rejections.
+        var sequence = NextUnused((pick % GeneratedSequenceRange) + 1, entry.Flights.Select(f => f.Sequence));
+
         var result = entry.OpenFlight(sequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
         return result.IsSuccess ? entry.Apply(result.Value) : entry;
     }
@@ -113,7 +133,10 @@ public class EntryCapturePropertyTests
             return entry;
         }
 
-        var sequence = (pick % entry.Flights.Length) + 1;
+        // Pick an existing flight by position IN THE SORTED LIST and use its
+        // sequence value: with gaps legal, count arithmetic no longer names a
+        // flight (out-of-order-flight-entry.md WI-4).
+        var sequence = entry.Flights[pick % entry.Flights.Length].Sequence;
         var metric = SampleMetricNames[metricIndex];
         var result = entry.CaptureMeasurement(
             sequence, metric, MeasuredValue.Of(pick / 10m), DateTimeOffset.UtcNow, SampleMetricDefs);
@@ -124,27 +147,45 @@ public class EntryCapturePropertyTests
         return result.IsSuccess ? entry.Apply(result.Value) : entry;
     }
 
-    // ============================================================ invariant 2
-    // Flight sequences are contiguous and 1-based: after any accepted
-    // sequence of OpenFlight decisions, Flights.Select(f => f.Sequence)
-    // equals [1..n]. The fold navigates by sequence (Entry.cs:216-220), so a
-    // gap would silently misroute every later measurement. Attempted
-    // sequences deliberately drift from the correct next value (delta
-    // -2..+2) so most attempts are rejected by openFlight.sequenceOutOfOrder
-    // and only the exactly-right one is ever accepted.
+    /// <summary>
+    /// The first unused sequence at or (wrapping) after <paramref name="start"/>
+    /// within <see cref="GeneratedSequenceRange"/>. Callers guarantee fewer
+    /// than that many flights exist, so this terminates. Mirrors how the tests'
+    /// reference models derive the same value, keeping actual and model in
+    /// lockstep.
+    /// </summary>
+    private static int NextUnused(int start, IEnumerable<int> taken)
+    {
+        var sequence = start;
+        while (taken.Contains(sequence))
+        {
+            sequence = (sequence % GeneratedSequenceRange) + 1;
+        }
 
-    private static readonly Gen<int> SequenceDelta = Gen.Int[-2, 2];
+        return sequence;
+    }
+
+    // ============================================================ invariant 2
+    // Sequences are unique, positive, and ascending: after any walk of OpenFlight
+    // decisions over a small positive range with repeats included, the folded
+    // Flights' sequences are strictly ascending — each >= 1, no duplicates.
+    // Contiguity is deliberately gone (out-of-order-flight-entry.md decision 2 /
+    // WI-4): gaps mean "not entered yet", so [1, 2, 5] is as legal as [1, 2, 3].
+    // With every attempt positive and maxLaunches unset, the only possible
+    // rejection is openFlight.duplicateSequence. Fold idempotence is invariant
+    // 5's business and is not repeated here.
+
+    private static readonly Gen<int> AttemptedSequence = Gen.Int[1, GeneratedSequenceRange];
 
     [Fact]
-    public void Flight_sequences_are_contiguous_and_1_based()
+    public void Flight_sequences_are_unique_positive_and_ascending()
     {
-        SequenceDelta.Array[0, 40].Sample(deltas =>
+        AttemptedSequence.Array[0, 40].Sample(attempts =>
         {
             var entry = OpenSampleEntry();
 
-            foreach (var delta in deltas)
+            foreach (var attemptedSequence in attempts)
             {
-                var attemptedSequence = entry.Flights.Length + 1 + delta;
                 var result = entry.OpenFlight(
                     attemptedSequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
 
@@ -154,11 +195,13 @@ public class EntryCapturePropertyTests
                 }
                 else
                 {
-                    result.Code.Should().Be("openFlight.sequenceOutOfOrder");
+                    result.Code.Should().Be("openFlight.duplicateSequence");
                 }
             }
 
-            entry.Flights.Select(f => f.Sequence).Should().Equal(Enumerable.Range(1, entry.Flights.Length));
+            var sequences = entry.Flights.Select(f => f.Sequence).ToList();
+            sequences.Should().BeInAscendingOrder().And.OnlyHaveUniqueItems();
+            sequences.Should().OnlyContain(s => s >= 1);
         });
     }
 
@@ -171,6 +214,9 @@ public class EntryCapturePropertyTests
     // ParameterResolver — F3K TaskC's launches.C is a parameterised
     // MaxLaunches with a declared default of 3, so resolution must happen
     // the same way OpenEntry resolves a parameterised WorkingTime.
+    // The scrambled-order leg (WI-4) checks the limit is a count of flights,
+    // not an ordinal property of the sequence values; P3 below generalises it
+    // to arbitrary permutations on concrete maxima.
 
     private const int UnboundedProbeCount = 50;
 
@@ -213,11 +259,23 @@ public class EntryCapturePropertyTests
 
         entry.Flights.Length.Should().Be(acceptCount);
 
-        if (maxLaunches is not null)
+        if (maxLaunches is { } max)
         {
-            var next = entry.OpenFlight(acceptCount + 1, maxLaunches, at: DateTimeOffset.UtcNow);
-            next.IsFailure.Should().BeTrue();
-            next.Code.Should().Be("openFlight.maxLaunchesExceeded");
+            // The same limit, hit in a scrambled (here: descending) order,
+            // overflows at exactly the same count (out-of-order-flight-entry.md
+            // WI-4): all max opens succeed, the next fails.
+            var scrambled = OpenSampleEntry();
+            for (var sequence = max; sequence >= 1; sequence--)
+            {
+                var descending = scrambled.OpenFlight(sequence, maxLaunches, at: DateTimeOffset.UtcNow);
+                descending.IsSuccess.Should().BeTrue();
+                scrambled = scrambled.Apply(descending.Value);
+            }
+
+            scrambled.Flights.Length.Should().Be(max);
+
+            var overflow = scrambled.OpenFlight(max + 1, maxLaunches, at: DateTimeOffset.UtcNow);
+            overflow.Code.Should().Be("openFlight.maxLaunchesExceeded");
         }
     }
 
@@ -309,7 +367,10 @@ public class EntryCapturePropertyTests
     // fold against hand-built events; this extends the same model-checking
     // approach to events the decide path (OpenFlight / CaptureMeasurement)
     // itself produced, so the reference model must also mirror
-    // captureMeasurement.alreadyCaptured's rejection to stay in lockstep.
+    // captureMeasurement.alreadyCaptured's rejection and the fold's
+    // insertion-by-sequence (out-of-order-flight-entry.md WI-4) to stay in
+    // lockstep — DecideStructurallyEqual's positional walk stays valid
+    // because BOTH sides are ascending by Sequence.
 
     private sealed class DecideFlightModel
     {
@@ -328,17 +389,44 @@ public class EntryCapturePropertyTests
         public required Entry Value { get; set; }
     }
 
+    // Out-of-order opens (WI-4): each attempt derives an unused positive value
+    // in the bounded range, skipping collisions exactly as a caller would —
+    // so gaps arise and the fold's insertion order is exercised, while
+    // actual and model derive the SAME sequence from their (identical) state.
+
     private static readonly GenOperation<DecideActual, DecideModel> DecideOpenFlight =
-        Gen.Operation<DecideActual, DecideModel>(
-            "OpenFlight",
-            actual =>
+        Gen.Int[1, GeneratedSequenceRange].Operation<DecideActual, DecideModel>(
+            pick => $"OpenFlight({pick}→unused)",
+            (actual, pick) =>
             {
-                var sequence = actual.Value.Flights.Length + 1;
-                var result = actual.Value.OpenFlight(
-                    sequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
+                if (actual.Value.Flights.Length >= GeneratedSequenceRange)
+                {
+                    return;
+                }
+
+                var sequence = NextUnused(pick, actual.Value.Flights.Select(f => f.Sequence));
+                var result = actual.Value.OpenFlight(sequence, maxLaunches: null, at: DateTimeOffset.UtcNow);
                 actual.Value = actual.Value.Apply(result.Value);
             },
-            model => model.Flights.Add(new DecideFlightModel { Sequence = model.Flights.Count + 1, Measurements = [] }));
+            (model, pick) =>
+            {
+                if (model.Flights.Count >= GeneratedSequenceRange)
+                {
+                    return;
+                }
+
+                var sequence = NextUnused(pick, model.Flights.Select(f => f.Sequence));
+                InsertModelFlight(model.Flights, sequence);
+            });
+
+    private static void InsertModelFlight(List<DecideFlightModel> flights, int sequence)
+    {
+        // Mirrors Entry.Apply(FlightOpened): insert at the first flight whose
+        // Sequence is greater, keeping the list ascending by Sequence.
+        var index = flights.FindIndex(f => f.Sequence > sequence);
+        flights.Insert(index < 0 ? flights.Count : index,
+            new DecideFlightModel { Sequence = sequence, Measurements = [] });
+    }
 
     private static readonly GenOperation<DecideActual, DecideModel> DecideCaptureMeasurement =
         (from pick in Gen.Int[0, 999] from metricIndex in Gen.Int[0, SampleMetricNames.Length - 1] select (pick, metricIndex))
@@ -351,7 +439,10 @@ public class EntryCapturePropertyTests
                     return;
                 }
 
-                var sequence = (p.pick % actual.Value.Flights.Length) + 1;
+                // Position INTO the sorted flight list, then take that
+                // flight's sequence: gaps make count arithmetic meaningless
+                // under out-of-order opens (out-of-order-flight-entry.md WI-4).
+                var sequence = actual.Value.Flights[p.pick % actual.Value.Flights.Length].Sequence;
                 var metric = SampleMetricNames[p.metricIndex];
                 var result = actual.Value.CaptureMeasurement(
                     sequence, metric, MeasuredValue.Of(p.pick / 10m), DateTimeOffset.UtcNow, SampleMetricDefs);
@@ -368,9 +459,8 @@ public class EntryCapturePropertyTests
                     return;
                 }
 
-                var sequence = (p.pick % model.Flights.Count) + 1;
+                var flight = model.Flights[p.pick % model.Flights.Count];
                 var metric = SampleMetricNames[p.metricIndex];
-                var flight = model.Flights.Single(f => f.Sequence == sequence);
 
                 // Mirrors captureMeasurement.alreadyCaptured: a second value
                 // for a metric already captured on this flight is rejected
@@ -417,5 +507,163 @@ public class EntryCapturePropertyTests
         }
 
         return true;
+    }
+
+    // ============================================================ P1 (WI-5)
+    // Capture-order independence — the story's own invariant
+    // (kanban/in-progress/out-of-order-flight-entry.md): a retrospectively
+    // completed card must be indistinguishable from a live-typed one. Each
+    // flight is planned as a block (its open plus any measurement payloads);
+    // folding the blocks in ANY order and folding them in sequence order produce
+    // structurally equal Entries — same sequence-per-flight, same measurements
+    // per flight. Block-local open-then-capture ordering is what keeps every
+    // capture accepted; block-level shuffling is the arrival-order freedom.
+
+    private sealed record PlannedCapture(string Metric, MeasuredValue Value);
+
+    private sealed record FlightPlan(int Sequence, IReadOnlyList<PlannedCapture> Captures);
+
+    private static readonly int[] SequencePool = [1, 2, 3, 4];
+
+    [Fact]
+    public void Capture_order_does_not_change_the_folded_entry()
+    {
+        (from order in Gen.Shuffle(SequencePool)
+         from count in Gen.Int[1, SequencePool.Length]
+         from includes in Gen.Bool.Array[SequencePool.Length * SampleMetricNames.Length]
+         from values in Gen.Int[0, 100_000].Array[SequencePool.Length * SampleMetricNames.Length]
+         select (order, count, includes, values))
+        .Sample(t =>
+        {
+            var plans = new List<FlightPlan>();
+            for (var i = 0; i < t.count; i++)
+            {
+                var captures = new List<PlannedCapture>();
+                for (var m = 0; m < SampleMetricNames.Length; m++)
+                {
+                    var slot = (i * SampleMetricNames.Length) + m;
+                    if (t.includes[slot])
+                    {
+                        captures.Add(new PlannedCapture(SampleMetricNames[m], MeasuredValue.Of(t.values[slot] / 100m)));
+                    }
+                }
+
+                // t.order's first `count` entries are a random DISTINCT subset of
+                // the pool, so gaps arise exactly as they do in real retrospective
+                // entry.
+                plans.Add(new FlightPlan(t.order[i], captures));
+            }
+
+            var canonical = FoldPlans(plans.OrderBy(p => p.Sequence));
+            var permuted = FoldPlans(plans);
+
+            AssertSameFlightsBySequence(canonical, permuted);
+        });
+    }
+
+    private static Entry FoldPlans(IEnumerable<FlightPlan> plans)
+    {
+        var entry = OpenSampleEntry();
+        foreach (var plan in plans)
+        {
+            entry = entry.Apply(new FlightOpened(plan.Sequence, DateTimeOffset.UtcNow));
+            foreach (var capture in plan.Captures)
+            {
+                entry = entry.Apply(new MeasurementCaptured(
+                    plan.Sequence,
+                    new Measurement { Metric = capture.Metric, Value = capture.Value, CapturedAt = DateTimeOffset.UtcNow }));
+            }
+        }
+
+        return entry;
+    }
+
+    private static void AssertSameFlightsBySequence(Entry expected, Entry actual)
+    {
+        actual.Flights.Select(f => f.Sequence).Should().Equal(expected.Flights.Select(f => f.Sequence));
+
+        for (var i = 0; i < expected.Flights.Length; i++)
+        {
+            var expectedFlight = expected.Flights[i];
+            var actualFlight = actual.Flights[i];
+
+            actualFlight.Measurements.Length.Should().Be(expectedFlight.Measurements.Length);
+            for (var m = 0; m < expectedFlight.Measurements.Length; m++)
+            {
+                actualFlight.Measurements[m].Metric.Should().Be(expectedFlight.Measurements[m].Metric);
+                actualFlight.Measurements[m].Value.Should().Be(expectedFlight.Measurements[m].Value);
+            }
+        }
+    }
+
+    // ============================================================ P2 (WI-5)
+    // Sortedness is an aggregate invariant: after any interleaving of accepted
+    // and rejected opens — non-positive attempts and duplicates included —
+    // Flights is strictly ascending by Sequence with no duplicates. This guards
+    // WI-2 (the sorted fold) directly, over a wider attempt range than
+    // invariant 2 exercises.
+
+    private static readonly Gen<int> AnySequenceAttempt = Gen.Int[-2, GeneratedSequenceRange];
+
+    [Fact]
+    public void Flights_stay_sorted_after_accepted_and_rejected_opens_interleave()
+    {
+        AnySequenceAttempt.Array[0, 50].Sample(attempts =>
+        {
+            var entry = OpenSampleEntry();
+
+            foreach (var attempted in attempts)
+            {
+                var result = entry.OpenFlight(attempted, maxLaunches: null, at: DateTimeOffset.UtcNow);
+                if (result.IsSuccess)
+                {
+                    entry = entry.Apply(result.Value);
+                }
+                else
+                {
+                    result.Code.Should().BeOneOf("openFlight.sequenceNotPositive", "openFlight.duplicateSequence");
+                }
+            }
+
+            var sequences = entry.Flights.Select(f => f.Sequence).ToArray();
+            sequences.Should().BeInAscendingOrder().And.OnlyHaveUniqueItems();
+            sequences.Should().OnlyContain(s => s >= 1);
+        });
+    }
+
+    // ============================================================ P3 (WI-5)
+    // The launch limit is a count, not an ordinal: for any permutation of
+    // 1..max (concrete maxima via generation), accepting all of them succeeds
+    // and the next open — whatever its value — fails
+    // openFlight.maxLaunchesExceeded. Generalises invariant 3 beyond the
+    // in-order case (out-of-order-flight-entry.md WI-5).
+
+    private static readonly int[] ProbeMaxima = [2, 4, 7];
+
+    [Fact]
+    public void The_launch_limit_is_a_count_not_an_ordinal()
+    {
+        (from max in Gen.OneOfConst(ProbeMaxima)
+         from order in Gen.Shuffle(Enumerable.Range(1, max).ToArray())
+         select (max, order))
+        .Sample(t =>
+        {
+            var entry = OpenSampleEntry();
+
+            foreach (var sequence in t.order)
+            {
+                var result = entry.OpenFlight(sequence, t.max, at: DateTimeOffset.UtcNow);
+                result.IsSuccess.Should().BeTrue($"launch {sequence} of {t.max}");
+                entry = entry.Apply(result.Value);
+            }
+
+            entry.Flights.Length.Should().Be(t.max);
+
+            var overflow = entry.OpenFlight(t.max + 1, t.max, at: DateTimeOffset.UtcNow);
+            overflow.Code.Should().Be("openFlight.maxLaunchesExceeded");
+
+            var farOverflow = entry.OpenFlight(t.max * 10, t.max, at: DateTimeOffset.UtcNow);
+            farOverflow.Code.Should().Be("openFlight.maxLaunchesExceeded");
+        });
     }
 }

@@ -179,7 +179,7 @@ public sealed record Entry
         Penalties = [],
     };
 
-    /// <summary>Appends a new, initially empty Flight at the event's sequence.</summary>
+    /// <summary>Inserts a new, initially empty Flight at the event's sequence.</summary>
     public Entry Apply(FlightOpened @event)
     {
         var flight = new Flight
@@ -188,7 +188,18 @@ public sealed record Entry
             Measurements = [],
         };
 
-        return this with { Flights = Flights.Add(flight) };
+        // Flights is always ascending by Sequence — insertion in place, not
+        // append — which is what makes positional flight selection
+        // (FlightSelector.SelectLast etc.) mean launch position under any
+        // capture order. A contiguous log always inserts at the end, which is
+        // byte-identical to what append did.
+        var index = 0;
+        while (index < Flights.Length && Flights[index].Sequence < @event.Sequence)
+        {
+            index++;
+        }
+
+        return this with { Flights = Flights.Insert(index, flight) };
     }
 
     /// <summary>Appends a raw Measurement to the Flight matching <see cref="MeasurementCaptured.FlightSequence"/>.</summary>
@@ -230,6 +241,17 @@ public sealed record Entry
     // definition's task shape; the handler does that resolution. Null means
     // the task limits launches not at all (half the corpus).
     //
+    // sequence is the stable launch label — "which launch this was" on the
+    // field, chosen by whoever records the flight (out-of-order-flight-entry.md
+    // decision 1). It is scoring-relevant data (the `flight.sequence`
+    // intrinsic feeds lookup terms and launch-penalty rules) but a label, not
+    // a claim about when it was typed: flights may be opened in any order, so
+    // gaps are legal (a gap means "not entered yet") while duplicates and
+    // non-positive values are not (decision 2). No rule in either rulebook
+    // requires flights to be entered in launch order; order-sensitive scoring
+    // reads launch chronology from this label, which the fold preserves by
+    // keeping Flights ascending (Apply(FlightOpened)).
+    //
     // A Flight carries no launch timestamp — kanban/completed/remove-flight-launchat.md.
     // It used to, unchecked, so that F3K.7's "an early launch scores zero, it is
     // not refused" stayed a scoring rule rather than a capture gate. The rule
@@ -248,11 +270,17 @@ public sealed record Entry
                 "entry.annulled", "This Entry has been annulled and cannot record further flights.");
         }
 
-        if (sequence != Flights.Length + 1)
+        if (sequence < 1)
         {
             return Result<FlightOpened>.Failure(
-                "openFlight.sequenceOutOfOrder",
-                $"Flight sequence must be {Flights.Length + 1}; got {sequence}.");
+                "openFlight.sequenceNotPositive",
+                $"Flight sequence must be a positive launch number; got {sequence}.");
+        }
+
+        if (Flights.Any(f => f.Sequence == sequence))
+        {
+            return Result<FlightOpened>.Failure(
+                "openFlight.duplicateSequence", $"Launch {sequence} has already been opened.");
         }
 
         if (maxLaunches is { } max && Flights.Length >= max)

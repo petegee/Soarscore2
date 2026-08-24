@@ -157,6 +157,16 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   whether the field should exist at all — is a story, not a deferral:
   `kanban/completed/remove-flight-launchat.md`.
 
+- **A mislabeled launch sequence cannot be corrected.** **Decided 2026-08-24**
+  (`kanban/completed/out-of-order-flight-entry.md`, WI-7). Out-of-order entry made
+  `flight.sequence` a caller-supplied launch label — but once opened it is immutable:
+  there is no renumbering event and `FlightOpened` is deliberately not correctable the
+  way a `Measurement` is (an amendment would have to rewrite history rather than append
+  beside it, since the label *is* the address measurements are filed under). Today's
+  remedy for a mislabel is annulling the Entry and starting a fresh one — a CD act,
+  proportionate to how rarely a scorer mislabels a launch at club scale (≤ 20 pilots,
+  scorecard in hand). Reopen only if CDs hit it in practice.
+
 ## Annulments and penalties
 
 - **The task-round coordinate on an aggregate penalty is recorded but read by

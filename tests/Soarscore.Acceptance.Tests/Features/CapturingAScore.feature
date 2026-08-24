@@ -65,3 +65,58 @@ Feature: Capturing a score
     When the scorer opens an entry for competitor 3 in round 1, group 1
     And the scorer records an entry penalty with an undeclared infraction type
     Then the penalty is refused as an undeclared infraction type
+
+  Scenario: Flights recorded out of order score identically
+    Given a published F3K class definition
+    And a competition adopting it with 6 registered competitors
+    And a drawn preliminary phase with these tasks
+      | round | task |
+      | 1     | D    |
+      | 2     | A    |
+      | 3     | B    |
+      | 4     | C    |
+    When the scorer opens an entry for competitor 1 in round 1, group 1
+    And the scorer opens flight 2
+    And the scorer records a valid 120 second flight on flight 2
+    And the scorer opens flight 1
+    And the scorer records a valid 100 second flight on flight 1
+    And the scorer opens an entry for competitor 2 in round 1, group 1
+    And the scorer opens flight 1
+    And the scorer records a valid 100 second flight on flight 1
+    And the scorer opens flight 2
+    And the scorer records a valid 120 second flight on flight 2
+    Then both competitors score identically in the group result
+
+  Scenario: Only the last launch is scored, however the card was typed
+    Given a published F3K class definition
+    And a competition adopting it with 6 registered competitors
+    And a drawn preliminary phase with these tasks
+      | round | task |
+      | 1     | A    |
+      | 2     | D    |
+      | 3     | B    |
+      | 4     | C    |
+    When the scorer opens an entry for competitor 1 in round 1, group 1
+    And the scorer opens flight 2
+    And the scorer records a valid 240 second flight on flight 2
+    And the scorer opens flight 1
+    And the scorer records a valid 120 second flight on flight 1
+    And the scorer opens an entry for competitor 2 in round 1, group 1
+    And the scorer opens a flight
+    And the scorer records a valid 120 second flight on flight 1
+    Then the winner of the group is competitor 1
+    And competitor 2 scores 500 against that last-launch flight
+
+  Scenario: A duplicated launch is refused
+    Given a published F3K class definition
+    And a competition adopting it with 6 registered competitors
+    And a drawn preliminary phase with these tasks
+      | round | task |
+      | 1     | D    |
+      | 2     | A    |
+      | 3     | B    |
+      | 4     | C    |
+    When the scorer opens an entry for competitor 3 in round 1, group 1
+    And the scorer opens flight 2
+    And the scorer opens flight 2 again
+    Then the second open is refused as a duplicated launch

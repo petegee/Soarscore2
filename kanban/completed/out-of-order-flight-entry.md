@@ -1,6 +1,6 @@
 # Flights within an Entry can be recorded out of order
 
-**Status:** Backlog · Planned · **Raised:** 2026-08-18 · **Planned:** 2026-08-24
+**Status:** Complete — built and verified 2026-08-24 · **Raised:** 2026-08-18 · **Planned:** 2026-08-24
 
 ## What
 
@@ -273,3 +273,43 @@ Run against both stores per CLAUDE.md (`SOARSCORE_TEST_STORE=postgres` and
   (`task-round-lifecycle.md`, governing principle) found the Entry boundary
   the only remaining imposed ordering, and this story is that finding's
   discharge.
+
+---
+
+# As built (2026-08-24)
+
+All seven work items landed as planned, with one addition and no deviations
+from the plan's decisions.
+
+- **WI-1** — `Entry.OpenFlight` (`src/Soarscore.Domain/Entries/Entry.cs:265`)
+  now checks `entry.annulled` → `openFlight.sequenceNotPositive` (:274) →
+  `openFlight.duplicateSequence` (:281) → `openFlight.maxLaunchesExceeded`;
+  the contiguity branch is gone.
+- **WI-2** — `Entry.Apply(FlightOpened)` (`Entry.cs:183`) inserts at the first
+  flight whose Sequence is greater; `Flights` is always ascending by Sequence.
+- **WI-3** — `OpenFlight(EntryId, int? Sequence = null)`
+  (`src/Soarscore.Application/Commands/Entries/OpenFlight.cs:29`); omitted
+  sequence derives max+1 (`OpenFlight.cs:57`). All pre-existing call sites are
+  unchanged.
+- **WI-4/WI-5** — contiguity tests rewritten per finding 5;
+  P1–P3 live in `EntryCapturePropertyTests.cs` (`Capture_order…:529`,
+  `Flights_stay_sorted…:609`, `The_launch_limit_is_a_count…:644`), P4 in
+  `FlightSelectorTests.cs:186`, driving the real `ScoringService.ScoreGroup`
+  over F3K Tasks A/B/M. Two handler tests added beyond the plan's list
+  (`OpenFlightHandlerTests.cs`: explicit sequence recorded verbatim; omitted
+  derives max+1 under a gap) — WI-3 changed the handler contract, so it is
+  covered at its own layer.
+- **WI-6** — three scenarios appended to `CapturingAScore.feature`
+  (`:69` identical scores either order, `:90` last-launch selection follows the
+  label, `:110` duplicate refused).
+- **WI-7** — deferred decision "a mislabeled launch cannot be corrected"
+  written to `kanban/deferred-decisions.md`.
+
+Test counts as built: Domain 436 (+6), Application 205 (+2), Acceptance 35
+(+3), Architecture 7 (unchanged), Infrastructure fast loop 55 (unchanged) —
+acceptance run on sqlite. Postgres runs not executed this session: no Docker
+on the build machine. Per CLAUDE.md, proving both backends means re-running
+the Infrastructure Storage-tagged suite and the acceptance suite with
+`SOARSCORE_TEST_STORE=postgres` where Docker is available — nothing in this
+story touches a store-specific path (finding 1), so the risk is nil, but the
+runs are owed.

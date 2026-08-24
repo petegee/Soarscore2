@@ -129,6 +129,41 @@ public class OpenFlightHandlerTests
         third.Code.Should().Be("openFlight.maxLaunchesExceeded");
     }
 
+    // out-of-order-flight-entry.md WI-3 / decision 4: an explicit sequence is
+    // the caller's launch label, used verbatim — opening launch 2 first is
+    // legal and leaves launch 1 as a gap.
+    [Fact]
+    public async Task An_explicit_sequence_is_recorded_verbatim_so_launch_2_can_be_typed_first()
+    {
+        var (store, _, entryId) = SeedOpenEntry();
+        var handler = new OpenFlightHandler(store, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(new OpenFlight(entryId, 2), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+        var flightOpened = store.Streams[entryId.Value][1].Should().BeOfType<FlightOpened>().Subject;
+        flightOpened.Sequence.Should().Be(2);
+    }
+
+    // Decision 4 again: once gaps exist, the omitted-sequence derivation must
+    // be max-plus-one, not length-plus-one — for flights {2}, Length+1 would
+    // mint the collision 2 while Max+1 correctly continues at 3.
+    [Fact]
+    public async Task Omitting_sequence_derives_max_plus_one_when_a_gap_exists()
+    {
+        var (store, _, entryId) = SeedOpenEntry();
+        var handler = new OpenFlightHandler(store, new FakeClock(Now));
+
+        var first = await handler.HandleAsync(new OpenFlight(entryId, 2), TestContext.Current.CancellationToken);
+        first.IsSuccess.Should().BeTrue();
+
+        var second = await handler.HandleAsync(new OpenFlight(entryId), TestContext.Current.CancellationToken);
+
+        second.IsSuccess.Should().BeTrue();
+        var flightOpened = store.Streams[entryId.Value][2].Should().BeOfType<FlightOpened>().Subject;
+        flightOpened.Sequence.Should().Be(3);
+    }
+
     [Fact]
     public async Task A_stale_read_version_fails_with_eventStore_concurrencyConflict_on_append()
     {

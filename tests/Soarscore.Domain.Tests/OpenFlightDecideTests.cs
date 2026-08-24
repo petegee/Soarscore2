@@ -8,8 +8,12 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Decide-function tests for <see cref="Entry.OpenFlight"/> —
-/// kanban/completed/capture-a-score-steel-thread-plan.md WI-3. One per failure
-/// code, plus success, plus the sequence advancing across successive folds.
+/// kanban/completed/capture-a-score-steel-thread-plan.md WI-3, updated by
+/// kanban/in-progress/out-of-order-flight-entry.md WI-4: contiguity is no
+/// longer enforced, so the old sequenceOutOfOrder case is replaced by one per
+/// surviving failure code (annulled, duplicateSequence, sequenceNotPositive,
+/// maxLaunchesExceeded), plus success, out-of-order success, and the sequence
+/// advancing across successive folds.
 ///
 /// The finding-3 regression test — a launch outside the working time is
 /// recorded, not refused — used to live here, asserting that OpenFlight passed
@@ -47,15 +51,43 @@ public class OpenFlightDecideTests
         result.Code.Should().Be("entry.annulled");
     }
 
+    // WI-4 (kanban/in-progress/out-of-order-flight-entry.md): the contiguity
+    // gate is gone — opening at 2 on an empty entry is this story's whole
+    // point, and its failure codes are duplicateSequence / sequenceNotPositive.
+
     [Fact]
-    public void OpenFlight_with_a_sequence_that_is_not_next_fails_with_a_stable_code()
+    public void OpenFlight_at_sequence_2_on_an_empty_entry_succeeds()
     {
         var entry = OpenEntry();
 
         var result = entry.OpenFlight(2, maxLaunches: null, at: DateTimeOffset.UtcNow);
 
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Sequence.Should().Be(2);
+        entry = entry.Apply(result.Value);
+        entry.Flights.Single().Sequence.Should().Be(2);
+    }
+
+    [Fact]
+    public void OpenFlight_with_a_duplicate_sequence_fails_with_a_stable_code()
+    {
+        var entry = OpenEntry().Apply(new FlightOpened(1, DateTimeOffset.UtcNow));
+
+        var result = entry.OpenFlight(1, maxLaunches: null, at: DateTimeOffset.UtcNow);
+
         result.IsFailure.Should().BeTrue();
-        result.Code.Should().Be("openFlight.sequenceOutOfOrder");
+        result.Code.Should().Be("openFlight.duplicateSequence");
+    }
+
+    [Fact]
+    public void OpenFlight_with_a_non_positive_sequence_fails_with_a_stable_code()
+    {
+        var entry = OpenEntry();
+
+        var result = entry.OpenFlight(0, maxLaunches: null, at: DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openFlight.sequenceNotPositive");
     }
 
     [Fact]

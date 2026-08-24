@@ -5,12 +5,19 @@
 // folds at this scale, and caching AdoptedRules outside the log would trade
 // a correctness property for an unmeasured benchmark).
 //
-// No Sequence parameter: the handler derives it as Flights.Length + 1, so
-// Entry.OpenFlight's contiguity check (WI-3) guards a fold bug, not the
-// caller. No LaunchAt either — kanban/completed/remove-flight-launchat.md
+// Sequence is optional (out-of-order-flight-entry.md decision 4). When the
+// caller supplies it, it is the launch label they are recording — "my third
+// launch", typed first, is sequence 3 — and it may arrive in any order; gaps
+// are legal, duplicates and non-positive values are refused by the decide
+// function. When omitted, the handler derives it as max + 1 of the flights
+// already present (1 on an empty Entry): max-plus-one, never length-plus-one,
+// because once gaps exist length-plus-one can mint a collision ({1, 3} → 3).
+// The derivation is a convenience for the scorer-working-down-a-card workflow;
+// the decide function remains the real guard.
+//
+// No LaunchAt either — kanban/completed/remove-flight-launchat.md
 // removed it, since no rule wants a launch instant and the classes that care
-// about launch timing declare a metric instead. Opening a flight now carries
-// no caller-supplied fact at all; the only timestamp is IClock's.
+// about launch timing declare a metric instead. The only timestamp is IClock's.
 
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
@@ -19,7 +26,7 @@ using Soarscore.Domain.Entries;
 
 namespace Soarscore.Application.Commands.Entries;
 
-public sealed record OpenFlight(EntryId EntryRef) : ICommand<EntryId>;
+public sealed record OpenFlight(EntryId EntryRef, int? Sequence = null) : ICommand<EntryId>;
 
 public sealed class OpenFlightHandler(IEventStore eventStore, IClock clock) : ICommandHandler<OpenFlight, EntryId>
 {
@@ -47,7 +54,8 @@ public sealed class OpenFlightHandler(IEventStore eventStore, IClock clock) : IC
             return Result<EntryId>.Failure(resolvedTask.Code!, resolvedTask.Message!, resolvedTask.Defects);
         }
 
-        var sequence = entry.Flights.Length + 1;
+        var sequence = command.Sequence ??
+            (entry.Flights.Length == 0 ? 1 : entry.Flights.Max(f => f.Sequence) + 1);
         var decision = entry.OpenFlight(sequence, resolvedTask.Value.Timing.MaxLaunches, clock.UtcNow);
         if (decision.IsFailure)
         {

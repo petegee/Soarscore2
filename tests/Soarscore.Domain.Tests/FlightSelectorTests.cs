@@ -1,5 +1,8 @@
 using System.Collections.Immutable;
 using AwesomeAssertions;
+using CsCheck;
+using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
@@ -10,6 +13,8 @@ namespace Soarscore.Domain.Tests;
 /// <summary>
 /// Black-box sociable tests for FlightSelector (WI-4).
 /// Tests flight selection, target assignment, validWhen, PerTask caps, and rounding.
+/// P4 (kanban/in-progress/out-of-order-flight-entry.md WI-5) adds the
+/// capture-order independence property over the real ScoreGroup pipeline.
 /// </summary>
 public class FlightSelectorTests
 {
@@ -138,6 +143,114 @@ public class FlightSelectorTests
 
         result.State.Should().Be(TaskResultState.NoResult);
         result.RawScore.Should().Be(0m);
+    }
+
+    // ------------------------------------------------------ P4 (out-of-order capture)
+
+    // One real corpus task per positional selection kind (finding 2), each
+    // with the raw score the three flights [100.5, 300.75, 250.25] must yield:
+    // Task A selects only launch 3 (cap 300); Task B the last two (each
+    // capped at maxFlight.B = 240); Task M's ExactlyNInOrder clamps launches
+    // 1..3 to targets [180, 300, 420] and scores all three. ScoreGroup's
+    // returned RawScore is the NORMALISED group score, so the expected raw
+    // value is pinned through the preserved selection instead.
+    private static readonly IReadOnlyList<(TaskDefinition Task, ClassDefinition ClassDef, IReadOnlyDictionary<string, MeasuredValue> Bindings, decimal ExpectedRawScore)>
+        PositionalTaskCases =
+        [
+            (F3KTask("A"), SeedF3K.Definition,
+                new Dictionary<string, MeasuredValue> { ["workingTime.A"] = MeasuredValue.Of(600m) },
+                250.25m),
+            (F3KTask("B"), SeedF3K.Definition,
+                new Dictionary<string, MeasuredValue>
+                {
+                    ["workingTime.B"] = MeasuredValue.Of(600m),
+                    ["maxFlight.B"] = MeasuredValue.Of(240m),
+                },
+                480m),
+            (F3KTask("M"), SeedF3K.Definition,
+                new Dictionary<string, MeasuredValue>(),
+                650.75m),
+        ];
+
+    /// <summary>
+    /// P4 — Selection is capture-order independent
+    /// (kanban/in-progress/out-of-order-flight-entry.md WI-5): folding the same
+    /// FlightOpened + MeasurementCaptured events in a shuffled arrival order and
+    /// scoring through the real ScoreGroup pipeline yields the same selected
+    /// flights and raw score as folding them in launch order, for every
+    /// positional selection kind the corpus uses. Pins finding 2 — the
+    /// regression decision 3's sorted fold exists to kill — at the selector
+    /// level, complementing P1's fold-level property.
+    /// </summary>
+    [Fact]
+    public void Selection_is_capture_order_independent_for_every_positional_kind()
+    {
+        (from caseIndex in Gen.Int[0, PositionalTaskCases.Count - 1]
+         from order in Gen.Shuffle(new[] { 1, 2, 3 })
+         select (caseIndex, order))
+        .Sample(t =>
+        {
+            var (task, classDef, bindings, expectedRawScore) = PositionalTaskCases[t.caseIndex];
+
+            var sorted = ScoreThroughPipeline(task, classDef, bindings, [1, 2, 3]);
+            var shuffled = ScoreThroughPipeline(task, classDef, bindings, t.order);
+
+            sorted.State.Should().Be(shuffled.State);
+            shuffled.RawScore.Should().Be(sorted.RawScore);
+            sorted.Selection.Should().NotBeNull();
+            shuffled.Selection.Should().NotBeNull();
+            SelectedSequences(shuffled).Should().Equal(SelectedSequences(sorted));
+            shuffled.Selection!.Flights.Select(f => f.Score)
+                .Should().Equal(sorted.Selection!.Flights.Select(f => f.Score));
+
+            // The concrete oracle: the selected flights' per-flight scores sum
+            // to the expected raw value, whichever way the card was typed.
+            sorted.Selection!.Flights.Sum(f => f.Score).Should().Be(expectedRawScore);
+        });
+    }
+
+    private static IEnumerable<int> SelectedSequences(TaskResult result) =>
+        result.Selection!.Flights.Select(f => (int)f.Metrics["flight.sequence"].Number!.Value);
+
+    private static TaskDefinition F3KTask(string code) =>
+        SeedF3K.Definition.Phases.SelectMany(p => p.Tasks).First(t => t.Code == code);
+
+    // Distinct per-launch times whose best flight is NOT the last one, so a
+    // positional misread of an unsorted flight list cannot pass by accident.
+    private static readonly decimal[] FlightTimes = [100.5m, 300.75m, 250.25m];
+
+    private static TaskResult ScoreThroughPipeline(
+        TaskDefinition task,
+        ClassDefinition classDef,
+        IReadOnlyDictionary<string, MeasuredValue> bindings,
+        int[] openOrder)
+    {
+        var groupRef = GroupId.New();
+        var competitorRef = CompetitorId.New();
+        var at = new DateTimeOffset(2026, 8, 24, 9, 0, 0, TimeSpan.Zero);
+        var entryKey = competitorRef.ToString();
+
+        // Each launch folds as a block — open then its measurements — with
+        // blocks in the caller's arrival order; the captures of one launch may
+        // therefore precede another launch's open.
+        var entry = Entry.Create(new EntryOpened(
+            EntryId.New(), CompetitionId.New(), 1, 1, 1,
+            groupRef, competitorRef, ReflightRole.Original, at));
+
+        foreach (var sequence in openOrder)
+        {
+            entry = entry.Apply(new FlightOpened(sequence, at.AddSeconds(sequence)));
+            entry = entry.Apply(new MeasurementCaptured(sequence,
+                new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(FlightTimes[sequence - 1]), CapturedAt = at }));
+            entry = entry.Apply(new MeasurementCaptured(sequence,
+                new Measurement { Metric = "landedWithinWindow", Value = MeasuredValue.Of(true), CapturedAt = at }));
+            entry = entry.Apply(new MeasurementCaptured(sequence,
+                new Measurement { Metric = "launchedInWorkingTime", Value = MeasuredValue.Of(true), CapturedAt = at }));
+        }
+
+        var entries = ImmutableDictionary<string, Entry>.Empty.Add(entryKey, entry);
+        var group = ScoringService.ScoreGroup(groupRef.ToString(), task, classDef, entries, bindings);
+        return group.Results[entryKey];
     }
 
     // ------------------------------------------------------ helpers
