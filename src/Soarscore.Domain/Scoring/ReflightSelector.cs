@@ -54,10 +54,19 @@ public static class ReflightSelector
     /// <see cref="ReflightRule"/>: Replacement takes the re-flight, BetterOf
     /// takes the better of the two normalised scores, NotPermitted and
     /// UndefinedRequiresRuling fail honestly rather than assume.
+    /// <para>
+    /// <paramref name="ruledSelection"/> (reflight-scoring-rulings.md WI-3) is a
+    /// recorded CD ruling — it fills a silence only: where the role-applicable
+    /// class slot is NOT UndefinedRequiresRuling it is ignored entirely (RR1,
+    /// the rulebook always beats the CD). It reaches here only from a validated
+    /// <see cref="ReflightRuling"/> (Replacement/BetterOf), but the switch's
+    /// exhaustiveness keeps the method total regardless of what is passed.
+    /// </para>
     /// </summary>
     public static Result<decimal> Select(
         IReadOnlyList<(ReflightRole Role, decimal Score)> candidates,
-        ReflightRule rule)
+        ReflightRule rule,
+        ReflightSelection? ruledSelection = null)
     {
         if (candidates.Count == 1)
         {
@@ -79,6 +88,12 @@ public static class ReflightSelector
         var reflight = candidates.First(c => c.Role != ReflightRole.Original);
         var original = candidates.First(c => c.Role == ReflightRole.Original);
         var selection = isEntitled ? rule.EntitledScores : rule.OthersScore;
+
+        // RR1: a ruling fills silences only — where the class speaks, it governs.
+        if (selection == ReflightSelection.UndefinedRequiresRuling && ruledSelection is { } ruled)
+        {
+            selection = ruled;
+        }
 
         return selection switch
         {

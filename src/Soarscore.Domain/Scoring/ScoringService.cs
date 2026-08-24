@@ -209,6 +209,22 @@ public static class ScoringService
 
                     var reflightRule = taskDefinition.Reflight ?? classDef.Reflight;
 
+                    // The CD rulings for this task-round, keyed by competitor
+                    // (reflight-scoring-rulings.md WI-3b). GroupBy preserves
+                    // within-group order and g.Last() is therefore the most
+                    // recently LOGGED ruling — RR3 (last ruling wins) made
+                    // code: Rulings folds in log order via ImmutableArray.Add.
+                    // A competitor with no ruling is simply absent from the
+                    // dictionary, so the collapse below passes a null ruled
+                    // selection — byte-identical to the pre-ruling behaviour
+                    // (RR1's regression guard).
+                    var rulingByCompetitor = competition.Rulings
+                        .Where(r => r.TaskRound.PhaseOrdinal == phase.Ordinal
+                                 && r.TaskRound.RoundOrdinal == round.Ordinal
+                                 && r.TaskRound.TaskRoundOrdinal == taskRound.Ordinal)
+                        .GroupBy(r => r.CompetitorRef.ToString())
+                        .ToDictionary(g => g.Key, g => g.Last());
+
                     // Candidates per competitor across every group of this
                     // task-round: one (role, normalised score) tuple per LIVE
                     // entry. Candidate collection is per-entry (a competitor
@@ -261,7 +277,13 @@ public static class ScoringService
                     // keying at the phase close cannot see a duplicate.
                     foreach (var (competitorRef, candidates) in candidatesByCompetitor)
                     {
-                        var selected = ReflightSelector.Select(candidates, reflightRule);
+                        // Absent → null → the selector behaves exactly as with
+                        // no ruling at all (GetValueOrDefault on the ruling
+                        // itself, not on a Selection enum — ReflightSelection's
+                        // default member is Replacement, which would silently
+                        // rule for everyone).
+                        var ruled = rulingByCompetitor.GetValueOrDefault(competitorRef)?.Selection;
+                        var selected = ReflightSelector.Select(candidates, reflightRule, ruled);
                         if (selected.IsFailure)
                         {
                             return Result<CompetitionResult>.Failure(

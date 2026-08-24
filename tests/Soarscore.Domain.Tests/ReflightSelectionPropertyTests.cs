@@ -248,4 +248,166 @@ public class ReflightSelectionPropertyTests
             }
         });
     }
+
+    // ========================================================== RR1..RR3 — the ruling laws
+    // reflight-scoring-rulings.md WI-4. The invariants are named in the story's
+    // plan so these tests prove stated laws rather than discover behaviour.
+
+    /// <summary>
+    /// RR1 — a ruling fills silences only. For any candidate pair and any ruled
+    /// selection: when the role-applicable class slot is NOT
+    /// UndefinedRequiresRuling, the selector's outcome is identical to the
+    /// no-ruling call. The rulebook always beats the CD.
+    /// </summary>
+    [Fact]
+    public void A_ruled_selection_never_changes_the_outcome_where_the_class_rule_speaks()
+    {
+        (from original in Gen.Decimal[1, 1000]
+         from reflight in Gen.Decimal[1, 1000]
+         from role in Gen.OneOfConst(ReflightRole.Entitled, ReflightRole.Filler)
+         from slot in Gen.OneOfConst(ReflightSelection.Replacement, ReflightSelection.BetterOf)
+         from ruled in Gen.OneOfConst(
+             ReflightSelection.Replacement,
+             ReflightSelection.BetterOf,
+             ReflightSelection.NotPermitted,
+             ReflightSelection.UndefinedRequiresRuling)
+         select (original, reflight, role, slot, ruled))
+        .Sample(t =>
+        {
+            // The generated slot lands on the generated ROLE's own rule slot;
+            // the other slot stays defined too, so both calls always succeed.
+            var rule = t.role == ReflightRole.Entitled
+                ? new ReflightRule { EntitledScores = t.slot, OthersScore = ReflightSelection.BetterOf }
+                : new ReflightRule { EntitledScores = ReflightSelection.BetterOf, OthersScore = t.slot };
+            var candidates = new List<(ReflightRole, decimal)>
+            {
+                (ReflightRole.Original, t.original),
+                (t.role, t.reflight),
+            };
+
+            var withoutRuling = ReflightSelector.Select(candidates, rule);
+            var withRuling = ReflightSelector.Select(candidates, rule, t.ruled);
+
+            withRuling.IsSuccess.Should().BeTrue();
+            withRuling.Value.Should().Be(withoutRuling.Value);
+        });
+    }
+
+    /// <summary>
+    /// RR2′ — the ruled selection law. Where the role-applicable slot IS silent
+    /// and a ruled selection applies, the output is exactly the ruled
+    /// application: Replacement → the reflight-role candidate's score; BetterOf
+    /// → the max of both candidates' scores. (Extension of R2.)
+    /// </summary>
+    [Fact]
+    public void A_ruled_selection_over_a_silent_rule_is_exactly_the_ruled_application()
+    {
+        (from original in Gen.Decimal[1, 1000]
+         from reflight in Gen.Decimal[1, 1000]
+         from role in Gen.OneOfConst(ReflightRole.Entitled, ReflightRole.Filler)
+         from ruled in Gen.OneOfConst(ReflightSelection.Replacement, ReflightSelection.BetterOf)
+         select (original, reflight, role, ruled))
+        .Sample(t =>
+        {
+            var rule = new ReflightRule
+            {
+                EntitledScores = ReflightSelection.UndefinedRequiresRuling,
+                OthersScore = ReflightSelection.UndefinedRequiresRuling,
+            };
+            var candidates = new List<(ReflightRole, decimal)>
+            {
+                (ReflightRole.Original, t.original),
+                (t.role, t.reflight),
+            };
+
+            var result = ReflightSelector.Select(candidates, rule, t.ruled);
+
+            result.IsSuccess.Should().BeTrue();
+            var expected = t.ruled == ReflightSelection.BetterOf
+                ? Math.Max(t.original, t.reflight)
+                : t.reflight;
+            result.Value.Should().Be(expected);
+        });
+    }
+
+    /// <summary>
+    /// RR3 — last ruling wins. Folding any sequence of ReflightRulingRecorded
+    /// events yields, per (task-round, competitor) key, the selection of the
+    /// sequence's FINAL element. Log order is truth.
+    /// </summary>
+    [Fact]
+    public void The_folded_rulings_lookup_per_key_equals_the_final_logged_selection()
+    {
+        (from keys in Gen.Int[0, 2].Array[2, 8]
+         from selections in Gen.OneOfConst(ReflightSelection.Replacement, ReflightSelection.BetterOf).Array[keys.Length]
+         select (keys, selections))
+        .Sample(t =>
+        {
+            var competition = BuildRuledCompetition();
+            var competitors = RegisteredCompetitors(competition);
+
+            for (var i = 0; i < t.keys.Length; i++)
+            {
+                var recorded = competition.RecordReflightRuling(new ReflightRuling
+                {
+                    TaskRound = new TaskRoundCoordinate(0, 1, 1),
+                    CompetitorRef = competitors[t.keys[i]],
+                    Selection = t.selections[i],
+                    Reason = $"Ruling {i + 1}",
+                    At = Now.AddMinutes(i),
+                });
+                recorded.IsSuccess.Should().BeTrue();
+                competition = competition.Apply(recorded.Value);
+            }
+
+            competition.Rulings.Length.Should().Be(t.keys.Length);
+
+            foreach (var key in t.keys.Distinct())
+            {
+                var lastAt = t.keys.Select((k, i) => (k, i)).Last(p => p.k == key).i;
+                var expected = t.selections[lastAt];
+
+                competition.Rulings.Last(r => r.CompetitorRef == competitors[key]).Selection.Should().Be(expected);
+            }
+        });
+    }
+
+    /// <summary>A minimal NZ-Class-M-shaped competition: a silent × 2 rule and three registered competitors.</summary>
+    private static Competition BuildRuledCompetition()
+    {
+        var definition = MakeClassDefinition(
+            ReflightSelection.UndefinedRequiresRuling, ReflightSelection.UndefinedRequiresRuling, minNewGroupSize: 2);
+        var adoptedRules = new AdoptedRules
+        {
+            Definition = definition,
+            SourceClassId = "content-hash-synthetic",
+            SourceVersion = definition.Version,
+            AdoptedAt = Now,
+        };
+        var competition = Competition.Create(new CompetitionCreated(
+            CompetitionId.New(), "Ruling Property Comp", "Nowhere",
+            new DateOnly(2026, 3, 14), new DateOnly(2026, 3, 15), "1.0.0", adoptedRules, Now));
+
+        for (var i = 0; i < 3; i++)
+        {
+            competition = competition.Apply(
+                competition.RegisterCompetitor(CompetitorId.New(), PersonId.New(), Now).Value);
+        }
+
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [] };
+        var taskRound = new TaskRound
+        {
+            Ordinal = 1,
+            State = Soarscore.Domain.Competitions.TaskRoundState.Drawn,
+            TaskRef = "T",
+            Groups = [group],
+        };
+        var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
+        var draw = new Draw { CreatedAt = Now, Status = "drawn" };
+
+        return competition.Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now));
+    }
+
+    private static ImmutableArray<CompetitorId> RegisteredCompetitors(Competition competition) =>
+        competition.Competitors.Select(c => c.Id).ToImmutableArray();
 }

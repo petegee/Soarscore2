@@ -208,4 +208,98 @@ public class ReflightScoringTests
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("score.reflightShapeUnsupported");
     }
+
+    [Fact]
+    public void An_UndefinedRequiresRuling_class_with_a_recorded_ruling_scores_the_ruled_application()
+    {
+        // reflight-scoring-rulings.md WI-3b: the same shape as the refusal fact
+        // above, but with the CD's ruling folded onto the competition — NZ M's
+        // dead end becomes a decision and the leaderboard computes.
+        var definition = MakeClassDefinition(ReflightSelection.UndefinedRequiresRuling, ReflightSelection.UndefinedRequiresRuling);
+        var (competition, competitors, group) = BuildCompetition(definition);
+
+        var original = OpenEntry(competition, group, competitors[0], ReflightRole.Original, 100m);
+        var entitled = OpenEntry(competition, group, competitors[0], ReflightRole.Entitled, 400m);
+
+        var ruled = competition.RecordReflightRuling(new ReflightRuling
+        {
+            TaskRound = new TaskRoundCoordinate(0, 1, 1),
+            CompetitorRef = competitors[0],
+            Selection = ReflightSelection.Replacement,
+            Reason = "Timing failure unresolved by the rulebook",
+            By = "the contest director",
+            At = Now,
+        });
+        ruled.IsSuccess.Should().BeTrue();
+        competition = competition.Apply(ruled.Value);
+
+        var result = ScoringService.ScoreCompetition(competition, Entries(original, entitled));
+
+        // Replacement, un-normalised: the re-flight's 400 is official.
+        result.IsSuccess.Should().BeTrue($"{result.Code}: {result.Message}");
+        result.Value.Scores[competitors[0].ToString()].Score.Should().Be(400m);
+    }
+
+    [Fact]
+    public void Two_rulings_for_one_competitor_resolve_to_the_later_logged_one()
+    {
+        // RR3 through the scoring pipeline: BetterOf is logged first, then
+        // superseded by Replacement — the leaderboard follows the second.
+        var definition = MakeClassDefinition(ReflightSelection.UndefinedRequiresRuling, ReflightSelection.UndefinedRequiresRuling);
+        var (competition, competitors, group) = BuildCompetition(definition);
+
+        var original = OpenEntry(competition, group, competitors[0], ReflightRole.Original, 100m);
+        var filler = OpenEntry(competition, group, competitors[0], ReflightRole.Filler, 400m);
+
+        competition = competition.Apply(competition.RecordReflightRuling(new ReflightRuling
+        {
+            TaskRound = new TaskRoundCoordinate(0, 1, 1),
+            CompetitorRef = competitors[0],
+            Selection = ReflightSelection.BetterOf,
+            Reason = "Provisional ruling",
+            At = Now,
+        }).Value);
+
+        competition = competition.Apply(competition.RecordReflightRuling(new ReflightRuling
+        {
+            TaskRound = new TaskRoundCoordinate(0, 1, 1),
+            CompetitorRef = competitors[0],
+            Selection = ReflightSelection.Replacement,
+            Reason = "Superseded after protest",
+            At = Now.AddMinutes(5),
+        }).Value);
+
+        var result = ScoringService.ScoreCompetition(competition, Entries(original, filler));
+
+        // Replacement (the later ruling), not BetterOf's max of 400.
+        result.IsSuccess.Should().BeTrue($"{result.Code}: {result.Message}");
+        result.Value.Scores[competitors[0].ToString()].Score.Should().Be(400m);
+    }
+
+    [Fact]
+    public void A_ruling_for_another_task_round_never_reaches_this_one()
+    {
+        var definition = MakeClassDefinition(ReflightSelection.UndefinedRequiresRuling, ReflightSelection.UndefinedRequiresRuling);
+        var (competition, competitors, group) = BuildCompetition(definition);
+
+        var original = OpenEntry(competition, group, competitors[0], ReflightRole.Original, 100m);
+        var entitled = OpenEntry(competition, group, competitors[0], ReflightRole.Entitled, 400m);
+
+        // Folded directly, not through the decide — the decide would refuse a
+        // coordinate naming no task-round; this fact is about the SCORING side
+        // ignoring rulings addressed elsewhere.
+        competition = competition.Apply(new ReflightRulingRecorded(new ReflightRuling
+        {
+            TaskRound = new TaskRoundCoordinate(0, 1, 99),
+            CompetitorRef = competitors[0],
+            Selection = ReflightSelection.BetterOf,
+            Reason = "A different task-round's incident",
+            At = Now,
+        }));
+
+        var result = ScoringService.ScoreCompetition(competition, Entries(original, entitled));
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("score.reflightRequiresRuling");
+    }
 }
