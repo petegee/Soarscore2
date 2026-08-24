@@ -95,6 +95,7 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<FinaliseCompetition, CompetitionId>, FinaliseCompetitionHandler>();
         builder.Services.AddScoped<ICommandHandler<RecordCompetitionPenalty, CompetitionId>, RecordCompetitionPenaltyHandler>();
         builder.Services.AddScoped<ICommandHandler<AppendReflightGroup, GroupId>, AppendReflightGroupHandler>();
+        builder.Services.AddScoped<ICommandHandler<RecordReflightRuling, CompetitionId>, RecordReflightRulingHandler>();
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
 

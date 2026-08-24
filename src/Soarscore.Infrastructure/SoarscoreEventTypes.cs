@@ -67,6 +67,7 @@ internal static class SoarscoreEventTypes
         (typeof(Finalised), "finalised"),
         (typeof(Soarscore.Domain.Competitions.PenaltyRecorded), "competitionPenaltyRecorded"),
         (typeof(ReflightGroupAppended), "reflightGroupAppended"),
+        (typeof(ReflightRulingRecorded), "reflightRulingRecorded"), // reflight-scoring-rulings.md WI-5 — missing this line fails at runtime on BOTH backends per LADR-0001 §4.8.
 
         // capture-a-score-steel-thread-plan.md WI-9 registered the narrow capture
         // slice: EntryOpened, FlightOpened, MeasurementCaptured.
