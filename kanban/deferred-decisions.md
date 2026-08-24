@@ -110,8 +110,19 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   because a pilot who took three of five allowed launches, a metric legitimately absent,
   and a `NoResult` all look identical to "not typed in yet". A later thread proposing to
   infer completion should reopen that plan's governing-principle section rather than
-  treat this as an open box. The read-side indicator that shows without deciding is
-  `kanban/backlog/entry-completeness-indicator.md`.
+  treat this as an open box. The read-side indicator that shows without deciding shipped
+  as `kanban/completed/entry-completeness-indicator.md`.
+- **No "did not fly" record; "expected" means drawn minus withdrawn.** **Decided
+  2026-08-24** (`kanban/completed/entry-completeness-indicator.md`). The indicator's stub
+  floated an explicit did-not-fly marker so its count could reach 20/20 for a pilot who
+  never launched. Refused, on the user's call: withdrawal already exists and is the
+  established way to record "won't fly" (`OpenEntry` refuses withdrawn competitors,
+  `CompetitorWithdrawn` leaves the draw intact), so Expected = `Group.CompetitorRefs`
+  ∧ `WithdrawnAt is null`, and a pilot who never launched *should* read as not recorded —
+  that is the truth of the record, which only the CD can resolve (by withdrawal or by
+  capture). A new first-class marker would add a concept to the glossary for a distinction
+  one existing event already carries. Reopen only if a CD asks for a lighter-weight mark
+  than withdrawal.
 
 ## Competition class model
 

@@ -66,8 +66,9 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Twenty-three commands + nine queries
-        // are mapped as of reflight-groups.md WI-4 (AppendReflightGroup).
+        // test below would vacuously pass. Twenty-three commands + ten queries
+        // are mapped as of entry-completeness-indicator.md WI-2
+        // (GetTaskRoundRecording).
         mappedMessages.Should().HaveCountGreaterThanOrEqualTo(23);
 
         using var scope = app.Services.CreateScope();

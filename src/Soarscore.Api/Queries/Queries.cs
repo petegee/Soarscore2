@@ -26,6 +26,8 @@ public static class Queries
 
         app.MapQuery<FindEntries, IReadOnlyList<EntrySummary>>("/entries");
 
+        app.MapQuery<GetTaskRoundRecording, TaskRoundRecordingView>("/task-round-recording");
+
         app.MapQuery<ScoreTaskRound, IReadOnlyList<GroupScoreView>>("/task-round-result");
         app.MapQuery<ScoreCompetition, CompetitionScoreView>("/competition-result");
 
