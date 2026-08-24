@@ -354,6 +354,14 @@ public sealed record Competition
     /// <summary>TaskRound / Competition scope only — Flight / Entry scoped penalties live on the Entry aggregate.</summary>
     public ImmutableArray<Penalty> Penalties { get; init; } = [];
 
+    /// <summary>
+    /// The CD's recorded answers to the class rulebook's silences
+    /// (<see cref="ReflightSelection.UndefinedRequiresRuling"/>) — accumulate,
+    /// never replace: a superseding ruling is a new entry, and last-logged wins
+    /// at lookup time (RR3), exactly as ParameterBindings accumulates.
+    /// </summary>
+    public ImmutableArray<ReflightRuling> Rulings { get; init; } = [];
+
     /// <summary>The creation event. Every stream begins with exactly one of these.</summary>
     public static Competition Create(CompetitionCreated @event) =>
         new()
@@ -371,6 +379,7 @@ public sealed record Competition
             ParameterBindings = [],
             Finalisations = [],
             Penalties = [],
+            Rulings = [],
         };
 
     // One overload per non-creation event — both the domain's own fold-by-type
@@ -442,6 +451,10 @@ public sealed record Competition
     public Competition Apply(PenaltyRecorded @event) =>
         this with { Penalties = Penalties.Add(@event.Penalty) };
 
+    // Accumulate, never replace: the log keeps every ruling (RR3's fold half).
+    public Competition Apply(ReflightRulingRecorded @event) =>
+        this with { Rulings = Rulings.Add(@event.Ruling) };
+
     /// <summary>
     /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted,
     /// TaskRoundAnnulled and TaskRoundReopened: find the Phase/Round/TaskRound
@@ -507,6 +520,7 @@ public sealed record Competition
             ParameterBound e => Require(current, e).Apply(e),
             Finalised e => Require(current, e).Apply(e),
             PenaltyRecorded e => Require(current, e).Apply(e),
+            ReflightRulingRecorded e => Require(current, e).Apply(e),
             _ => throw new ArgumentException($"Unknown CompetitionEvent subtype: {@event.GetType().Name}"),
         };
 
@@ -1108,10 +1122,7 @@ public sealed record Competition
         // TaskRound.TaskRef is the task's Code — the one stable handle (see
         // OpenEntry's own note). The class-level default, overridden per-task
         // where the task declares one (F19).
-        var task = AdoptedRules.Definition.Phases
-            .SelectMany(p => p.Tasks)
-            .First(t => t.Code == taskRound.TaskRef);
-        var rule = task.Reflight ?? AdoptedRules.Definition.Reflight;
+        var rule = ResolveReflightRule(taskRound.TaskRef);
 
         if (rule.MinNewGroupSize is null)
         {
@@ -1195,6 +1206,15 @@ public sealed record Competition
         Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal)
             ?.Rounds.FirstOrDefault(r => r.Ordinal == roundOrdinal)
             ?.TaskRounds.FirstOrDefault(tr => tr.Ordinal == taskRoundOrdinal);
+
+    // The task-scan + class-default fallback shared by AppendReflightGroup and
+    // RecordReflightRuling (reflight-scoring-rulings.md WI-2): the class-level
+    // ReflightRule, overridden per-task where the task declares one (F19).
+    private ReflightRule ResolveReflightRule(string taskCode) =>
+        AdoptedRules.Definition.Phases
+            .SelectMany(p => p.Tasks)
+            .First(t => t.Code == taskCode)
+            .Reflight ?? AdoptedRules.Definition.Reflight;
 
     // One code per command rather than one shared code, so a caller can tell
     // which command rejected without reading the message.
@@ -1340,9 +1360,9 @@ public sealed record Competition
         var defect = ValidatePenaltyScope(penalty)
             ?? ValidateCompetitorSubject(penalty)
             ?? ValidateCompetitorExists(penalty.CompetitorRef!.Value)
-            ?? ValidateTaskRoundCoordinate(penalty.TaskRound)
+            ?? ValidateTaskRoundCoordinate(penalty.TaskRound, "recordPenalty")
             ?? ValidateInfractionType(penalty.InfractionType)
-            ?? ValidateByNotBlank(penalty.By);
+            ?? ValidateByNotBlank(penalty.By, "recordPenalty");
 
         return defect is not null
             ? Result<PenaltyRecorded>.Failure(defect.Code, defect.Message)
@@ -1361,7 +1381,10 @@ public sealed record Competition
                 "A TaskRound/Competition-scoped penalty must name the competitor it is against.")
             : null;
 
-    private Defect? ValidateTaskRoundCoordinate(TaskRoundCoordinate? coordinate)
+    // Code-prefix parameter, not a hardcoded "recordPenalty.*": the coordinate
+    // navigation is shared with RecordReflightRuling
+    // (reflight-scoring-rulings.md WI-2), and each command keeps its own code.
+    private Defect? ValidateTaskRoundCoordinate(TaskRoundCoordinate? coordinate, string command)
     {
         if (coordinate is null)
         {
@@ -1371,21 +1394,21 @@ public sealed record Competition
         var phase = Phases.FirstOrDefault(p => p.Ordinal == coordinate.PhaseOrdinal);
         if (phase is null)
         {
-            return new Defect("recordPenalty.taskRoundNotFound", "$.taskRound",
+            return new Defect($"{command}.taskRoundNotFound", "$.taskRound",
                 $"No phase has been drawn with ordinal {coordinate.PhaseOrdinal}.");
         }
 
         var round = phase.Rounds.FirstOrDefault(r => r.Ordinal == coordinate.RoundOrdinal);
         if (round is null)
         {
-            return new Defect("recordPenalty.taskRoundNotFound", "$.taskRound",
+            return new Defect($"{command}.taskRoundNotFound", "$.taskRound",
                 $"No round with ordinal {coordinate.RoundOrdinal} in phase {coordinate.PhaseOrdinal}.");
         }
 
         var taskRound = round.TaskRounds.FirstOrDefault(tr => tr.Ordinal == coordinate.TaskRoundOrdinal);
         if (taskRound is null)
         {
-            return new Defect("recordPenalty.taskRoundNotFound", "$.taskRound",
+            return new Defect($"{command}.taskRoundNotFound", "$.taskRound",
                 $"No task-round with ordinal {coordinate.TaskRoundOrdinal} in round {coordinate.RoundOrdinal}.");
         }
 
@@ -1398,11 +1421,92 @@ public sealed record Competition
             : new Defect("recordPenalty.infractionTypeNotDeclared", "$.infractionType",
                 $"'{infractionType}' is not an infraction type declared by the adopted class definition.");
 
-    private static Defect? ValidateByNotBlank(string? by) =>
+    private static Defect? ValidateByNotBlank(string? by, string command) =>
         by is not null && string.IsNullOrWhiteSpace(by)
-            ? new Defect("recordPenalty.byBlank", "$.by",
+            ? new Defect($"{command}.byBlank", "$.by",
                 "By, when supplied, must not be blank — an absent By is fine, a blank one is a typo.")
             : null;
+
+    // Instance decide function — WI-2 (reflight-scoring-rulings.md). Defect-chain
+    // style, like RecordPenalty beside it: no later check needs a value an
+    // earlier one computed beyond what FindTaskRound already returns. Validates
+    // the ruling against the adopted class's RESOLVED ReflightRule — data, never
+    // a branch on class (CLAUDE.md's core architectural law).
+    //
+    // Deliberately absent (lifecycle-function style):
+    //   - No entry-existence or pair-shape check (planner's call 3, NFR-4): a
+    //     ruling may precede capture (the CD rules at the incident) or follow
+    //     it (scoring recomputes per query). A ruling whose pair of entries
+    //     never materialises simply never matches a candidate pair.
+    //   - No uniqueness check (decision 2): re-recording for the same
+    //     (task-round, competitor) supersedes — the most recently logged ruling
+    //     is the effective one, and the log keeps every decision.
+    //   - No per-role necessity check in mixed classes (planner's call 4): where
+    //     exactly one slot is silent (F3F), Competition holds no entry data, so
+    //     it cannot know the competitor's role; such a ruling may turn out inert,
+    //     and scoring ignores it by RR1.
+    public Result<ReflightRulingRecorded> RecordReflightRuling(ReflightRuling ruling)
+    {
+        var taskRound = FindTaskRound(
+            ruling.TaskRound.PhaseOrdinal, ruling.TaskRound.RoundOrdinal, ruling.TaskRound.TaskRoundOrdinal);
+
+        var defect = ValidateSelectionIsAResolution(ruling.Selection)
+            ?? ReasonGiven(ruling.Reason, "recordReflightRuling")
+            ?? ValidateByNotBlank(ruling.By, "recordReflightRuling")
+            ?? ValidateTaskRoundCoordinate(ruling.TaskRound, "recordReflightRuling")
+            ?? ValidateTaskRoundNotAnnulled(taskRound)
+            ?? ValidateRulingCompetitorRegistered(ruling.CompetitorRef)
+            ?? ValidateClassRuleSilent(taskRound);
+
+        return defect is not null
+            ? Result<ReflightRulingRecorded>.Failure(defect.Code, defect.Message)
+            : Result<ReflightRulingRecorded>.Success(new ReflightRulingRecorded(ruling));
+    }
+
+    private static Defect? ValidateSelectionIsAResolution(ReflightSelection selection) =>
+        selection is ReflightSelection.Replacement or ReflightSelection.BetterOf
+            ? null
+            : new Defect("recordReflightRuling.selectionNotAResolution", "$.selection",
+                $"A ruling must decide: Replacement or BetterOf. '{selection}' asserts what the " +
+                "rulebook forbids or where it is silent — neither is a decision.");
+
+    private Defect? ValidateTaskRoundNotAnnulled(TaskRound? taskRound) =>
+        taskRound is { State: TaskRoundState.Annulled }
+            ? new Defect("recordReflightRuling.taskRoundAnnulled", "$.taskRound",
+                "This task-round is annulled; nothing scores there, so there is nothing to rule on.")
+            : null;
+
+    // Typo protection only: a ruling keyed to nobody would silently never
+    // apply. Withdrawal is NOT checked — AppendReflightGroup refuses withdrawn
+    // members because it forms a group; a ruling does not, and a moot ruling
+    // for a withdrawn competitor is inert, not harmful (planner's call 2).
+    private Defect? ValidateRulingCompetitorRegistered(CompetitorId competitorRef) =>
+        Competitors.Any(c => c.Id == competitorRef)
+            ? null
+            : new Defect("recordReflightRuling.competitorNotFound", "$.competitorRef",
+                "No such competitor in this competition.");
+
+    // Decision 3: where BOTH resolved slots are concrete — Replacement,
+    // BetterOf or NotPermitted, e.g. F3K, F5J — the rulebook governs and there
+    // is nothing to fill. Accepting a ruling there would let a CD believe they
+    // settled something that had no effect. Classes with at least one silent
+    // slot stay acceptable; a ruling against the one speaking slot in a mixed
+    // class (F3F) is accepted here and ignored at scoring by RR1.
+    private Defect? ValidateClassRuleSilent(TaskRound? taskRound)
+    {
+        if (taskRound is null)
+        {
+            return null;
+        }
+
+        var rule = ResolveReflightRule(taskRound.TaskRef);
+        return rule.EntitledScores is ReflightSelection.UndefinedRequiresRuling
+               || rule.OthersScore is ReflightSelection.UndefinedRequiresRuling
+            ? null
+            : new Defect("recordReflightRuling.classRuleSpeaks", "$.selection",
+                "The adopted class rules state which of a competitor's attempts counts here; " +
+                "there is no silence for a ruling to fill.");
+    }
 
     // Compares against *all* competitors, including withdrawn ones — a
     // withdrawal is not a re-entry ticket (invariant 1, the plan's Context).

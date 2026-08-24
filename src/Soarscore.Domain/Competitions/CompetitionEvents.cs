@@ -4,14 +4,15 @@
 // phase/round/task-round/group schedule. Created up front (CompetitionCreated
 // + PhaseDrawn) and only lightly mutated afterwards — register or withdraw a
 // competitor, append a reflight group, complete / annul / reopen a task-round,
-// amend the rules, bind a parameter, finalise, record a penalty. Twelve events
-// total, mirroring aggregate-roots.md §3's mutation list one-for-one.
+// amend the rules, bind a parameter, finalise, record a penalty, record a
+// reflight ruling. Thirteen events total, mirroring aggregate-roots.md §3's
+// mutation list one-for-one.
 //
 // Event payloads reuse Domain's own value-object records (AdoptedRules,
 // RulesAmendment, ParameterBinding, Finalisation, Competitor, Group, Round,
-// Penalty) directly rather than redefining their shapes — those types are
-// already immutable value objects with no Marten dependency, so wrapping them
-// again here would just be duplication (LADR-0001 §4).
+// Penalty, ReflightRuling) directly rather than redefining their shapes —
+// those types are already immutable value objects with no Marten dependency,
+// so wrapping them again here would just be duplication (LADR-0001 §4).
 
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
@@ -32,6 +33,7 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(ParameterBound), "parameterBound")]
 [JsonDerivedType(typeof(Finalised), "finalised")]
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
+[JsonDerivedType(typeof(ReflightRulingRecorded), "reflightRulingRecorded")]
 public abstract record CompetitionEvent : IDomainEvent
 {
     private protected CompetitionEvent() { }
@@ -140,3 +142,11 @@ public sealed record Finalised(Finalisation Finalisation) : CompetitionEvent;
 
 /// <summary>TaskRound/Competition scope only — Flight/Entry-scoped penalties live on the Entry aggregate.</summary>
 public sealed record PenaltyRecorded(Penalty Penalty) : CompetitionEvent;
+
+/// <summary>
+/// The CD settling which score counts where the class rulebook is silent
+/// (<see cref="ReflightSelection.UndefinedRequiresRuling"/> — F3B Task C, F5L,
+/// NZ.3.12.5 l; reflight-scoring-rulings.md). Superseding rulings accumulate —
+/// the log keeps every decision, and last-logged wins at lookup time (RR3).
+/// </summary>
+public sealed record ReflightRulingRecorded(ReflightRuling Ruling) : CompetitionEvent;

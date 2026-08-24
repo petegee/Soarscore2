@@ -13,6 +13,7 @@
 // `Guid.CreateVersion7()`.
 
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain;
 
@@ -66,6 +67,34 @@ public sealed record Penalty
 }
 
 public enum PenaltyScope { Flight, Entry, TaskRound, Competition }
+
+/// <summary>
+/// A CD's recorded answer to the question the class rulebook leaves silent
+/// (<see cref="ReflightSelection.UndefinedRequiresRuling"/>): which of this
+/// competitor's two attempts for one task-round counts. Selection is
+/// Resolution-shaped only — Replacement or BetterOf; NotPermitted asserts the
+/// rulebook forbids and UndefinedRequiresRuling asserts it is silent, and
+/// neither is a decision. Recorded, never derived (NFR-4): valid with no
+/// entries yet captured. Kin to <see cref="ParameterBinding"/>, not to an
+/// Entry Annulment — it fills what the class left open, chosen at competition
+/// time (reflight-scoring-rulings.md).
+/// </summary>
+public sealed record ReflightRuling
+{
+    public required TaskRoundCoordinate TaskRound { get; init; }
+
+    public required CompetitorId CompetitorRef { get; init; }
+
+    public required ReflightSelection Selection { get; init; }
+
+    /// <summary>The recorded basis for the ruling — a substantive record, not an audit breadcrumb.</summary>
+    public required string Reason { get; init; }
+
+    /// <summary>Who ruled, when the client supplies it — optional, never required. Penalty.By precedent.</summary>
+    public string? By { get; init; }
+
+    public required DateTimeOffset At { get; init; }
+}
 
 /// <summary>
 /// The same ordinal triple <see cref="Entries.EntryOpened"/> already carries,
