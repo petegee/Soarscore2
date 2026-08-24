@@ -198,7 +198,7 @@ inside this aggregate because the draw's fairness invariant needs the field as
 one consistent set, and registration writes are low-volume — the contention
 argument that pushes Entry out does not apply here. Created up front and only
 lightly mutated afterwards (register or withdraw a competitor, append a
-reflight group, annul a task-round). It holds no live flight data — Entries reference their Group and
+reflight group, annul a task-round, record a reflight ruling). It holds no live flight data — Entries reference their Group and
 Competitor by id from outside. Task-round completion, annulment and reopening
 live here; scoring reads this structure but writes nothing back to it.
 Completion is **reversible by design**: it is the CD asserting that a

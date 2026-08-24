@@ -1,6 +1,6 @@
 # Reflight-scoring rulings
 
-**Status:** In progress · **Raised:** 2026-08-24 · **Planned:** 2026-08-24
+**Status:** Completed 2026-08-24 · **Raised:** 2026-08-24 · **Planned:** 2026-08-24
 
 ## What
 

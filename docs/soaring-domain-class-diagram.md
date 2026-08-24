@@ -146,6 +146,16 @@ classDiagram
         +PenaltyScope scope
     }
 
+    class ReflightRuling {
+        <<value object>>
+        +TaskRoundCoordinate taskRound
+        +CompetitorId competitorRef
+        +ReflightSelection selection
+        +string reason
+        +string? by
+        +timestamp at
+    }
+
     class ClubAffiliation {
         <<value object>>
         +string clubName
@@ -205,6 +215,7 @@ classDiagram
     Competition "1" *-- "0..*" Competitor : field
     Competition "1" *-- "1..*" Phase : has
     Competition "1" *-- "0..*" Penalty : records
+    Competition "1" *-- "0..*" ReflightRuling : settled by CD ruling
     Phase "1" *-- "1..*" Round : has
     Round "1" *-- "1..*" TaskRound : has
     TaskRound "1" *-- "1..*" Group : divided into
@@ -1157,6 +1168,19 @@ stage reads anything new from `AdoptedRules` for it.
   `UndefinedRequiresRuling` exists because at least one class defines no rule at
   all, and the system must be able to say so and record the Contest Director's
   decision rather than invent one.
+- **Where the rulebook is silent, the silence is filled by a recorded ruling,
+  not an assumption.** `UndefinedRequiresRuling` leaves the CD a decision to
+  make, so `ReflightRuling` (on Competition, kin to ParameterBinding — it fills
+  what the class left open) is where that decision lives: which of this
+  competitor's two attempts counts, Replacement or BetterOf, with reason, who
+  ruled and when. Recorded, never derived — valid before any entry is captured,
+  superseded by a later ruling rather than replaced, and consumed by scoring
+  only where the resolved class rule is silent. Where the rulebook speaks
+  (every other selection), recording a competing ruling is refused: the CD is
+  not above the rulebook. F3B Task C (`F3B.1.5 e` names Tasks A/B only), F5L
+  (`5.5.12.9` grants the re-flight and stops) and NZ Class M (`NZ.3.12.5 l`,
+  likewise) are the silences that forced it
+  (kanban/in-progress/reflight-scoring-rulings.md).
 - **Finalisation captures, it does not compute.** Results are derived on demand
   while a competition is live. Finalising a phase freezes its results and names
   who was promoted — which is where a flyoff cut decision is recorded — and
