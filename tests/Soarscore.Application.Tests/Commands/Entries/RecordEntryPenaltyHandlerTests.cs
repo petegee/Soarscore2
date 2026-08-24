@@ -61,7 +61,7 @@ public class RecordEntryPenaltyHandlerTests
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
         store.AppendAsync(
             competitionId.Value, ExpectedVersion.Exact(2),
-            [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now)]).GetAwaiter().GetResult();
+            [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now), new DrawAccepted(0, Now)]).GetAwaiter().GetResult();
 
         // Fold the competition to open an entry.
         var competitionEvents = store.Streams[competitionId.Value];

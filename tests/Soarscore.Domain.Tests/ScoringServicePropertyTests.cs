@@ -183,6 +183,8 @@ public class ScoringServicePropertyTests
         var drawn = competition.DrawPhase(rounds, [], Now);
         drawn.IsSuccess.Should().BeTrue();
         competition = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
 
         var entries = new Dictionary<EntryId, Entry>();
 
@@ -273,6 +275,8 @@ public class ScoringServicePropertyTests
         var drawn = competition.DrawPhase(1, [], Now);
         drawn.IsSuccess.Should().BeTrue();
         competition = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
 
         var entries = new Dictionary<EntryId, Entry>();
 

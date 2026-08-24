@@ -59,6 +59,10 @@ public class OpenEntryDecideTests
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = at, Status = "drawn" };
         competition = competition.Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], at));
+        // Entries open only against an accepted draw (D4) — the acceptance is
+        // arrangement, not the subject here; the D4 gate itself has
+        // DrawAcceptanceDecideTests.
+        competition = competition.Apply(new DrawAccepted(0, at));
 
         return (competition, competitors.ToImmutable(), groupRef);
     }

@@ -110,18 +110,32 @@ public class BindParameterDecideTests
         result.Code.Should().Be("competition.parameter.valueNotAllowed");
     }
 
+    // kanban/in-progress/draw-acceptance-redraw.md D7: the CompetitionSetup
+    // freeze moved from "any phase drawn" to "the live draw accepted", so a
+    // rebind between reject and redraw stays possible. The accepted case folds
+    // a hand-built DrawAccepted directly — no handler exists at this layer.
+
     [Fact]
-    public void BindParameter_a_CompetitionSetup_parameter_after_a_phase_is_drawn_fails_with_a_stable_code()
+    public void BindParameter_a_CompetitionSetup_parameter_succeeds_after_the_draw_but_fails_once_accepted()
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 12);
         var drawn = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
+        drawn.IsSuccess.Should().BeTrue();
         competition = competition.Apply(drawn.Value);
 
-        // F3J's flyoffMinRounds: CompetitionSetup, no default (SeedF3J.cs).
-        var result = competition.BindParameter("flyoffMinRounds", MeasuredValue.Of(3m), "CD", DateTimeOffset.UtcNow);
+        // Between draw and acceptance the rebind window is open — rebinding
+        // minPerGroup may be precisely why the CD rejects.
+        var beforeAccept = competition.BindParameter("flyoffMinRounds", MeasuredValue.Of(3m), "CD", DateTimeOffset.UtcNow);
+        beforeAccept.IsSuccess.Should().BeTrue();
+        competition = competition.Apply(beforeAccept.Value);
 
-        result.IsFailure.Should().BeTrue();
-        result.Code.Should().Be("competition.parameter.frozen");
+        competition = competition.Apply(new DrawAccepted(drawn.Value.PhaseOrdinal, DateTimeOffset.UtcNow));
+
+        // F3J's flyoffMinRounds: CompetitionSetup, no default (SeedF3J.cs).
+        var afterAccept = competition.BindParameter("flyoffMinRounds", MeasuredValue.Of(4m), "CD", DateTimeOffset.UtcNow);
+
+        afterAccept.IsFailure.Should().BeTrue();
+        afterAccept.Code.Should().Be("competition.parameter.frozen");
     }
 
     [Fact]
@@ -157,12 +171,17 @@ public class BindParameterDecideTests
     }
 
     [Fact]
-    public void BindParameter_a_BeforeFlying_parameter_after_a_phase_is_drawn_succeeds_while_a_CompetitionSetup_one_fails()
+    public void BindParameter_a_BeforeFlying_parameter_binds_even_after_acceptance_while_a_CompetitionSetup_one_freezes()
     {
+        // The pair's divergence is the whole point: after acceptance the
+        // BeforeFlying parameter still binds while the CompetitionSetup one
+        // refuses — acceptance freezes setup choices, never flying-day ones.
         var definition = WithBeforeFlyingParameter(SeedF3J.Definition);
         var competition = CompetitionAdopting(definition, 12);
         var drawn = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
+        drawn.IsSuccess.Should().BeTrue();
         competition = competition.Apply(drawn.Value);
+        competition = competition.Apply(new DrawAccepted(drawn.Value.PhaseOrdinal, DateTimeOffset.UtcNow));
 
         var beforeFlying = competition.BindParameter("windSpeed", MeasuredValue.Of(4.5m), "CD", DateTimeOffset.UtcNow);
         beforeFlying.IsSuccess.Should().BeTrue();

@@ -90,6 +90,8 @@ public sealed class ClosingACompetitionSteps
         }
 
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
+        // D4: "under way" means accepted — the scenario closes a flown competition.
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
 
         // F5J's literal MinPerGroup 6 means a 6-pilot field is exactly one
         // group, with the same membership every round. Asserted rather than

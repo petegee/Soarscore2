@@ -295,8 +295,11 @@ public sealed record Round
 
 /// <summary>
 /// The diagram types Status as a bare string rather than a lifecycle enum —
-/// kept that way deliberately, since neither doc source states the set of
-/// draw statuses.
+/// kept that way deliberately. Vocabulary in folded state is
+/// <c>"drawn" | "accepted"</c>: a rejected draw's phase is REMOVED from Phases
+/// entirely (Phases holds only live phases — decision D2,
+/// kanban/in-progress/draw-acceptance-redraw.md), so no "rejected" value ever
+/// appears here.
 /// </summary>
 public sealed record Draw
 {
@@ -439,6 +442,26 @@ public sealed record Competition
             @event.TaskRoundOrdinal,
             taskRound => taskRound with { State = TaskRoundState.Drawn });
 
+    public Competition Apply(DrawAccepted @event)
+    {
+        var phases = Phases
+            .Select(phase => phase.Ordinal == @event.PhaseOrdinal
+                ? phase with { Draw = phase.Draw with { Status = "accepted" } }
+                : phase)
+            .ToImmutableArray();
+
+        return this with { Phases = phases };
+    }
+
+    // Removal, not a status write: Phases holds only live phases (decision D2,
+    // kanban/in-progress/draw-acceptance-redraw.md), which is what lets
+    // DrawPhase address the replacement draw correctly with no edit and what
+    // reopens registration and unscoped parameter binds automatically. Reason
+    // is audit-only — TaskRoundAnnulled's precedent; the log keeps every
+    // rejected draw even though this fold forgets them.
+    public Competition Apply(DrawRejected @event) =>
+        this with { Phases = Phases.Where(p => p.Ordinal != @event.PhaseOrdinal).ToImmutableArray() };
+
     public Competition Apply(RulesAmended @event) =>
         this with { RulesAmendments = RulesAmendments.Add(@event.Amendment) };
 
@@ -516,6 +539,8 @@ public sealed record Competition
             TaskRoundCompleted e => Require(current, e).Apply(e),
             TaskRoundAnnulled e => Require(current, e).Apply(e),
             TaskRoundReopened e => Require(current, e).Apply(e),
+            DrawAccepted e => Require(current, e).Apply(e),
+            DrawRejected e => Require(current, e).Apply(e),
             RulesAmended e => Require(current, e).Apply(e),
             ParameterBound e => Require(current, e).Apply(e),
             Finalised e => Require(current, e).Apply(e),
@@ -615,6 +640,58 @@ public sealed record Competition
             : Result<CompetitorWithdrawn>.Success(new CompetitorWithdrawn(competitorRef, at));
     }
 
+    // Draw-lifecycle instance decide functions — WI-2
+    // (kanban/in-progress/draw-acceptance-redraw.md). Defect-chain style, like
+    // RegisterCompetitor/WithdrawCompetitor above: no later check needs an
+    // earlier check's value beyond the live phase they all share. Both act on
+    // THE LIVE PHASE — the single element of Phases (the story's P1 proves
+    // there is at most one) — and the emitted event carries that phase's
+    // Ordinal.
+    //
+    // Accept requires status "drawn" (D4/D6/D7 all key off acceptance:
+    // entries open, the field freezes and CompetitionSetup parameters freeze
+    // only once the CD has stood behind the draw). Reject deliberately has no
+    // alreadyAccepted code: rejecting an accepted draw nobody has flown
+    // against is the ordinary correction path, and D2's phase removal is what
+    // reopens registration and unscoped binds — only entries block it (D5).
+    //
+    // Reason is validated here rather than in the handler because it is a
+    // substantive CD ruling record, not an audit breadcrumb — AnnulTaskRound's
+    // recorded reasoning (story decision F2). phaseHasEntries is an
+    // already-resolved fact supplied by the handler from IEntryQuery, with NO
+    // default: unlike BindParameter.roundHasEntries, a wrong default here
+    // would silently orphan entries.
+    public Result<DrawAccepted> AcceptDraw(DateTimeOffset at)
+    {
+        var phase = LivePhase();
+
+        var defect = DrawnPhaseFound(phase, "acceptDraw")
+            ?? (phase!.Draw.Status == "accepted"
+                ? new Defect("acceptDraw.alreadyAccepted", "$.competitionId", "This draw has already been accepted.")
+                : null);
+
+        return defect is not null
+            ? Result<DrawAccepted>.Failure(defect.Code, defect.Message)
+            : Result<DrawAccepted>.Success(new DrawAccepted(phase!.Ordinal, at));
+    }
+
+    public Result<DrawRejected> RejectDraw(bool phaseHasEntries, string reason, DateTimeOffset at)
+    {
+        var phase = LivePhase();
+
+        var defect = DrawnPhaseFound(phase, "rejectDraw")
+            ?? ReasonGiven(reason, "rejectDraw")
+            ?? (phaseHasEntries
+                ? new Defect(
+                    "rejectDraw.entriesExist", "$.competitionId",
+                    "Entries already exist against this phase's draw; rejecting it would orphan them.")
+                : null);
+
+        return defect is not null
+            ? Result<DrawRejected>.Failure(defect.Code, defect.Message)
+            : Result<DrawRejected>.Success(new DrawRejected(phase!.Ordinal, reason, at));
+    }
+
     // Instance decide function — WI-1 (kanban/completed/bind-parameter-steel-thread-plan.md),
     // round scope added by kanban/completed/per-round-parameter-bindings-plan.md.
     // Defect-chain style, like RegisterCompetitor/WithdrawCompetitor above —
@@ -665,10 +742,10 @@ public sealed record Competition
     // early returns instead.
     public Result<PhaseDrawn> DrawPhase(int rounds, ImmutableArray<string> taskRefs, DateTimeOffset at)
     {
-        // Only the first, unconditional draw — see the plan's "Redrawing" Out
-        // of scope entry. Phases.Length is therefore always 0 below; the
-        // expression is written generically anyway so a later thread adding
-        // a second call site (flyoff draws) does not have to touch this line.
+        // The guard is "no live phase", not "never drawn": rejecting a draw
+        // removes its phase (D2), so a redraw after a rejection is legal and
+        // Phases.Length is again the preliminary's ordinal. Flyoff-phase
+        // draws stay deferred (deferred-decisions.md).
         if (!Phases.IsEmpty)
         {
             return Result<PhaseDrawn>.Failure(
@@ -843,9 +920,6 @@ public sealed record Competition
             })
             .ToImmutableArray();
 
-        // Draw.Status still carries no defined vocabulary
-        // (Competition.cs — the Draw record's doc comment) — "drawn" is a
-        // stable literal, following the EvaluatorVersion precedent.
         var @event = new PhaseDrawn(
             PhaseOrdinal: Phases.Length,
             Type: phaseDefinition.Type,
@@ -890,6 +964,19 @@ public sealed record Competition
         {
             return Result<EntryOpened>.Failure(
                 "openEntry.phaseNotDrawn", "No phase has been drawn with this ordinal.");
+        }
+
+        // D4 (kanban/in-progress/draw-acceptance-redraw.md): the competition
+        // begins at acceptance, not at the draw — glossary "once accepted, the
+        // competition can begin". Gating on the REFERENCED phase's status (not
+        // "any accepted draw exists") is equivalent under P1 and truthful per
+        // entry; ordering above is preserved, so an undrawn competition still
+        // answers openEntry.phaseNotDrawn first.
+        if (phase.Draw.Status != "accepted")
+        {
+            return Result<EntryOpened>.Failure(
+                "entry.drawNotAccepted",
+                "The draw has not been accepted — the competition cannot begin yet.");
         }
 
         var round = phase.Rounds.FirstOrDefault(r => r.Ordinal == roundOrdinal);
@@ -1207,6 +1294,19 @@ public sealed record Competition
             ?.Rounds.FirstOrDefault(r => r.Ordinal == roundOrdinal)
             ?.TaskRounds.FirstOrDefault(tr => tr.Ordinal == taskRoundOrdinal);
 
+    // Both draw-lifecycle commands act on THE LIVE PHASE — the single element
+    // of Phases (kanban/in-progress/draw-acceptance-redraw.md, P1: at most one).
+    private Phase? LivePhase() =>
+        Phases.IsEmpty ? null : Phases.Single();
+
+    // One code per command rather than one shared code, so a caller can tell
+    // which command rejected without reading the message — TaskRoundFound's
+    // rule.
+    private static Defect? DrawnPhaseFound(Phase? phase, string command) =>
+        phase is null
+            ? new Defect($"{command}.noDrawnPhase", "$.competitionId", "No phase has been drawn for this competition.")
+            : null;
+
     // The task-scan + class-default fallback shared by AppendReflightGroup and
     // RecordReflightRuling (reflight-scoring-rulings.md WI-2): the class-level
     // ReflightRule, overridden per-task where the task declares one (F19).
@@ -1515,18 +1615,17 @@ public sealed record Competition
             ? new Defect("competition.competitor.alreadyRegistered", "$.personRef", "This person is already registered in this competition.")
             : null;
 
-    // Unreachable this thread — Phases is always empty because no command
-    // produces PhaseDrawn yet. Written anyway, the same way CreateCompetition's
-    // retirement check was written against a state nothing could yet produce.
-    // "Accepted" currently means "any phase drawn" because Draw.Status carries
-    // no defined value set (Competition.cs:230-234) — revisit this check once
-    // it does. See ValidateParameterNotFrozen below for the other consumer of
-    // the same !Phases.IsEmpty approximation — deliberately not merged with
-    // it, since the two ask different questions (is the field closed, vs is
-    // this parameter settled) and will diverge once Draw.Status is defined.
+    // Frozen means the live draw is ACCEPTED, not merely drawn (D6,
+    // kanban/in-progress/draw-acceptance-redraw.md): a competitor who turns up
+    // after the draw can still be registered until the CD stands behind it.
+    // Withdrawal stays ungated forever (WithdrawCompetitor's note above;
+    // aggregate-roots.md §3's field-freeze note unchanged). Shares
+    // HasAnAcceptedDraw with ValidateParameterNotFrozen so the two cannot
+    // drift; they stay separate checks — they ask different questions (is the
+    // field closed, vs is this parameter settled) and keep separate codes.
     private Defect? ValidateFieldNotFrozen() =>
-        !Phases.IsEmpty
-            ? new Defect("competition.field.frozen", "$.personRef", "The field is frozen: a phase has already been drawn.")
+        HasAnAcceptedDraw()
+            ? new Defect("competition.field.frozen", "$.personRef", "The field is frozen: the draw has been accepted.")
             : null;
 
     private Defect? ValidateCompetitorExists(CompetitorId competitorRef) =>
@@ -1561,17 +1660,24 @@ public sealed record Competition
     }
 
     // See ValidateFieldNotFrozen above for the other consumer of
-    // !Phases.IsEmpty — this asks whether THIS PARAMETER is settled, not
-    // whether the field is closed, and is scoped to CompetitionSetup only:
-    // a BeforeFlying parameter (e.g. F5K's nlh) is legitimately bound after
-    // the draw, so freezing every parameter there would be wrong.
+    // HasAnAcceptedDraw — this asks whether THIS PARAMETER is settled, not
+    // whether the field is closed, and keeps its own code for it. Frozen at
+    // acceptance too (D7, kanban/in-progress/draw-acceptance-redraw.md):
+    // rebinding minPerGroup between reject and redraw may be precisely why
+    // the CD rejected. Scoped to CompetitionSetup only: a BeforeFlying
+    // parameter (e.g. F5K's nlh) is legitimately bound even after acceptance.
     private Defect? ValidateParameterNotFrozen(string parameterName)
     {
         var parameter = AdoptedRules.Definition.Parameters.FirstOrDefault(p => p.Name == parameterName);
-        return parameter is not null && parameter.BoundAt == ParameterBindingPoint.CompetitionSetup && !Phases.IsEmpty
-            ? new Defect("competition.parameter.frozen", "$.parameterName", $"'{parameterName}' is bound at competition setup and cannot be changed once a phase has been drawn.")
+        return parameter is not null && parameter.BoundAt == ParameterBindingPoint.CompetitionSetup && HasAnAcceptedDraw()
+            ? new Defect("competition.parameter.frozen", "$.parameterName", $"'{parameterName}' is bound at competition setup and cannot be changed once the draw has been accepted.")
             : null;
     }
+
+    // One accepted-draw check shared by both freeze validators (D6/D7) so the
+    // two cannot drift — kanban/in-progress/draw-acceptance-redraw.md.
+    private bool HasAnAcceptedDraw() =>
+        Phases.Any(p => p.Draw.Status == "accepted");
 
     // kanban/completed/per-round-parameter-bindings-plan.md. phaseOrdinal/roundOrdinal
     // null-null means an unscoped bind — every parameter, PerRound or not, may

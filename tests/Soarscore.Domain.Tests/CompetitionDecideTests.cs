@@ -111,18 +111,19 @@ public class CompetitionDecideTests
             "1.0.0", SampleAdoptedRules(), DateTimeOffset.UtcNow));
 
     /// <summary>
-    /// A minimal drawn phase — just enough for RegisterCompetitor's
-    /// field-freeze check (!Phases.IsEmpty) to see a non-empty Phases array.
-    /// Nothing reads inside Rounds/TaskRounds for that check, so both are left
-    /// empty.
+    /// A minimal drawn phase — just enough for the field-freeze check to see
+    /// a live phase. Nothing reads inside Rounds/TaskRounds for that check, so
+    /// both are left empty. Status is "drawn": the field is not yet frozen —
+    /// registration stays open until DrawAccepted folds
+    /// (kanban/in-progress/draw-acceptance-redraw.md, D6).
     /// </summary>
     private static Competition SampleCompetitionWithDrawnPhase()
     {
-        var draw = new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "Accepted" };
+        var draw = new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "drawn" };
         var phase = new Phase
         {
             Type = PhaseType.Preliminary,
-            Ordinal = 1,
+            Ordinal = 0,
             Draw = draw,
             Rounds = ImmutableArray<Round>.Empty,
         };
@@ -181,10 +182,27 @@ public class CompetitionDecideTests
         result.Code.Should().Be("competition.competitor.alreadyRegistered");
     }
 
+    // kanban/in-progress/draw-acceptance-redraw.md D6: the freeze moved from
+    // "any phase drawn" to "the live draw accepted". The accepted case folds a
+    // hand-built DrawAccepted directly — no handler exists at this layer.
+
     [Fact]
-    public void RegisterCompetitor_against_a_field_with_a_drawn_phase_fails_with_a_stable_code()
+    public void RegisterCompetitor_between_the_draw_and_its_acceptance_succeeds()
+    {
+        // The point of the move: a latecomer can still join after the draw,
+        // until the CD accepts it.
+        var competition = SampleCompetitionWithDrawnPhase();
+
+        var result = competition.RegisterCompetitor(CompetitorId.New(), PersonId.New(), DateTimeOffset.UtcNow);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RegisterCompetitor_against_a_field_with_an_accepted_draw_fails_with_a_stable_code()
     {
         var competition = SampleCompetitionWithDrawnPhase();
+        competition = competition.Apply(new DrawAccepted(0, DateTimeOffset.UtcNow));
 
         var result = competition.RegisterCompetitor(CompetitorId.New(), PersonId.New(), DateTimeOffset.UtcNow);
 
@@ -199,8 +217,8 @@ public class CompetitionDecideTests
         var registered = competition.RegisterCompetitor(CompetitorId.New(), PersonId.New(), DateTimeOffset.UtcNow);
         competition = competition.Apply(registered.Value);
         competition = competition.Apply(new PhaseDrawn(
-            1, PhaseType.Preliminary,
-            new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "Accepted" },
+            0, PhaseType.Preliminary,
+            new Draw { CreatedAt = DateTimeOffset.UtcNow, Status = "drawn" },
             [],
             DateTimeOffset.UtcNow));
 

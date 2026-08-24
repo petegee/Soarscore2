@@ -99,6 +99,8 @@ public sealed class CapturingAScoreSteps
     public async Task GivenADrawnPreliminaryPhaseOfRounds(int rounds)
     {
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
+        // D4: flying starts at acceptance, not at the draw.
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
     }
 
     // For a ChooseFromCatalogue phase (F3K): the table names the task the CD
@@ -111,6 +113,7 @@ public sealed class CapturingAScoreSteps
         var taskRefs = table.Rows.Select(row => row["task"]).ToList();
         await ApiClient.PostCommandAsync<CompetitionId>(
             Client, "/draw-phase", new DrawPhase(_competitionId, taskRefs.Count, taskRefs));
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
     }
 
     // ----------------------------------------------------------------- When

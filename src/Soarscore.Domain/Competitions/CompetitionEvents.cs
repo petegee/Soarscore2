@@ -3,10 +3,10 @@
 // The setup and shape of one event: its field, its rulebook copy, and its
 // phase/round/task-round/group schedule. Created up front (CompetitionCreated
 // + PhaseDrawn) and only lightly mutated afterwards — register or withdraw a
-// competitor, append a reflight group, complete / annul / reopen a task-round,
-// amend the rules, bind a parameter, finalise, record a penalty, record a
-// reflight ruling. Thirteen events total, mirroring aggregate-roots.md §3's
-// mutation list one-for-one.
+// competitor, accept or reject the draw, append a reflight group, complete /
+// annul / reopen a task-round, amend the rules, bind a parameter, finalise,
+// record a penalty, record a reflight ruling. Fifteen events total, mirroring
+// aggregate-roots.md §3's mutation list one-for-one.
 //
 // Event payloads reuse Domain's own value-object records (AdoptedRules,
 // RulesAmendment, ParameterBinding, Finalisation, Competitor, Group, Round,
@@ -29,6 +29,8 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(TaskRoundCompleted), "taskRoundCompleted")]
 [JsonDerivedType(typeof(TaskRoundAnnulled), "taskRoundAnnulled")]
 [JsonDerivedType(typeof(TaskRoundReopened), "taskRoundReopened")]
+[JsonDerivedType(typeof(DrawAccepted), "drawAccepted")]
+[JsonDerivedType(typeof(DrawRejected), "drawRejected")]
 [JsonDerivedType(typeof(RulesAmended), "rulesAmended")]
 [JsonDerivedType(typeof(ParameterBound), "parameterBound")]
 [JsonDerivedType(typeof(Finalised), "finalised")]
@@ -127,6 +129,23 @@ public sealed record TaskRoundReopened(
     int TaskRoundOrdinal,
     string Reason,
     DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// The CD standing behind the drawn schedule — glossary: "once accepted, the
+/// competition can begin". Moves the named phase's Draw.Status to "accepted";
+/// the field freeze (D6) and CompetitionSetup parameter freeze (D7) key off
+/// this state, and Entry opening gates on it (D4).
+/// </summary>
+public sealed record DrawAccepted(int PhaseOrdinal, DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// The CD sending the draw back — a rejected phase is removed from the fold
+/// (Phases holds only live phases, decision D2), which is what lets DrawPhase
+/// address the replacement draw correctly without any edit. Reason is carried
+/// for audit only — TaskRoundAnnulled's precedent; the log keeps every
+/// rejected draw even though the fold forgets them.
+/// </summary>
+public sealed record DrawRejected(int PhaseOrdinal, string Reason, DateTimeOffset At) : CompetitionEvent;
 
 /// <summary>Appends a corrected definition, applied retroactively across the whole competition.</summary>
 public sealed record RulesAmended(RulesAmendment Amendment) : CompetitionEvent;

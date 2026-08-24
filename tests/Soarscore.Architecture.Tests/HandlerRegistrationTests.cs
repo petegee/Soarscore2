@@ -66,10 +66,12 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Twenty-four commands + ten queries
-        // are mapped as of reflight-scoring-rulings.md WI-5
-        // (RecordReflightRuling).
-        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(24);
+        // test below would vacuously pass. Twenty-five commands + ten queries
+        // are mapped as of draw-acceptance-redraw.md WI-4 (AcceptDraw,
+        // RejectDraw — the count comment here previously said twenty-four
+        // against twenty-three actual MapCommand lines; corrected while
+        // bumping).
+        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(26);
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;

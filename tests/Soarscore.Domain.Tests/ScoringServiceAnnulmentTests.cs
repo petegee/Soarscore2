@@ -84,6 +84,8 @@ public class ScoringServiceAnnulmentTests
         }
 
         competition = competition.Apply(competition.DrawPhase(1, [], Now).Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
         var group = competition.Phases[0].Rounds[0].TaskRounds[0].Groups[0];
 
         return (competition, competitors, group.Id);

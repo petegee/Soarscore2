@@ -97,6 +97,8 @@ public sealed class ReflightingAGroupSteps
         // as part of the draw itself (DrawingACatalogueChoicePhase.feature).
         await ApiClient.PostCommandAsync<CompetitionId>(
             Client, "/draw-phase", new DrawPhase(_competitionId, 1, ["A"]));
+        // D4: flights require an accepted draw.
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
     }
 
     [Given(@"^every competitor flies the original group with a distinct flight time$")]

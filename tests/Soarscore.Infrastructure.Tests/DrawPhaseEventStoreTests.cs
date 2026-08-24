@@ -136,7 +136,7 @@ public abstract class DrawPhaseEventStoreTests<TFixture>(TFixture fixture) : ICl
     }
 
     [Fact]
-    public async Task DrawPhase_freezes_the_field_registration_rejected_withdrawal_still_succeeds()
+    public async Task DrawPhase_freezes_the_field_only_once_accepted_registration_rejected_withdrawal_still_succeeds()
     {
         var competitionId = await CreateCompetitionAsync(fixture, F3JDefinition, "Field Freeze");
 
@@ -150,11 +150,23 @@ public abstract class DrawPhaseEventStoreTests<TFixture>(TFixture fixture) : ICl
         var drawn = await drawHandler.HandleAsync(new DrawPhase(competitionId, 1), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
 
-        // The first real exercise of RegisterCompetitor's ValidateFieldNotFrozen
-        // check — "unreachable this thread" in the previous plan, reachable for
-        // the first time here, now against a real PostgreSQL round trip.
-        var latePerson = await RegisterPersonAsync(fixture, "pilot-freeze-late@example.com");
+        // Between draw and acceptance the field is still open — the freeze
+        // moved from "any phase drawn" onto acceptance (D6,
+        // kanban/in-progress/draw-acceptance-redraw.md).
+        var betweenDrawPerson = await RegisterPersonAsync(fixture, "pilot-freeze-between@example.com");
         var registerHandler = new RegisterCompetitorHandler(fixture.EventStore, new SystemClock());
+        var betweenDrawRegistration = await registerHandler.HandleAsync(
+            new RegisterCompetitor(competitionId, betweenDrawPerson), TestContext.Current.CancellationToken);
+        betweenDrawRegistration.IsSuccess.Should().BeTrue();
+
+        var acceptHandler = new AcceptDrawHandler(fixture.EventStore, new SystemClock());
+        var accepted = await acceptHandler.HandleAsync(new AcceptDraw(competitionId), TestContext.Current.CancellationToken);
+        accepted.IsSuccess.Should().BeTrue();
+
+        // The first real exercise of RegisterCompetitor's re-pointed
+        // ValidateFieldNotFrozen check — reachable only once a draw is
+        // ACCEPTED, here against a real store round trip.
+        var latePerson = await RegisterPersonAsync(fixture, "pilot-freeze-late@example.com");
         var lateRegistration = await registerHandler.HandleAsync(
             new RegisterCompetitor(competitionId, latePerson), TestContext.Current.CancellationToken);
         lateRegistration.IsFailure.Should().BeTrue();

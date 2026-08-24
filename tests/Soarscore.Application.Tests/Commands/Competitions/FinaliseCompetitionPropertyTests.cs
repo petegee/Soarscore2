@@ -186,6 +186,10 @@ public class FinaliseCompetitionPropertyTests
         drawn.IsSuccess.Should().BeTrue();
         competitionEvents.Add(drawn.Value);
         competition = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        var accepted = new DrawAccepted(0, Now);
+        competitionEvents.Add(accepted);
+        competition = competition.Apply(accepted);
 
         var entries = new Dictionary<EntryId, Entry>();
 

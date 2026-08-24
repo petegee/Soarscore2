@@ -78,6 +78,13 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
         var drawn = await drawHandler.HandleAsync(new DrawPhase(created.Value, rounds), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
 
+        // D4 (kanban/in-progress/draw-acceptance-redraw.md): an entry cannot
+        // open against a drawn-but-not-accepted competition — every scenario
+        // below records entries, so the CD accepts right after the draw.
+        var accepted = await new AcceptDrawHandler(fixture.EventStore, new SystemClock())
+            .HandleAsync(new AcceptDraw(created.Value), TestContext.Current.CancellationToken);
+        accepted.IsSuccess.Should().BeTrue($"{accepted.Code}: {accepted.Message}");
+
         return (created.Value, list);
     }
 

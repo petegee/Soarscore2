@@ -99,6 +99,18 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
     }
 
     /// <summary>
+    /// D4 (kanban/in-progress/draw-acceptance-redraw.md): an entry cannot open
+    /// against a drawn-but-not-accepted competition — every scenario below
+    /// opens entries, so the CD accepts right after the draw.
+    /// </summary>
+    private static async Task AcceptDrawAsync(IStoreFixture fixture, CompetitionId competitionId)
+    {
+        var accepted = await new AcceptDrawHandler(fixture.EventStore, new SystemClock())
+            .HandleAsync(new AcceptDraw(competitionId), TestContext.Current.CancellationToken);
+        accepted.IsSuccess.Should().BeTrue($"{accepted.Code}: {accepted.Message}");
+    }
+
+    /// <summary>
     /// Reads the raw Entry stream and folds it with the public <see cref="Entry.Apply(Entry?, EntryEvent)"/> —
     /// the same shape Application's internal EntryLoader uses, inlined here
     /// because that type is not visible outside Soarscore.Application and no
@@ -195,6 +207,7 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
         var drawHandler = new DrawPhaseHandler(fixture.EventStore, new SystemClock());
         var drawn = await drawHandler.HandleAsync(new DrawPhase(competitionId, 2), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
+        await AcceptDrawAsync(fixture, competitionId);
 
         var getHandler = new GetCompetitionHandler(fixture.EventStore);
         var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
@@ -324,6 +337,7 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
         var drawHandler = new DrawPhaseHandler(fixture.EventStore, new SystemClock());
         var drawn = await drawHandler.HandleAsync(new DrawPhase(competitionId, 1), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
+        await AcceptDrawAsync(fixture, competitionId);
 
         var getHandler = new GetCompetitionHandler(fixture.EventStore);
         var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
@@ -403,6 +417,7 @@ public abstract class EntryCaptureEventStoreTests<TFixture>(TFixture fixture) : 
         var drawHandler = new DrawPhaseHandler(fixture.EventStore, new SystemClock());
         var drawn = await drawHandler.HandleAsync(new DrawPhase(competitionId, 1), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
+        await AcceptDrawAsync(fixture, competitionId);
 
         var getHandler = new GetCompetitionHandler(fixture.EventStore);
         var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);

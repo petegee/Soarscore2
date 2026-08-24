@@ -1,6 +1,6 @@
 # Story — Accepting or rejecting the draw, and redrawing
 
-**Status:** In progress · **Raised:** 2026-08-24 · **Fleshed out:** 2026-08-24
+**Status:** Complete — built and verified 2026-08-25 · **Raised:** 2026-08-24 · **Fleshed out:** 2026-08-24
 
 ## What
 

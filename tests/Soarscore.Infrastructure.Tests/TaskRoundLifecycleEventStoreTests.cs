@@ -151,6 +151,18 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
             .HandleAsync(new OpenEntry(competitionId, 0, roundOrdinal, 1, groupRef, competitorRef), Ct);
 
     /// <summary>
+    /// D4 (kanban/in-progress/draw-acceptance-redraw.md): an entry cannot open
+    /// against a drawn-but-not-accepted competition — every scenario below
+    /// flies flights, so the CD accepts right after the draw.
+    /// </summary>
+    private static async Task AcceptDrawAsync(IStoreFixture fixture, CompetitionId competitionId)
+    {
+        var accepted = await new AcceptDrawHandler(fixture.EventStore, new SystemClock())
+            .HandleAsync(new AcceptDraw(competitionId), Ct);
+        accepted.IsSuccess.Should().BeTrue($"{accepted.Code}: {accepted.Message}");
+    }
+
+    /// <summary>
     /// Creates the competition, registers <paramref name="fieldSize"/> pilots and
     /// draws the qualification phase for <paramref name="rounds"/> rounds. F5J's
     /// literal MinPerGroup 6 means a 6-pilot field is exactly one group per round.
@@ -182,8 +194,11 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
             fixture, "Lifecycle Round Trip", "lifecycle", F5JMinRounds);
 
         // The read model's first two states, before any lifecycle event exists
-        // — the third ("finalised") is what this test is really after.
+        // — the third ("finalised") is what this test is really after. The
+        // accept below deliberately follows this assertion: it pins the state
+        // the draw alone produces.
         (await ReadModelStateAsync(fixture, competitionId)).Should().Be("drawn");
+        await AcceptDrawAsync(fixture, competitionId);
 
         // Fly every round first: closing a task-round closes score capture for
         // it (Competition.cs's openEntry.taskRoundClosed), so capture comes
@@ -274,6 +289,7 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
     public async Task Completing_a_task_round_closes_score_capture_through_the_real_store_and_reopening_restores_it()
     {
         var (competitionId, competitors) = await DrawnCompetitionAsync(fixture, "Closure", "closure", rounds: 1);
+        await AcceptDrawAsync(fixture, competitionId);
 
         var competition = await LoadAsync(fixture, competitionId);
         var group = competition.Phases.Single().Rounds.Single().TaskRounds.Single().Groups.Single();
@@ -317,6 +333,7 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
     public async Task Competitions_read_model_dropped_and_fully_replayed_lands_back_on_finalised()
     {
         var (competitionId, _) = await DrawnCompetitionAsync(fixture, "State Replay", "state-replay", F5JMinRounds);
+        await AcceptDrawAsync(fixture, competitionId);
 
         var competition = await LoadAsync(fixture, competitionId);
         foreach (var round in competition.Phases.Single().Rounds)
@@ -365,6 +382,7 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
     public async Task Finalise_is_refused_through_the_real_store_until_the_classs_minimum_rounds_are_fully_flown()
     {
         var (competitionId, _) = await DrawnCompetitionAsync(fixture, "Validity Gate", "validity", F5JMinRounds);
+        await AcceptDrawAsync(fixture, competitionId);
 
         var competition = await LoadAsync(fixture, competitionId);
         var rounds = competition.Phases.Single().Rounds;
@@ -403,7 +421,9 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
         var stillShort = await finaliseHandler.HandleAsync(new FinaliseCompetition(competitionId, "CD Jane"), Ct);
         stillShort.IsFailure.Should().BeTrue();
         stillShort.Code.Should().Be("finalise.notEnoughRounds");
-        (await ReadModelStateAsync(fixture, competitionId)).Should().Be("drawn");
+        // Not finalised — and, with the draw accepted at the top of this test
+        // (D4), the summary reads "accepted" (CompetitionProjection, D8).
+        (await ReadModelStateAsync(fixture, competitionId)).Should().Be("accepted");
 
         // Reopen the annulled round and complete it: now four rounds are fully
         // flown and the class's own gate opens.

@@ -164,6 +164,8 @@ public class NormalisationGroupIsolationPropertyTests
         var drawn = competition.DrawPhase(1, [], Now);
         drawn.IsSuccess.Should().BeTrue();
         competition = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
 
         var groups = competition.Phases[0].Rounds[0].TaskRounds[0].Groups;
 

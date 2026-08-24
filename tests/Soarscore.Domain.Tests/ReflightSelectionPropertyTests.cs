@@ -115,6 +115,8 @@ public class ReflightSelectionPropertyTests
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
         competition = competition.Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now));
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
 
         var entries = new Dictionary<EntryId, Entry>();
         foreach (var competitorRef in competitors)
@@ -405,7 +407,9 @@ public class ReflightSelectionPropertyTests
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
 
-        return competition.Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now));
+        return competition
+            .Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now))
+            .Apply(new DrawAccepted(0, Now));
     }
 
     private static ImmutableArray<CompetitorId> RegisteredCompetitors(Competition competition) =>

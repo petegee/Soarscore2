@@ -35,6 +35,17 @@ public static class CompetitionProjection
                 e.Id, e.Name, e.Location, e.StartDate, e.EndDate,
                 e.AdoptedRules.Definition.Name, e.AdoptedRules.SourceClassId, "created"),
             PhaseDrawn when current is not null => current with { State = "drawn" },
+            // draw-acceptance-redraw.md D8: the summary mirrors the live
+            // phase's Draw.Status. Acceptance is the state the glossary
+            // means by "the competition can begin".
+            DrawAccepted when current is not null => current with { State = "accepted" },
+            // A rejected draw's phase is removed from the fold (D2), so the
+            // competition is back where CompetitionCreated left it.
+            // Theoretically this arm could overwrite "finalised", but that is
+            // unreachable: finalisation requires complete task-rounds, which
+            // require entries, and rejectDraw.entriesExist refuses rejection
+            // of any competition that far along.
+            DrawRejected when current is not null => current with { State = "created" },
             Finalised e when current is not null && e.Finalisation.Scope == FinalisationScope.Competition =>
                 current with { State = "finalised" },
             _ => current,

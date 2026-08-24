@@ -77,7 +77,8 @@ public class OpenEntryHandlerTests
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
         store.AppendAsync(
-            id.Value, ExpectedVersion.Exact(version), [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now)])
+            id.Value, ExpectedVersion.Exact(version),
+            [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now), new DrawAccepted(0, Now)])
             .GetAwaiter().GetResult();
 
         return (store, id, competitors.ToImmutable(), groupRef);

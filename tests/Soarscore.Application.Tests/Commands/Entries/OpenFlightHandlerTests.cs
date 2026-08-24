@@ -55,7 +55,8 @@ public class OpenFlightHandlerTests
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
         store.AppendAsync(
-            competitionId.Value, ExpectedVersion.Exact(2), [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now)])
+            competitionId.Value, ExpectedVersion.Exact(2),
+            [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now), new DrawAccepted(0, Now)])
             .GetAwaiter().GetResult();
 
         var competitionEvents = store.Streams[competitionId.Value];

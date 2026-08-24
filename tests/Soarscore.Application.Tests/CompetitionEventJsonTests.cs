@@ -268,6 +268,40 @@ public class CompetitionEventJsonTests
         reread.Should().BeOfType<TaskRoundReopened>().Which.Should().Be(reopened);
     }
 
+    // kanban/in-progress/draw-acceptance-redraw.md WI-6 — the two
+    // draw-acceptance events. DrawRejected carries a Reason like its
+    // task-round siblings, so both discriminator and payload are asserted;
+    // an unregistered alias fails at runtime on both backends
+    // (LADR-0001 §4.8), which is what these tests exist to catch first.
+
+    [Fact]
+    public void DrawAccepted_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent accepted = new DrawAccepted(0, DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(accepted, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"drawAccepted\"");
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<DrawAccepted>().Which.Should().Be(accepted);
+    }
+
+    [Fact]
+    public void DrawRejected_round_trips_its_Reason_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent rejected = new DrawRejected(0, "Late entrant not in the field", DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(rejected, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"drawRejected\"");
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<DrawRejected>().Which.Should().Be(rejected);
+    }
+
     [Fact]
     public void Finalised_event_round_trips_with_decimal_aggregate_as_a_json_string()
     {

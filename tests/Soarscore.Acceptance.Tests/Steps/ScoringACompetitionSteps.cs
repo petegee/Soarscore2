@@ -110,6 +110,8 @@ public sealed class ScoringACompetitionSteps
     public async Task GivenThePreliminaryPhaseIsDrawnForRounds(int rounds)
     {
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
+        // D4: scoring scenarios fly flights — the draw must be accepted first.
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
     }
 
     /// <summary>

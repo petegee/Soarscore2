@@ -97,6 +97,8 @@ public sealed class RecordingAReflightRulingSteps
             new BindParameter(_competitionId, "minNewGroup", MeasuredValue.Of(2m), "The contest director"));
 
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, 1));
+        // D4: flights require an accepted draw.
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
     }
 
     [Given(@"^every competitor flies the original group at their seeded pace$")]

@@ -219,6 +219,14 @@ public abstract class CatalogueDrawEventStoreTests<TFixture>(TFixture fixture) :
             new DrawPhase(competitionId, 2, taskRefs), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue($"{drawn.Code}: {drawn.Message}");
 
+        // D4 (kanban/in-progress/draw-acceptance-redraw.md): entries need an
+        // accepted draw. Tests 1-3 above deliberately never accept — they are
+        // the regression guard for a drawn-but-not-accepted competition still
+        // reading correctly; this one opens entries, so it accepts.
+        var accepted = await new AcceptDrawHandler(fixture.EventStore, new SystemClock())
+            .HandleAsync(new AcceptDraw(competitionId), TestContext.Current.CancellationToken);
+        accepted.IsSuccess.Should().BeTrue($"{accepted.Code}: {accepted.Message}");
+
         var getHandler = new GetCompetitionHandler(fixture.EventStore);
         var fetched = await getHandler.HandleAsync(new GetCompetition(competitionId), TestContext.Current.CancellationToken);
         fetched.IsSuccess.Should().BeTrue();

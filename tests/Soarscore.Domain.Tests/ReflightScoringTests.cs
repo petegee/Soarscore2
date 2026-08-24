@@ -89,6 +89,9 @@ public class ReflightScoringTests
         var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
         competition = competition.Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now));
+        // Entries open only against an accepted draw (D4) — acceptance is
+        // arrangement here; the gate itself has DrawAcceptanceDecideTests.
+        competition = competition.Apply(new DrawAccepted(0, Now));
 
         return (competition, competitors.ToImmutable(), group.Id);
     }

@@ -167,6 +167,8 @@ public class TaskRoundClosurePropertyTests
         var drawn = competition.DrawPhase(rounds, ImmutableArray<string>.Empty, Now);
         drawn.IsSuccess.Should().BeTrue();
 
-        return competition.Apply(drawn.Value);
+        var accepted = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        return accepted.Apply(new DrawAccepted(0, Now));
     }
 }

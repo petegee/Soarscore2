@@ -29,9 +29,12 @@ public sealed record CompetitionSummary(
     string ClassName,
     string ClassContentHash,
     /// <summary>
-    /// "created" | "drawn" | "finalised" — a list-view label, not a lifecycle
-    /// enum: the authoritative state is the folded stream, and a task-round
-    /// reopening after finalisation does not walk this back. A plain string
-    /// for the same reason Draw.Status is one — no doc source states the set.
+    /// "created" | "drawn" | "accepted" | "finalised" — a list-view label, not
+    /// a lifecycle enum: the authoritative state is the folded stream, and a
+    /// task-round reopening after finalisation does not walk this back. A
+    /// plain string for the same reason Draw.Status is one — no doc source
+    /// states the set. ("accepted" added by kanban/in-progress/
+    /// draw-acceptance-redraw.md D8: DrawAccepted moves the summary forward,
+    /// DrawRejected walks it back to "created".)
     /// </summary>
     string State);

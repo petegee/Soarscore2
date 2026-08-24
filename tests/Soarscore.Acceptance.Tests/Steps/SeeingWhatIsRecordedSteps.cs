@@ -78,6 +78,8 @@ public sealed class SeeingWhatIsRecordedSteps
         }
 
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
+        // D4: this scenario records flights, which requires an accepted draw.
+        await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
 
         var view = await ApiClient.GetAsync<CompetitionView>(Client, $"/competition?id={_competitionId.Value}");
         var taskRound = view.Competition.Phases.Single().Rounds.Single(r => r.Ordinal == 1).TaskRounds.Single();

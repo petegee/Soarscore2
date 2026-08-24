@@ -71,16 +71,25 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
 
 ## Draw
 
-- **Redraw / draw acceptance.** Acceptance criteria are already drafted at
-  `kanban/completed/phase-drawn-steel-thread-plan.md:110-121` — the `Draw.Status`
-  vocabulary, `AcceptDraw`/`RejectDraw`, and moving `ValidateFieldNotFrozen` off
-  `Phases.IsEmpty`.
 - **Flyoff-phase draws.** The current draw's field is unconditionally "every
   non-withdrawn Competitor". Flyoff field selection is a different algorithm, not a
   variation on this one.
 - **Multi-task rounds (F3B).** `FixedSequence` with `tasksPerRound: 3`, structurally
   rejected by `Competition.DrawPhase` with `drawPhase.unsupportedRoundComposition`. A
   different problem from catalogue choice, refused at the same single check.
+- **A draw-history read surface.** **Decided 2026-08-24**
+  (`kanban/completed/draw-acceptance-redraw.md`, decision D2's stated consequence).
+  Rejection removes the phase from the fold, so prior rejected draws are invisible
+  through `GET /competition` — they live only in the event log (the audit trail is
+  the stream, per house style). No query reads them today; if a CD ever wants to
+  review *why* a draw was rejected without reading raw events, that read surface is
+  a new story, not an omission here.
+- **Whether `AppendReflightGroup` should also require an accepted draw.** **Decided
+  2026-08-24**, same story. It is left ungated in the decide function: unreachable
+  through the API today under D4 — a reflight group needs a task-round, which needs
+  an entry, and opening an entry requires acceptance. The decide function does not
+  enforce what the command graph already makes unreachable; revisit only if a new
+  entry path bypasses the gate.
 
 ## Task-round lifecycle and finalisation
 

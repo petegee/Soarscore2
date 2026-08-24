@@ -137,13 +137,54 @@ public class BindParameterHandlerTests
         result.Code.Should().Be("competition.parameter.kindMismatch");
     }
 
+    // kanban/in-progress/draw-acceptance-redraw.md D7 — the freeze moved to
+    // acceptance. The accepted case seeds the stream with a hand-built
+    // DrawAccepted: no AcceptDraw handler exists until that story's stage 2,
+    // and this layer only needs the event in the stream.
+
     [Fact]
-    public async Task Binding_a_CompetitionSetup_parameter_after_a_phase_is_drawn_surfaces_frozen_unchanged()
+    public async Task Binding_a_CompetitionSetup_parameter_after_a_draw_but_before_acceptance_succeeds()
     {
-        var (store, competitionId) = SeedCompetition();
+        var (store, competitionId) = await SeedRegisteredDrawnCompetitionAsync();
         var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
 
-        // Enough field to draw. Register 12 competitors then draw.
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD"),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Binding_a_CompetitionSetup_parameter_after_the_draw_is_accepted_surfaces_frozen_unchanged()
+    {
+        var (store, competitionId) = await SeedRegisteredDrawnCompetitionAsync();
+
+        var version = store.Streams[competitionId.Value].Count;
+        await store.AppendAsync(
+            competitionId.Value, ExpectedVersion.Exact(version), [new DrawAccepted(0, Now)],
+            TestContext.Current.CancellationToken);
+
+        var handler = new BindParameterHandler(store, new FakeEntryQuery(), new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD"),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("competition.parameter.frozen");
+    }
+
+    /// <summary>Enough field to draw: 12 competitors registered, one F3J round drawn.</summary>
+    private static async Task<(FakeEventStore Store, CompetitionId CompetitionId)> SeedRegisteredDrawnCompetitionAsync()
+    {
+        var store = new FakeEventStore();
+        var competitionId = CompetitionId.New();
+        var created = new CompetitionCreated(
+            competitionId, "Club Champs 2026", "Auckland", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13),
+            "1", SampleAdoptedRules(), Now);
+        await store.AppendAsync(competitionId.Value, ExpectedVersion.NoStream, [created], TestContext.Current.CancellationToken);
+
         var version = 1L;
         for (var i = 0; i < 12; i++)
         {
@@ -164,12 +205,7 @@ public class BindParameterHandlerTests
         var drawn = await drawHandler.HandleAsync(new DrawPhase(competitionId, 1), TestContext.Current.CancellationToken);
         drawn.IsSuccess.Should().BeTrue();
 
-        var result = await handler.HandleAsync(
-            new BindParameter(competitionId, "flyoffMinRounds", MeasuredValue.Of(3m), "CD"),
-            TestContext.Current.CancellationToken);
-
-        result.IsFailure.Should().BeTrue();
-        result.Code.Should().Be("competition.parameter.frozen");
+        return (store, competitionId);
     }
 
     [Fact]

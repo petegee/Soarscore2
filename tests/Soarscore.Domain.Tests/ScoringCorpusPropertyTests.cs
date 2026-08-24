@@ -131,6 +131,8 @@ public class ScoringCorpusPropertyTests
         var drawn = competition.DrawPhase(Rounds, taskRefs, Now);
         drawn.IsSuccess.Should().BeTrue($"{seedClass.FileName}: {drawn.Code}");
         competition = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
 
         var entries = new Dictionary<EntryId, Entry>();
         var flownCompetitors = new HashSet<CompetitorId>();
