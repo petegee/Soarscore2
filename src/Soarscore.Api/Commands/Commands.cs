@@ -25,6 +25,7 @@ public static class Commands
         app.MapCommand<RegisterCompetitor, CompetitorId>("/register-competitor");
         app.MapCommand<WithdrawCompetitor, CompetitorId>("/withdraw-competitor");
         app.MapCommand<DrawPhase, CompetitionId>("/draw-phase");
+        app.MapCommand<PrescribeDraw, CompetitionId>("/prescribe-draw");
         app.MapCommand<AcceptDraw, CompetitionId>("/accept-draw");
         app.MapCommand<RejectDraw, CompetitionId>("/reject-draw");
         app.MapCommand<BindParameter, CompetitionId>("/bind-parameter");
