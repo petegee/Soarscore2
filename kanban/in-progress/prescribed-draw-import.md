@@ -1,6 +1,6 @@
 # Story — Prescribed-draw import capability
 
-**Status:** Backlog · **Raised:** 2026-08-25 · **Fleshed out:** 2026-08-25
+**Status:** In progress · **Raised:** 2026-08-25 · **Fleshed out:** 2026-08-25 · **Implementation started:** 2026-08-26
 
 ## What
 
