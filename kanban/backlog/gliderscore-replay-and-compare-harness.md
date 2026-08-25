@@ -32,6 +32,6 @@ case = the ALES sample comp already analysed.
 
 ## Before starting
 
-Blocked on: arithmetic resolved, first fixture committed, prescribed draw available.
+Blocked on: arithmetic resolved, first fixture committed, ~~prescribed draw available~~ (discharged 2026-08-26 by `kanban/in-progress/prescribed-draw-import.md`).
 Scope guard v1: single-class, no-team, no-series, no-merged/prelim comps — fixtures
 touching the §6 concept gaps stay skip-listed until those concepts exist.
