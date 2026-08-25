@@ -1,6 +1,9 @@
 # Story — Gliderscore golden-fixture pipeline
 
-**Status:** Backlog · **Raised:** 2026-08-25 · **Planned:** 2026-08-25
+**Status:** Completed · **Raised:** 2026-08-25 · **Planned:** 2026-08-25 ·
+**Completed:** 2026-08-25 (WI-1–WI-3 and index.md; corpus growth split to
+`kanban/backlog/grow-gliderscore-fixture-corpus.md` — needs exports only the
+repo owner can supply)
 
 ## What
 
@@ -48,6 +51,13 @@ offline; nothing in `src/`, `tests/` build or CI ever reads Jet or invokes Pytho
 - **Done when:** differential clean on the sample export; README records usage, pinned
   library version, and the offline-only rule.
 
+> **As built 2026-08-25:** Done. `tests/GliderscoreFixtures/extract/extract.py` wraps
+> access_parser **0.0.6** (pinned by pip metadata + module-file sha256s in the README).
+> Differential gate **clean**: 29/29 tables matched the surviving ad-hoc baseline —
+> identical table sets (including `DBParams` *and* `MSysObjects`), ordered columns, row
+> counts; 1883 cells compared under stringification, 0 mismatches, 0 type-name
+> differences. Baseline copies not committed, per plan.
+
 ### WI-2 — Fixture schema v1 (documented here)
 
 Layout: `tests/GliderscoreFixtures/` — a neutral home, since the harness story
@@ -92,6 +102,13 @@ Validation rules (checked at curation; a `validate.py` beside `extract.py` may e
 5. any triage field marking a §6 concept gap (teams, series, merged/prelim) ⇒ the
    fixture must be skip-listed in `index.md`, never silently active.
 
+> **As built 2026-08-25:** Schema v1 realised by fixture #1 (below). `validate.py`
+> beside `extract.py` enforces rules 1–5 plus an expected-scores↔scores-raw key/row
+> integrity check; negative self-tests confirmed every rule fires. Index contract:
+> one dash-bullet per comp (`- <slug> — active|skipped — …`) — the rule-5 parser
+> tokenises the first whitespace-delimited word after the bullet marker, so a
+> markdown table would not be recognised.
+
 ### WI-3 — Commit fixture #1: ALES sample comp
 
 Slug `ales-sample-comp`. Curated via WI-1 output from
@@ -109,6 +126,15 @@ committing.
 **Done when:** validation rules pass and committed — this discharges the harness
 story's "first fixture committed" precondition.
 
+> **As built 2026-08-25:** Done (working tree). Source committed as
+> `tests/GliderscoreFixtures/sources/ales-sample-comp.mdb`
+> (sha256 `cea07593…00f968`, byte-verified copy). PII check clean: `CompPilots` has no
+> contact columns; all `Pilots` contact columns empty; ZZ-prefixed shipped test pilots.
+> All six fixture files curated; `validate.py` PASS; oracle spot-check matches the
+> reconciliation table exactly (Raw 160/275/330, NS 440/835/1030, seven zeros;
+> ranks 1/2/3 then seven "=4", source `reconstructed-ladder`). Triage flags all off
+> (`UseTeams=false`, `CompSeriesNo="0"`, `PrelimCompNo=-1`, `MergedComps=""`) ⇒ active.
+
 ### WI-4 — Corpus growth + skip-list
 
 Add Pete's install example comps across classes. Each addition is now small:
@@ -125,6 +151,13 @@ extract → curate → validate → index.
   divergence D6 — GS drops at 12 scored rounds vs official 6); ≥ 1 `Decs ≥ 1` comp
   (witnesses the float32 artifacts the sample cannot show); Speed/Distance families
   when available.
+
+> **Partial 2026-08-25:** `tests/GliderscoreFixtures/index.md` created — ales-sample-comp
+> listed active; standing skip reasons and the diversity hunt-list recorded. Corpus
+> growth is stopped outside the story: no further GliderScore exports exist on this
+> machine (the only other database found, `/home/pete/source/gliderscore/DB_12582_gliderscore_backup.bak`,
+> is a SQL Server NTbackup of the eScoring web DB — not Jet, unreadable by the extractor).
+> Remainder split to `kanban/backlog/grow-gliderscore-fixture-corpus.md` at completion.
 
 ## Ranking oracle — decided 2026-08-25 (hybrid)
 
