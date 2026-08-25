@@ -1,0 +1,23 @@
+{
+  "schema": {
+    "CompNo": "Long",
+    "LeftLogoPath": "Text",
+    "LeftLogoWidth": "Long",
+    "LeftLogoHeight": "Long",
+    "RightLogoPath": "Text",
+    "RightLogoWidth": "Long",
+    "RightLogoHeight": "Long",
+    "HeaderLine1": "Text",
+    "HeaderLine2": "Text",
+    "HeaderLine3": "Text",
+    "HeaderLine4": "Text",
+    "HeaderLine5": "Text",
+    "HeaderLine6": "Text",
+    "FooterLine1": "Text",
+    "FooterLine2": "Text",
+    "AssocCompNo": "Text",
+    "MatrixBadge_Header": "Text",
+    "MatrixBadge_LogoPath": "Text"
+  },
+  "rows": []
+}

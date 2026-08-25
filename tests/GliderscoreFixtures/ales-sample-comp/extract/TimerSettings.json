@@ -1,0 +1,14 @@
+{
+  "schema": {
+    "TimerNo": "Long",
+    "TimerTime": "Long",
+    "DisplayTime": "Text",
+    "AnnouncementDescription": "Text",
+    "AnnouncementFileName": "Text",
+    "BeepFreq": "Long",
+    "BeepDuration": "Long",
+    "OnRoundChange": "Boolean",
+    "TimerState": "Text"
+  },
+  "rows": []
+}

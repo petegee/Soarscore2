@@ -1,0 +1,11 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "disGroupsPerRound": "Byte",
+    "disPilotsMax": "Byte",
+    "disPilotsMin": "Text",
+    "disDrawLocked": "Boolean",
+    "disAllowBackToBack": "Long"
+  },
+  "rows": []
+}

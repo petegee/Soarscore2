@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "spdDecimalsForTiming": "Byte",
+    "spdNumberOfTimekeepers": "Byte",
+    "spdGroupsPerRound": "Byte",
+    "spdPilotsMax": "Byte",
+    "SpdPilotsMin": "Text",
+    "spdDrawLocked": "Boolean"
+  },
+  "rows": []
+}

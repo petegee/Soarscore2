@@ -1,0 +1,7 @@
+{
+  "schema": {
+    "BonusNo": "Long",
+    "BonusName": "Text"
+  },
+  "rows": []
+}

@@ -1,0 +1,33 @@
+{
+  "slug": "ales-sample-comp",
+  "source": {
+    "originalFilename": "GliderScoreDownload.txt",
+    "repoPath": "tests/GliderscoreFixtures/sources/ales-sample-comp.mdb",
+    "sha256": "cea07593425a0dc63765ddf5367940d1a2890068df4864df648ba56d0300f968"
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the export"
+  },
+  "exportedBy": "pete",
+  "exportDate": "2026-08-25T08:05:10+12:00",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "accessParser": "0.0.6",
+    "python": "3.13.15",
+    "extracted": "2026-08-25"
+  },
+  "notes": [
+    "exportedBy is asserted by the repo owner (pete) in the 2026-08-25 working session; it is corroborated by DBParams.UserName='pete' but not independently provable.",
+    "exportDate is the source file's modification time; DBParams carries no export timestamp, so the file mtime is the best available proxy and could postdate the actual GliderScore Export Competition(s) run.",
+    "10 pilots, 3 rounds x 1 group; only round 1 has flights (pilots 13, 48, 70); rounds 2-3 are all-zero with Updated='False'.",
+    "GroupScoreDecimals=0 forces integral scores, so the binary32 persist cast on RawScore/NormalisedScore is unwitnessed by this fixture (arithmetic story, Precision & storage #4 Unresolved); a Decs>=1 export is needed to see float32 artifacts.",
+    "durFlightPenalty=0 means the height-penalty deduction mode is None, so the configured durRefHeight=200 / durPenaltyUpToRefHeight=0.5 / durPenaltyOverRefHeight=3.0 are inert in this comp.",
+    "Drops never activate: Drop1AtRound..Drop5AtRound are all 99 (= never), DropScoreOption=0 and F3QDrop6to10='99,99,99,99,99'; DurALES factory default is no discard.",
+    "PII check 2026-08-25: CompPilots carries no contact columns; every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for all rows; pilots are the GliderScore shipped test set (ZZ-prefixed names). Source committed as-is.",
+    "Pilots filtering was the identity here: the master table contained exactly the 10 CompPilots members, so entries.json carries them verbatim.",
+    "Spd/Dis/F3K/F5B/F5K family rows, F3KTaskByRound, F5KTaskandRefHeightByRound, F5KBonusNames/F5KBonusData and CompSeries are present-but-empty in the export and therefore omitted from competition.json; DurTargetTimeByRound is carried verbatim with zero rows.",
+    "Excluded per story WI-2: per-family timing decimals (display-only), presentation/device/audio tables; ScoresChecked stays in scores-raw.json as inert evidence mapping to nothing."
+  ]
+}

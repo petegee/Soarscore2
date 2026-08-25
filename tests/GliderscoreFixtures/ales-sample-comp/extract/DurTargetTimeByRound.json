@@ -1,0 +1,8 @@
+{
+  "schema": {
+    "CompNo": "Long",
+    "RoundNo": "Long",
+    "TargetTime": "Long"
+  },
+  "rows": []
+}

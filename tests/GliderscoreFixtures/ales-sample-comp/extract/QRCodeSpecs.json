@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "ItemName": "Text",
+    "Include": "Boolean",
+    "Identifier": "Text",
+    "Data": "Text",
+    "Terminator": "Text",
+    "Seq": "Long",
+    "ECLevel": "Text"
+  },
+  "rows": []
+}

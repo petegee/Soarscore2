@@ -1,0 +1,59 @@
+{
+  "schema": {
+    "LndgNo": "Integer",
+    "Distance": "Double",
+    "Points": "Integer"
+  },
+  "rows": [
+    {
+      "LndgNo": 6,
+      "Distance": 1.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 2.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 3.0,
+      "Points": 40
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 4.0,
+      "Points": 35
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 5.0,
+      "Points": 30
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 6.0,
+      "Points": 25
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 7.0,
+      "Points": 20
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 8.0,
+      "Points": 15
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 9.0,
+      "Points": 10
+    },
+    {
+      "LndgNo": 6,
+      "Distance": 10.0,
+      "Points": 5
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "No GliderScore report transcript exists for this comp, so ranks come from the documented ladder (arithmetic story, THE LADDER): Score DESC, RawScore DESC after report-time re-round to GroupScoreDecimals; no drops (Drop*=99); class DurALES ends the ladder at rung 2; tied pilots share the displayed rank '=n'.",
+    "A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine.",
+    "Independently validated in the scoring-arithmetic story's reconciliation (2026-08-25): all 30 Scores rows recomputed exactly and the reconstructed ranking verified.",
+    "Totals behind the ranks: pilot 70 Score/RawScore 1030, pilot 48 835, pilot 13 440, remaining seven 0. Intra-tie ordering of the '=4' group is not significant (identical displayed rank; HiddenRanking within ties is implementation-defined). Percent is display-only and deliberately not recorded."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 70,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 48,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 13,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 12,
+      "rank": "=4"
+    },
+    {
+      "pilotNo": 17,
+      "rank": "=4"
+    },
+    {
+      "pilotNo": 21,
+      "rank": "=4"
+    },
+    {
+      "pilotNo": 28,
+      "rank": "=4"
+    },
+    {
+      "pilotNo": 42,
+      "rank": "=4"
+    },
+    {
+      "pilotNo": 56,
+      "rank": "=4"
+    },
+    {
+      "pilotNo": 65,
+      "rank": "=4"
+    }
+  ]
+}

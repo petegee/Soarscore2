@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "LndgNo": "Integer",
+    "Name": "Text"
+  },
+  "rows": [
+    {
+      "LndgNo": 6,
+      "Name": "ALES Landing"
+    }
+  ]
+}
