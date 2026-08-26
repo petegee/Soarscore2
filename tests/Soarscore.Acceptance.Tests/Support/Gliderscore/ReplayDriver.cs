@@ -70,7 +70,13 @@ using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Acceptance.Tests.Support.Gliderscore;
 
-/// <summary>Everything the comparator needs to find its way around the replay.</summary>
+/// <summary>
+/// Everything the comparator needs to find its way around the replay.
+/// </summary>
+/// <param name="CommandsIssued">WI-5 self-check: how many command POSTs this
+/// replay made — a pure function of the fixture data, so two replays of one
+/// fixture in one run must agree exactly (a difference means state bled across
+/// replays through the shared store).</param>
 public sealed record ReplayOutcome(
     CompetitionId CompetitionId,
     int PhaseOrdinal,
@@ -78,11 +84,16 @@ public sealed record ReplayOutcome(
     IReadOnlyDictionary<int, int> RoundOrdinalByRoundNo,
     IReadOnlyDictionary<(int RoundNo, int GroupNo), GroupId> GroupIdByRoundAndGroup,
     IReadOnlyDictionary<(int RoundNo, int GroupNo, long PilotNo), EntryId> EntryIdBySlot,
-    IReadOnlyDictionary<long, CompetitorId> CompetitorByPilotNo);
+    IReadOnlyDictionary<long, CompetitorId> CompetitorByPilotNo,
+    int CommandsIssued);
 
 public sealed class ReplayDriver(HttpClient client)
 {
     private const string CdName = "Gliderscore replay harness";
+
+    // WI-5 self-check 1 — the command counter behind ReplayOutcome.CommandsIssued.
+    // One POST = one count, in ReplayAsync order; reads (GETs) are not commands.
+    private int _commandsIssued;
 
     // WI-3 — round-scoped parameter bindings, keyed by fixture slug. The
     // mechanism is generic (POST /bind-parameter per entry, phase 0 = the
@@ -319,7 +330,8 @@ public sealed class ReplayDriver(HttpClient client)
             RoundOrdinalByRoundNo: roundOrdinalByRoundNo,
             GroupIdByRoundAndGroup: groupIdByRoundAndGroup,
             EntryIdBySlot: entryIdBySlot,
-            CompetitorByPilotNo: competitorByPilotNo);
+            CompetitorByPilotNo: competitorByPilotNo,
+            CommandsIssued: _commandsIssued);
     }
 
     // ------------------------------------------------------------- D5 draw
@@ -594,6 +606,8 @@ public sealed class ReplayDriver(HttpClient client)
 
     private async Task<T> PostAsync<T>(string path, object command)
     {
+        _commandsIssued++;
+
         using var response = await client.PostAsJsonAsync(path, command, ApiClient.Options);
         var body = await response.Content.ReadAsStringAsync();
 

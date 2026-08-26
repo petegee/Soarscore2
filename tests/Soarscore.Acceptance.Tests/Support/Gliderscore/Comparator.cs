@@ -43,6 +43,36 @@
 // and compared with == (D6: binary32-widened oracle values repr clean at their
 // written decimal count; a tolerance big enough to absorb float32 noise would
 // mask exactly the bugs this harness exists to catch).
+//
+// WI-5 adds three SELF-CHECKS around the same machinery (no production change):
+//
+//   • conservation — per competitor, exactly:
+//         Σ our grain-2 normalised cells            (every /task-round-result row, role Original)
+//       − Σ contributions of the engine's DROPPED cells
+//       − aggregate-penalty deductions              (f3k-sample-comp's −100s)
+//         == the competitor's /competition-result Score,
+//     and the Disqualified flags agree. The dropped set is the ENGINE'S OWN
+//     decision: these very cells are arranged into TaskRoundScores exactly as
+//     ScoreCompetition arranges them and folded through ScoringService.Aggregate,
+//     whose PhaseScores.DroppedScores carries what its policy removed — the
+//     harness never re-implements a tie-break (story trap 2). The identity is
+//     stated purely over OUR data, so f3j-international's ledgered phantom
+//     cells (never replayed) stand on neither side and need no subtraction;
+//     the D6 ledger remains the grain comparisons' business alone. What it
+//     catches: a pilot→competitor mapping slip anywhere in the harness
+//     (per-competitor sums go asymmetric), a future aggregation/drop/penalty
+//     regression that keeps every cell value intact but corrupts totals, and
+//     drift between the two read paths (/task-round-result vs
+//     /competition-result).
+//
+//   • ledger strictness — the compare tail (ledger subtraction + report
+//     assembly) is extracted into public Comparator.BuildReport so the
+//     self-test can drive it against a synthetic mismatch: fails unledgered,
+//     passes only under exactly its own ledger entry, still fails under an
+//     entry naming someone else.
+//
+//   • ConservationBreak / ComparisonReport.ConservationTable surface the
+//     conservation verdict in the same diff-table spirit as the grains.
 
 using System.Collections.Immutable;
 using System.Net.Http.Json;
@@ -53,6 +83,12 @@ using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
+
+// Both namespaces declare a TaskRoundState (the write-side aggregate's and the
+// scoring pipeline's) and both are imported above; alias them apart for
+// CheckConservation's state collapse.
+using CompetitionTaskRoundState = Soarscore.Domain.Competitions.TaskRoundState;
+using ScoringTaskRoundState = Soarscore.Domain.Scoring.TaskRoundState;
 
 namespace Soarscore.Acceptance.Tests.Support.Gliderscore;
 
@@ -70,10 +106,40 @@ public sealed record GrainMismatch(
         Ours is { } ours && Expected is { } expected ? (ours - expected).ToString(System.Globalization.CultureInfo.InvariantCulture) : "n/a";
 }
 
+/// <summary>
+/// One conservation violation (WI-5): the competitor's kept-cell sum minus
+/// dropped contributions minus aggregate penalties did not reproduce the
+/// published final score (or the Disqualified flags disagreed).
+/// ExpectedFinal = AggregateAfterDrops − PenaltyDeduction; Actual is what
+/// /competition-result published.
+/// </summary>
+public sealed record ConservationBreak(
+    string CompetitorRef,
+    decimal CellSum,
+    decimal DroppedSum,
+    decimal AggregateAfterDrops,
+    decimal PenaltyDeduction,
+    decimal ExpectedFinal,
+    decimal ActualFinal,
+    bool ExpectedDisqualified,
+    bool ActualDisqualified)
+{
+    public string Detail =>
+        $"expected {ExpectedFinal} (aggregate {AggregateAfterDrops} − penalties {PenaltyDeduction}) "
+        + $"but /competition-result says {ActualFinal}"
+        + ((ExpectedDisqualified, ActualDisqualified) switch
+        {
+            (true, false) => " and engine disqualification was not published",
+            (false, true) => " but engine recorded no disqualification",
+            _ => "",
+        }) + $"; Σ cells {CellSum} − dropped {DroppedSum} = aggregate {AggregateAfterDrops}.";
+}
+
 public sealed record ComparisonReport(
     IReadOnlyList<GrainMismatch> RawMismatches,
     IReadOnlyList<GrainMismatch> NormalisedMismatches,
     IReadOnlyList<GrainMismatch> RankingMismatches,
+    IReadOnlyList<ConservationBreak> ConservationBreaks,
     int RawCellsCompared,
     int NormalisedCellsCompared,
     int RankingPilotsCompared,
@@ -81,6 +147,9 @@ public sealed record ComparisonReport(
 {
     public bool AllGrainsExact =>
         RawMismatches.Count == 0 && NormalisedMismatches.Count == 0 && RankingMismatches.Count == 0;
+
+    /// <summary>WI-5 — the conservation self-check held for every competitor.</summary>
+    public bool Conserves => ConservationBreaks.Count == 0;
 
     /// <summary>The ONE diff table (D6): pilot × round × grain, ours / expected / delta.</summary>
     public string DiffTable()
@@ -103,6 +172,35 @@ public sealed record ComparisonReport(
                 m.Ours?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "(none)",
                 m.Expected?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "(none)",
                 m.Delta)));
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>The WI-5 conservation verdict in the same diff-table spirit.</summary>
+    public string ConservationTable()
+    {
+        var invariant = System.Globalization.CultureInfo.InvariantCulture;
+
+        var lines = new List<string>
+        {
+            $"GliderScore replay conservation broken for {ConservationBreaks.Count} competitor(s) — "
+            + "Σ kept grain-2 cells − dropped cells − aggregate penalties ≠ final score:",
+            "competitor                            | cells   | -dropped | =agg     | -pen     | expected | actual",
+            "--------------------------------------|---------|----------|----------|----------|----------|-------",
+        };
+
+        lines.AddRange(ConservationBreaks
+            .OrderBy(b => b.CompetitorRef, StringComparer.Ordinal)
+            .Select(b => string.Format(
+                invariant,
+                "{0,-37} | {1,-7} | {2,-8} | {3,-8} | {4,-8} | {5,-8} | {6}",
+                b.CompetitorRef,
+                b.CellSum.ToString(invariant),
+                b.DroppedSum.ToString(invariant),
+                b.AggregateAfterDrops.ToString(invariant),
+                b.PenaltyDeduction.ToString(invariant),
+                b.ExpectedFinal.ToString(invariant),
+                b.ActualFinal.ToString(invariant))));
 
         return string.Join(Environment.NewLine, lines);
     }
@@ -131,9 +229,18 @@ public static class Comparator
         var comparedRaw = new HashSet<string>();
         var comparedNormalised = new HashSet<string>();
 
+        // WI-5 — grain 2's cells are collected as they are compared, so the
+        // conservation self-check folds exactly what the read path published.
+        var cellsByCompetitor = new Dictionary<CompetitorId, List<TaskRoundScore>>();
+
         await CompareRawGrainAsync(fixture, outcome, competition, entries, taskNos[0], comparedRaw, rawMismatches);
-        await CompareNormalisedGrainAsync(fixture, outcome, client, taskNos[0], comparedNormalised, normalisedMismatches);
-        await CompareRankingGrain(fixture, outcome, client, rankingMismatches);
+        await CompareNormalisedGrainAsync(
+            fixture, outcome, client, taskNos[0], comparedNormalised, normalisedMismatches, cellsByCompetitor);
+
+        // One fetch serves both the ranking grain and the conservation check.
+        var finalScores = await GetAsync<CompetitionScoreView>(
+            client, $"/competition-result?competitionRef={outcome.CompetitionId.Value}");
+        CompareRankingGrain(fixture, outcome, finalScores, rankingMismatches);
 
         // Ledgered divergences are SUBTRACTED (D6); the remainder must be empty.
         // Coverage is enforced symmetrically: an oracle cell we never compared,
@@ -141,6 +248,41 @@ public static class Comparator
         EnsureOracleCoverage(fixture.ExpectedScores.Scores.Keys, comparedRaw, "raw", rawMismatches);
         EnsureOracleCoverage(fixture.ExpectedScores.Scores.Keys, comparedNormalised, "normalised", normalisedMismatches);
 
+        // WI-5 — conservation runs over OUR cells and the PUBLISHED finals,
+        // independent of whether any grain matched: a break is evidence in its
+        // own right, not a consequence of a grain mismatch.
+        var conservationBreaks = CheckConservation(outcome, competition, finalScores, cellsByCompetitor);
+
+        return BuildReport(
+            fixture,
+            rawMismatches,
+            normalisedMismatches,
+            rankingMismatches,
+            conservationBreaks,
+            comparedRaw.Count,
+            comparedNormalised.Count,
+            fixture.ExpectedResult.Ranks.Length,
+            fixture.ExpectedScores.Scores.Count);
+    }
+
+    /// <summary>
+    /// The compare tail every caller shares: subtract the fixture's divergence
+    /// ledger (D6) from each grain's mismatches and assemble the report. Public
+    /// for the WI-5 ledger-strictness self-test, which drives it against a
+    /// synthetic mismatch — fails unledgered, passes only under exactly its own
+    /// ledger entry.
+    /// </summary>
+    public static ComparisonReport BuildReport(
+        GliderscoreFixture fixture,
+        IReadOnlyList<GrainMismatch> rawMismatches,
+        IReadOnlyList<GrainMismatch> normalisedMismatches,
+        IReadOnlyList<GrainMismatch> rankingMismatches,
+        IReadOnlyList<ConservationBreak> conservationBreaks,
+        int rawCellsCompared,
+        int normalisedCellsCompared,
+        int rankingPilotsCompared,
+        int oracleCells)
+    {
         var rawRemainder = SubtractLedger(fixture, rawMismatches).ToList();
         var normalisedRemainder = SubtractLedger(fixture, normalisedMismatches).ToList();
         var rankingRemainder = SubtractLedger(fixture, rankingMismatches).ToList();
@@ -149,10 +291,11 @@ public static class Comparator
             RawMismatches: rawRemainder,
             NormalisedMismatches: normalisedRemainder,
             RankingMismatches: rankingRemainder,
-            RawCellsCompared: comparedRaw.Count,
-            NormalisedCellsCompared: comparedNormalised.Count,
-            RankingPilotsCompared: fixture.ExpectedResult.Ranks.Length,
-            OracleCells: fixture.ExpectedScores.Scores.Count);
+            ConservationBreaks: conservationBreaks,
+            RawCellsCompared: rawCellsCompared,
+            NormalisedCellsCompared: normalisedCellsCompared,
+            RankingPilotsCompared: rankingPilotsCompared,
+            OracleCells: oracleCells);
     }
 
     // ------------------------------------------------------------- grain 1
@@ -280,7 +423,8 @@ public static class Comparator
         HttpClient client,
         int taskNo,
         HashSet<string> compared,
-        List<GrainMismatch> mismatches)
+        List<GrainMismatch> mismatches,
+        Dictionary<CompetitorId, List<TaskRoundScore>> cellsByCompetitor)
     {
         var groupByGroupId = outcome.GroupIdByRoundAndGroup.ToDictionary(kv => kv.Value, kv => kv.Key);
         var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
@@ -306,6 +450,33 @@ public static class Comparator
                     AddIfDifferent(
                         mismatches, "normalised", pilotNo, roundOfView, groupNo, result.RawScore,
                         OracleCell(fixture, taskNo, roundOfView, groupNo, pilotNo)?.NormalisedScore);
+
+                    // WI-5 — the cell as ScoreCompetition would arrange it:
+                    // one TaskRoundScore per competitor per task-round (the
+                    // task-round ordinal is 1 throughout this harness). A
+                    // second cell for the same round would mean draw
+                    // derivation let a duplicate through (D5 step 3's job) —
+                    // fail loudly here rather than let Aggregate's FirstOrDefault
+                    // pick one silently.
+                    var cell = new TaskRoundScore(
+                        outcome.TaskCodeByRoundNo[roundOfView],
+                        outcome.RoundOrdinalByRoundNo[roundOfView],
+                        TaskOrdinal: 1,
+                        result.RawScore);
+
+                    if (!cellsByCompetitor.TryGetValue(result.CompetitorRef, out var cells))
+                    {
+                        cellsByCompetitor[result.CompetitorRef] = cells = [];
+                    }
+
+                    if (cells.Any(c => c.RoundOrdinal == cell.RoundOrdinal && c.TaskOrdinal == cell.TaskOrdinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"Fixture '{fixture.Slug}': pilot {pilotNo} has two normalised cells in round "
+                            + $"{roundOfView} — draw derivation should have deduplicated their slots.");
+                    }
+
+                    cells.Add(cell);
                 }
             }
         }
@@ -313,17 +484,15 @@ public static class Comparator
 
     // ------------------------------------------------------------- grain 3
 
-    private static async Task CompareRankingGrain(
+    private static void CompareRankingGrain(
         GliderscoreFixture fixture,
         ReplayOutcome outcome,
-        HttpClient client,
+        CompetitionScoreView finalScores,
         List<GrainMismatch> mismatches)
     {
-        var view = await GetAsync<CompetitionScoreView>(
-            client, $"/competition-result?competitionRef={outcome.CompetitionId.Value}");
         var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
 
-        var placingByPilot = view.Scores
+        var placingByPilot = finalScores.Scores
             .Where(s => s.Placing.HasValue)
             .ToDictionary(s => pilotByCompetitor[s.CompetitorRef], s => s.Placing!.Value);
 
@@ -380,6 +549,123 @@ public static class Comparator
                 }
             }
         }
+    }
+
+    // ------------------------------------------------------------ conservation
+
+    /// <summary>
+    /// WI-5 self-check 2 — conservation, per competitor, EXACTLY:
+    ///
+    ///   Σ our grain-2 normalised cells        (every /task-round-result row, role Original)
+    /// − Σ contributions of the engine's dropped cells
+    /// − aggregate-penalty deductions         (PenaltyEngine over the subject-filtered
+    ///                                         competition penalties — f3k's −100s)
+    /// == the competitor's /competition-result Score,
+    ///
+    /// with the Disqualified flags agreeing. See this file's header for why it
+    /// is stated purely over our data (ledgered phantom cells stand on neither
+    /// side) and what it catches.
+    /// </summary>
+    private static IReadOnlyList<ConservationBreak> CheckConservation(
+        ReplayOutcome outcome,
+        Competition competition,
+        CompetitionScoreView finalScores,
+        IReadOnlyDictionary<CompetitorId, List<TaskRoundScore>> cellsByCompetitor)
+    {
+        if (cellsByCompetitor.Count == 0)
+        {
+            return [];
+        }
+
+        var classDef = competition.AdoptedRules.Definition;
+        var phaseDefinition = classDef.Phases[outcome.PhaseOrdinal];
+
+        // The round structure exactly as ScoreCompetition walks it — including
+        // its write-side state collapse (Drawn/InProgress score as Complete).
+        var phase = competition.Phases.Single(p => p.Ordinal == outcome.PhaseOrdinal);
+        var rounds = phase.Rounds.OrderBy(r => r.Ordinal)
+            .Select(round => new RoundData(
+                round.Ordinal,
+                round.TaskRounds.OrderBy(tr => tr.Ordinal)
+                    .Select(tr => new TaskRoundData(
+                        tr.Ordinal,
+                        tr.TaskRef,
+                        tr.State switch
+                        {
+                            // The write-side state collapse ScoreCompetition performs.
+                            CompetitionTaskRoundState.Annulled => ScoringTaskRoundState.Annulled,
+                            CompetitionTaskRoundState.Complete => ScoringTaskRoundState.Complete,
+                            CompetitionTaskRoundState.Drawn or CompetitionTaskRoundState.InProgress =>
+                                ScoringTaskRoundState.Complete,
+                            _ => throw new ArgumentOutOfRangeException(
+                                nameof(competition), tr.State, "Unknown TaskRoundState."),
+                        }))
+                    .ToImmutableArray()))
+            .ToImmutableArray();
+
+        var breaks = new List<ConservationBreak>();
+        var finalByCompetitor = finalScores.Scores.ToDictionary(s => s.CompetitorRef, s => s);
+
+        foreach (var (competitorId, cells) in cellsByCompetitor)
+        {
+            // Same ref-string convention as ScoreCompetition: Entry.CompetitorRef /
+            // view CompetitorRef .ToString() on both sides of every comparison.
+            var competitorRef = competitorId.ToString();
+
+            var allScores = cells
+                .Select((cell, index) => (cell, index))
+                .ToDictionary(x => $"{x.cell.RoundOrdinal}|{x.cell.TaskOrdinal}|{x.index}", x => x.cell);
+
+            // The engine's own aggregation AND its own drop decision — no
+            // harness re-implementation of tie-breaks (story trap 2).
+            var phaseScores = ScoringService.Aggregate(competitorRef, phaseDefinition, rounds, allScores);
+
+            // Mirrors ScoringService.GetAggregatePenalties (private there):
+            // TaskRound/Competition-scoped penalties whose subject is this
+            // competitor, grouped by infraction type — one recorded Penalty is
+            // one occurrence. PenaltyEngine does the arithmetic.
+            var aggregatePenalties = competition.Penalties
+                .Where(p => p.Scope is PenaltyScope.TaskRound or PenaltyScope.Competition)
+                .Where(p => p.CompetitorRef is { } subject && subject.ToString() == competitorRef)
+                .GroupBy(p => p.InfractionType)
+                .Select(g => new RecordedPenalty(g.Key, g.Count()))
+                .ToImmutableArray();
+
+            var applied = PenaltyEngine.ApplyAggregatePenalties(
+                phaseScores.Aggregate, aggregatePenalties, classDef.Penalties);
+
+            var droppedSum = phaseScores.DroppedScores.Sum(s => s.Score);
+            var expectedFinal = phaseScores.Aggregate - applied.Deduction;
+
+            if (!finalByCompetitor.TryGetValue(competitorId, out var final))
+            {
+                breaks.Add(new ConservationBreak(
+                    competitorRef,
+                    cells.Sum(c => c.Score),
+                    droppedSum,
+                    phaseScores.Aggregate,
+                    applied.Deduction,
+                    expectedFinal,
+                    ActualFinal: 0m,
+                    ExpectedDisqualified: applied.Disqualified,
+                    ActualDisqualified: false));
+            }
+            else if (expectedFinal != final.Score || applied.Disqualified != final.Disqualified)
+            {
+                breaks.Add(new ConservationBreak(
+                    competitorRef,
+                    cells.Sum(c => c.Score),
+                    droppedSum,
+                    phaseScores.Aggregate,
+                    applied.Deduction,
+                    expectedFinal,
+                    final.Score,
+                    applied.Disqualified,
+                    final.Disqualified));
+            }
+        }
+
+        return breaks;
     }
 
     // -------------------------------------------------------------- ledger

@@ -82,6 +82,22 @@ public sealed class ReplaySteps
             + $"{Environment.NewLine}{report.DiffTable()}");
     }
 
+    [Then(@"^kept normalised cells minus dropped cells and aggregate penalties conserve into every final score$")]
+    public void ThenKeptNormalisedCellsConserveIntoEveryFinalScore()
+    {
+        // WI-5 self-check 2 — per competitor: Σ our grain-2 normalised cells −
+        // the engine's own dropped-cell contributions − aggregate penalties ==
+        // the /competition-result Score, exactly (Comparator.CheckConservation
+        // states it fully). Catches a silently dropped replay slot or a
+        // pilot→competitor mapping slip masquerading as a scoring diff.
+        var report = Report();
+
+        report.ConservationBreaks.Should().BeEmpty(
+            $"conservation must hold exactly for every competitor of {Fixture.Slug}; "
+            + $"{report.ConservationBreaks.Count} competitor(s) broke the identity."
+            + $"{Environment.NewLine}{report.ConservationTable()}");
+    }
+
     [Then(@"^the fixture carries no ledgered divergences$")]
     public void ThenTheFixtureCarriesNoLedgeredDivergences()
     {
