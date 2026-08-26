@@ -1,0 +1,118 @@
+{
+  "keyFormat": "{TaskNo}/{RoundNo}/{GroupNo}/{ReFlightNo}/{PilotNo}",
+  "valuesAsPersisted": "RawScore/NormalisedScore exactly as stored by GliderScore (values verified clean at GroupScoreDecimals=0 \u2014 see provenance)",
+  "scores": {
+    "1/1/1/0/17": {
+      "RawScore": 996.0,
+      "NormalisedScore": 1000.0
+    },
+    "1/1/1/0/21": {
+      "RawScore": 977.0,
+      "NormalisedScore": 981.0
+    },
+    "1/1/1/0/26": {
+      "RawScore": 983.0,
+      "NormalisedScore": 987.0
+    },
+    "1/1/1/0/47": {
+      "RawScore": 985.0,
+      "NormalisedScore": 989.0
+    },
+    "1/1/1/0/49": {
+      "RawScore": 995.0,
+      "NormalisedScore": 999.0
+    },
+    "1/1/1/0/56": {
+      "RawScore": 985.0,
+      "NormalisedScore": 989.0
+    },
+    "1/1/1/0/62": {
+      "RawScore": 992.0,
+      "NormalisedScore": 996.0
+    },
+    "1/2/1/0/17": {
+      "RawScore": 981.0,
+      "NormalisedScore": 988.0
+    },
+    "1/2/1/0/21": {
+      "RawScore": 993.0,
+      "NormalisedScore": 1000.0
+    },
+    "1/2/1/0/26": {
+      "RawScore": 901.0,
+      "NormalisedScore": 907.0
+    },
+    "1/2/1/0/47": {
+      "RawScore": 691.0,
+      "NormalisedScore": 696.0
+    },
+    "1/2/1/0/49": {
+      "RawScore": 992.0,
+      "NormalisedScore": 999.0
+    },
+    "1/2/1/0/56": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "1/2/1/0/62": {
+      "RawScore": 990.0,
+      "NormalisedScore": 997.0
+    },
+    "1/3/1/0/17": {
+      "RawScore": 994.0,
+      "NormalisedScore": 1000.0
+    },
+    "1/3/1/0/21": {
+      "RawScore": 983.0,
+      "NormalisedScore": 989.0
+    },
+    "1/3/1/0/26": {
+      "RawScore": 990.0,
+      "NormalisedScore": 996.0
+    },
+    "1/3/1/0/47": {
+      "RawScore": 985.0,
+      "NormalisedScore": 991.0
+    },
+    "1/3/1/0/49": {
+      "RawScore": 993.0,
+      "NormalisedScore": 999.0
+    },
+    "1/3/1/0/56": {
+      "RawScore": 980.0,
+      "NormalisedScore": 986.0
+    },
+    "1/3/1/0/62": {
+      "RawScore": 993.0,
+      "NormalisedScore": 999.0
+    },
+    "1/4/1/0/17": {
+      "RawScore": 990.0,
+      "NormalisedScore": 996.0
+    },
+    "1/4/1/0/21": {
+      "RawScore": 991.0,
+      "NormalisedScore": 997.0
+    },
+    "1/4/1/0/26": {
+      "RawScore": 990.0,
+      "NormalisedScore": 996.0
+    },
+    "1/4/1/0/47": {
+      "RawScore": 985.0,
+      "NormalisedScore": 991.0
+    },
+    "1/4/1/0/49": {
+      "RawScore": 994.0,
+      "NormalisedScore": 1000.0
+    },
+    "1/4/1/0/56": {
+      "RawScore": 985.0,
+      "NormalisedScore": 991.0
+    },
+    "1/4/1/0/62": {
+      "RawScore": 994.0,
+      "NormalisedScore": 1000.0
+    }
+  }
+}

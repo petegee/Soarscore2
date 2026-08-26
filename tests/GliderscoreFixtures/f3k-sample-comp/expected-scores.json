@@ -1,0 +1,366 @@
+{
+  "keyFormat": "{TaskNo}/{RoundNo}/{GroupNo}/{ReFlightNo}/{PilotNo}",
+  "valuesAsPersisted": "RawScore/NormalisedScore exactly as stored by GliderScore (values verified clean at GroupScoreDecimals=0 \u2014 see provenance)",
+  "scores": {
+    "5/3/1/0/56": {
+      "RawScore": 430.0,
+      "NormalisedScore": 913.0
+    },
+    "5/3/1/0/65": {
+      "RawScore": 452.0,
+      "NormalisedScore": 960.0
+    },
+    "5/3/1/0/70": {
+      "RawScore": 410.0,
+      "NormalisedScore": 870.0
+    },
+    "5/4/1/0/12": {
+      "RawScore": 300.0,
+      "NormalisedScore": 571.0
+    },
+    "5/4/1/0/13": {
+      "RawScore": 525.0,
+      "NormalisedScore": 1000.0
+    },
+    "5/4/1/0/17": {
+      "RawScore": 210.0,
+      "NormalisedScore": 400.0
+    },
+    "5/4/1/0/21": {
+      "RawScore": 300.0,
+      "NormalisedScore": 571.0
+    },
+    "5/4/1/0/28": {
+      "RawScore": 405.0,
+      "NormalisedScore": 771.0
+    },
+    "5/4/1/0/42": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/4/1/0/48": {
+      "RawScore": 135.0,
+      "NormalisedScore": 257.0
+    },
+    "5/4/1/0/56": {
+      "RawScore": 405.0,
+      "NormalisedScore": 771.0
+    },
+    "5/4/1/0/65": {
+      "RawScore": 210.0,
+      "NormalisedScore": 400.0
+    },
+    "5/4/1/0/70": {
+      "RawScore": 135.0,
+      "NormalisedScore": 257.0
+    },
+    "5/5/1/0/12": {
+      "RawScore": 9.0,
+      "NormalisedScore": 692.0
+    },
+    "5/5/1/0/13": {
+      "RawScore": 11.0,
+      "NormalisedScore": 846.0
+    },
+    "5/5/1/0/17": {
+      "RawScore": 11.0,
+      "NormalisedScore": 846.0
+    },
+    "5/5/1/0/21": {
+      "RawScore": 12.0,
+      "NormalisedScore": 923.0
+    },
+    "5/5/1/0/28": {
+      "RawScore": 13.0,
+      "NormalisedScore": 1000.0
+    },
+    "5/5/1/0/42": {
+      "RawScore": 9.0,
+      "NormalisedScore": 692.0
+    },
+    "5/5/1/0/48": {
+      "RawScore": 8.0,
+      "NormalisedScore": 615.0
+    },
+    "5/5/1/0/56": {
+      "RawScore": 13.0,
+      "NormalisedScore": 1000.0
+    },
+    "5/5/1/0/65": {
+      "RawScore": 11.0,
+      "NormalisedScore": 846.0
+    },
+    "5/5/1/0/70": {
+      "RawScore": 11.0,
+      "NormalisedScore": 846.0
+    },
+    "5/6/1/0/12": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/13": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/17": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/21": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/28": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/42": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/1/1/0/12": {
+      "RawScore": 338.0,
+      "NormalisedScore": 573.0
+    },
+    "5/1/1/0/13": {
+      "RawScore": 220.0,
+      "NormalisedScore": 373.0
+    },
+    "5/1/1/0/17": {
+      "RawScore": 325.0,
+      "NormalisedScore": 551.0
+    },
+    "5/1/1/0/21": {
+      "RawScore": 479.0,
+      "NormalisedScore": 812.0
+    },
+    "5/1/1/0/28": {
+      "RawScore": 528.0,
+      "NormalisedScore": 895.0
+    },
+    "5/1/1/0/42": {
+      "RawScore": 590.0,
+      "NormalisedScore": 1000.0
+    },
+    "5/1/1/0/48": {
+      "RawScore": 527.0,
+      "NormalisedScore": 893.0
+    },
+    "5/1/1/0/56": {
+      "RawScore": 518.0,
+      "NormalisedScore": 878.0
+    },
+    "5/1/1/0/65": {
+      "RawScore": 431.0,
+      "NormalisedScore": 731.0
+    },
+    "5/1/1/0/70": {
+      "RawScore": 333.0,
+      "NormalisedScore": 564.0
+    },
+    "5/2/1/0/12": {
+      "RawScore": 300.0,
+      "NormalisedScore": 1000.0
+    },
+    "5/2/1/0/13": {
+      "RawScore": 131.0,
+      "NormalisedScore": 437.0
+    },
+    "5/2/1/0/17": {
+      "RawScore": 138.0,
+      "NormalisedScore": 460.0
+    },
+    "5/2/1/0/21": {
+      "RawScore": 116.0,
+      "NormalisedScore": 387.0
+    },
+    "5/2/1/0/28": {
+      "RawScore": 293.0,
+      "NormalisedScore": 977.0
+    },
+    "5/2/1/0/42": {
+      "RawScore": 258.0,
+      "NormalisedScore": 860.0
+    },
+    "5/2/1/0/48": {
+      "RawScore": 272.0,
+      "NormalisedScore": 907.0
+    },
+    "5/2/1/0/56": {
+      "RawScore": 12.0,
+      "NormalisedScore": 40.0
+    },
+    "5/2/1/0/65": {
+      "RawScore": 192.0,
+      "NormalisedScore": 640.0
+    },
+    "5/2/1/0/70": {
+      "RawScore": 263.0,
+      "NormalisedScore": 877.0
+    },
+    "5/3/1/0/12": {
+      "RawScore": 430.0,
+      "NormalisedScore": 913.0
+    },
+    "5/3/1/0/13": {
+      "RawScore": 439.0,
+      "NormalisedScore": 932.0
+    },
+    "5/3/1/0/17": {
+      "RawScore": 470.0,
+      "NormalisedScore": 998.0
+    },
+    "5/3/1/0/21": {
+      "RawScore": 343.0,
+      "NormalisedScore": 728.0
+    },
+    "5/3/1/0/28": {
+      "RawScore": 455.0,
+      "NormalisedScore": 966.0
+    },
+    "5/3/1/0/42": {
+      "RawScore": 238.0,
+      "NormalisedScore": 505.0
+    },
+    "5/3/1/0/48": {
+      "RawScore": 471.0,
+      "NormalisedScore": 1000.0
+    },
+    "5/6/1/0/48": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/56": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/65": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/6/1/0/70": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/12": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/13": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/17": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/21": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/28": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/42": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/48": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/56": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/65": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/7/1/0/70": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/12": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/13": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/17": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/21": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/28": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/42": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/48": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/56": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/65": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/8/1/0/70": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/12": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/13": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/17": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/21": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/28": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/42": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/48": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/56": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/65": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    },
+    "5/9/1/0/70": {
+      "RawScore": 0.0,
+      "NormalisedScore": 0.0
+    }
+  }
+}

@@ -2,8 +2,9 @@
 // WI-1. Pure and deterministic given a stable field ordering: no unseeded
 // randomness, so a replay and a CsCheck shrink (WI-2) both reproduce the same
 // output. GroupId is not minted here — this returns bare CompetitorId
-// partitions; Competition.DrawPhase mints GroupId when it builds the Group
-// records for the event, the only place a GroupId is actually needed.
+// partitions; Competition.cs's draw decide functions (DrawPhase, PrescribeDraw)
+// mint GroupId when they build the Group records for the event, the only place
+// a GroupId is actually needed.
 
 using System.Collections.Immutable;
 

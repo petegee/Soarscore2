@@ -1,0 +1,17 @@
+{
+  "schema": {
+    "CompNo": "Long",
+    "f5kGroupsPerRound": "Long",
+    "f5kPilotsMax": "Long",
+    "f5kPilotsMin": "Text",
+    "f5kDrawLocked": "Boolean",
+    "f5kAllowBackToBack": "Long",
+    "f5kDecimalsForTiming": "Long",
+    "f5kBonusTable": "Long",
+    "f5kRefHeight": "Long",
+    "f5kLaneOption": "Long",
+    "f5kNbrOfLanes": "Long",
+    "f5kMinTimeForHeightBonus": "Long"
+  },
+  "rows": []
+}

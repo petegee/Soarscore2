@@ -1,0 +1,11 @@
+{
+  "schema": {
+    "SeriesNo": "Integer",
+    "SeriesName": "Text",
+    "SeriesDate": "DateTime",
+    "ScoresToCount": "Integer",
+    "Decimals": "Integer",
+    "SeriesType": "Long"
+  },
+  "rows": []
+}

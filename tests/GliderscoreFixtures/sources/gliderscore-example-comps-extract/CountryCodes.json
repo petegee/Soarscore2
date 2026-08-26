@@ -1,0 +1,7 @@
+{
+  "schema": {
+    "CountryCode": "Text",
+    "CountryName": "Text"
+  },
+  "rows": []
+}

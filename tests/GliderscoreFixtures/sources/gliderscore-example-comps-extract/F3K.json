@@ -1,0 +1,22 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "f3kGroupsPerRound": "Integer",
+    "f3kPilotsMax": "Integer",
+    "f3kDrawLocked": "Boolean",
+    "f3kAllowBackToBack": "Long",
+    "f3kDecimalsForTiming": "Long",
+    "f3kPilotsMin": "Text"
+  },
+  "rows": [
+    {
+      "CompNo": 5,
+      "f3kGroupsPerRound": 4,
+      "f3kPilotsMax": 3,
+      "f3kDrawLocked": false,
+      "f3kAllowBackToBack": 0,
+      "f3kDecimalsForTiming": 0,
+      "f3kPilotsMin": "TmProt=True&Enf20kHz=True&LaneOpt=0&Back2Back=True&NbrPlts=10&GrpsInRnd=4&NbrRnds=9&"
+    }
+  ]
+}

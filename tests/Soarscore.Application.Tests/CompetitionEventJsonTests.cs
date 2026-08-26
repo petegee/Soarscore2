@@ -106,7 +106,7 @@ public class CompetitionEventJsonTests
     // shape (kanban/in-progress/catalogue-choice-draws-plan.md WI-5), so the
     // per-round TaskRef is actually covered by serialisation rather than
     // incidentally covered by a uniform one.
-    private static PhaseDrawn SamplePhaseDrawnEvent(DateTimeOffset? at = null)
+    private static PhaseDrawn SamplePhaseDrawnEvent(DateTimeOffset? at = null, string? prescribedBy = null)
     {
         Round MakeRound(int ordinal, string taskRef)
         {
@@ -138,7 +138,8 @@ public class CompetitionEventJsonTests
             Type: PhaseType.Preliminary,
             Draw: new Draw { CreatedAt = at ?? DateTimeOffset.UtcNow, Status = "drawn" },
             Rounds: [MakeRound(1, "A"), MakeRound(2, "B")],
-            At: at ?? DateTimeOffset.UtcNow);
+            At: at ?? DateTimeOffset.UtcNow,
+            PrescribedBy: prescribedBy);
     }
 
     [Fact]
@@ -163,6 +164,44 @@ public class CompetitionEventJsonTests
         var reread = (PhaseDrawn)JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options)!;
 
         reread.Rounds.Select(r => r.TaskRounds[0].TaskRef).Should().Equal("A", "B");
+    }
+
+    // kanban/in-progress/prescribed-draw-import.md WI-3 — P1's appended
+    // PrescribedBy. The round-trip half proves the payload survives; the
+    // legacy half is the backward-compatibility contract against both
+    // stores' pre-P1 persisted history.
+
+    [Fact]
+    public void PhaseDrawn_round_trips_its_PrescribedBy_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent drawn = SamplePhaseDrawnEvent(prescribedBy: "CD");
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"prescribedBy\":\"CD\"");
+
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<PhaseDrawn>().Which.PrescribedBy.Should().Be("CD");
+    }
+
+    [Fact]
+    public void Legacy_PhaseDrawn_payload_without_PrescribedBy_deserialises_to_null()
+    {
+        // WhenWritingNull omits the property entirely, so serialising a
+        // prescribedBy-less event reproduces exactly the byte shape every
+        // store persisted before the field existed.
+        CompetitionEvent drawn = SamplePhaseDrawnEvent();
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+
+        json.Should().NotContain("prescribedBy");
+
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+
+        reread.Should().BeOfType<PhaseDrawn>().Which.PrescribedBy.Should().BeNull();
     }
 
     private static ParameterBinding SampleParameterBinding(

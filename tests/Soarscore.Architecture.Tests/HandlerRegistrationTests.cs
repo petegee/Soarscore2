@@ -66,12 +66,12 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Twenty-five commands + ten queries
-        // are mapped as of draw-acceptance-redraw.md WI-4 (AcceptDraw,
-        // RejectDraw — the count comment here previously said twenty-four
-        // against twenty-three actual MapCommand lines; corrected while
+        // test below would vacuously pass. Twenty-six commands + ten queries
+        // are mapped as of prescribed-draw-import.md WI-4 (PrescribeDraw —
+        // the count comment here previously said twenty-five commands + ten
+        // queries as of draw-acceptance-redraw.md WI-4; corrected while
         // bumping).
-        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(26);
+        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(27);
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;

@@ -1,0 +1,34 @@
+{
+  "slug": "jerilderie-2010",
+  "source": {
+    "originalFilename": "GliderScoreDownload.txt",
+    "repoPath": "tests/GliderscoreFixtures/sources/gliderscore-example-comps.mdb",
+    "sha256": "89e8f2cbec91af6bf7f994c4e15fc2c0214e7c31944273ecbf3ca31d40d790df"
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the export"
+  },
+  "exportedBy": "pete",
+  "exportDate": "2026-08-26T11:52:24+12:00",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "accessParser": "0.0.6",
+    "python": "3.10.12",
+    "extracted": "2026-08-26"
+  },
+  "notes": [
+    "Shared extraction of record: tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/ \u2014 one export carries five comps (CompNo 1-5), so one extraction serves all five fixtures and each is split out at curation; this fixture is CompNo 4 only.",
+    "exportedBy is asserted by the repo owner (pete) in the 2026-08-26 working session; it is corroborated by DBParams.UserName='pete' but not independently provable.",
+    "exportDate is the committed source file's modification time; DBParams carries no export timestamp, so the file mtime is the best available proxy and could postdate the actual GliderScore Export Competition(s) run.",
+    "PII re-check 2026-08-26 for this comp's 63 members (all of them, not a sample): every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for all 63; all 63 are GliderScore shipped ZZ-prefixed test names (Max ZZKroger ... Eric ZZSmith); CompPilots carries no contact columns at all.",
+    "Triage facts recorded honestly: UseTeams=true with UseTeamProtection=true and NbrForTeamScore=4, CompPilots.Team populated for all 63 pilots across 14 teams (sizes 3,5,4,4,4,4,4,5,5,5,5,5,5,5); CompSeriesNo='1;2' but the export's CompSeries table has zero rows, so both series links are dead; PrelimCompNo=-1 and MergedComps='' are off. See competition.json triageJustification.",
+    "Re-flight witness (the export's only one): Scores row RoundNo=13 GroupNo=1 ReFlightNo=0 PilotNo=29 SeqNo=14 carries OriginalRoundNo=12 \u2014 pilot 29 has no round-12 row at all, flew twice inside round 13 (the orig-12 re-flight in G1 and his own orig-13 slot in G2), and the re-flight normalises within R13/G1 like any other row because its ReFlightNo is 0. Kept verbatim alongside the regular slot; aggregation keys on OriginalRoundNo, so it supplies pilot 29's round-12 cell.",
+    "Two-drop witness: DropScoreOption=0, Drop1AtRound=6, Drop2AtRound=12, Drop3..5=99; option-0 activation counts DISTINCT rounds with RawScore>0 (task 1), and all 14 scored rounds qualify, so every pilot loses exactly two worst cells (latest-equally-bad-first tie-break) wherever they sit across rounds 1-14.",
+    "Dur row carried as the sibling fixtures' scoring-relevant subset (target time, points-per-second, timekeepers, landing ref, ref-height/rates, flight penalty). Populated fields deliberately left out as display/draw-shape detail per WI-2 precedent, recorded here verbatim rather than dropped silently: durDecimalsForTiming=0; durGroupsPerRound=5; durPilotsMax=13; durDrawLocked=False; durNbrOfLanes=0.0; durAllowBackToBack=0; F5JMotorRestartOption=0; durPilotsMin='TmProt=True&Enf20kHz=True&LaneOpt=0&Back2Back=True&NbrPlts=63&GrpsInRnd=5&NbrRnds=14&' (draw state agreeing with the observed shape: 63 pilots, 5 groups/round, 14 rounds).",
+    "Ranking oracle is reconstructed-ladder: NO GliderScore Overall Results transcript exists for this comp (unlike f3j-international/flyoff). If Pete later runs GS Overall Results R1-R14 on his install, overall-results-transcript.csv can be added and the fixture upgraded to a gs-report-transcript oracle.",
+    "Excluded as display-only or draw-shape detail per WI-2 precedent: durDecimalsForTiming and the Dur draw fields listed above; presentation/device/audio tables; ScoresChecked stays in scores-raw.json as inert evidence mapping to nothing.",
+    "Spd/Dis family rows belong to comp 3 and F3K rows to comp 5, so familyRows carries Dur only; DurTargetTimeByRound has zero rows export-wide and is carried empty-with-schema."
+  ]
+}

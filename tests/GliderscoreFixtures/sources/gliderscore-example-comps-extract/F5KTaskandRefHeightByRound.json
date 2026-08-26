@@ -1,0 +1,9 @@
+{
+  "schema": {
+    "CompNo": "Long",
+    "RoundNo": "Long",
+    "Task": "Text",
+    "RefHeight": "Long"
+  },
+  "rows": []
+}

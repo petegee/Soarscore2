@@ -1,0 +1,35 @@
+{
+  "slug": "f3j-international",
+  "source": {
+    "originalFilename": "GliderScoreDownload.txt",
+    "repoPath": "tests/GliderscoreFixtures/sources/gliderscore-example-comps.mdb",
+    "sha256": "89e8f2cbec91af6bf7f994c4e15fc2c0214e7c31944273ecbf3ca31d40d790df"
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the export"
+  },
+  "exportedBy": "pete",
+  "exportDate": "2026-08-26T11:52:24+12:00",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "accessParser": "0.0.6",
+    "python": "3.10.12",
+    "extracted": "2026-08-26"
+  },
+  "notes": [
+    "Shared extraction of record: tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/ — one export carries five comps (CompNo 1-5), so one extraction serves all five fixtures and each is split out at curation; this fixture is CompNo 1 only.",
+    "exportedBy is asserted by the repo owner (pete) in the 2026-08-26 working session; it is corroborated by DBParams.UserName='pete' but not independently provable.",
+    "exportDate is the committed source file's modification time; DBParams carries no export timestamp, so the file mtime is the best available proxy and could postdate the actual GliderScore Export Competition(s) run.",
+    "PII re-check 2026-08-26 for this comp's 30 members: every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for all 30; all 30 are GliderScore shipped ZZ-prefixed test names; CompPilots carries no contact columns at all.",
+    "Triage facts recorded honestly: UseTeams=true with CompPilots.Team populated for all 30 pilots across 8 teams (sizes 4,3,4,4,4,3,4,4); CompSeriesNo='1' but the export's CompSeries table has zero rows, so the series link is dead; PrelimCompNo=-1 and MergedComps='' are off. See competition.json triageJustification.",
+    "Survey correction (2026-08-26): the story survey expected one re-flight row in this comp; the extraction of record has none — OriginalRoundNo equals RoundNo on all 485 rows. The export's single OriginalRoundNo!=RoundNo row belongs to comp 4 (Jerilderie 2010). This fixture therefore witnesses no re-flight.",
+    "Round 1 carries a phantom group 5: five zero-score rows (pilots 7, 11, 17, 39, 56) whose pilots also have real flights in groups 1/4 of the same round; kept verbatim. GS aggregates best-per-original-round keeping the highest, so these rows do not alter totals or drops (verified against the transcript oracle).",
+    "GroupScoreDecimals=1 confirmed, but the expected binary32 persist-cast artifacts do NOT appear: every persisted RawScore/NormalisedScore reprs clean at its decimal count across all 485 rows (and the whole export); the extracted column type is Double; the only long-tail values anywhere are comp-3 Speed averaged seconds (binary64 arithmetic, not float32 widening). The survey's expectation that Decs=1 would witness the float32 persist casts did not materialise; the arithmetic story's Precision & storage question stays open.",
+    "Drop config crossed: DropScoreOption=0, Drop1AtRound=8, Drop2AtRound..Drop5AtRound=99, F3QDrop6to10='99,99,99,99,99'; 16 scored rounds >= 8 activates exactly one drop per pilot. The dropped cell is each pilot's worst task score wherever it sits — transcript '*' marks land in rounds 1-16 (histogram 1:1, 2:2, 3:2, 4:1, 7:1, 9:1, 10:3, 12:1, 13:7, 14:7, 16:4 = 30), not only from round 8 onward.",
+    "durFlightPenalty=1 puts the late-landing deduction mode in force (unlike ales-sample-comp): 11 rows carry FlightScoreDeduction=30; Penalty is 0 everywhere.",
+    "Excluded as display-only or draw-shape detail per WI-2 precedent: durDecimalsForTiming; Dur draw fields (durGroupsPerRound/durPilotsMax/durDrawLocked/durNbrOfLanes/durAllowBackToBack/durPilotsMin/F5JMotorRestartOption); presentation/device/audio tables; ScoresChecked stays in scores-raw.json as inert evidence mapping to nothing.",
+    "Spd/Dis family rows exist but belong to comp 3 and F3K rows to comp 5, so familyRows carries Dur only; DurTargetTimeByRound has zero rows export-wide and is carried empty-with-schema."
+  ]
+}

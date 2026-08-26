@@ -1,0 +1,34 @@
+{
+  "slug": "f3j-international-flyoff",
+  "source": {
+    "originalFilename": "GliderScoreDownload.txt",
+    "repoPath": "tests/GliderscoreFixtures/sources/gliderscore-example-comps.mdb",
+    "sha256": "89e8f2cbec91af6bf7f994c4e15fc2c0214e7c31944273ecbf3ca31d40d790df"
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the export"
+  },
+  "exportedBy": "pete",
+  "exportDate": "2026-08-26T11:52:24+12:00",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "accessParser": "0.0.6",
+    "python": "3.10.12",
+    "extracted": "2026-08-26"
+  },
+  "notes": [
+    "Shared extraction of record: tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/ — one export carries five comps (CompNo 1-5), so one extraction serves all five fixtures and each is split out at curation; this fixture is CompNo 2 only.",
+    "exportedBy is asserted by the repo owner (pete) in the 2026-08-26 working session; it is corroborated by DBParams.UserName='pete' but not independently provable.",
+    "exportDate is the committed source file's modification time; DBParams carries no export timestamp, so the file mtime is the best available proxy and could postdate the actual GliderScore Export Competition(s) run.",
+    "PII re-check 2026-08-26 for this comp's 7 members: every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for all 7; all 7 are GliderScore shipped ZZ-prefixed test names; CompPilots carries no contact columns at all.",
+    "Triage facts recorded honestly: UseTeams=false and all seven CompPilots.Team values are 0 (verified — no team assignments exist); CompSeriesNo='2' but the export's CompSeries table has zero rows, so the series link is dead; PrelimCompNo=-1 and MergedComps='' are off. See competition.json triageJustification (series only — UseTeams=false raises no teams flag).",
+    "Fly-off-shaped comp: the comp's Dur draw state records NbrRnds=4 with durGroupsPerRound=1 over 7 pilots, and the extraction of record holds exactly 28 Scores rows = 7 pilots x 4 scored rounds x 1 group per round (rounds 1-4 only, TaskNo 1 throughout, no re-flight rows). This is the fly-off tail of the comp-1 event run two days later (CompDate 2009-03-08 vs 2009-03-06), not a multi-group contest — its diversity value is a small single-group integral-scored comp with a full gs-report-transcript oracle, not fly-off mechanics themselves (prelim/fly-off merging stays an unconditional-skip concept gap elsewhere). The story survey's '8 rounds x 6 groups / 188 rows' was wrong.",
+    "GroupScoreDecimals=0 makes every persisted RawScore/NormalisedScore integral, so binary32 represents them exactly: as in ales-sample-comp (and unlike what Decs=1 was hoped to witness in f3j-international), the float32 persist casts are unwitnessed here — every value reprs clean at 0 decimals across all 28 rows.",
+    "Drop config verbatim: DropScoreOption=0, Drop1AtRound..Drop5AtRound=99 each, F3QDrop6to10='99,99,99,99,99' — no drop can activate within 4 scored rounds (the DurGeneral factory default is also no-drop); the transcript carries zero '*' marks, reconciled against an independently recomputed ladder.",
+    "durFlightPenalty=0 means deduction mode None (unlike f3j-international): FlightScoreDeduction is 0.0 on all 28 rows and Penalty is 0 everywhere.",
+    "Excluded as display-only or draw-shape detail per WI-3 precedent: durDecimalsForTiming; Dur draw fields (durGroupsPerRound/durPilotsMax/durDrawLocked/durNbrOfLanes/durAllowBackToBack/durPilotsMin/F5JMotorRestartOption); presentation/device/audio tables; ScoresChecked stays in scores-raw.json as inert evidence mapping to nothing.",
+    "Spd/Dis family rows exist but belong to comp 3 and F3K rows to comp 5, so familyRows carries Dur only; DurTargetTimeByRound has zero rows export-wide and is carried empty-with-schema."
+  ]
+}

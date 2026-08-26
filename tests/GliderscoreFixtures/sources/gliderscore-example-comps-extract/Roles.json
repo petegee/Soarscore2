@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "Role": "Text",
+    "RoleName": "Text"
+  },
+  "rows": [
+    {
+      "Role": "Plt",
+      "RoleName": "Pilot"
+    }
+  ]
+}

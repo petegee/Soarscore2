@@ -1,0 +1,20 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "disGroupsPerRound": "Byte",
+    "disPilotsMax": "Byte",
+    "disDrawLocked": "Boolean",
+    "disAllowBackToBack": "Long",
+    "disPilotsMin": "Text"
+  },
+  "rows": [
+    {
+      "CompNo": 3,
+      "disGroupsPerRound": 6,
+      "disPilotsMax": 4,
+      "disDrawLocked": false,
+      "disAllowBackToBack": 0,
+      "disPilotsMin": "TmProt=True&Enf20kHz=True&LaneOpt=0&Back2Back=True&NbrPlts=23&GrpsInRnd=6&NbrRnds=9&"
+    }
+  ]
+}

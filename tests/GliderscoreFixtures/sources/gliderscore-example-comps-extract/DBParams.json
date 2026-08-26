@@ -1,0 +1,28 @@
+{
+  "schema": {
+    "Property": "Text",
+    "PRValue": "Text"
+  },
+  "rows": [
+    {
+      "Property": "DBVersion",
+      "PRValue": "6.78"
+    },
+    {
+      "Property": "DecimalSeparator",
+      "PRValue": "."
+    },
+    {
+      "Property": "ListSeparator",
+      "PRValue": ","
+    },
+    {
+      "Property": "NativeName",
+      "PRValue": "English (United States)"
+    },
+    {
+      "Property": "UserName",
+      "PRValue": "pete"
+    }
+  ]
+}

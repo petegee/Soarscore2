@@ -1,0 +1,54 @@
+{
+  "source": "gs-report-transcript",
+  "notes": [
+    "Oracle is GliderScore's own computation over R1-R9: the Overall Results report transcribed verbatim into overall-results-transcript.csv (sha256 b122b52a5fed31638c8d8205a94832ad71c31ea739810d3e9579bd865de4bc2c).",
+    "'*' prefix marks the single dropped score: exactly one '*' per pilot, on Rnd9 \u2014 Drop1@5 is the only drop that activates (five distinct rounds carry RawScore>0; Drop2@9 never reaches its threshold), and it lands on the latest of the tied zero placeholder cells, never on a real score. Rounds 6-9 are NoTaskSet placeholders showing 0.",
+    "Penalty column observations: ZZIrvin 100, ZZNancarrow 200, ZZPotter 100 \u2014 per-pilot totals of four persisted Penalty=100 rows (pilots 42, 56 x2, 65); GS subtracts the total after summing the round cells (ZZNancarrow 3602 - 200 = 3402). Round cells themselves are pre-penalty NormalisedScore values.",
+    "Percent is display-only (100 x Score / winner Score) and deliberately not recorded; Score/Pcnt/Raw Score columns are not transcribed (Raw Score equals Score here \u2014 integral scores, GroupScoreDecimals=0).",
+    "Name-to-PilotNo mapping is doubly corroborated: transcript surnames match Pilots case-insensitively after trimming ('ZZPRATLEY, David' vs 'ZZPratley'), and the transcript Pilot column equals CompPilots.StartNo (UsePilotNumbering=true) \u2014 both mappings agree on all 10 pilots.",
+    "Independently validated 2026-08-26 against the documented ladder (arithmetic story THE LADDER): best-per-original-round normalised sum over rounds 1-9, one drop of the lowest cell with latest-equally-bad-first tie-break (Drop2@9 inactive \u2014 only 5 rounds with RawScore>0 exist), minus per-pilot penalty totals, re-round to 0 decimals, Score DESC / RawScore DESC \u2014 recomputed ranks agree with all 10 transcript ranks, all 10 Score values and pick the same dropped round (R9) for every pilot.",
+    "No ties: ranks display 1..10 without '=n'. Transcript header states '< Scores - Original >'."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 28,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 12,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 48,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 13,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 65,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 21,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 70,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 56,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 17,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 42,
+      "rank": "10"
+    }
+  ]
+}

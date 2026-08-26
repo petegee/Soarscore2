@@ -1,0 +1,187 @@
+{
+  "identity": {
+    "CompNo": 1,
+    "CompName": "F3J International",
+    "GSCompClass": "F3J",
+    "CompDate": "2009-03-06 00:00:00"
+  },
+  "scoring": {
+    "GSCompClass": "F3J",
+    "GroupScoreOption": 1,
+    "GroupScoreDecimals": 1,
+    "RoundOrTruncate": 0,
+    "DropScoreOption": 0,
+    "Drop1AtRound": 8,
+    "Drop2AtRound": 99,
+    "Drop3AtRound": 99,
+    "Drop4AtRound": 99,
+    "Drop5AtRound": 99,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "familyRows": {
+    "Dur": {
+      "CompNo": 1,
+      "durTargetTime": 600,
+      "DurPointsPerSecond": 1.0,
+      "durNumberOfTimekeepers": 1,
+      "durLndg": 2,
+      "durRefHeight": 200.0,
+      "durPenaltyUpToRefHeight": 0.0,
+      "durPenaltyOverRefHeight": 0.0,
+      "durFlightPenalty": 1
+    }
+  },
+  "scheduleTables": {
+    "DurTargetTimeByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "TargetTime": "Long"
+      },
+      "rows": []
+    }
+  },
+  "lookups": {
+    "landingSchemes": [
+      {
+        "LndgNo": 2,
+        "Name": "F3J/F3L/F5L Enter Dist",
+        "points": [
+          {
+            "LndgNo": 2,
+            "Distance": 0.2,
+            "Points": 100
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 0.4,
+            "Points": 99
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 0.6,
+            "Points": 98
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 0.8,
+            "Points": 97
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 1.0,
+            "Points": 96
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 1.2,
+            "Points": 95
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 1.4,
+            "Points": 94
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 1.6,
+            "Points": 93
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 1.8,
+            "Points": 92
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 2.0,
+            "Points": 91
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 3.0,
+            "Points": 90
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 4.0,
+            "Points": 85
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 5.0,
+            "Points": 80
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 6.0,
+            "Points": 75
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 7.0,
+            "Points": 70
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 8.0,
+            "Points": 65
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 9.0,
+            "Points": 60
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 10.0,
+            "Points": 55
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 11.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 12.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 13.0,
+            "Points": 40
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 14.0,
+            "Points": 35
+          },
+          {
+            "LndgNo": 2,
+            "Distance": 15.0,
+            "Points": 30
+          }
+        ]
+      }
+    ],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 3,
+    "CompSeriesNo": "1",
+    "PrelimCompNo": -1,
+    "MergedComps": "",
+    "triageJustification": {
+      "series": {
+        "deadLinkCount": 0,
+        "evidence": "The export's CompSeries table has zero rows, so this comp's CompSeriesNo='1' link references nothing and no series data can alter any individual score."
+      },
+      "teams": {
+        "evidence": "Scores carries no team columns; team standings are report-time aggregations of unchanged individual normalised scores, never an input to them. CompPilots.Team assignments are nonetheless populated honestly: UseTeams=true with all 30 pilots assigned across 8 teams (sizes 4,3,4,4,4,3,4,4); they reach no persisted score."
+      }
+    }
+  }
+}
