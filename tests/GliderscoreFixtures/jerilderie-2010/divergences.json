@@ -1,0 +1,65 @@
+[
+  {
+    "grain": "raw",
+    "round": 13,
+    "group": 1,
+    "pilotNo": 29,
+    "reason": "D5: the corpus's only re-flight row (R13/G1 SeqNo=14, OriginalRoundNo=12 — pilot 29's round-12 makeup flight, flown inside R13) has no base-draw prescription path (prescribeDraw.competitorRepeated refuses a repeated competitor; deferred-decisions.md 'Draw'), so draw derivation step 1 excludes it. Oracle cell 1/13/1/0/29 — raw 689 = packed 958 decoded 598 s + 91 landing — is intentionally never replayed or compared. GS's normalisation of that cell against R13/G1's basis 696 (689/696 -> 990) is reproduced for the 13 members whose rows ARE replayed."
+  },
+  {
+    "grain": "normalised",
+    "round": 13,
+    "group": 1,
+    "pilotNo": 29,
+    "reason": "D5: same excluded re-flight row as the raw-grain entry; the oracle's NormalisedScore 990 cell at R13/G1 pilot 29 is intentionally never replayed or compared."
+  },
+  {
+    "grain": "raw",
+    "round": 12,
+    "group": 1,
+    "pilotNo": 29,
+    "reason": "D5: consequence of the excluded re-flight row — prescribeDraw.competitorMissing demands every registered competitor appear in every round, so the driver prescribes pilot 29 into R12/G1 as a deliberate flight-less synthetic slot (NoResult -> cell 0, arithmetically the same candidate the aggregator would otherwise synthesise for his absent R12). This manufactured slot is not a scores-raw row and has no oracle counterpart; its zero cell is intentionally ours alone."
+  },
+  {
+    "grain": "normalised",
+    "round": 12,
+    "group": 1,
+    "pilotNo": 29,
+    "reason": "D5: same manufactured flight-less R12/G1 slot as the raw-grain entry — no oracle cell exists at 1/12/1/0/29."
+  },
+  {
+    "grain": "ranking",
+    "round": null,
+    "group": null,
+    "pilotNo": 29,
+    "reason": "D5: knock-on of the excluded re-flight row. Pilot 29 replays 13 real cells plus the synthetic 0 candidate for his seen-but-absent R12 slot, so his two drops remove {0, 505} where GS drops his two worst real cells {505, 706}: final 10583 vs GS 10867 (delta 284). Place 32 vs oracle '29'."
+  },
+  {
+    "grain": "ranking",
+    "round": null,
+    "group": null,
+    "pilotNo": 25,
+    "reason": "D5: knock-on of pilot 29's ledgered reflight delta — he moves from place 29 to 32 and pilots strictly between shift one place up. Final 10806 unchanged; ours places 29 vs oracle '30'. Drops are per-pilot, so only placings differ."
+  },
+  {
+    "grain": "ranking",
+    "round": null,
+    "group": null,
+    "pilotNo": 27,
+    "reason": "D5: knock-on of pilot 29's ledgered reflight delta — one place up. Final 10751 unchanged; ours places 30 vs oracle '31'."
+  },
+  {
+    "grain": "ranking",
+    "round": null,
+    "group": null,
+    "pilotNo": 52,
+    "reason": "D5: knock-on of pilot 29's ledgered reflight delta — one place up. Final 10707 unchanged; ours places 31 vs oracle '32'."
+  },
+  {
+    "grain": "ranking",
+    "round": null,
+    "group": null,
+    "pilotNo": 21,
+    "reason": "story trap 3: pilots 4 and 21 tie on Score (11784) with different RawScore sums (9283 vs 9257); GS's ladder orders Score DESC, RawScore DESC and displays distinct ranks '8'/'9', while RankingEngine.Rank shares the numeric place among Score-ties (both 8). Independent of the re-flight choice — fires under a perfect replay too. Trap 3 pre-authorises 'a ledgered divergence' as its resolution pending a RawScore-secondary-key engine story; WI-8 records the finding in deferred-decisions.md."
+  }
+]

@@ -352,6 +352,130 @@ runtime). If not → mark the fixture skip-listed-for-harness in `index.md` word
 `deferred-decisions.md`, and close this WI with the other four fixtures as the
 delivered corpus — the fallback is pre-authorised (Q2); no need to stop and ask.
 
+#### WI-6 design (2026-08-26, worked from the actual data before code)
+
+**The data.** Pilot 29 holds 14 rows across 13 rounds: R1–R11 ordinary, then TWO R13
+rows — Seq 10 in G2 (his drawn R13 slot, packed 906 → 546 s + 91 landing) and Seq 14
+in G1 carrying `OriginalRoundNo=12` (the makeup flight, packed 958 → 598 s + 91) —
+and R14/G3. He has **no R12 row at all**, not even a zero. Every other pilot has
+exactly 14 rows in 14 distinct rounds. The one −100 penalty row is pilot 2
+(R11/G3), post-sum like f3k's.
+
+**GS semantics, proven numerically** (independent recompute matches all 882
+persisted RawScore/NormalisedScore cells exactly, and the reconstructed ladder —
+Score DESC, RawScore DESC, `=n` on full ties, two lowest-cell drops, −100
+post-sum — reproduces expected-result.json 63/63 ranks):
+
+- Makeup raw = 598 + 91 = **689**, persisted at key `1/13/1/0/29`.
+- Normalisation basis = **R13/G1's own max, 696** — the 13 original members' max
+  (`689/696·1000 → 990` half-up = persisted NormalisedScore). The makeup raw does
+  not set the basis (689 < 696), so whether GS includes it is unobservable here.
+- Aggregation destination = ladder column **orig-round 12** (option-0 drop walk
+  places each cell at column `10·OriginalRoundNo+TaskNo`, arithmetic story §4).
+- Drop pool = **14 real candidates**; GS drops his two worst real cells
+  {505@R5, 706@R4} → final **10867**, oracle rank "29".
+- Drop activation counts *present* cells, not non-zero results: five pilots have
+  < 12 non-zero cells (min 2 — pilots 67/15/8/32/69) yet the 63/63 rank match
+  proves everyone drops exactly 2. All their zeros are genuine recorded flights.
+
+**Candidate mappings.**
+
+- **(a) Current behaviour — D5 step 1 filters the row.** Pilot 29 replays 13
+  cells; `PhaseAggregator.Aggregate` synthesises a 0 candidate for his seen-but-
+  absent R12 (`PhaseAggregator.cs:83-92`) → drops {0, 505} → final **10583**
+  (delta **284** vs GS). Other pilots are provably untouched: G1's basis is
+  unchanged (689 < 696) and drops operate on per-pilot vectors. Full-ladder
+  simulation of our Score-only placing over the (a)-scores: only pilots 29
+  (29→32), 25 (30→29), 27 (31→30), 52 (32→31) change place — verified by
+  replicating the comparator's direct + tie-membership checks exactly (15 ranking
+  mismatch records, all over those four plus trap-3's pilot 21 below). Grains
+  1 & 2: 881/882 compared exact; the makeup cell surfaces once per grain via
+  `EnsureOracleCoverage`, ledgerable at (round 13, group 1, pilot 29).
+- **(b) Reflight-shape mapping — dead on three independent grounds.**
+  1. `AppendReflightGroup` appends a **new** group
+     (`Competition.cs:1441-1449`, ordinal `Groups.Length+1`); a group's
+     normalisation basis is its own members, so an appended group cannot host the
+     makeup entry against basis 696 — a solo group normalises it to **1000 ≠
+     990**. Naming all 14 G1 members to rebuild the basis manufactures 13 phantom
+     rows (violates D4) for zero grain-3 gain.
+  2. `ReflightSelector` collapses a competitor's task-round entries to **ONE**
+     score by law (shape guard + collapse-to-one, `ReflightSelector.cs:25-47`),
+     but GS aggregates **two live cells** for pilot 29 — 990 keyed orig-12 AND
+     913 keyed R13. No selection rule places two aggregate cells in one task-
+     round; `BetterOf(990,913)=990` as THE R13 cell still leaves R12 a phantom
+     zero (same structural hole as (a), delta 207 instead of 284). The shape
+     guard would accept Original+reflight roles across G2/G1, but acceptance is
+     moot while the destination cannot be expressed.
+  3. In the data the two roles sit in **different groups** (G1 makeup / G2
+     regular); grain 2 compares per group, so both cells stay exact only while
+     neither is collapsed — but the conservation collector throws on two cells
+     for one (round, taskRound), and `/task-round-result` folding would need
+     role-aware widening. Harness surgery whose end state still diverges.
+- **(c) Any entry-in-R12 arrangement** either corrupts the hosting group's basis
+  (shifting other pilots — unledgerable) or lands in an appended solo group
+  (1000 ≠ 990). Dead.
+
+**VERDICT: implement mapping (a).** Faithful per the stated bar — all three
+grains exact modulo ledgered divergences citing D5; no engine changes; no
+unledgered mismatches. Q2's fallback stays unused: no available mapping
+reproduces the aggregate destination (orig-12) without an engine change, but (a)
+never attempts it — it excludes the row under D5 step 1 (the standing
+deferred-decisions.md Draw deferral) and ledgers every arithmetic consequence
+precisely. Closing the gap properly needs an engine concept ("aggregate a
+task-round cell into an original round's slot") that no current aggregate or
+selector expresses — that is a new backlog stub, not a silent scope increase.
+
+**Ledger (7 entries, committed as `divergences.json`).**
+
+| grain | round | group | pilot | why |
+|---|---|---|---|---|
+| raw | 13 | 1 | 29 | D5 — re-flight row excluded; oracle cell never replayed |
+| normalised | 13 | 1 | 29 | D5 — same cell, other grain |
+| ranking | – | – | 29 | D5 — drops {0,505} vs GS {505,706}: 10583 vs 10867 (Δ284), place 32 vs "29" |
+| ranking | – | – | 25 | D5 knock-on — one place up (29 vs "30") |
+| ranking | – | – | 27 | D5 knock-on — one place up (30 vs "31") |
+| ranking | – | – | 52 | D5 knock-on — one place up (31 vs "32") |
+| ranking | – | – | 21 | **story trap 3** — fires under a perfect replay too |
+
+Trap 3 detail: pilots 4 and 21 tie on Score (11784) with RawScore sums 9283 vs
+9257; GS's ladder orders Score DESC, RawScore DESC and displays distinct ranks
+"8"/"9", `RankingEngine.Rank` shares the numeric place (both 8,
+`RankingEngine.cs:45-73`). The D6 letter cites arithmetic-story IDs; trap 3 is
+the story's own pre-authorised resolution ("triage, then either a small engine
+change … as its own story or a ledgered divergence") and WI-8 records the
+finding. The citation-check step is widened to accept `trap 3` beside D1–D6 —
+anything uncited still fails. P4 needs no entry (our shared place 8 == oracle
+"8"; membership flags only 21).
+
+**Authoring (D3), verified against competition.json.** GroupScoreOption=1 →
+landing inside `score`; `PiecewiseTerm` target 600 / PPS 1 (symmetric decay =
+1200−T beyond target — proven by the recompute); `LookupTerm` identity rows
+upTo v → v for v ∈ {0} ∪ {30…90 step 5} ∪ {91…100} (all 843 flown slots'
+landings on-table — checked; off-table unreachable per validator rule 2); integral
+`HalfUp` precision 1 (Decs=0, RoundOrTruncate=0); ONE collapsed policy
+`ByTask dropCount 2 applyWhenRoundsCompletedAtLeast 6` — no results-gate needed
+(the gate evaluates competition-level completed rounds, all 14 complete; f3k's
+gate existed because placeholder rounds were absent, jerilderie's zeros are
+present cells); `competitionPenalty` PerOccurrence DeductPoints 100;
+`durFlightPenalty=0` → no deduction metric; no round binds
+(DurTargetTimeByRound empty). Driver and comparator need **zero changes**; only
+the scenario, the two fixture JSONs, and the citation-step widening land.
+
+**Design amendment found at implementation (2026-08-26): the prescription guard.**
+First replay run exposed a second base-draw surface the design must respect:
+`prescribeDraw.competitorMissing` — every registered competitor must appear in
+every prescribed round, and D5's filter leaves pilot 29 absent from R12
+entirely. Late registration is no escape (`openEntry.competitorNotDrawn`,
+`Competition.cs:1172`). Resolution: the driver prescribes pilot 29 into R12/G1
+as a **deliberate flight-less slot** (per-slug `SyntheticSlots`, the WI-3
+round-bind data pattern) — NoResult ⇒ cell 0, which is arithmetically the SAME
+candidate the aggregator would otherwise synthesise for the absent slot
+(`PhaseAggregator.cs:83-92`), so every number in the verdict table above stands
+unchanged. The slot is *not* a scores-raw row (a deliberate, bounded exception
+to D4's letter): it surfaces as one raw + one normalised "no oracle cell"
+mismatch at (12, 1, 29), ledgered like the rest. Ledger grows 7 → **9**
+entries.
+
 **Checkpoint:** five green or documented fallback; both stores.
 
 ### WI-7 — Runbook

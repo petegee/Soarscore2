@@ -115,6 +115,26 @@ public sealed class ReplayDriver(HttpClient client)
             ["f3j-international"] = [("targetTime", 1, 540m)],
         };
 
+    // WI-6 — slots a fixture needs prescribed although no scores-raw row backs
+    // them (the same per-fixture-data pattern as the round binds above).
+    //
+    // jerilderie-2010: excluding the re-flight row (D5 step 1) leaves pilot 29
+    // absent from round 12 entirely, and prescribeDraw.competitorMissing
+    // demands every registered competitor appear in every round — late
+    // registration is no escape either (openEntry.competitorNotDrawn). He is
+    // therefore PRESCRIBED into R12/G1 as a flight-less slot: NoResult ⇒ cell
+    // 0, arithmetically the same candidate the aggregator would otherwise
+    // synthesise for the absent slot (PhaseAggregator.Aggregate's missing-score
+    // branch), so the replayed aggregation equals the story WI-6 mapping-(a)
+    // analysis exactly. The two comparison mismatches this manufactured slot
+    // produces ("no oracle cell", raw + normalised at 12/1/29) are ledgered in
+    // the fixture's divergences.json citing D5.
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
+        SyntheticSlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
+        {
+            ["jerilderie-2010"] = [(12, 1, 29)],
+        };
+
     public async Task<ReplayOutcome> ReplayAsync(GliderscoreFixture fixture)
     {
         // ------------------------------------------------------------ publish
@@ -160,6 +180,21 @@ public sealed class ReplayDriver(HttpClient client)
 
         // -------------------------------------------------------------- draw
         var keptRows = DeriveDrawRows(fixture);
+
+        // WI-6 — append the fixture's synthetic slots (see SyntheticSlots) as
+        // all-zero rows: zero time keeps CaptureDurationInputs flight-less
+        // (NoResult ⇒ cell 0), a SeqNo past every real row puts the slot last
+        // in its group's flying order, and OriginalRoundNo = RoundNo keeps any
+        // accidental re-derivation honest. Appended AFTER derivation so D5's
+        // partition assertion judges the real rows alone.
+        foreach (var (roundNo, groupNo, pilotNo) in SyntheticSlots.GetValueOrDefault(fixture.Slug) ?? [])
+        {
+            keptRows.Add(new ScoresRow(
+                TaskNo: 1, RoundNo: roundNo, GroupNo: groupNo, ReFlightNo: 0, PilotNo: pilotNo,
+                SeqNo: keptRows.Where(r => r.RoundNo == roundNo).Max(r => r.SeqNo) + 1,
+                Laps: 0m, Time1Mins: 0m, Time1Secs: 0m, Time2Mins: 0m, Time2Secs: 0m,
+                FlightScoreDeduction: 0m, Landing: 0m, Penalty: 0, OriginalRoundNo: roundNo));
+        }
 
         // WI-4 — the fixture's per-round GS task schedule (empty for the
         // duration-family fixtures, whose FixedSequence phases prescribe a null

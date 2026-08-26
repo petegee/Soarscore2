@@ -1,0 +1,229 @@
+{
+  "name": "Gliderscore DurGeneral (jerilderie-2010)",
+  "faiDesignation": "",
+  "version": "GliderScore 6.78 export, authored per gliderscore-replay-and-compare-harness.md D3/WI-6; GroupScoreOption=1 (landing inside score), symmetric decay target 600 PPS 1, identity landing table LndgNo=3, integral HalfUp, two-drop collapse Drop1@6+Drop2@12 into one policy",
+  "parameters": [
+    {
+      "name": "targetTime",
+      "kind": "Number",
+      "unit": "s",
+      "defaultValue": {
+        "kind": "Number",
+        "number": 600
+      },
+      "allowedValues": [],
+      "boundAt": "PerRound"
+    }
+  ],
+  "reflight": {
+    "entitledScores": "UndefinedRequiresRuling",
+    "othersScore": "UndefinedRequiresRuling",
+    "minNewGroupSize": 2
+  },
+  "penalties": [
+    {
+      "infractionType": "competitionPenalty",
+      "exclusionGroups": [],
+      "accrual": "PerOccurrence",
+      "effects": [
+        {
+          "effect": "DeductPoints",
+          "points": 100
+        }
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 1
+      },
+      "drops": [
+        {
+          "dimension": "ByTask",
+          "dropCount": 2,
+          "applyWhenRoundsCompletedAtLeast": 6
+        }
+      ],
+      "tasks": [
+        {
+          "code": "D",
+          "name": "Duration",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landingDistance",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 0.1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 1
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "piecewise",
+              "metricRef": "flightTime",
+              "bands": [
+                {
+                  "from": 0,
+                  "to": {
+                    "param": "targetTime"
+                  },
+                  "ratePerUnit": 1
+                },
+                {
+                  "from": {
+                    "param": "targetTime"
+                  },
+                  "ratePerUnit": -1
+                }
+              ]
+            },
+            {
+              "$kind": "lookup",
+              "metricRef": "landingDistance",
+              "rows": [
+                {
+                  "upTo": 0,
+                  "points": 0
+                },
+                {
+                  "upTo": 30,
+                  "points": 30
+                },
+                {
+                  "upTo": 35,
+                  "points": 35
+                },
+                {
+                  "upTo": 40,
+                  "points": 40
+                },
+                {
+                  "upTo": 45,
+                  "points": 45
+                },
+                {
+                  "upTo": 50,
+                  "points": 50
+                },
+                {
+                  "upTo": 55,
+                  "points": 55
+                },
+                {
+                  "upTo": 60,
+                  "points": 60
+                },
+                {
+                  "upTo": 65,
+                  "points": 65
+                },
+                {
+                  "upTo": 70,
+                  "points": 70
+                },
+                {
+                  "upTo": 75,
+                  "points": 75
+                },
+                {
+                  "upTo": 80,
+                  "points": 80
+                },
+                {
+                  "upTo": 85,
+                  "points": 85
+                },
+                {
+                  "upTo": 90,
+                  "points": 90
+                },
+                {
+                  "upTo": 91,
+                  "points": 91
+                },
+                {
+                  "upTo": 92,
+                  "points": 92
+                },
+                {
+                  "upTo": 93,
+                  "points": 93
+                },
+                {
+                  "upTo": 94,
+                  "points": 94
+                },
+                {
+                  "upTo": 95,
+                  "points": 95
+                },
+                {
+                  "upTo": 96,
+                  "points": 96
+                },
+                {
+                  "upTo": 97,
+                  "points": 97
+                },
+                {
+                  "upTo": 98,
+                  "points": 98
+                },
+                {
+                  "upTo": 99,
+                  "points": 99
+                },
+                {
+                  "upTo": 100,
+                  "points": 100
+                },
+                {
+                  "points": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -50,6 +50,16 @@ Feature: Replaying a GliderScore fixture
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 
+  Scenario: The jerilderie-2010 fixture reproduces GliderScore exactly modulo its ledgered re-flight-row divergences
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "jerilderie-2010"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 9 accepted divergences
+
   Scenario: Replaying the ales-sample-comp fixture twice within one run issues identical command counts and compares exact twice
     Given the fixture corpus manifest
     When the harness replays the GliderScore fixture "ales-sample-comp" twice within this scenario

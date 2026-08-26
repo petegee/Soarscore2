@@ -115,8 +115,19 @@ public sealed class ReplaySteps
         // D6's ledger schema: every reason cites resolve-gliderscore-scoring-
         // arithmetic.md's divergence IDs (D1/D3/D5/D6). A reason without one is
         // an untriaged excuse, not a documented divergence.
+        //
+        // WI-6 widening — `trap 3` is accepted beside D1–D6, and only trap 3:
+        // the story's own planning answer pre-authorises exactly this ledgered
+        // divergence when GS's Score DESC/RawScore DESC ladder secondary key
+        // fires against our Score-only ranking (jerilderie-2010 pilots 4/21),
+        // and WI-8 records it in deferred-decisions.md. It is not an
+        // arithmetic-story divergence (GS complies with its own documented
+        // ladder), so citing a D-number there would be dishonest. The pinning
+        // "records exactly N" step keeps the widened acceptance from hiding
+        // untriaged growth.
         var unattributed = Fixture!.Divergences
-            .Where(d => !System.Text.RegularExpressions.Regex.IsMatch(d.Reason, @"\bD[1-6]\b"))
+            .Where(d => !System.Text.RegularExpressions.Regex.IsMatch(
+                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             .ToList();
 
         unattributed.Should().BeEmpty(
