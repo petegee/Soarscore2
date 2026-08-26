@@ -942,9 +942,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/validate.py": {
-    "mtime": 1787687949.6807883,
-    "seen": 1787693045.6565797,
-    "ast_hash": "9b4c57d9343b9221ce8dcf340707a345",
+    "mtime": 1787712369.755281,
+    "seen": 1787714360.3455055,
+    "ast_hash": "1df0736e0fe40aa734d181ea189e7903",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj": {
@@ -2135,12 +2135,6 @@
     "ast_hash": "4c915f685da4c350e201b85219544d7c",
     "semantic_hash": ""
   },
-  "kanban/backlog/grow-gliderscore-fixture-corpus.md": {
-    "mtime": 1787687949.6763077,
-    "seen": 1787693045.6567826,
-    "ast_hash": "661e8239cc41726dea54b60450c2a9d2",
-    "semantic_hash": ""
-  },
   "kanban/backlog/smaller-items.md": {
     "mtime": 1787525490.4069989,
     "seen": 1787693045.6567833,
@@ -2322,15 +2316,15 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/README.md": {
-    "mtime": 1787687949.6807032,
-    "seen": 1787693045.656814,
-    "ast_hash": "178b7ee720f589f67d34260c4ebdb500",
+    "mtime": 1787712376.1852837,
+    "seen": 1787714360.3498414,
+    "ast_hash": "4b9398ad35743328bf636bc1de2e7544",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/index.md": {
-    "mtime": 1787687949.6807883,
-    "seen": 1787693045.6568148,
-    "ast_hash": "c0ded764982c89e2f3c836364259d50a",
+    "mtime": 1787714332.812993,
+    "seen": 1787714360.3498425,
+    "ast_hash": "14ddd1944eabec8184e8ac6bc0440911",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/README.md": {
@@ -2361,6 +2355,324 @@
     "mtime": 1787694949.7110667,
     "seen": 1787694976.899637,
     "ast_hash": "f8ecc9fbe147de0664a42653a157d7cb",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/competition.json": {
+    "mtime": 1787710863.3325865,
+    "seen": 1787714360.3455076,
+    "ast_hash": "81743196363bbc31081684d29f7d1697",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/entries.json": {
+    "mtime": 1787710926.1818585,
+    "seen": 1787714360.345509,
+    "ast_hash": "1c618cf8884edeb2427508dd55620bb4",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/expected-result.json": {
+    "mtime": 1787710863.3414369,
+    "seen": 1787714360.3455102,
+    "ast_hash": "40ff0c390984f3fbd1cfb20b99accd7d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/expected-scores.json": {
+    "mtime": 1787710863.3408403,
+    "seen": 1787714360.345511,
+    "ast_hash": "dbc3e6e8e9c186cbd69c6ec839ab639e",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/provenance.json": {
+    "mtime": 1787710890.0611486,
+    "seen": 1787714360.345512,
+    "ast_hash": "b7f765508aa5d427003abcbe563e50c6",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/scores-raw.json": {
+    "mtime": 1787710863.3406785,
+    "seen": 1787714360.3455129,
+    "ast_hash": "0770596b7d0a3d2d86227f1174b93d60",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/competition.json": {
+    "mtime": 1787703012.8850687,
+    "seen": 1787714360.3455138,
+    "ast_hash": "338d7709656b9dcda01ef57ce26f34a4",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/entries.json": {
+    "mtime": 1787703012.8859541,
+    "seen": 1787714360.3455145,
+    "ast_hash": "160127b31125406ea282344b74fde5d5",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/expected-result.json": {
+    "mtime": 1787703012.901963,
+    "seen": 1787714360.345515,
+    "ast_hash": "a0cc478bc8de26e530667e717c57354e",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/expected-scores.json": {
+    "mtime": 1787703012.9015286,
+    "seen": 1787714360.345516,
+    "ast_hash": "310b458d231e4006b916a3436a6632c9",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/provenance.json": {
+    "mtime": 1787703012.8844965,
+    "seen": 1787714360.3455172,
+    "ast_hash": "a5221cc71d19a3516bc9546fdbc95bd0",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/scores-raw.json": {
+    "mtime": 1787703012.8976426,
+    "seen": 1787714360.3455176,
+    "ast_hash": "007d57c613b071fe789183682aa8854f",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/competition.json": {
+    "mtime": 1787711985.93516,
+    "seen": 1787714360.3455186,
+    "ast_hash": "6135a2ed13e0c9b5b51b1b3395b958e5",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/entries.json": {
+    "mtime": 1787711985.9211597,
+    "seen": 1787714360.3455195,
+    "ast_hash": "456e5d24e32e9c6a970abea91f238985",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/expected-result.json": {
+    "mtime": 1787712025.6596794,
+    "seen": 1787714360.3455205,
+    "ast_hash": "0f4b0c772689e3aeeef154f2001de770",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/expected-scores.json": {
+    "mtime": 1787711985.9348042,
+    "seen": 1787714360.345521,
+    "ast_hash": "9b34712d6a861ca4c9a428d1d3b9dd3e",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/provenance.json": {
+    "mtime": 1787712025.6595435,
+    "seen": 1787714360.345522,
+    "ast_hash": "05afc56c97ea560e3487df3a0d5b2a5a",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/scores-raw.json": {
+    "mtime": 1787711985.9331598,
+    "seen": 1787714360.3455229,
+    "ast_hash": "fbdb3845e7f930977dbf1b15488534e1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/competition.json": {
+    "mtime": 1787713086.9666584,
+    "seen": 1787714360.3455234,
+    "ast_hash": "edd422b74ca104cac33fde3708fddae1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/entries.json": {
+    "mtime": 1787713086.9663196,
+    "seen": 1787714360.3455243,
+    "ast_hash": "a3ba1683db9b758c7a67e91189b6d839",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/expected-result.json": {
+    "mtime": 1787713086.9669158,
+    "seen": 1787714360.3455253,
+    "ast_hash": "9b904a2281dedeaf521584f295eb0c95",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/expected-scores.json": {
+    "mtime": 1787713086.9646494,
+    "seen": 1787714360.345526,
+    "ast_hash": "d7fc79968ce2860f22849554a768ea4a",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/provenance.json": {
+    "mtime": 1787713086.9667559,
+    "seen": 1787714360.3455267,
+    "ast_hash": "c1f631ef6649768d7b512dd9f6dd6187",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/scores-raw.json": {
+    "mtime": 1787713086.9612637,
+    "seen": 1787714360.3455276,
+    "ast_hash": "d082a5a9c71f090aa7ba5ddae5154613",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/AudioSettings.json": {
+    "mtime": 1787701957.3036346,
+    "seen": 1787714360.3455284,
+    "ast_hash": "b53aa83173581706e6c03394af378ab8",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/CompPilots.json": {
+    "mtime": 1787701957.3036957,
+    "seen": 1787714360.3455293,
+    "ast_hash": "dc5d2131c1b30e0e35d6a5672512c122",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/CompSeries.json": {
+    "mtime": 1787701957.3037338,
+    "seen": 1787714360.3455298,
+    "ast_hash": "8e5c309c45b4693f13f979d1d399e63f",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/Comps.json": {
+    "mtime": 1787701957.3037546,
+    "seen": 1787714360.3455305,
+    "ast_hash": "f601d3a111154e5b3480b478ebddd8d2",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/CountryCodes.json": {
+    "mtime": 1787701957.3037753,
+    "seen": 1787714360.3455317,
+    "ast_hash": "25a9ffe5634139071d285d89ca1cb009",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/CustomReportsData.json": {
+    "mtime": 1787701957.3037941,
+    "seen": 1787714360.3455322,
+    "ast_hash": "ef8922506c188e995f3ff2c83262d759",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/DBParams.json": {
+    "mtime": 1787701957.303812,
+    "seen": 1787714360.3455331,
+    "ast_hash": "ef1bac59228280c0c748d11d314a2852",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/DeviceNames.json": {
+    "mtime": 1787701957.30383,
+    "seen": 1787714360.3455343,
+    "ast_hash": "8bc26d4367d4ef7e56b8690a608ff5cc",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/Dis.json": {
+    "mtime": 1787701957.303848,
+    "seen": 1787714360.345535,
+    "ast_hash": "b23cad109483439cb6aaac2a81bed2ee",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/Dur.json": {
+    "mtime": 1787701957.3038661,
+    "seen": 1787714360.3455355,
+    "ast_hash": "388f31f6cf51451a43635a660602bed6",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/DurTargetTimeByRound.json": {
+    "mtime": 1787701957.3038845,
+    "seen": 1787714360.3455367,
+    "ast_hash": "bc163ffbe32cea969138eba059e5f439",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F3K.json": {
+    "mtime": 1787701957.3039026,
+    "seen": 1787714360.345538,
+    "ast_hash": "f33d89ad2d4fca6d295c31de40158caf",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F3KTaskByRound.json": {
+    "mtime": 1787701957.3039224,
+    "seen": 1787714360.3455386,
+    "ast_hash": "6aca7a2bbef25f13671f7be9c62e4870",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F5B.json": {
+    "mtime": 1787701957.3039415,
+    "seen": 1787714360.3455393,
+    "ast_hash": "a63981f92c9c5469146aba06f54a50e9",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F5K.json": {
+    "mtime": 1787701957.3040006,
+    "seen": 1787714360.34554,
+    "ast_hash": "89e2d7894a9adcaa3a1a0024ca564ad8",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F5KBonusData.json": {
+    "mtime": 1787701957.3039598,
+    "seen": 1787714360.3455412,
+    "ast_hash": "9dc47dc8c3c4d3f94430de60a2a8ac33",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F5KBonusNames.json": {
+    "mtime": 1787701957.30398,
+    "seen": 1787714360.345542,
+    "ast_hash": "5d0cc4ac8527c40a56769e8c26e89707",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/F5KTaskandRefHeightByRound.json": {
+    "mtime": 1787701957.3040206,
+    "seen": 1787714360.3455427,
+    "ast_hash": "79a8efc0825533aa303d0a2e98c31091",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/LndgNames.json": {
+    "mtime": 1787701957.304048,
+    "seen": 1787714360.3455434,
+    "ast_hash": "c8781b633ba0099e30b63ff3dc0c9243",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/LndgPoints.json": {
+    "mtime": 1787701957.3040698,
+    "seen": 1787714360.345544,
+    "ast_hash": "262f4e837313d58d87dfa18ad4d44713",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/MSysObjects.json": {
+    "mtime": 1787701957.3041134,
+    "seen": 1787714360.3455453,
+    "ast_hash": "eff5f16ef527939dd5d0cd38a1f5a0d1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/ModelNames.json": {
+    "mtime": 1787701957.304093,
+    "seen": 1787714360.3455458,
+    "ast_hash": "980ced58b5ffeb714b0d119c7b603bc1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/Pilots.json": {
+    "mtime": 1787701957.3041449,
+    "seen": 1787714360.3455465,
+    "ast_hash": "c78ce11a96541a2a5f6e96747317e11a",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/QRCodeSpecs.json": {
+    "mtime": 1787701957.304172,
+    "seen": 1787714360.3455472,
+    "ast_hash": "891df6a830cefd03ba6d8aa40ec11a9d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/Roles.json": {
+    "mtime": 1787701957.3041916,
+    "seen": 1787714360.3455484,
+    "ast_hash": "2a13412c5642b9f57fd5876fedfdcd43",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/Spd.json": {
+    "mtime": 1787701957.3045824,
+    "seen": 1787714360.345549,
+    "ast_hash": "519de34ff9bd2b43ef3704c179a8a35c",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/TimerNames.json": {
+    "mtime": 1787701957.3046093,
+    "seen": 1787714360.3455498,
+    "ast_hash": "01ef11cab7f8069f10ddd422a9e75153",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/TimerSettings.json": {
+    "mtime": 1787701957.3046293,
+    "seen": 1787714360.3455503,
+    "ast_hash": "4fdff04769e2875c8728106b3a01980e",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/grow-gliderscore-fixture-corpus.md": {
+    "mtime": 1787714241.3167794,
+    "seen": 1787714360.3498235,
+    "ast_hash": "861f2c7d54d8511de974d8cbf7461b75",
     "semantic_hash": ""
   }
 }

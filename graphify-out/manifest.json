@@ -2130,9 +2130,9 @@
     "semantic_hash": ""
   },
   "kanban/backlog/gliderscore-replay-and-compare-harness.md": {
-    "mtime": 1787694632.7830253,
-    "seen": 1787694976.8996215,
-    "ast_hash": "4c915f685da4c350e201b85219544d7c",
+    "mtime": 1787718135.3694675,
+    "seen": 1787718142.1954348,
+    "ast_hash": "ef78d63d67b6422a47aae61f96423510",
     "semantic_hash": ""
   },
   "kanban/backlog/smaller-items.md": {
@@ -2304,9 +2304,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1787694958.9680705,
-    "seen": 1787694976.8996458,
-    "ast_hash": "13db6a3a68f7a256f077c3401389d615",
+    "mtime": 1787714393.580791,
+    "seen": 1787717612.7793221,
+    "ast_hash": "32bcc32a149ecb3c00dae332b8714065",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -2669,10 +2669,10 @@
     "ast_hash": "4fdff04769e2875c8728106b3a01980e",
     "semantic_hash": ""
   },
-  "kanban/in-progress/grow-gliderscore-fixture-corpus.md": {
-    "mtime": 1787714241.3167794,
-    "seen": 1787714360.3498235,
-    "ast_hash": "861f2c7d54d8511de974d8cbf7461b75",
+  "kanban/completed/grow-gliderscore-fixture-corpus.md": {
+    "mtime": 1787714422.7677834,
+    "seen": 1787717612.7790277,
+    "ast_hash": "c32678beeef92ea7fda3adf2298e8b11",
     "semantic_hash": ""
   }
 }
