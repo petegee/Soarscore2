@@ -89,7 +89,7 @@ public sealed class ReplaySteps
         // triage. For this steel thread nothing may be excused — if this fails,
         // someone ledgered a real mismatch to get green.
         Fixture!.Divergences.Should().BeEmpty(
-            "WI-1's expected outcome for ales-sample-comp is an EXACT match everywhere; "
+            $"{Fixture.Slug} is expected to match EXACTLY everywhere; "
             + "a populated ledger means a divergence was accepted without triage.");
     }
 

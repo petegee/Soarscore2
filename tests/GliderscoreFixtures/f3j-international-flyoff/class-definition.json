@@ -1,0 +1,191 @@
+{
+  "name": "Gliderscore DurGeneral (f3j-international-flyoff)",
+  "faiDesignation": "",
+  "version": "GliderScore 6.78 export, authored per gliderscore-replay-and-compare-harness.md D3",
+  "parameters": [],
+  "reflight": {
+    "entitledScores": "UndefinedRequiresRuling",
+    "othersScore": "UndefinedRequiresRuling",
+    "minNewGroupSize": 2
+  },
+  "penalties": [],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 1
+      },
+      "drops": [],
+      "tasks": [
+        {
+          "code": "D",
+          "name": "Duration",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landingDistance",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 0.1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 1
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "piecewise",
+              "metricRef": "flightTime",
+              "bands": [
+                {
+                  "from": 0,
+                  "to": 900,
+                  "ratePerUnit": 1
+                },
+                {
+                  "from": 900,
+                  "ratePerUnit": -1
+                }
+              ]
+            },
+            {
+              "$kind": "lookup",
+              "metricRef": "landingDistance",
+              "rows": [
+                {
+                  "upTo": 0.2,
+                  "points": 100
+                },
+                {
+                  "upTo": 0.4,
+                  "points": 99
+                },
+                {
+                  "upTo": 0.6,
+                  "points": 98
+                },
+                {
+                  "upTo": 0.8,
+                  "points": 97
+                },
+                {
+                  "upTo": 1.0,
+                  "points": 96
+                },
+                {
+                  "upTo": 1.2,
+                  "points": 95
+                },
+                {
+                  "upTo": 1.4,
+                  "points": 94
+                },
+                {
+                  "upTo": 1.6,
+                  "points": 93
+                },
+                {
+                  "upTo": 1.8,
+                  "points": 92
+                },
+                {
+                  "upTo": 2.0,
+                  "points": 91
+                },
+                {
+                  "upTo": 3.0,
+                  "points": 90
+                },
+                {
+                  "upTo": 4.0,
+                  "points": 85
+                },
+                {
+                  "upTo": 5.0,
+                  "points": 80
+                },
+                {
+                  "upTo": 6.0,
+                  "points": 75
+                },
+                {
+                  "upTo": 7.0,
+                  "points": 70
+                },
+                {
+                  "upTo": 8.0,
+                  "points": 65
+                },
+                {
+                  "upTo": 9.0,
+                  "points": 60
+                },
+                {
+                  "upTo": 10.0,
+                  "points": 55
+                },
+                {
+                  "upTo": 11.0,
+                  "points": 50
+                },
+                {
+                  "upTo": 12.0,
+                  "points": 45
+                },
+                {
+                  "upTo": 13.0,
+                  "points": 40
+                },
+                {
+                  "upTo": 14.0,
+                  "points": 35
+                },
+                {
+                  "upTo": 15.0,
+                  "points": 30
+                },
+                {
+                  "points": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
