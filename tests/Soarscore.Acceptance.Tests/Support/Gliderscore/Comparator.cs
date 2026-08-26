@@ -22,6 +22,10 @@
 //                       contributions onto our pre-normalisation raw so both sides
 //                       speak GS's composition; the engine's own evaluation of
 //                       those same terms is exercised end-to-end by grain 2.
+//                       WI-4: the task definition resolves PER ROUND (f3k-
+//                       sample-comp prescribes a different GS task each round);
+//                       its fixtures carry no ScoreNormalised terms, so there
+//                       GsEquivalentRaw passes our raw straight through.
 //   grain 2 (normalised) — GS NormalisedScore vs GET /task-round-result per
 //                       round. CompetitorTaskResultView.RawScore carries the
 //                       POST-normalisation value (NormalisationEngine.cs line 151
@@ -163,10 +167,14 @@ public static class Comparator
         List<GrainMismatch> mismatches)
     {
         var classDef = competition.AdoptedRules.Definition;
-        var taskDef = classDef.Phases[outcome.PhaseOrdinal].Tasks.Single(t => t.Code == outcome.TaskCode);
 
         foreach (var group in outcome.EntryIdBySlot.GroupBy(kv => (kv.Key.RoundNo, kv.Key.GroupNo)))
         {
+            // WI-4 — the task is per ROUND (f3k-sample-comp prescribes a
+            // different GS task code each round); resolve this round's task.
+            var taskDef = classDef.Phases[outcome.PhaseOrdinal]
+                .Tasks.Single(t => t.Code == outcome.TaskCodeByRoundNo[group.Key.RoundNo]);
+
             // Round-scoped bindings win per per-round-parameter-bindings-plan.md;
             // the same flattening ScoreTaskRoundHandler performs over HTTP.
             var bindings = ScoringService.FlattenParameterBindings(

@@ -18,12 +18,33 @@ using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Acceptance.Tests.Support.Gliderscore;
 
+// WI-4 widens this file with the two shapes f3k-sample-comp needs: the
+// schedule tables (per-round task catalogue) and the optional F3K family row.
+// Both are nullable — the duration-family fixtures' competition.json carries
+// neither, and System.Text.Json leaves an absent property at its default.
+
 public sealed record CompetitionFile(
     CompetitionIdentity Identity,
     CompetitionScoring Scoring,
-    FamilyRowsTable FamilyRows);
+    FamilyRowsTable FamilyRows,
+    ScheduleTablesTable? ScheduleTables = null);
 
-public sealed record FamilyRowsTable(DurFamilyRow Dur);
+public sealed record FamilyRowsTable(DurFamilyRow? Dur = null, F3KFamilyRow? F3K = null);
+
+/// <summary>
+/// The F3K family row — draw/timing state only, no scoring knobs (provenance):
+/// the harness reads nothing from it today; its presence is what marks a
+/// fixture as F3K-family alongside Identity.GsCompClass.
+/// </summary>
+public sealed record F3KFamilyRow(int CompNo);
+
+/// <summary>The per-round task schedule tables (competition.json scheduleTables).</summary>
+public sealed record ScheduleTablesTable(F3KTaskByRoundTable? F3KTaskByRound = null);
+
+public sealed record F3KTaskByRoundTable(F3KTaskRow[] Rows);
+
+/// <summary>One F3KTaskByRound row: round → GS task code ("G", "A(1)", …).</summary>
+public sealed record F3KTaskRow(int RoundNo, string Task);
 
 public sealed record CompetitionIdentity(
     int CompNo,
@@ -44,8 +65,8 @@ public sealed record DurFamilyRow(
     int DurLndg,
     int DurFlightPenalty)
 {
-    /// <summary>Convenience accessor — competition.json nests family rows under "familyRows".</summary>
-    public static DurFamilyRow Of(CompetitionFile competition) => competition.FamilyRows.Dur;
+    /// <summary>Convenience accessor — competition.json nests family rows under "familyRows". Null when absent (F3K fixtures carry no Dur row).</summary>
+    public static DurFamilyRow? Of(CompetitionFile competition) => competition.FamilyRows.Dur;
 }
 
 public sealed record EntriesFile(CompPilotsTable CompPilots, PilotsTable Pilots);

@@ -1,0 +1,300 @@
+{
+  "name": "Gliderscore F3K sample (f3k-sample-comp)",
+  "faiDesignation": "",
+  "version": "GliderScore 6.78 export, authored per gliderscore-replay-and-compare-harness.md D3/WI-4; the six GS task codes' arithmetic decoded from CalcRawScoreF3K and proven cell-exact against expected-scores.json (see tests/GliderscoreFixtures/f3k-sample-comp/provenance.json)",
+  "parameters": [],
+  "reflight": {
+    "entitledScores": "UndefinedRequiresRuling",
+    "othersScore": "UndefinedRequiresRuling",
+    "minNewGroupSize": 2
+  },
+  "penalties": [
+    {
+      "infractionType": "competitionPenalty",
+      "exclusionGroups": [],
+      "accrual": "PerOccurrence",
+      "effects": [
+        {
+          "effect": "DeductPoints",
+          "points": 100
+        }
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "ChooseFromCatalogue",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 1
+      },
+      "drops": [
+        {
+          "dimension": "ByTask",
+          "dropCount": 1,
+          "applyWhenRoundsCompletedAtLeast": 5,
+          "applyWhenResultsAtLeast": 4
+        }
+      ],
+      "tasks": [
+        {
+          "code": "G",
+          "name": "Best5 2:00max",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "all"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 5
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 120
+            }
+          ]
+        },
+        {
+          "code": "A(1)",
+          "name": "L1 5max in 10m",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 1
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 300
+            }
+          ]
+        },
+        {
+          "code": "F",
+          "name": "Best3 3:00max",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "all"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 3
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 180
+            }
+          ]
+        },
+        {
+          "code": "D",
+          "name": "Ladder (Not FAI)",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "exactlyN",
+            "count": 7,
+            "targets": "InOrder",
+            "targetValues": [30, 45, 60, 75, 90, 105, 120]
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 7
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1
+            }
+          ]
+        },
+        {
+          "code": "C(3)",
+          "name": "AllUp 3:00*5",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "all"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 5
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 180
+            }
+          ]
+        },
+        {
+          "code": "X",
+          "name": "NoTaskSet placeholder",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "all"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete"
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 1
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

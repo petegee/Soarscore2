@@ -30,6 +30,22 @@
 //     because a score term over an uncaptured metric throws — while placeholder
 //     rows stay flight-less exactly as D4 requires.
 //
+// WI-4 widens three places for f3k-sample-comp, cited where they happen:
+//   - per-round task prescription: F3KTaskByRound names a GS task per round, so
+//     the phase is authored ChooseFromCatalogue and every prescribed round
+//     carries its TaskRef;
+//   - the F3K capture map, PER GS TASK CODE (trap 6): ScrArr(0..6) = Laps,
+//     Time1Mins, Time1Secs, Time2Mins, Time2Secs, Landing,
+//     FlightScoreDeduction — each non-zero packed-mmss slot becomes ONE flight
+//     carrying flightTime; slot order is preserved because task D pairs
+//     flights positionally with descending ladder targets (ExactlyNInOrder).
+//     The map and the per-task arithmetic it feeds were PROVEN against
+//     expected-scores.json before this harness trusted them (90/90 raw cells);
+//   - Scores.Penalty rows replay as competition-scoped penalties via
+//     /record-competition-penalty — post-sum per-pilot deductions (provenance),
+//     which our pipeline applies after aggregation before ranking
+//     (ScoringService.GetAggregatePenalties), the same placement as GS.
+//
 // Deliberately NOT widened here: /record-entry-penalty calls. The WI-3 brief
 // expected Scores.FlightScoreDeduction to replay as an entry-scoped DeductPoints
 // penalty definition, but PenaltyEngine.ApplyRawPenalties honours only zeroing
@@ -58,7 +74,7 @@ namespace Soarscore.Acceptance.Tests.Support.Gliderscore;
 public sealed record ReplayOutcome(
     CompetitionId CompetitionId,
     int PhaseOrdinal,
-    string TaskCode,
+    IReadOnlyDictionary<int, string> TaskCodeByRoundNo,
     IReadOnlyDictionary<int, int> RoundOrdinalByRoundNo,
     IReadOnlyDictionary<(int RoundNo, int GroupNo), GroupId> GroupIdByRoundAndGroup,
     IReadOnlyDictionary<(int RoundNo, int GroupNo, long PilotNo), EntryId> EntryIdBySlot,
@@ -134,6 +150,11 @@ public sealed class ReplayDriver(HttpClient client)
         // -------------------------------------------------------------- draw
         var keptRows = DeriveDrawRows(fixture);
 
+        // WI-4 — the fixture's per-round GS task schedule (empty for the
+        // duration-family fixtures, whose FixedSequence phases prescribe a null
+        // TaskRef and repeat their single task).
+        var taskByRoundNo = F3KTaskByRound(fixture);
+
         var prescribedRounds = keptRows
             .GroupBy(r => r.RoundNo)
             .OrderBy(g => g.Key)
@@ -146,7 +167,9 @@ public sealed class ReplayDriver(HttpClient client)
                         g.OrderBy(r => r.SeqNo).Select(r => competitorByPilotNo[r.PilotNo]).ToList()))
                     .ToList();
 
-                return new PrescribedRound(TaskRef: null, Groups: groups);
+                return new PrescribedRound(
+                    TaskRef: taskByRoundNo.GetValueOrDefault(roundRows.Key),
+                    Groups: groups);
             })
             .ToList();
 
@@ -188,10 +211,12 @@ public sealed class ReplayDriver(HttpClient client)
         var roundsAscending = phase.Rounds.OrderBy(r => r.Ordinal).ToList();
 
         var groupIdByRoundAndGroup = new Dictionary<(int RoundNo, int GroupNo), GroupId>();
+        var taskCodeByRoundNo = new Dictionary<int, string>();
 
         foreach (var roundNo in roundNosAscending)
         {
             var taskRound = roundsAscending[roundOrdinalByRoundNo[roundNo] - 1].TaskRounds.Single();
+            taskCodeByRoundNo[roundNo] = taskRound.TaskRef;
             var groupNosAscending = keptRows
                 .Where(r => r.RoundNo == roundNo)
                 .Select(r => r.GroupNo).Distinct().OrderBy(n => n).ToList();
@@ -202,8 +227,6 @@ public sealed class ReplayDriver(HttpClient client)
                     taskRound.Groups.OrderBy(g => g.Ordinal).ElementAt(i).Id;
             }
         }
-
-        var taskCode = roundsAscending[0].TaskRounds.Single().TaskRef;
 
         // --------------------------------------------------- D4 cell universe
         // Outer walk is per ROUND, inner per group: a round's groups share ONE
@@ -237,19 +260,30 @@ public sealed class ReplayDriver(HttpClient client)
                     entryIdBySlot[(row.RoundNo, row.GroupNo, row.PilotNo)] = entryId;
 
                     // Placeholder rows stay flight-less ⇒ NoResult ⇒ cell 0 (D4).
-                    // A FLOWN slot opens exactly one flight; its captures include
-                    // deliberate zeros — see CaptureInputs (WI-3 widening).
+                    // A FLOWN slot opens ONE FLIGHT PER NON-ZERO SLOT VALUE —
+                    // exactly one for the duration family (WI-3), up to seven
+                    // for F3K's packed columns (WI-4); captures carry the
+                    // flight sequence they belong to. Deliberate zeros inside a
+                    // flown slot — see CaptureInputs (WI-3 widening).
                     var captures = CaptureInputs(fixture, row);
 
                     if (captures is not null)
                     {
-                        await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
+                        var flights = captures
+                            .GroupBy(c => c.Flight)
+                            .OrderBy(g => g.Key)
+                            .ToList();
 
-                        foreach (var (metric, value) in captures)
+                        foreach (var flight in flights)
                         {
-                            await PostAsync<EntryId>(
-                                "/capture-measurement",
-                                new CaptureMeasurement(entryId, 1, metric, MeasuredValue.Of(value)));
+                            await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
+
+                            foreach (var (metric, value, _) in flight)
+                            {
+                                await PostAsync<EntryId>(
+                                    "/capture-measurement",
+                                    new CaptureMeasurement(entryId, flight.Key, metric, MeasuredValue.Of(value)));
+                            }
                         }
                     }
                 }
@@ -260,12 +294,28 @@ public sealed class ReplayDriver(HttpClient client)
                 new CompleteTaskRound(competitionId, phase.Ordinal, roundOrdinal, 1));
         }
 
+        // WI-4 — Scores.Penalty rows are post-sum per-pilot competition
+        // penalties (provenance; arithmetic story Drop-worst §6): GS subtracts
+        // each pilot's penalty total from the summed kept cells afterwards.
+        // One POST per occurrence row — GetAggregatePenalties counts rows per
+        // infraction type and PerOccurrence accrual multiplies the points, so
+        // pilot 56's two rows become one 200 deduction. Recorded before
+        // finalise, though RecordPenalty imposes no finalisation gate.
+        foreach (var row in fixture.ScoresRaw.Rows.Where(r => r.Penalty > 0))
+        {
+            await PostAsync<CompetitionId>(
+                "/record-competition-penalty",
+                new RecordCompetitionPenalty(
+                    competitionId, CompetitionPenaltyInfractionType, PenaltyScope.Competition,
+                    competitorByPilotNo[row.PilotNo], TaskRound: null, By: CdName));
+        }
+
         await PostAsync<CompetitionId>("/finalise-competition", new FinaliseCompetition(competitionId, CdName));
 
         return new ReplayOutcome(
             CompetitionId: competitionId,
             PhaseOrdinal: phase.Ordinal,
-            TaskCode: taskCode,
+            TaskCodeByRoundNo: taskCodeByRoundNo,
             RoundOrdinalByRoundNo: roundOrdinalByRoundNo,
             GroupIdByRoundAndGroup: groupIdByRoundAndGroup,
             EntryIdBySlot: entryIdBySlot,
@@ -327,12 +377,25 @@ public sealed class ReplayDriver(HttpClient client)
 
     // ---------------------------------------------------------- D4 capture
 
+    // WI-4 — the infraction type f3k-sample-comp's class definition declares
+    // for its Scores.Penalty column (post-sum per-pilot competition penalty).
+    private const string CompetitionPenaltyInfractionType = "competitionPenalty";
+
     /// <summary>
-    /// The (metric, value) pairs this row contributes, per D4's capture rule.
-    /// Null means the slot is a placeholder: no flight is opened and nothing
-    /// is captured, which is what keeps GS's placeholder-zero cells in the
-    /// drop pool as NoResult cells.
-    ///
+    /// One decoded slot value: the metric it is captured under, its value in
+    /// seconds, and WHICH flight of the entry carries it (1-based, slot order).
+    /// The duration family yields only flight 1; F3K's packed columns become
+    /// flights 1..n in ScrArr order.
+    /// </summary>
+    private sealed record SlotCapture(string Metric, decimal Value, int Flight);
+
+    /// <summary>The (metric, value, flight) triples this row contributes, or null.</summary>
+    private static List<SlotCapture>? CaptureInputs(GliderscoreFixture fixture, ScoresRow row) =>
+        fixture.Competition.Identity.GsCompClass == "F3K"
+            ? CaptureF3KInputs(fixture, row)
+            : CaptureDurationInputs(fixture, row);
+
+    /// <summary>
     /// Duration family (WI-3 capture map). A row counts as flown iff it
     /// carries a packed-mmss flight time — verified for every duration fixture
     /// so far that non-flown rows are all-zero across every Scores column.
@@ -356,14 +419,17 @@ public sealed class ReplayDriver(HttpClient client)
     ///                          definition as a −1 rate term over this metric.
     /// Laps is ignored (trap 6); Time2* would mean two timekeepers (trap 5).
     /// </summary>
-    private static List<(string Metric, decimal Value)>? CaptureInputs(GliderscoreFixture fixture, ScoresRow row)
+    private static List<SlotCapture>? CaptureDurationInputs(GliderscoreFixture fixture, ScoresRow row)
     {
-        if (DurFamilyRow.Of(fixture.Competition).DurNumberOfTimekeepers != 1)
+        var dur = DurFamilyRow.Of(fixture.Competition)
+            ?? throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': no Dur family row — not a duration-family fixture.");
+
+        if (dur.DurNumberOfTimekeepers != 1)
         {
             throw new NotSupportedException(
-                $"Fixture '{fixture.Slug}': durNumberOfTimekeepers = "
-                + $"{DurFamilyRow.Of(fixture.Competition).DurNumberOfTimekeepers}. Two-timekeeper fixtures are not "
-                + "supported by the harness yet (index.md 'Still open'; story trap 5).");
+                $"Fixture '{fixture.Slug}': durNumberOfTimekeepers = {dur.DurNumberOfTimekeepers}. Two-timekeeper "
+                + "fixtures are not supported by the harness yet (index.md 'Still open'; story trap 5).");
         }
 
         if (row.Time1Mins <= 0m)
@@ -380,25 +446,137 @@ public sealed class ReplayDriver(HttpClient client)
             .Select(m => m.Name)
             .ToHashSet();
 
-        var captures = new List<(string, decimal)>();
+        var captures = new List<SlotCapture>();
 
         if (declared.Contains("flightTime"))
         {
-            captures.Add(("flightTime", DecodePackedMinutesSeconds(row.Time1Mins)));
+            captures.Add(new SlotCapture("flightTime", DecodePackedMinutesSeconds(row.Time1Mins), Flight: 1));
         }
 
         if (declared.Contains("landingDistance"))
         {
-            captures.Add(("landingDistance", row.Landing));
+            captures.Add(new SlotCapture("landingDistance", row.Landing, Flight: 1));
         }
 
         if (declared.Contains("lateLandingDeduction"))
         {
-            captures.Add(("lateLandingDeduction", row.FlightScoreDeduction));
+            captures.Add(new SlotCapture("lateLandingDeduction", row.FlightScoreDeduction, Flight: 1));
         }
 
         return captures;
     }
+
+    // ------------------------------------------------------- F3K capture map
+
+    /// <summary>
+    /// The per-round GS task schedule (WI-4): F3KTaskByRound's round → task
+    /// code. Empty for every non-F3K fixture — their phases are FixedSequence
+    /// over one task and prescribe a null TaskRef.
+    /// </summary>
+    private static IReadOnlyDictionary<int, string> F3KTaskByRound(GliderscoreFixture fixture) =>
+        fixture.Competition.ScheduleTables?.F3KTaskByRound?.Rows.ToDictionary(r => r.RoundNo, r => r.Task)
+        ?? new Dictionary<int, string>();
+
+    /// <summary>
+    /// The F3K slot-column capture map, PER GS TASK CODE (trap 6). GS packs up
+    /// to seven inputs into one Scores row — ScrArr(0..6) = Laps, Time1Mins,
+    /// Time1Secs, Time2Mins, Time2Secs, Landing, FlightScoreDeduction
+    /// (arithmetic story, F3K section) — and CalcRawScoreF3K reads a
+    /// task-specific PREFIX as flight times, each mmss-decoded. The map below
+    /// was derived from that Select Case and PROVEN against expected-scores.json
+    /// before this harness trusted it: replaying decode → per-task cap /
+    /// ladder-clamp → sum reproduces all 90 oracle RawScore cells exactly.
+    ///
+    ///   G    'Best5 2:00max' — five time slots, each clamped at 120 s;
+    ///   A(1) 'L1 5max in 10m' — the Laps slot alone (packed), clamped at 300 s;
+    ///   F    'Best3 3:00max' — three time slots, each clamped at 180 s;
+    ///   D    'Ladder (Not FAI)' — ALL SEVEN slots positionally clamped at the
+    ///        ladder targets 30/45/60/75/90/105/120 s (the landing-distance and
+    ///        deduction slots count as flight times here — provenance; pilot
+    ///        13 R4: Landing 145→105, Deduction 200→120);
+    ///   C(3) 'AllUp 3:00*5' — five time slots, each clamped at 180 s;
+    ///   X    'NoTaskSet' — placeholder rounds 6–9, nothing ever captured.
+    ///
+    /// GS's working-window reduction (1 s per flown flight, D5) and its
+    /// violation-zeroing are NOT expressible in our timing model — but they
+    /// never bite this fixture's recorded data: every recorded slot set fits
+    /// inside its reduced window with margin, so no cell needs ledgering.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> F3KSlotMap =
+        new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["G"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs"],
+            ["A(1)"] = ["Laps"],
+            ["F"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["D"] = [
+                "Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs",
+                "Landing", "FlightScoreDeduction"],
+            ["C(3)"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs"],
+            ["X"] = [],
+        };
+
+    private static List<SlotCapture>? CaptureF3KInputs(GliderscoreFixture fixture, ScoresRow row)
+    {
+        var taskByRound = F3KTaskByRound(fixture);
+        var taskCode = taskByRound.GetValueOrDefault(row.RoundNo)
+            ?? throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': F3K schedule names no task for round {row.RoundNo}.");
+
+        if (!F3KSlotMap.ContainsKey(taskCode))
+        {
+            throw new NotSupportedException(
+                $"Fixture '{fixture.Slug}': round {row.RoundNo} names GS task '{taskCode}', which is not in "
+                + "the F3K slot-column capture map — widen F3KSlotMap with its CalcRawScoreF3K semantics first.");
+        }
+
+        var captures = new List<SlotCapture>();
+        var seenNonZero = false;
+        var gapAfterNonZero = false;
+
+        for (var i = 0; i < F3KSlotMap[taskCode].Count; i++)
+        {
+            var decoded = DecodePackedMinutesSeconds(ColumnValue(row, F3KSlotMap[taskCode][i]));
+
+            if (decoded == 0m)
+            {
+                // Task D pairs flights POSITIONALLY with descending ladder
+                // targets (ExactlyNInOrder + targetValues): a skipped slot
+                // BETWEEN flown ones would shift every later flight onto the
+                // wrong rung. Fail loudly rather than mis-score — every
+                // recorded row in this fixture is prefix-shaped.
+                if (taskCode == "D" && seenNonZero)
+                {
+                    gapAfterNonZero = true;
+                }
+
+                continue;
+            }
+
+            if (gapAfterNonZero)
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{fixture.Slug}': round {row.RoundNo} pilot {row.PilotNo} has an interior zero "
+                    + $"in ladder task D's slots (slot {i} follows a gap) — positional targets would mispair.");
+            }
+
+            seenNonZero = true;
+            captures.Add(new SlotCapture("flightTime", decoded, Flight: captures.Count + 1));
+        }
+
+        return captures.Count == 0 ? null : captures;
+    }
+
+    private static decimal ColumnValue(ScoresRow row, string column) => column switch
+    {
+        "Laps" => row.Laps,
+        "Time1Mins" => row.Time1Mins,
+        "Time1Secs" => row.Time1Secs,
+        "Time2Mins" => row.Time2Mins,
+        "Time2Secs" => row.Time2Secs,
+        "Landing" => row.Landing,
+        "FlightScoreDeduction" => row.FlightScoreDeduction,
+        _ => throw new ArgumentOutOfRangeException(nameof(column), column, "Unknown F3K slot column."),
+    };
 
     /// <summary>
     /// GS packed mmss.s decode with Fix-truncation toward zero
