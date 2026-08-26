@@ -21,6 +21,24 @@
 //        decision 4 — list order IS the flying order).
 //   Trap 5 — a fixture with two timekeepers is refused loudly rather than
 //        mis-modelled as a single-timekeeper decode.
+//
+// WI-3 widens two places, both cited where they happen below:
+//   - round-scoped parameter bindings (f3j-international's round-1 target time,
+//     oracle-reconciled knowledge that competition.json does not carry);
+//   - the duration-family capture map: the two columns f3j-international's
+//     score terms read are captured for every FLOWN slot including zeros,
+//     because a score term over an uncaptured metric throws — while placeholder
+//     rows stay flight-less exactly as D4 requires.
+//
+// Deliberately NOT widened here: /record-entry-penalty calls. The WI-3 brief
+// expected Scores.FlightScoreDeduction to replay as an entry-scoped DeductPoints
+// penalty definition, but PenaltyEngine.ApplyRawPenalties honours only zeroing
+// effects and GetAggregatePenalties filters to TaskRound/Competition scope, so
+// such a penalty would change no score anywhere — and GS subtracts FltPenalty
+// INSIDE RawScore pre-normalisation anyway, which an aggregate-stage deduction
+// could not reproduce. The deduction is therefore part of the fixture's class
+// definition (a −1 rate term over a captured deduction column) and reaches the
+// engine through the ordinary score pipeline. See Comparator.cs grain-1 notes.
 
 using System.Net.Http.Json;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -49,6 +67,26 @@ public sealed record ReplayOutcome(
 public sealed class ReplayDriver(HttpClient client)
 {
     private const string CdName = "Gliderscore replay harness";
+
+    // WI-3 — round-scoped parameter bindings, keyed by fixture slug. The
+    // mechanism is generic (POST /bind-parameter per entry, phase 0 = the
+    // prescribed first phase); only the DATA is per-fixture.
+    //
+    // f3j-international: GS scored its round 1 against a 540 s target — every
+    // one of the round's 22 over-target decay witnesses implies T = (t + TS)/2
+    // = 540 exactly, while rounds 2-16 never decay and hold durTargetTime =
+    // 600. The export carries no DurTargetTimeByRound rows at all (the table
+    // is empty in the source .mdb), so this value exists nowhere in the
+    // fixture's input files: it is oracle-reconciled knowledge, authored here
+    // beside the capture maps rather than parsed (trap 6 precedent). The class
+    // definition declares `targetTime` PerRound with default 600; this binding
+    // pins round 1 to 540 before any entry opens (a round-scoped bind freezes
+    // once flights exist).
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<(string Parameter, int RoundNo, decimal Value)>>
+        RoundParameterBindings = new Dictionary<string, IReadOnlyList<(string, int, decimal)>>
+        {
+            ["f3j-international"] = [("targetTime", 1, 540m)],
+        };
 
     public async Task<ReplayOutcome> ReplayAsync(GliderscoreFixture fixture)
     {
@@ -115,6 +153,30 @@ public sealed class ReplayDriver(HttpClient client)
         await PostAsync<CompetitionId>("/prescribe-draw", new PrescribeDraw(competitionId, prescribedRounds, CdName));
         await PostAsync<CompetitionId>("/accept-draw", new AcceptDraw(competitionId));
 
+        // Fixture ordinals are pure position math over the kept rows: rounds
+        // ascending RoundNo, 1-based. Needed here already — a round-scoped
+        // parameter bind names the round by this ordinal.
+        var roundNosAscending = keptRows.Select(r => r.RoundNo).Distinct().OrderBy(n => n).ToList();
+        var roundOrdinalByRoundNo = roundNosAscending
+            .Select((roundNo, index) => (roundNo, ordinal: index + 1))
+            .ToDictionary(pair => pair.roundNo, pair => pair.ordinal);
+
+        // WI-3 — apply the fixture's round-scoped parameter binds while every
+        // task-round is still Drawn and no entry exists (the decide function
+        // refuses a bind into a round that has started flying). Phase 0 is the
+        // prescribed first phase (Phase.Ordinal is Phases.Length at draw time).
+        if (RoundParameterBindings.GetValueOrDefault(fixture.Slug) is { } binds)
+        {
+            foreach (var (parameter, roundNo, value) in binds)
+            {
+                await PostAsync<CompetitionId>(
+                    "/bind-parameter",
+                    new BindParameter(
+                        competitionId, parameter, MeasuredValue.Of(value), CdName,
+                        PhaseOrdinal: 0, RoundOrdinal: roundOrdinalByRoundNo[roundNo]));
+            }
+        }
+
         // --------------------------------------------- read back drawn structure
         // Ordinals are assigned by position at prescription time (Competition.
         // PrescribeDraw): Phase.Ordinal is Phases.Length at draw time — 0 for a
@@ -124,11 +186,6 @@ public sealed class ReplayDriver(HttpClient client)
         var view = await ApiClient.GetAsync<CompetitionView>(client, $"/competition?id={competitionId.Value}");
         var phase = view.Competition.Phases.Single();
         var roundsAscending = phase.Rounds.OrderBy(r => r.Ordinal).ToList();
-
-        var roundNosAscending = keptRows.Select(r => r.RoundNo).Distinct().OrderBy(n => n).ToList();
-        var roundOrdinalByRoundNo = roundNosAscending
-            .Select((roundNo, index) => (roundNo, ordinal: index + 1))
-            .ToDictionary(pair => pair.roundNo, pair => pair.ordinal);
 
         var groupIdByRoundAndGroup = new Dictionary<(int RoundNo, int GroupNo), GroupId>();
 
@@ -149,38 +206,51 @@ public sealed class ReplayDriver(HttpClient client)
         var taskCode = roundsAscending[0].TaskRounds.Single().TaskRef;
 
         // --------------------------------------------------- D4 cell universe
+        // Outer walk is per ROUND, inner per group: a round's groups share ONE
+        // task-round, and completing it closes the round to new entries
+        // (openEntry.taskRoundClosed) — WI-3 exposed this with f3j-
+        // international's four groups per round; single-group fixtures never
+        // noticed.
         var entryIdBySlot = new Dictionary<(int RoundNo, int GroupNo, long PilotNo), EntryId>();
 
-        foreach (var group in keptRows
-            .GroupBy(r => (r.RoundNo, r.GroupNo))
-            .OrderBy(g => g.Key.RoundNo).ThenBy(g => g.Key.GroupNo))
+        foreach (var roundNo in roundNosAscending)
         {
-            var roundOrdinal = roundOrdinalByRoundNo[group.Key.RoundNo];
-            var groupId = groupIdByRoundAndGroup[(group.Key.RoundNo, group.Key.GroupNo)];
+            var roundOrdinal = roundOrdinalByRoundNo[roundNo];
+            var groupNosAscending = keptRows
+                .Where(r => r.RoundNo == roundNo)
+                .Select(r => r.GroupNo).Distinct().OrderBy(n => n);
 
-            foreach (var row in group.OrderBy(r => r.SeqNo))
+            foreach (var groupNo in groupNosAscending)
             {
-                var entryId = await PostAsync<EntryId>(
-                    "/open-entry",
-                    new OpenEntry(
-                        competitionId, phase.Ordinal, roundOrdinal, 1,
-                        groupId, competitorByPilotNo[row.PilotNo]));
+                var groupId = groupIdByRoundAndGroup[(roundNo, groupNo)];
 
-                entryIdBySlot[(row.RoundNo, row.GroupNo, row.PilotNo)] = entryId;
-
-                // Placeholder rows stay flight-less ⇒ NoResult ⇒ cell 0 (D4);
-                // flown slots open exactly one flight and capture decoded values.
-                var captures = CaptureInputs(fixture, row);
-
-                if (captures.Count > 0)
+                foreach (var row in keptRows
+                    .Where(r => r.RoundNo == roundNo && r.GroupNo == groupNo)
+                    .OrderBy(r => r.SeqNo))
                 {
-                    await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
+                    var entryId = await PostAsync<EntryId>(
+                        "/open-entry",
+                        new OpenEntry(
+                            competitionId, phase.Ordinal, roundOrdinal, 1,
+                            groupId, competitorByPilotNo[row.PilotNo]));
 
-                    foreach (var (metric, value) in captures)
+                    entryIdBySlot[(row.RoundNo, row.GroupNo, row.PilotNo)] = entryId;
+
+                    // Placeholder rows stay flight-less ⇒ NoResult ⇒ cell 0 (D4).
+                    // A FLOWN slot opens exactly one flight; its captures include
+                    // deliberate zeros — see CaptureInputs (WI-3 widening).
+                    var captures = CaptureInputs(fixture, row);
+
+                    if (captures is not null)
                     {
-                        await PostAsync<EntryId>(
-                            "/capture-measurement",
-                            new CaptureMeasurement(entryId, 1, metric, MeasuredValue.Of(value)));
+                        await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
+
+                        foreach (var (metric, value) in captures)
+                        {
+                            await PostAsync<EntryId>(
+                                "/capture-measurement",
+                                new CaptureMeasurement(entryId, 1, metric, MeasuredValue.Of(value)));
+                        }
                     }
                 }
             }
@@ -258,13 +328,35 @@ public sealed class ReplayDriver(HttpClient client)
     // ---------------------------------------------------------- D4 capture
 
     /// <summary>
-    /// The (metric, value) pairs this row contributes, per D4's capture rule:
-    /// non-zero inputs only. Duration family — Time1Mins is the packed-mmss
-    /// flight time, Landing the landing-distance bucket; Laps ignored (trap 6),
-    /// FlightScoreDeduction is WI-3's widening, Time2* would mean two
-    /// timekeepers (trap 5) and is refused rather than averaged away.
+    /// The (metric, value) pairs this row contributes, per D4's capture rule.
+    /// Null means the slot is a placeholder: no flight is opened and nothing
+    /// is captured, which is what keeps GS's placeholder-zero cells in the
+    /// drop pool as NoResult cells.
+    ///
+    /// Duration family (WI-3 capture map). A row counts as flown iff it
+    /// carries a packed-mmss flight time — verified for every duration fixture
+    /// so far that non-flown rows are all-zero across every Scores column.
+    /// For a flown slot the two columns f3j-international's score terms READ
+    /// are captured even when zero: FlightInterpreter throws on a score-term
+    /// metric that was never measured, and a zero landing / zero deduction is
+    /// an observed fact of the flight, not missing data. D4's "only non-zero
+    /// inputs" letter gives way here; its intent (placeholders stay
+    /// flight-less, nothing is manufactured) does not.
+    ///
+    ///   flightTime           — Time1Mins decoded Fix-style ("500.0" = 300 s,
+    ///                          Handoff §3); captured when non-zero.
+    ///   landingDistance      — metres; ALWAYS captured for a flown slot. The
+    ///                          class lookup scores a zero as zero (GS's
+    ///                          exact-match miss on the empty distance).
+    ///   lateLandingDeduction — Scores.FlightScoreDeduction payload points;
+    ///                          ALWAYS captured for a flown slot. durFlightPenalty=1
+    ///                          selects GS's late-landing scheme, under which
+    ///                          the payload is subtracted from RawScore
+    ///                          pre-normalisation — expressed in the class
+    ///                          definition as a −1 rate term over this metric.
+    /// Laps is ignored (trap 6); Time2* would mean two timekeepers (trap 5).
     /// </summary>
-    private static List<(string Metric, decimal Value)> CaptureInputs(GliderscoreFixture fixture, ScoresRow row)
+    private static List<(string Metric, decimal Value)>? CaptureInputs(GliderscoreFixture fixture, ScoresRow row)
     {
         if (DurFamilyRow.Of(fixture.Competition).DurNumberOfTimekeepers != 1)
         {
@@ -274,16 +366,35 @@ public sealed class ReplayDriver(HttpClient client)
                 + "supported by the harness yet (index.md 'Still open'; story trap 5).");
         }
 
+        if (row.Time1Mins <= 0m)
+        {
+            return null;
+        }
+
+        // Only metrics the fixture's own definition declares may be captured —
+        // the earlier fixtures declare no deduction column, so their flown
+        // slots keep the two-capture shape.
+        var declared = fixture.Definition.Phases
+            .SelectMany(p => p.Tasks)
+            .SelectMany(t => t.Metrics)
+            .Select(m => m.Name)
+            .ToHashSet();
+
         var captures = new List<(string, decimal)>();
 
-        if (row.Time1Mins > 0m)
+        if (declared.Contains("flightTime"))
         {
             captures.Add(("flightTime", DecodePackedMinutesSeconds(row.Time1Mins)));
         }
 
-        if (row.Landing > 0m)
+        if (declared.Contains("landingDistance"))
         {
             captures.Add(("landingDistance", row.Landing));
+        }
+
+        if (declared.Contains("lateLandingDeduction"))
+        {
+            captures.Add(("lateLandingDeduction", row.FlightScoreDeduction));
         }
 
         return captures;

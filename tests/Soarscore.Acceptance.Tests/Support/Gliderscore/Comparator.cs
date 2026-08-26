@@ -205,6 +205,17 @@ public static class Comparator
     /// Our pre-normalisation score expressed in GS's RawScore composition — see
     /// this file's header. NoResult keeps the engine's own cell (0), matching
     /// GS's placeholder-zero rows.
+    ///
+    /// WI-3 verification (f3j-international, drops + deductions): no entry-
+    /// penalty mirroring is added here, because that fixture expresses its
+    /// late-landing deduction inside `score` (a −1 rate term over a captured
+    /// deduction column), so our raw is ALREADY GS-composed
+    /// (time + landing − deduction) before this mapping. A fixture that
+    /// authored a DeductPoints entry-scoped penalty definition would need the
+    /// deduction mirrored here AND at grain 2 it could not be mirrored at all:
+    /// PenaltyEngine.ApplyRawPenalties honours zeroing effects only and
+    /// GetAggregatePenalties filters to TaskRound/Competition scope, so such a
+    /// penalty reaches no scoring stage — see ReplayDriver.cs header.
     /// </summary>
     private static decimal GsEquivalentRaw(ResolvedTask task, TaskResult result)
     {

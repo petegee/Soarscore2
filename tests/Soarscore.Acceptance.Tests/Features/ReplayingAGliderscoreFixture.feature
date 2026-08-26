@@ -26,3 +26,12 @@ Feature: Replaying a GliderScore fixture
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
     And the fixture carries no ledgered divergences
+
+  Scenario: The f3j-international fixture reproduces GliderScore exactly at all three grains modulo its ledgered phantom-group cells
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f3j-international"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 2 accepted divergences

@@ -93,6 +93,34 @@ public sealed class ReplaySteps
             + "a populated ledger means a divergence was accepted without triage.");
     }
 
+    [Then(@"^every ledgered divergence cites an arithmetic-story divergence ID$")]
+    public void ThenEveryLedgeredDivergenceCitesAnArithmeticStoryId()
+    {
+        // D6's ledger schema: every reason cites resolve-gliderscore-scoring-
+        // arithmetic.md's divergence IDs (D1/D3/D5/D6). A reason without one is
+        // an untriaged excuse, not a documented divergence.
+        var unattributed = Fixture!.Divergences
+            .Where(d => !System.Text.RegularExpressions.Regex.IsMatch(d.Reason, @"\bD[1-6]\b"))
+            .ToList();
+
+        unattributed.Should().BeEmpty(
+            $"every ledgered divergence must cite an arithmetic-story divergence ID; "
+            + $"{Fixture.Slug} carries {unattributed.Count} without one.");
+    }
+
+    [Then(@"^the fixture ledger records exactly (\d+) accepted divergences$")]
+    public void ThenTheFixtureLedgerRecordsExactlyAcceptedDivergences(int expected)
+    {
+        // WI-3: f3j-international's phantom R1 group 5 (D5) leaves five oracle
+        // cells per grain that no replayed slot can produce — the ledger names
+        // them so the exact-grain assertions above prove everything ELSE is
+        // exact. This step pins the ledger to its reviewed size, so entries
+        // cannot silently grow.
+        Fixture!.Divergences.Should().HaveCount(expected,
+            $"{Fixture.Slug}'s committed ledger was triaged at {expected} entries; "
+            + "a different count means the fixture data or the ledger changed without re-triage.");
+    }
+
     private ComparisonReport Report() =>
         _report ?? throw new InvalidOperationException(
             "No comparison has run yet — the replay When step must precede the comparison Then steps.");

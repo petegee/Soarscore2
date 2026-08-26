@@ -1,0 +1,16 @@
+[
+  {
+    "grain": "raw",
+    "round": 1,
+    "group": 5,
+    "pilotNo": "*",
+    "reason": "D5: phantom group 5 in round 1 — five pilots (7, 11, 17, 39, 56) appear twice in the round; draw derivation keeps the real flight (highest oracle NormalisedScore per original round) and drops these all-zero placeholder rows, so their oracle cells are intentionally never replayed or compared. GS itself aggregates best-per-original-round, which is what makes the phantom neutral."
+  },
+  {
+    "grain": "normalised",
+    "round": 1,
+    "group": 5,
+    "pilotNo": "*",
+    "reason": "D5: phantom group 5 in round 1 — same dropped rows as the raw-grain entry; the oracle carries NormalisedScore 0 cells for them that no replayed slot can produce."
+  }
+]
