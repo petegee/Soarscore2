@@ -1,7 +1,7 @@
 # Story — GliderScore replay-and-compare harness
 
-**Status:** In progress · **Raised:** 2026-08-25 · **Fleshed out:** 2026-08-26 ·
-**Implementation started:** 2026-08-26
+**Status:** Completed · **Raised:** 2026-08-25 · **Fleshed out:** 2026-08-26 ·
+**Implementation started:** 2026-08-26 · **Completed:** 2026-08-26
 
 ## What
 
@@ -533,3 +533,37 @@ GliderScore; no glossary/docs change without an approval on record; both stores 
   (index.md *Still open*).
 - Engine changes: staged-drop accumulation, ranking secondary key — surfaced here,
   delivered (if at all) by their own stories.
+
+## As built (2026-08-26)
+
+All eight WIs delivered; all five active fixtures replay through public commands
+and compare exact at all three grains, modulo ledgered divergences that each
+cite an arithmetic-story divergence ID (or trap 3, which fired for real — see
+below); no `src/` file mentions GliderScore; both stores green throughout.
+Commits `ec4adb0`..(WI-8). Deviations worth knowing, each recorded where it bit:
+
+- **WI-2:** `MetricDefinition.precision` is a rounding *quantum*, not decimal
+  places (0.1 for one-decimal landing distances) — ales never discriminated it.
+- **WI-3:** D3's entry-scoped-penalty mapping was NOT used — verified against
+  the tree that `PenaltyEngine.ApplyRawPenalties` honours only Zero* effects,
+  so an entry-scoped `DeductPoints` changes no score anywhere. The late-landing
+  deduction is expressed as class data (captured metric + rate term in
+  `score`), which places it exactly where GS does: inside raw
+  pre-normalisation. The engine gap is parked as
+  `kanban/backlog/entry-scoped-deduct-points-penalties-inert.md`.
+- **WI-3:** jerilderie aside, f3j-international's R1 flies to target 540 while
+  every later round uses the Dur-row default 600 — absent from fixture inputs,
+  reproduced by binding the class's per-round `targetTime` parameter for round 1.
+- **WI-4:** D3's drop-collapse assertion needed a correction: our ByTask drop
+  removes `dropCount` cells PER task code (`PhaseAggregator.cs:228`), so f3k's
+  six per-round task codes require the policy's second gate
+  (`applyWhenResultsAtLeast`) — which reproduces GS exactly. No engine change.
+- **WI-6:** implemented with mapping (a) (D5-filtered replay, fully ledgered);
+  Q2's skip-list fallback unused. Trap 3 fired (jerilderie P4/P21) and is
+  ledgered; the engine change is parked as
+  `kanban/backlog/ranking-secondary-rawscore-key.md`; the re-flight concept gap
+  as `kanban/backlog/reflight-aggregate-destination.md`. Q1's declined view
+  field likewise parked (`kanban/backlog/pre-normalisation-score-view-field.md`).
+- **tech-debt.md:** nothing added — the staged-drop workaround was not made
+  insufficient by any corpus fixture (jerilderie's two-drop collapse is exact;
+  f3k's gate suffices), so WI-8's own criterion says note nothing.
