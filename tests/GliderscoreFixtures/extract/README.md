@@ -173,6 +173,111 @@ as skip-listed when a line starts with that slug token and contains the word
 - some-comp — skipped — team scoring (concept gap)
 ```
 
+## Replay-and-compare harness
+
+The replay-and-compare harness lives in `tests/Soarscore.Acceptance.Tests`
+(feature `ReplayingAGliderscoreFixture`, support code in
+`Support/Gliderscore/`). It replays each active fixture through Soarscore's
+public command surface only — publish the authored class definition, create,
+register, prescribe the realised draw, accept, open entries/flights, capture,
+complete rounds, finalise — then compares GliderScore's persisted scores at
+three grains (raw flight score · per-round normalised score · final ranking)
+with EXACT decimal equality, no tolerance. See the story on the board
+(`gliderscore-replay-and-compare-harness.md`) for the full design.
+
+### How the corpus is consumed
+
+- `index.md` is the manifest: every `- <slug> — …` bullet whose line does not
+  contain "skipped" is active; the feature holds one scenario per active
+  fixture plus the harness's own self-checks (replay determinism, score
+  conservation, ledger strictness).
+- Fixtures stay exactly where they are — nothing copies or moves them. The
+  loader resolves the corpus by walking up from the test assembly's location
+  until `tests/GliderscoreFixtures` appears, so build-output depth is never
+  hardcoded.
+- Per fixture the harness loads the curated JSON (`competition.json`,
+  `entries.json`, `scores-raw.json`, `expected-scores.json`,
+  `expected-result.json` — `provenance.json` documents curation but is not
+  machine-read), plus the hand-authored `<slug>/class-definition.json`, which
+  is deserialised with the Api's own ingestion options and posted verbatim to
+  `/publish-class-definition`.
+- An optional `<slug>/divergences.json` lists accepted differences after
+  human triage; absent means an empty ledger. One object per entry:
+
+  | Field     | Meaning                                                    |
+  | --------- | ---------------------------------------------------------- |
+  | `grain`   | `raw`, `normalised` or `ranking`                           |
+  | `round`   | round number; null for the ranking grain                   |
+  | `group`   | group number; null for the ranking grain                   |
+  | `pilotNo` | pilot number, or `"*"` for all pilots                      |
+  | `reason`  | must cite an arithmetic-story divergence ID (`D1`–`D6`) or story trap 3 |
+
+  The comparator subtracts ledgered entries and fails on any remainder. The
+  citation rule is asserted by the feature steps, not merely convention.
+
+### Running
+
+The feature carries the `@gliderscore` tag, exposed as xUnit trait
+`Category=gliderscore`, so just that feature runs as:
+
+```sh
+dotnet test tests/Soarscore.Acceptance.Tests --filter "Category=gliderscore"
+```
+
+One store per run, selected by the `SOARSCORE_TEST_STORE` environment
+variable — `postgres` (the default) or `sqlite`; postgres spins up its store
+via Testcontainers and needs Docker running:
+
+```sh
+SOARSCORE_TEST_STORE=sqlite   dotnet test tests/Soarscore.Acceptance.Tests --filter "Category=gliderscore"
+SOARSCORE_TEST_STORE=postgres dotnet test tests/Soarscore.Acceptance.Tests --filter "Category=gliderscore"
+```
+
+A backend Soarscore claims to support is one that is green under both values.
+Drop the filter to run the rest of the acceptance suite alongside.
+
+### Adding a fixture
+
+1. **Curate** through this directory's pipeline as documented above:
+   `extract.py`, hand-curation of the six JSON files, `validate.py` passes.
+2. **Author `<slug>/class-definition.json` by hand**, following story decision
+   D3. The mapping rules from `competition.json`:
+   - Normalisation arrangement follows `GroupScoreOption`: option 2 (time
+     basis) puts the time term in `Score` and the landing lookup in
+     `ScoreNormalised`; option 1 (points basis) puts landing inside `Score`
+     and normalisation scales the total. Verify the actual value per fixture
+     — do not assume it from the class name.
+   - Duration is a `PiecewiseTerm` symmetric decay curve (band `[0,target]`
+     rate PPS, band `[target,∞]` rate −PPS), never a plain capped rate term.
+   - Landing is an exact-match `LookupTerm` with ascending `upTo` rows from
+     the scheme's `LndgPoints`, including the leading-zero row (`upTo` 0 → 0)
+     where needed. Validator rule 2 guarantees every flown landing sits
+     on-table, so never soften the lookup.
+   - Rounding grid: `GroupScoreDecimals`/`RoundOrTruncate` →
+     `normalise.round` `{mode: HalfUp|Truncate, precision: 10^-Decs}`.
+   - Drops collapse into ONE policy (`dropCount` = thresholds crossed,
+     `applyWhenRoundsCompletedAtLeast` = lowest crossed threshold) — the
+     engine applies the first matching policy only.
+   - Penalty columns map by scope: `Scores.FlightScoreDeduction` →
+     entry-scoped penalty definition, replayed via `/record-entry-penalty`;
+     `Scores.Penalty` → competition-scoped definition, replayed via
+     `/record-competition-penalty` with the competitor as subject.
+   The existing authored definitions are the templates — `ales-sample-comp`
+   is the simplest; `jerilderie-2010` shows drop collapse and a competition
+   penalty.
+3. **Add a scenario** to `ReplayingAGliderscoreFixture.feature`, asserting
+   the three grains plus conservation, and the ledger shape you expect
+   ("carries no ledgered divergences" or "records exactly N accepted
+   divergences").
+4. **Replay.** Any mismatch prints one diff table (pilot × round × grain,
+   ours / expected / delta).
+5. **Triage** every difference: *importer/authoring bug* · *our engine
+   defect* · *intentional divergence*. Fix the first two at their source;
+   only the third goes further.
+6. **Ledger** intentional divergences in `<slug>/divergences.json`, each
+   reason citing the arithmetic-story divergence ID behind the difference.
+   The ledger starts empty; an entry lands only after human triage.
+
 ## Differential gate result
 
 2026-08-25: extraction of `/home/pete/Downloads/GliderScoreDownload.txt`
