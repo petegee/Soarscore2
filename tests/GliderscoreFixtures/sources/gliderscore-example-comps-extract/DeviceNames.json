@@ -1,0 +1,7 @@
+{
+  "schema": {
+    "DeviceNo": "Long",
+    "DeviceName": "Text"
+  },
+  "rows": []
+}

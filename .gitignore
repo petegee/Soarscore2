@@ -10,3 +10,6 @@ tools/Soarscore.SeedData/json/
 # Reqnroll's MSBuild codegen target regenerates these from *.feature on every
 # build (WI-13, capture-a-score-steel-thread-plan.md) — derived, not authored.
 *.feature.cs
+
+# Python bytecode from the hand-run fixture tooling (tests/GliderscoreFixtures/extract/)
+__pycache__/

@@ -1,0 +1,13 @@
+{
+  "schema": {
+    "TypeName": "Text",
+    "ID": "Long",
+    "Description": "Text",
+    "Phonetic": "Text",
+    "FileName": "Text",
+    "F3KTask": "Text",
+    "ToDelete": "Boolean",
+    "F5KTask": "Text"
+  },
+  "rows": []
+}

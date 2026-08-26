@@ -1,0 +1,133 @@
+{
+  "source": "gs-report-transcript",
+  "notes": [
+    "Oracle is GliderScore's own computation over R1-R16: the Overall Results report transcribed verbatim into overall-results-transcript.csv (sha256 14b6e1d9f0be1f6c438695560bd0e77824a1ffd5ea235afe89fb2a1f8b8e3ae0).",
+    "'*' prefix on a round cell marks that pilot's single dropped score (16 scored rounds >= Drop1AtRound=8); the mark lands wherever each pilot's worst score falls (rounds 1-16 here), not only on rounds >= 8. All 30 pilots carry exactly one '*'.",
+    "Percent is display-only (100 x Score / winner Score) and deliberately not recorded; Score/Pcnt/Raw Score columns are not transcribed.",
+    "Transcript surnames are upper-cased renderings of the Pilots names ('ZZWURTS, Joe' vs 'ZZWurts'); PilotNo mapping is case-insensitive exact after trimming.",
+    "Independently validated 2026-08-26 against the documented ladder (arithmetic story THE LADDER): best-per-original-round normalised sum, one drop of the lowest task cell with latest-equally-bad-first tie-break, report-time re-round to 1 decimal, Score DESC / RawScore DESC — recomputed ranks agree with all 30 transcript ranks and pick the same dropped round for every pilot.",
+    "No ties: ranks display 1..30 without '=n'. Transcript header states '< Scores - Original >'."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 62,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 49,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 56,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 21,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 47,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 54,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 26,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 13,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 17,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 22,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 12,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 30,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 28,
+      "rank": "13"
+    },
+    {
+      "pilotNo": 11,
+      "rank": "14"
+    },
+    {
+      "pilotNo": 3,
+      "rank": "15"
+    },
+    {
+      "pilotNo": 29,
+      "rank": "16"
+    },
+    {
+      "pilotNo": 25,
+      "rank": "17"
+    },
+    {
+      "pilotNo": 50,
+      "rank": "18"
+    },
+    {
+      "pilotNo": 42,
+      "rank": "19"
+    },
+    {
+      "pilotNo": 32,
+      "rank": "20"
+    },
+    {
+      "pilotNo": 52,
+      "rank": "21"
+    },
+    {
+      "pilotNo": 46,
+      "rank": "22"
+    },
+    {
+      "pilotNo": 64,
+      "rank": "23"
+    },
+    {
+      "pilotNo": 2,
+      "rank": "24"
+    },
+    {
+      "pilotNo": 43,
+      "rank": "25"
+    },
+    {
+      "pilotNo": 39,
+      "rank": "26"
+    },
+    {
+      "pilotNo": 55,
+      "rank": "27"
+    },
+    {
+      "pilotNo": 7,
+      "rank": "28"
+    },
+    {
+      "pilotNo": 44,
+      "rank": "29"
+    },
+    {
+      "pilotNo": 63,
+      "rank": "30"
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+{
+  "schema": {
+    "LndgNo": "Integer",
+    "Distance": "Double",
+    "Points": "Integer"
+  },
+  "rows": [
+    {
+      "LndgNo": 1,
+      "Distance": 1.0,
+      "Points": 100
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 2.0,
+      "Points": 95
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 3.0,
+      "Points": 90
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 4.0,
+      "Points": 85
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 5.0,
+      "Points": 80
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 6.0,
+      "Points": 75
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 7.0,
+      "Points": 70
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 8.0,
+      "Points": 65
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 9.0,
+      "Points": 60
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 10.0,
+      "Points": 55
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 11.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 12.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 13.0,
+      "Points": 40
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 14.0,
+      "Points": 35
+    },
+    {
+      "LndgNo": 1,
+      "Distance": 15.0,
+      "Points": 30
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 0.2,
+      "Points": 100
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 0.4,
+      "Points": 99
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 0.6,
+      "Points": 98
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 0.8,
+      "Points": 97
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 1.0,
+      "Points": 96
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 1.2,
+      "Points": 95
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 1.4,
+      "Points": 94
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 1.6,
+      "Points": 93
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 1.8,
+      "Points": 92
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 2.0,
+      "Points": 91
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 3.0,
+      "Points": 90
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 4.0,
+      "Points": 85
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 5.0,
+      "Points": 80
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 6.0,
+      "Points": 75
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 7.0,
+      "Points": 70
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 8.0,
+      "Points": 65
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 9.0,
+      "Points": 60
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 10.0,
+      "Points": 55
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 11.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 12.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 13.0,
+      "Points": 40
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 14.0,
+      "Points": 35
+    },
+    {
+      "LndgNo": 2,
+      "Distance": 15.0,
+      "Points": 30
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 30.0,
+      "Points": 30
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 35.0,
+      "Points": 35
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 40.0,
+      "Points": 40
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 45.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 50.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 55.0,
+      "Points": 55
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 60.0,
+      "Points": 60
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 65.0,
+      "Points": 65
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 70.0,
+      "Points": 70
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 75.0,
+      "Points": 75
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 80.0,
+      "Points": 80
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 85.0,
+      "Points": 85
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 90.0,
+      "Points": 90
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 91.0,
+      "Points": 91
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 92.0,
+      "Points": 92
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 93.0,
+      "Points": 93
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 94.0,
+      "Points": 94
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 95.0,
+      "Points": 95
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 96.0,
+      "Points": 96
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 97.0,
+      "Points": 97
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 98.0,
+      "Points": 98
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 99.0,
+      "Points": 99
+    },
+    {
+      "LndgNo": 3,
+      "Distance": 100.0,
+      "Points": 100
+    }
+  ]
+}

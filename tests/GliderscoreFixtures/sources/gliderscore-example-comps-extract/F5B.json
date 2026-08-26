@@ -1,0 +1,17 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "f5bTargetTime": "Integer",
+    "f5bDecimalsForTiming": "Byte",
+    "f5bLndg": "Integer",
+    "f5bPointsPerLap": "Integer",
+    "f5bNumberOfTimekeepers": "Byte",
+    "f5bGroupsPerRound": "Byte",
+    "f5bPilotsMax": "Byte",
+    "f5bPilotsMin": "Text",
+    "f5bDrawLocked": "Boolean",
+    "f5bFlightPenalty": "Integer",
+    "WattMinSpecs": "Text"
+  },
+  "rows": []
+}

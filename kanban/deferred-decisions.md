@@ -96,6 +96,14 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
   `OriginalRoundNo ≠ RoundNo`) have no prescription path — their analogue is
   `AppendReflightGroup`, not the base draw — and fixtures exercising them stay
   skip-listed until prescribing reflight groups is actually wanted.
+  **Scoped 2026-08-26** (`kanban/completed/grow-gliderscore-fixture-corpus.md`):
+  this deferral is about the *draw-prescription* path. The fixture corpus now
+  holds an ACTIVE comp whose `Scores` carry a re-flight row
+  (`jerilderie-2010`, R13 pilot 29, `OriginalRoundNo=12`) — curated as score
+  data with GS-persisted oracles, which needs no prescription path. What stays
+  unavailable is feeding such rows through draw import; a future
+  replay/compare-harness thread must replay jerilderie-2010's re-flight via the
+  reflight-group mechanics, not the base draw.
 - **Mid-comp-withdrawal reproduction.** **Decided 2026-08-26**, same story (WI-8).
   An imported comp where someone withdrew mid-event flew earlier rounds alongside
   pilots our field-freeze model would have kept in every group; reproducing that

@@ -1,0 +1,54 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "RoundNo": "Long",
+    "Task": "Text"
+  },
+  "rows": [
+    {
+      "CompNo": 5,
+      "RoundNo": 1,
+      "Task": "G"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 2,
+      "Task": "A(1)"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 3,
+      "Task": "F"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 4,
+      "Task": "D"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 5,
+      "Task": "C(3)"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 6,
+      "Task": "X"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 7,
+      "Task": "X"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 8,
+      "Task": "X"
+    },
+    {
+      "CompNo": 5,
+      "RoundNo": 9,
+      "Task": "X"
+    }
+  ]
+}

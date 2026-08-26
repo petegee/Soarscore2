@@ -18,8 +18,7 @@ conversion steps consume; they are inputs of record, not build products.
 Extraction is run once per fixture, **by hand, offline**:
 
 ```sh
-PYTHONPATH=/var/data/python/lib/python3.13/site-packages \
-    python3 extract.py <export-file> [--out DIR] [--slug NAME]
+python3 extract.py <export-file> [--out DIR] [--slug NAME]
 ```
 
 - `<export-file>` — the GliderScore export (a Jet database, whatever its file
@@ -28,16 +27,21 @@ PYTHONPATH=/var/data/python/lib/python3.13/site-packages \
 - `--slug` — fixture slug, default: input filename stem.
 
 Output goes to `<OUT>/<slug>/extract/<Table>.json` (directories created as
-needed). Requires Python 3.13 with the pinned `access_parser` below importable
-under `PYTHONPATH=/var/data/python/lib/python3.13/site-packages` (the library
-is not installed on the default path).
+needed). Since 2026-08-26 this is plain system Python 3.10 with the pinned
+`access_parser` below importable from its pip user-site install — no
+`PYTHONPATH`, no virtualenv. (The original pin lived under
+`/var/data/python/lib/python3.13/site-packages` on Python 3.13; that path no
+longer exists.)
 
 ## Pinned access_parser version
 
 **access_parser 0.0.6**, determined via `python3 -m pip show access_parser`
-(dist-info metadata at `/var/data/python/lib/python3.13/site-packages`) and
-confirmed with `importlib.metadata.version("access_parser")` under the
-`PYTHONPATH` above. The module snapshot at time of pinning:
+and confirmed with `importlib.metadata.version("access_parser")`. Originally
+pinned from `/var/data/python/lib/python3.13/site-packages` (Python 3.13);
+since 2026-08-26 that path is gone and the SAME pinned version 0.0.6 is
+installed under pip user-site on system Python 3.10
+(`~/.local/lib/python3.10/site-packages`) — see Usage. All four module
+sha256s below were **re-verified unchanged on 2026-08-26 under Python 3.10**:
 
 | File                  | sha256                                                            |
 | --------------------- | ----------------------------------------------------------------- |
@@ -113,11 +117,16 @@ invokes it.
 
 ```sh
 python3 validate.py <fixture-dir> [--index PATH]
+python3 validate.py --self-test
 ```
 
 - `<fixture-dir>` — e.g. `../ales-sample-comp` from this directory.
 - `--index` — path to `tests/GliderscoreFixtures/index.md`. Only needed to prove
   rule 5 for a fixture that trips a concept-gap triage flag.
+- `--self-test` — builds throwaway minimal fixtures in a temp directory and
+  asserts rule 5 in both directions (flagged without/with unsound/sound
+  `triageJustification`, plus the `ales-sample-comp` regression); exits
+  non-zero if any case fails.
 
 Enforced rules (story WI-2):
 
@@ -125,7 +134,9 @@ Enforced rules (story WI-2):
    RoundNo / GroupNo / SeqNo present (non-null) on every row.
 2. every non-zero `Landing` value exists among the referenced scheme's
    (`Dur.durLndg`) LndgPoints distances — an off-table miss silently scores 0 in
-   GliderScore, so it fails loudly here.
+   GliderScore, so it fails loudly here. The check runs only when
+   `competition.json` actually carries a `Dur` family row; Dur-less comps of the
+   F3K/F5K shape have no landing scheme to consult and pass without one.
 3. `GroupScoreDecimals ∈ {0,1,2,3}` and `RoundOrTruncate ∈ {0,1}` — out-of-range
    values make GliderScore zero or stale its persisted scores, invalidating any
    fixture.
@@ -135,7 +146,15 @@ Enforced rules (story WI-2):
    preliminary link `PrelimCompNo`, non-empty `MergedComps`) require the fixture
    to be skip-listed in `index.md`: with `--index` given the run fails unless the
    index marks the slug skipped; without `--index` it prints a warning naming the
-   requirement.
+   requirement. Refinement (2026-08-26): a team or series flag alone no longer
+   forces the skip if `competition.json` records a sound `triageJustification`
+   inside its `triage` object —
+   `{"series": {"deadLinkCount": 0, "evidence": "<non-empty string>"},
+   "teams": {"evidence": "<non-empty string>"}}`. The validator mechanically
+   checks that series `deadLinkCount` is an integer equal to 0 and that no
+   `scores-raw.json` column name contains "team" (case-insensitive); each
+   flagged concept needs its own sound justification, and preliminary /
+   merged-comp gaps are never excusable.
 6. integrity (beyond the five): `expected-scores.json` keys correspond 1:1 with
    `scores-raw` rows on the composite key `{TaskNo}/{RoundNo}/{GroupNo}/
    {ReFlightNo}/{PilotNo}`, every key's pilot is among the entries members, and

@@ -1,0 +1,20 @@
+{
+  "schema": {
+    "LndgNo": "Integer",
+    "Name": "Text"
+  },
+  "rows": [
+    {
+      "LndgNo": 1,
+      "Name": "FAI 15 Metre Tape"
+    },
+    {
+      "LndgNo": 2,
+      "Name": "F3J/F3L/F5L Enter Dist"
+    },
+    {
+      "LndgNo": 3,
+      "Name": "F3J/F3L/F5L Enter Points"
+    }
+  ]
+}

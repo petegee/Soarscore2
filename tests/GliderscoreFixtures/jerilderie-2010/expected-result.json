@@ -1,0 +1,264 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "No GliderScore report transcript exists for this comp, so ranks come from the documented ladder (arithmetic story, THE LADDER): best-per-original-round normalised sum minus per-pilot penalty totals, two lowest-cell drops (14 scored rounds >= Drop1AtRound=6 and >= Drop2AtRound=12; latest-equally-bad-first tie-break), report-time re-round to GroupScoreDecimals=0, Score DESC / RawScore DESC; class DurGeneral ends the ladder at rung 2; tied pilots share the displayed rank '=n'.",
+    "A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine.",
+    "The per-cell ground truth is strong: all 882 persisted NormalisedScore values (and all 882 RawScore values) were reproduced exactly by an independent recompute from the raw inputs and comp config (2026-08-26, WI-8 curation) before this ladder was applied to them; what remains unverified against GliderScore itself is only the report-level aggregation step, which no transcript covers yet.",
+    "If Pete later supplies an Overall Results R1-R14 transcript, add it as overall-results-transcript.csv and upgrade this oracle to gs-report-transcript.",
+    "Percent is display-only (100 x Score / winner Score) and deliberately not recorded. Intra-tie ordering of '=n' groups is not significant (identical displayed rank; HiddenRanking within ties is implementation-defined)."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 62,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 5,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 17,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 22,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 13,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 33,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 20,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 4,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 21,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 24,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 26,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 12,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 74,
+      "rank": "13"
+    },
+    {
+      "pilotNo": 56,
+      "rank": "14"
+    },
+    {
+      "pilotNo": 45,
+      "rank": "15"
+    },
+    {
+      "pilotNo": 18,
+      "rank": "16"
+    },
+    {
+      "pilotNo": 10,
+      "rank": "17"
+    },
+    {
+      "pilotNo": 19,
+      "rank": "18"
+    },
+    {
+      "pilotNo": 1,
+      "rank": "19"
+    },
+    {
+      "pilotNo": 48,
+      "rank": "20"
+    },
+    {
+      "pilotNo": 53,
+      "rank": "21"
+    },
+    {
+      "pilotNo": 55,
+      "rank": "22"
+    },
+    {
+      "pilotNo": 30,
+      "rank": "23"
+    },
+    {
+      "pilotNo": 11,
+      "rank": "24"
+    },
+    {
+      "pilotNo": 71,
+      "rank": "25"
+    },
+    {
+      "pilotNo": 41,
+      "rank": "26"
+    },
+    {
+      "pilotNo": 42,
+      "rank": "27"
+    },
+    {
+      "pilotNo": 28,
+      "rank": "28"
+    },
+    {
+      "pilotNo": 29,
+      "rank": "29"
+    },
+    {
+      "pilotNo": 25,
+      "rank": "30"
+    },
+    {
+      "pilotNo": 27,
+      "rank": "31"
+    },
+    {
+      "pilotNo": 52,
+      "rank": "32"
+    },
+    {
+      "pilotNo": 14,
+      "rank": "33"
+    },
+    {
+      "pilotNo": 31,
+      "rank": "34"
+    },
+    {
+      "pilotNo": 40,
+      "rank": "35"
+    },
+    {
+      "pilotNo": 23,
+      "rank": "36"
+    },
+    {
+      "pilotNo": 16,
+      "rank": "37"
+    },
+    {
+      "pilotNo": 70,
+      "rank": "38"
+    },
+    {
+      "pilotNo": 44,
+      "rank": "39"
+    },
+    {
+      "pilotNo": 35,
+      "rank": "40"
+    },
+    {
+      "pilotNo": 58,
+      "rank": "41"
+    },
+    {
+      "pilotNo": 3,
+      "rank": "42"
+    },
+    {
+      "pilotNo": 6,
+      "rank": "43"
+    },
+    {
+      "pilotNo": 37,
+      "rank": "44"
+    },
+    {
+      "pilotNo": 2,
+      "rank": "45"
+    },
+    {
+      "pilotNo": 61,
+      "rank": "46"
+    },
+    {
+      "pilotNo": 7,
+      "rank": "47"
+    },
+    {
+      "pilotNo": 38,
+      "rank": "48"
+    },
+    {
+      "pilotNo": 65,
+      "rank": "49"
+    },
+    {
+      "pilotNo": 36,
+      "rank": "50"
+    },
+    {
+      "pilotNo": 51,
+      "rank": "51"
+    },
+    {
+      "pilotNo": 9,
+      "rank": "52"
+    },
+    {
+      "pilotNo": 60,
+      "rank": "53"
+    },
+    {
+      "pilotNo": 34,
+      "rank": "54"
+    },
+    {
+      "pilotNo": 57,
+      "rank": "55"
+    },
+    {
+      "pilotNo": 66,
+      "rank": "56"
+    },
+    {
+      "pilotNo": 59,
+      "rank": "57"
+    },
+    {
+      "pilotNo": 15,
+      "rank": "58"
+    },
+    {
+      "pilotNo": 8,
+      "rank": "59"
+    },
+    {
+      "pilotNo": 73,
+      "rank": "60"
+    },
+    {
+      "pilotNo": 67,
+      "rank": "61"
+    },
+    {
+      "pilotNo": 69,
+      "rank": "62"
+    },
+    {
+      "pilotNo": 32,
+      "rank": "63"
+    }
+  ]
+}

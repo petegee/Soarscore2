@@ -1,0 +1,22 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "spdDecimalsForTiming": "Byte",
+    "spdNumberOfTimekeepers": "Byte",
+    "spdGroupsPerRound": "Byte",
+    "spdPilotsMax": "Byte",
+    "spdDrawLocked": "Boolean",
+    "SpdPilotsMin": "Text"
+  },
+  "rows": [
+    {
+      "CompNo": 3,
+      "spdDecimalsForTiming": 2,
+      "spdNumberOfTimekeepers": 2,
+      "spdGroupsPerRound": 1,
+      "spdPilotsMax": 23,
+      "spdDrawLocked": false,
+      "SpdPilotsMin": "TmProt=True&Enf20kHz=True&LaneOpt=0&Back2Back=True&NbrPlts=23&GrpsInRnd=1&NbrRnds=9&"
+    }
+  ]
+}

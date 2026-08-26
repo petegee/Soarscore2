@@ -1,0 +1,37 @@
+{
+  "slug": "f3k-sample-comp",
+  "source": {
+    "originalFilename": "GliderScoreDownload.txt",
+    "repoPath": "tests/GliderscoreFixtures/sources/gliderscore-example-comps.mdb",
+    "sha256": "89e8f2cbec91af6bf7f994c4e15fc2c0214e7c31944273ecbf3ca31d40d790df"
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the export"
+  },
+  "exportedBy": "pete",
+  "exportDate": "2026-08-26T11:52:24+12:00",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "accessParser": "0.0.6",
+    "python": "3.10.12",
+    "extracted": "2026-08-26"
+  },
+  "notes": [
+    "Shared extraction of record: tests/GliderscoreFixtures/sources/gliderscore-example-comps-extract/ \u2014 one export carries five comps (CompNo 1-5), so one extraction serves all five fixtures and each is split out at curation; this fixture is CompNo 5 only.",
+    "exportedBy is asserted by the repo owner (pete) in the 2026-08-26 working session; it is corroborated by DBParams.UserName='pete' but not independently provable.",
+    "exportDate is the committed source file's modification time; DBParams carries no export timestamp, so the file mtime is the best available proxy and could postdate the actual GliderScore Export Competition(s) run.",
+    "PII re-check 2026-08-26 for this comp's 10 members: every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for all 10; all 10 are GliderScore shipped ZZ-prefixed test names; CompPilots carries no contact columns at all.",
+    "Triage facts recorded honestly: UseTeams=true with CompPilots.Team populated for all 10 pilots across 4 teams (sizes 2,2,4,2); CompSeriesNo='1;2' but the export's CompSeries table has zero rows, so both series links are dead; PrelimCompNo=-1 and MergedComps='' are off. See competition.json triageJustification.",
+    "Per-round task schedule carried faithfully from F3KTaskByRound (all 9 rows are comp 5): R1=G, R2=A(1), R3=F, R4=D, R5=C(3), R6-R9=X \u2014 six distinct codes over nine rounds. The transcript's per-round captions agree: G='Best5 2:00max', A(1)='L1 5max in 10m', F='Best3 3:00max', D='Ladder  (Not FAI)', C(3)='AllUp 3:00*5', X captioned 'NoTaskSet'. Scores.TaskNo stays 5 on every row: task identity lives entirely in F3KTaskByRound, not in the Scores rows.",
+    "Rounds 6-9 are placeholder rounds: ten all-zero Scores rows each (RawScore=0, NormalisedScore=0, all Time columns 0, Laps 0) against the 'NoTaskSet' captions; all flying data lives in rounds 1-5 (round 4 additionally holds one zero row, pilot 42). The placeholder rounds do not count toward drop activation but do sit in the drop candidate pool as zero candidates.",
+    "Drops crossed \u2014 first live-drop witness, with a twist: DropScoreOption=0 (drop lowest task cells) with Drop1AtRound=5 and Drop2AtRound=9 (Drop3..5=14/19/24; F3QDrop6to10='99,...'). Option-0 activation counts DISTINCT rounds with RawScore>0 (arithmetic story, Drop-worst \u00a73), so only rounds 1-5 count: Drop1 activates exactly at its threshold of 5 scored rounds, and Drop2@9 NEVER ACTIVATES \u2014 not even on a zero cell, because the denominator never reaches 9. The single dropped cell is nevertheless a zero for every pilot: candidates sort value ASC then RoundNo DESC (latest equally-bad first), so R9 (zero placeholder) drops ahead of every real score; each pilot keeps all five real normalised scores and their full five-round sum minus penalties. Transcript reconciled: exactly one '*' per pilot, on Rnd9.",
+    "The three non-zero Landing values (145.0, round 4, pilots 13/28/56) are NOT landing-scheme lookups: the F3K family row has no landing-reference field at all (verified against the F3K table schema \u2014 following the data finds nothing to resolve), and CalcRawScoreF3K treats the landing-distance slot as ladder-task input (task D 'Ladder (Not FAI)'). lookups.landingSchemes is therefore empty, and validate.py rule 2 (which requires a Dur family row with durLndg) cannot evaluate this fixture \u2014 see story WI-5.",
+    "Penalty observations: four rows carry Penalty=100 (pilot 42 in R1; pilot 56 in R2 and R3; pilot 65 in R3). NormalisedScore cells are pre-penalty; GS subtracts each pilot's penalty total from the summed kept cells afterwards \u2014 transcript Penalty column shows ZZPotter 100, ZZNancarrow 200, ZZIrvin 100 (e.g. ZZNancarrow cells sum 3602, Score shown 3402).",
+    "Round-2 encoding oddity: task A(1) stores its result in the Laps column with all four Time columns zero \u2014 ten rows with non-zero NormalisedScore and no flight-time data. This exactly explains the gap between 'rows with any time' (39) and 'rows with NS != 0' (49).",
+    "GroupScoreDecimals=0 gives integral scores, so as with the other three fixtures the float32 persist casts are unwitnessed: every persisted RawScore/NormalisedScore reprs clean at its decimal count and survives a binary32 round-trip unchanged across all 90 rows.",
+    "familyRows carries the F3K row verbatim \u2014 unlike Dur it holds only draw/timing state (f3kGroupsPerRound/f3kPilotsMax/f3kDrawLocked/f3kAllowBackToBack/f3kDecimalsForTiming/f3kPilotsMin) and no scoring knobs; per-round scoring variation lives in F3KTaskByRound instead. Its draw state is partially stale: configured GrpsInRnd=4 (f3kGroupsPerRound=4) yet every round flew one group of all 10 pilots; NbrPlts=10 and NbrRnds=9 agree with the Scores rows.",
+    "Dur/Spd/Dis/F5B/F5K family rows are absent for comp 5 (Dur exists only for comps 1-4, Spd/Dis only for comp 3), so familyRows carries F3K only; DurTargetTimeByRound and F5KTaskandRefHeightByRound have zero rows export-wide and are carried empty-with-schema."
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "identity": {
+    "CompNo": 5,
+    "CompName": "F3K Sample Comp",
+    "GSCompClass": "F3K",
+    "CompDate": "2020-01-01 00:00:00"
+  },
+  "scoring": {
+    "GSCompClass": "F3K",
+    "GroupScoreOption": 1,
+    "GroupScoreDecimals": 0,
+    "RoundOrTruncate": 0,
+    "DropScoreOption": 0,
+    "Drop1AtRound": 5,
+    "Drop2AtRound": 9,
+    "Drop3AtRound": 14,
+    "Drop4AtRound": 19,
+    "Drop5AtRound": 24,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "familyRows": {
+    "F3K": {
+      "CompNo": 5,
+      "f3kGroupsPerRound": 4,
+      "f3kPilotsMax": 3,
+      "f3kDrawLocked": false,
+      "f3kAllowBackToBack": 0,
+      "f3kDecimalsForTiming": 0,
+      "f3kPilotsMin": "TmProt=True&Enf20kHz=True&LaneOpt=0&Back2Back=True&NbrPlts=10&GrpsInRnd=4&NbrRnds=9&"
+    }
+  },
+  "scheduleTables": {
+    "F3KTaskByRound": {
+      "schema": {
+        "CompNo": "Integer",
+        "RoundNo": "Long",
+        "Task": "Text"
+      },
+      "rows": [
+        {
+          "CompNo": 5,
+          "RoundNo": 1,
+          "Task": "G"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 2,
+          "Task": "A(1)"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 3,
+          "Task": "F"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 4,
+          "Task": "D"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 5,
+          "Task": "C(3)"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 6,
+          "Task": "X"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 7,
+          "Task": "X"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 8,
+          "Task": "X"
+        },
+        {
+          "CompNo": 5,
+          "RoundNo": 9,
+          "Task": "X"
+        }
+      ]
+    },
+    "DurTargetTimeByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "TargetTime": "Long"
+      },
+      "rows": []
+    },
+    "F5KTaskandRefHeightByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "Task": "Text",
+        "RefHeight": "Long"
+      },
+      "rows": []
+    }
+  },
+  "lookups": {
+    "landingSchemes": [],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 2,
+    "CompSeriesNo": "1;2",
+    "PrelimCompNo": -1,
+    "MergedComps": "",
+    "triageJustification": {
+      "series": {
+        "deadLinkCount": 0,
+        "evidence": "The export's CompSeries table has zero rows, so both of this comp's series references ('1;2') link to nothing and no series data can alter any individual score."
+      },
+      "teams": {
+        "evidence": "Scores carries no team columns; team standings are report-time aggregations of unchanged individual normalised scores, never an input to them. CompPilots.Team assignments are nonetheless populated honestly: UseTeams=true with all 10 pilots assigned across 4 teams (sizes 2,2,4,2); they reach no persisted score."
+      }
+    }
+  }
+}
