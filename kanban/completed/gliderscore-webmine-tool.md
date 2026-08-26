@@ -1,6 +1,6 @@
 # Story — GliderScore webmine tool (read-only online comp acquisition)
 
-**Status:** Backlog · **Raised:** 2026-08-26
+**Status:** Completed · **Raised:** 2026-08-26 · **Implementation started:** 2026-08-27 · **Completed:** 2026-08-27
 
 Research basis: `gliderscore-online-data-mining.md` (repo root), **validated against the
 GliderScore VB.NET source** (`gliderscore/`, private — not public; see Confidentiality).
@@ -115,14 +115,19 @@ source tree:
 
 ## Before starting
 
-- [ ] Cross-checked against users/NFRs — no conflict: developer-run offline-style
+- [x] Cross-checked against users/NFRs — no conflict: developer-run offline-style
       tooling, no runtime surface, no new domain concepts (converter targets exist
       fixture concepts only).
 - [ ] Permission email drafted/sent (gate for first live call, not for code).
-- [ ] Prototype artifacts in `/tmp/opencode/gs/` are transient — either land the
+- [x] Prototype artifacts in `/tmp/opencode/gs/` are transient — either land the
       prototype miner script into the new location early or accept re-mining.
-- [ ] Confirm CompID case-sensitivity handling (warning string reported inside the
+      (2026-08-27: the dir is gone; accepted re-mining — the miner was written
+      from the mining doc's documented page structure, tests run on synthetic
+      pages.)
+- [x] Confirm CompID case-sensitivity handling (warning string reported inside the
       exe; not found in this source slice — treat IDs as opaque case-sensitive).
+      (Enforced as-is in the kernel: `^[0-9a-fA-F]{10,15}$`, never normalised;
+      covered by tests.)
 
 ## Plan
 
@@ -167,3 +172,31 @@ source tree:
 `gliderscore/` holds Gerry Carter's private source, gitignored, **not to be made
 public**. Tooling written here must not embed decompiled/private snippets in any
 public artifact; cite behaviour, don't copy code.
+
+## As built (2026-08-27)
+
+All five WIs delivered; the tool stayed Python per this plan (the C#-reuse
+question was weighed first: ~0% literal overlap with any existing C# test code —
+the seams are JSON artifacts, and a sidecar tool structurally cannot leak into
+`src/`). Built with one sub-agent per WI: WI-1 (`gsclient.py` kernel + property
+tests for allowlist closure / throttle floor / audit completeness) → WI-2 +
+WI-3 in parallel → WI-4 → orchestrator cross-WI offline smoke of
+catalogue(last30+all)+fetch(--tasks) through one scripted fake transport, then
+README.
+
+- Files: `tests/GliderscoreFixtures/webmine/{gsclient,csvparse,mine_catalogue,
+  fetch_comp,triage}.py`, `README.md`, `tests/test_*.py`.
+- Tests: 104 passing offline (gsclient 21 · mine_catalogue 8 · csvparse 16 ·
+  fetch_comp 24 · triage 35), pytest + hypothesis (`max_examples=50`);
+  no live network anywhere.
+- Deviations worth knowing: comp postback goes back verbatim including the
+  CompList select value; assignments within an (round,group,reflight) bucket are
+  canonically sorted rather than file-ordered (wire order preserved in
+  `<CompID>_records.json`); `drawGaps` always carries per-pilot base-slot
+  summaries, shortfall lines name "missing rounds"; violations withhold only the
+  triage artifact — csv + records json stay as evidence, delete finaliser always
+  fires.
+- Still live-gated: permission email unsent; eScoring scraper proven against
+  synthetic pages only; per-comp-type zip richness unverified until first
+  permitted runs (`--keep-zip` retains evidence).
+- WI-5's agent-skill wrapper split out as `kanban/backlog/webmine-agent-skill-wrapper.md`.

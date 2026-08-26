@@ -2129,12 +2129,6 @@
     "ast_hash": "dc926a80dab56af2fa270e1212c0072c",
     "semantic_hash": ""
   },
-  "kanban/backlog/gliderscore-replay-and-compare-harness.md": {
-    "mtime": 1787694632.7830253,
-    "seen": 1787694976.8996215,
-    "ast_hash": "4c915f685da4c350e201b85219544d7c",
-    "semantic_hash": ""
-  },
   "kanban/backlog/smaller-items.md": {
     "mtime": 1787525490.4069989,
     "seen": 1787693045.6567833,
@@ -2304,9 +2298,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1787694958.9680705,
-    "seen": 1787694976.8996458,
-    "ast_hash": "13db6a3a68f7a256f077c3401389d615",
+    "mtime": 1787714393.580791,
+    "seen": 1787717612.7793221,
+    "ast_hash": "32bcc32a149ecb3c00dae332b8714065",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -2669,10 +2663,106 @@
     "ast_hash": "4fdff04769e2875c8728106b3a01980e",
     "semantic_hash": ""
   },
-  "kanban/in-progress/grow-gliderscore-fixture-corpus.md": {
-    "mtime": 1787714241.3167794,
-    "seen": 1787714360.3498235,
-    "ast_hash": "861f2c7d54d8511de974d8cbf7461b75",
+  "kanban/completed/grow-gliderscore-fixture-corpus.md": {
+    "mtime": 1787714422.7677834,
+    "seen": 1787717612.7790277,
+    "ast_hash": "c32678beeef92ea7fda3adf2298e8b11",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/ales-sample-comp/class-definition.json": {
+    "mtime": 1787720549.7926066,
+    "seen": 1787721490.671921,
+    "ast_hash": "12ef4a04862e902e5d631d91675716e7",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Steps/ReplaySteps.cs": {
+    "mtime": 1787733841.453404,
+    "seen": 1787734353.1484518,
+    "ast_hash": "fb46b5a70efaec0ea99d48e56f5a74aa",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/Comparator.cs": {
+    "mtime": 1787731769.5794942,
+    "seen": 1787731831.8663917,
+    "ast_hash": "79ffdfdf7d0826f0540d76fd23b40f2c",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/FixtureLoader.cs": {
+    "mtime": 1787720179.0110164,
+    "seen": 1787720366.9757347,
+    "ast_hash": "97454dcec4f7a1cd723975b8ba1fda01",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/FixtureModels.cs": {
+    "mtime": 1787729714.8108652,
+    "seen": 1787730009.0294883,
+    "ast_hash": "bf5f3dd527723e2fd1bd56c000712101",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs": {
+    "mtime": 1787734083.13827,
+    "seen": 1787734353.148623,
+    "ast_hash": "74a58266c6262cecb1ba616ef2bc16a0",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/gliderscore-replay-and-compare-harness.md": {
+    "mtime": 1787734058.310181,
+    "seen": 1787734353.1525722,
+    "ast_hash": "e87f00b7243e4ac07717d80c33ee26c1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international-flyoff/class-definition.json": {
+    "mtime": 1787721409.7704146,
+    "seen": 1787721490.6726823,
+    "ast_hash": "c630145c082b6b5cb94ca4873397e142",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/class-definition.json": {
+    "mtime": 1787723513.3136153,
+    "seen": 1787723678.5075865,
+    "ast_hash": "5b901cc779f6ec01fab7bb0508646730",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3j-international/divergences.json": {
+    "mtime": 1787723261.5123591,
+    "seen": 1787723678.5076091,
+    "ast_hash": "c29eb7559893532988d4d0d88ba7d2f0",
+    "semantic_hash": ""
+  },
+  "gliderscore-online-data-mining.md": {
+    "mtime": 1787723271.222576,
+    "seen": 1787723678.5122874,
+    "ast_hash": "6484cf3ecb333ec96fc4e7ff5917258f",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-sample-comp/class-definition.json": {
+    "mtime": 1787729943.727907,
+    "seen": 1787730009.0284727,
+    "ast_hash": "79ba0a7a333f51642aed9a0096afd421",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gliderscore-webmine-tool.md": {
+    "mtime": 1787727998.9132242,
+    "seen": 1787730009.0327895,
+    "ast_hash": "b5c7589c57bcc5a7de2b2624b98106af",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Steps/HarnessSelfCheckSteps.cs": {
+    "mtime": 1787731632.0640466,
+    "seen": 1787731831.8662415,
+    "ast_hash": "3817447e0db3453383ecb9faf55b9c4d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/class-definition.json": {
+    "mtime": 1787733791.6692257,
+    "seen": 1787734353.1475778,
+    "ast_hash": "da74495137f9c9ea44be5b5a7eb81199",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/jerilderie-2010/divergences.json": {
+    "mtime": 1787734114.706383,
+    "seen": 1787734353.1476007,
+    "ast_hash": "d3fb81e30448892ce35a7b69de380999",
     "semantic_hash": ""
   }
 }
