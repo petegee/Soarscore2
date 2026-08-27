@@ -57,3 +57,11 @@ Feature: Scoring a competition
     And the preliminary phase is drawn for 1 round
     When every competitor flies and a 300-point safety penalty is recorded against competitor 1
     Then competitor 1's leaderboard score is 300 lower, and every other competitor's is unchanged
+
+  Scenario: An entry-scoped deduction lowers the flight score before normalisation
+    Given a published class declaring a PerOccurrence entry-scoped deduct-points penalty
+    And a competition is created adopting it, with 6 registered competitors
+    And the preliminary phase is drawn for 1 round
+    When competitor 1 commits the infraction twice and everyone else flies clean
+    Then competitor 1's pre-normalisation group score is 200 lower than their unpenalised raw
+    And competitor 1 is not the group winner-anchor if any clean flight outscores their deducted raw

@@ -47,6 +47,28 @@ public sealed class ScoringACompetitionSteps
     private static readonly ClassDefinition F5JDefinition = Corpus.All.Single(c => c.FileName == "30-f5j").Definition;
     private static readonly DateTimeOffset LaunchAt = new(2026, 1, 10, 9, 3, 12, TimeSpan.Zero);
 
+    // WI-4 (kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md):
+    // no seed class declares an entry-scoped PerOccurrence deduct-points penalty
+    // — all seven FAI classes declare their deductions for Competition-scope
+    // recording (story D5) — so the scenario derives one from the F5J corpus
+    // class, whose task machinery these steps already fly: CaptureFlightAsync's
+    // zero-contribution metrics make raw == flightTime for it exactly as for
+    // plain F5J. The added definition joins no exclusion group and carries only
+    // a DeductPoints effect, so adoption check 16 admits it.
+    private static readonly PenaltyDefinition LateLandingDeduction = new()
+    {
+        InfractionType = "lateLanding",
+        Accrual = PenaltyAccrual.PerOccurrence,
+        Effects = [new(PenaltyEffect.DeductPoints, 100m)],
+    };
+
+    private static readonly ClassDefinition F5JWithEntryScopedDeduction = F5JDefinition with
+    {
+        Name = "RC Electric Powered Thermal Duration Gliders (acceptance fixture: entry-scoped late-landing deduction)",
+        Version = "FAI F5 Electric 2026 ed.2 + acceptance lateLanding",
+        Penalties = [.. F5JDefinition.Penalties, LateLandingDeduction],
+    };
+
     private string? _classContentHash;
     private CompetitionId _competitionId;
     private readonly List<CompetitorId> _competitors = [];
@@ -75,6 +97,14 @@ public sealed class ScoringACompetitionSteps
     private CompetitorId _aggregatePenaltyCompetitor;
     private readonly Dictionary<CompetitorId, decimal> _aggregateScenarioTimes = new();
 
+    // Populated by the entry-scoped deduction scenario's When step, read by its
+    // Then steps (kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md WI-4).
+    private CompetitorId _entryDeductionCompetitor;
+    private CompetitorId _entryDeductionCleanWinner;
+    // Every competitor's expected normalised score, computed in the When step
+    // from the deducted-ratio arithmetic the Then steps assert.
+    private readonly Dictionary<CompetitorId, decimal> _entryDeductionExpectedScores = new();
+
     // ---------------------------------------------------------------- Given
 
     [Given(@"^the F5J class is published$")]
@@ -82,6 +112,13 @@ public sealed class ScoringACompetitionSteps
     {
         _classContentHash = await ApiClient.PostCommandAsync<string>(
             Client, "/publish-class-definition", new PublishClassDefinition(F5JDefinition));
+    }
+
+    [Given(@"^a published class declaring a PerOccurrence entry-scoped deduct-points penalty$")]
+    public async Task GivenAPublishedClassDeclaringAPerOccurrenceEntryScopedDeductPointsPenalty()
+    {
+        _classContentHash = await ApiClient.PostCommandAsync<string>(
+            Client, "/publish-class-definition", new PublishClassDefinition(F5JWithEntryScopedDeduction));
     }
 
     [Given(@"^a competition is created adopting it, with (\d+) registered competitors$")]
@@ -374,6 +411,65 @@ public sealed class ScoringACompetitionSteps
         _aggregatePenaltyCompetitor = penalised;
     }
 
+    /// <summary>
+    /// The data this step flies makes the deduction's PLACEMENT observable in
+    /// exact decimals (raw == flightTime per the file header). Competitor 1
+    /// flies the group's longest time (600) — their unpenalised winner-anchor
+    /// position; one clean competitor flies 500, above competitor 1's deducted
+    /// raw but below their unpenalised one; the rest fill distinct mid-field
+    /// values. Two records of the same infraction are then made against
+    /// competitor 1's Entry: GetEntryPenalties groups them into OccurrenceCount
+    /// 2 (ScoringService), and the PerOccurrence definition accrues
+    /// 2 x 100 = 200 pre-normalisation.
+    /// </summary>
+    [When(@"^competitor 1 commits the infraction twice and everyone else flies clean$")]
+    public async Task WhenCompetitor1CommitsTheInfractionTwiceAndEveryoneElseFliesClean()
+    {
+        var group = await ResolveGroupAsync(roundOrdinal: 1);
+        var penalised = group.CompetitorRefs[0];
+
+        var times = new decimal[] { 600m, 300m, 320m, 340m, 360m, 500m };
+        const decimal perOccurrencePoints = 100m;
+        const int committedOccurrences = 2;
+
+        EntryId penalisedEntryId = default;
+        for (var i = 0; i < group.CompetitorRefs.Length; i++)
+        {
+            var entryId = await CaptureFlightAsync(1, group.Id, group.CompetitorRefs[i], times[i]);
+            if (i == 0)
+            {
+                penalisedEntryId = entryId;
+            }
+        }
+
+        // Recorded AFTER capture — NFR-4, no imposed ordering on score capture:
+        // penalties stay recordable at any time because scoring happens only
+        // at read time.
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/record-entry-penalty",
+            new RecordEntryPenalty(penalisedEntryId, "lateLanding", PenaltyScope.Entry, "the scorer"));
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/record-entry-penalty",
+            new RecordEntryPenalty(penalisedEntryId, "lateLanding", PenaltyScope.Entry, "the scorer"));
+
+        // Data invariants the Then steps rely on, asserted rather than assumed:
+        // the clean best raw outranks the deducted one (so the "if any clean
+        // flight outscores their deducted raw" clause of the scenario holds),
+        // and every normalised score divides exactly under that anchor.
+        decimal deductedRaw = times[0] - perOccurrencePoints * committedOccurrences; // 400
+        decimal cleanBestRaw = times.Skip(1).Max();                                  // 500
+        deductedRaw.Should().BeLessThan(cleanBestRaw);
+
+        foreach (var (competitorRef, i) in group.CompetitorRefs.Select((r, i) => (r, i)))
+        {
+            var effectiveRaw = i == 0 ? deductedRaw : times[i];
+            _entryDeductionExpectedScores[competitorRef] = 1000m * effectiveRaw / cleanBestRaw;
+        }
+
+        _entryDeductionCompetitor = penalised;
+        _entryDeductionCleanWinner = group.CompetitorRefs[5]; // index 5 flies the clean best, 500
+    }
+
     // ----------------------------------------------------------------- Then
 
     [Then(@"^the group's result holds a normalised score for each of its 6 competitors$")]
@@ -544,6 +640,55 @@ public sealed class ScoringACompetitionSteps
                 score.Score.Should().Be(_aggregateScenarioTimes[score.CompetitorRef]);
             }
         }
+    }
+
+    [Then(@"^competitor 1's pre-normalisation group score is 200 lower than their unpenalised raw$")]
+    public async Task ThenCompetitor1sPreNormalisationGroupScoreIs200LowerThanTheirUnpenalisedRaw()
+    {
+        var view = (await FetchAllGroupViewsAsync(roundOrdinal: 1)).Single();
+
+        // Assertion mapping. The view layer exposes only post-normalisation
+        // scores (displaying pre-normalisation scores is out of scope here:
+        // kanban/backlog/pre-normalisation-score-view-field.md), so "200 lower
+        // than their unpenalised raw" rides the ratio the deduction feeds:
+        // D3 places the subtraction pre-normalisation INSIDE winner finding,
+        // so the group's 1000 anchors on the best DEDUCTED raw (500, a clean
+        // flight) and every cell reads 1000 x effectiveRaw / 500 —
+        //
+        //     competitor 1: 1000 x (600 - 2x100) / 500 = 800   not their
+        //                unpenalised anchor position of 1000 (the inert bug)
+        //     clean peers:  1000 x t / 500             = 600 / 640 / 680 / 720
+        //     clean best:   1000 x 500 / 500           = 1000
+        //
+        // Every row is asserted because misplacing the deduction moves other
+        // rows even where competitor 1's coincides: applied POST-normalisation
+        // flat it would leave the anchor on the unpenalised 600 (clean best
+        // then reads 833.33...); ignoring occurrence count reads 900.
+        view.ValidCount.Should().Be(6);
+
+        foreach (var result in view.Results)
+        {
+            result.State.Should().Be(TaskResultState.Valid);
+            result.RawScore.Should().Be(_entryDeductionExpectedScores[result.CompetitorRef]);
+        }
+    }
+
+    [Then(@"^competitor 1 is not the group winner-anchor if any clean flight outscores their deducted raw$")]
+    public async Task ThenCompetitor1IsNotTheGroupWinnerAnchorIfAnyCleanFlightOutscoresTheirDeductedRaw()
+    {
+        var view = (await FetchAllGroupViewsAsync(roundOrdinal: 1)).Single();
+
+        // The "if" clause is a fact of the When step's data: the best clean
+        // raw (500) outscores competitor 1's deducted raw (600 - 200 = 400),
+        // so normalisation must move off them — under the same max-over-
+        // deducted-raws that found them the anchor while unpenalised. A
+        // pipeline scoring the penalised flight from its unpenalised anchor
+        // position fails here first.
+        view.WinnerRef.Should().NotBeNull();
+        view.WinnerRef.Should().NotBe(_entryDeductionCompetitor);
+        view.WinnerRef.Should().Be(_entryDeductionCleanWinner);
+        view.Results.Single(r => r.CompetitorRef == _entryDeductionCleanWinner)
+            .RawScore.Should().Be(1000m);
     }
 
     // --------------------------------------------------------------- helpers
