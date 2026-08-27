@@ -59,6 +59,64 @@ line starts with the slug token and contains "skipped".
   sound triageJustification; reconstructed-ladder oracle pending an Overall
   Results transcript — foundation is an independent recompute matching all 882
   persisted RawScore and NormalisedScore values exactly.
+- f5j-christchurch-2019 — active — F5J (height-penalised duration + scheme-11
+  landing) — exercises the corpus's first ACTIVE F5J-family fixture and THE
+  float32 persist-cast witness (G4): persisted NormalisedScore values are
+  clean exact-1dp doubles while a simulated binary32 persist cast flips
+  99/162 scored values (secondary witness comp 98 uncited-in-corpus) — assert
+  persisted values and emulate the cast in comparators, never expect dirty
+  stores; a mid-comp snapshot: R1–R11 scored of 18 drawn rounds, ragged
+  partial groups inside scored rounds (14–16 of 18 updated), R12–18
+  wholly-unflown placeholders; F5J arithmetic min(packed-mmss, 600) −
+  two-rate height penalty (0.5/m ≤200 m then 100+3.0/m above; launch height
+  stored in Scores.FlightScoreDeduction) + ADDITIVE scheme-11 "F5J Enter
+  Landing" points; effective 1dp half-up points-normalisation while the
+  stored scoring knobs are Jet nulls DB-wide (the first corpus fixtures
+  whose Comps knobs are nulls); reconstructed-ladder oracle.
+- f5j-hawkes-bay-trials — active — F5J (height-penalised duration + scheme-11
+  landing) — exercises FOUR re-flight cells (all pilot 128: R1→R5/G2,
+  R2→R5/G3, R4→R6/G1, R3→R6/G3) with delete-on-reflight semantics — pilot 128
+  holds no rows in R1–R4 and OriginalRoundNo ≠ RoundNo is the only in-DB
+  marker (ReFlightNo=0 throughout: a detection trap) — de-singularising the
+  corpus's single-witness re-flight gap (jerilderie-2010); the orig→new
+  mapping is many-originals-to-many-new-cells across two destination rounds,
+  keyed on OriginalRoundNo alone; 'Team Trials' is name-only (sound
+  triageJustification recorded); 16 drawn rounds × 18 pilots, R1–10 scored;
+  reconstructed-ladder oracle with drops provably un-fireable (thresholds
+  unset or '99-never' in the Comps row; drop config is unset DB-wide).
+- f3k-southern-fling — active — F3K (task-per-round catalogue) — exercises the
+  corpus's FIRST per-group normalisation inside an F3K comp (15 rounds ×
+  G1–G3, best-in-group → 1000 at 1 dp exact on 218/218 rows); task letters
+  E/I/J/K are first corpus sightings (catalogue K,I,A(2),E,H,G,J,C(1),D,F,
+  B(1),H,G,B(2),C(1)); mid-comp retirement as silent absence — pilot 89
+  Retired=true after R8, no placeholder stubs afterwards, ranked on flown
+  rounds only; ten tied-winner groups incl. a whole-group 5-way tie yet zero
+  final-ladder ties; [REDACTION-NEEDED NOISE] phantom Landing=145.0 on 12/14
+  R9 rows kept verbatim, inert by construction (no landing scheme attaches
+  anywhere in this F3K comp — never read it as touchdown evidence);
+  reconstructed-ladder oracle.
+- f5j-nz-south-island — active — F5J (height-penalised duration + scheme-11
+  landing) — exercises extreme height penalties: 19 scored rows over 200 m
+  incl. a 1000 m launch whose computed raw −2026 persists UNfloored while its
+  NormalisedScore clamps to 0.0 — flooring is witnessed at normalisation only;
+  one motor-restart flag row (zeroed score fields, Updated=true) paired with
+  its effect knob Dur.F5JMotorRestartOption=1; vacant-seat honesty — R7/G1
+  SeqNos {1,2,4,5}, occupant unknowable from data, noted and NOT invented;
+  zero-time no-flight rows score trivially exact; 16 rounds × 13 pilots
+  (129 genuine flights among 133 updated rows); reconstructed-ladder oracle
+  asserting the clamp row and un-fireable drops.
+- f3k-june-2020 — active — F3K (task-per-round catalogue) — exercises the
+  corpus's mid-comp group re-draw witness: R7's cancelled zeros re-flown as a
+  NEW group G4 with re-flight bookkeeping untouched (ReFlightNo=0 everywhere
+  and OriginalRoundNo==RoundNo — the re-draw lives entirely outside the
+  re-flight model; cancellation flags mix True-flagged standing zeros and
+  False stale placeholders side by side, so keep-highest-per-original-round
+  dedup alone resolves the round); ragged empty seats G1 s1 / G2 s2+s3; five
+  persisted R4/H slot-decode deviants kept raw untouched (slot-sum shortfalls
+  12.3/2/4/29.6/12 s — a hardened RawScore==decoded-slot-sum validator must
+  whitelist those five keys, never repair them); normalisation exact 199/199
+  despite null stored knobs; reconstructed-ladder oracle settling the
+  cancelled-zero aggregation.
 - f3b-international — skipped — multi-task-per-round (Duration+Speed+Distance)
   hits unsupportedRoundComposition; NO fixture directory was curated — it
   remains available only in the shared extraction of record
@@ -88,26 +146,57 @@ A competition matching either of these is indexed as `- <slug> — skipped —
 
 ## Diversity wanted
 
-Status after the 2026-08-26 five-fixture growth: most original targets are now
-witnessed corpus-wide (per-fixture detail lives in the Competitions lines
-above); pick the next gap-hunt target from **Still open**.
+Status after the 2026-08-26 five-fixture growth and the 2026-08-27 NZ-master
+growth (five fixtures): most original targets are now witnessed corpus-wide
+(per-fixture detail lives in the Competitions lines above); pick the next
+gap-hunt target from **Still open**.
 
 Witnessed:
 
 - Multi-group normalisation rounds — f3j-international (16 × 4 groups),
   jerilderie-2010 (14 × 5);
-- Re-flight (`OriginalRoundNo ≠ RoundNo`) — jerilderie-2010 only (R13/G1,
-  OriginalRoundNo=12);
+- Re-flight (`OriginalRoundNo ≠ RoundNo`) — jerilderie-2010 (single cell,
+  R13/G1, OriginalRoundNo=12) and now FOUR further cells in
+  f5j-hawkes-bay-trials (all pilot 128; delete-on-reflight semantics;
+  many-originals-to-many-new-cells across two destination rounds, keyed on
+  OriginalRoundNo alone);
+- F5J family — three fixtures with complementary configurations:
+  f5j-christchurch-2019 (mid-comp snapshot with ragged partial groups;
+  two-rate height penalty exercised in both regimes), f5j-hawkes-bay-trials
+  (delete-on-reflight aggregation), f5j-nz-south-island (extreme-height clamp,
+  motor-restart pairing, vacant seat);
+- F3K multi-group / per-group normalisation — f3k-southern-fling (FIRST corpus
+  witness: 15 rounds × G1–G3; ten tied-winner groups incl. a whole-group 5-way
+  tie yet zero final-ladder ties), f3k-june-2020 (also, incl. a four-group
+  re-draw round);
+- Mid-comp group re-draw — f3k-june-2020 (R7 cancelled zeros re-flown as a NEW
+  group G4 outside the re-flight bookkeeping — ReFlightNo=0 and
+  OriginalRoundNo==RoundNo everywhere; keep-highest-per-original-round dedup
+  alone resolves the mixed cancellation flags);
+- Motor-restart-effect pairing — f5j-nz-south-island (flagged row zeroed
+  outright beside Dur.F5JMotorRestartOption=1; contrast f5j-christchurch-2019,
+  where restart flags persist under a null option and take no scoring effect);
+- Float32 persist-cast residue — witnessed as a comparator property over CLEAN
+  stored data: f5j-christchurch-2019's persisted NormalisedScore values are
+  exact-1dp doubles and only an EMULATED binary32 persist cast flips 99/162
+  scored values (secondary comp 98 uncited-in-corpus) — comparator strategy
+  must emulate the persist cast rather than expect dirty stores;
 - Drop threshold crossed — f3j-international (Drop1@8 over 16 rounds),
   f3k-sample-comp (Drop1@5 via option-0 distinct-scored-round counting, with
   Drop2@9 never biting), jerilderie-2010 (Drop1@6 AND Drop2@12 — two drops);
 - F3K family with per-round task catalogue — f3k-sample-comp (G, A(1), F, D,
-  C(3), X×4 via F3KTaskByRound);
-- Decimal vs integral scoring — GroupScoreDecimals=1 (f3j-international)
-  against 0 in all four others;
+  C(3), X×4 via F3KTaskByRound), f3k-southern-fling (letters E/I/J/K are first
+  corpus sightings; catalogue K,I,A(2),E,H,G,J,C(1),D,F,B(1),H,G,B(2),C(1));
+- Decimal vs integral scoring — stored knobs: GroupScoreDecimals=1
+  (f3j-international) against 0 in all four others; NOTE the NZ master stores
+  GroupScoreDecimals/GroupScoreOption as Jet nulls DB-wide, so the five NZ
+  fixtures record their behaviourally-derived effective grids (e.g. 1 dp
+  half-up points-normalisation) via configProvenance/knobProvenance in each
+  competition.json instead of stored values;
 - Placeholder zero rounds — ales-sample-comp (R2–R3 wholly unflown,
   Updated='False'), f3k-sample-comp (NoTaskSet rounds 6–9), f3j-international
-  (phantom R1 group 5); jerilderie-2010's zeros are genuine, not placeholders;
+  (phantom R1 group 5), f5j-christchurch-2019 (R12–18 wholly unflown);
+  jerilderie-2010's zeros are genuine, not placeholders;
 - Penalty deduction — jerilderie-2010 (pilot 2, −100), f3k-sample-comp (four
   Penalty=100 rows subtracted post-sum);
 - Perfect maximum final score — jerilderie-2010 leader 12000 = 12 kept × 1000;
@@ -116,15 +205,14 @@ Witnessed:
 
 Still open:
 
-- Float32 persist-cast artifacts under `Decs ≥ 1` — null result so far:
-  f3j-international runs Decs=1 yet no binary32 widening appears anywhere in
-  the export; needs a future export from a GS version/build that stores
-  Singles;
 - Speed/Distance family rows in an ACTIVE fixture (they exist only for
   skip-listed f3b-international);
-- Divergence D6 proper (factory-default drop threshold, GS 12 vs official 6) —
-  every crossed threshold so far is custom (8; 5/9; 6/12);
-- F5J/F5L/F5B families — absent from the corpus entirely;
+- Divergence D6 proper (factory-default drop thresholds, GS default 12 vs
+  official 6) — every crossed threshold so far is custom (8; 5/9; 6/12), and
+  the NZ master confirms this unwitnessable from that source: Drop-config
+  columns are unset on ALL 168 Comps rows of NZContests.mdb;
+- More than one timekeeper — absent DB-wide on the NZ master; every Dur row
+  carried by the corpus sets durNumberOfTimekeepers=1;
+- F5L/F5B families — still absent entirely (the NZ growth added F5J/F3K only);
 - Merged/prelim comp (fly-off selected within one comp) — PrelimCompNo=-1 and
-  MergedComps empty throughout;
-- More than one timekeeper — every Dur row carries durNumberOfTimekeepers=1.
+  MergedComps empty throughout, NZ fixtures included.
