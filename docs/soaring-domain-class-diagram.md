@@ -425,8 +425,10 @@ classDiagram
         +PenaltyEffect effect
         +decimal points
     }
-    %% There is no appliedAt: the pipeline stage is a property of the EFFECT,
-    %% not a second choice on top of it. DeductPoints and Disqualify act on the
+    %% There is no appliedAt: the pipeline stage is a property of the EFFECT
+    %% within the stages where the recorded penalty's SCOPE makes it visible:
+    %% Flight/Entry records act at the task-round stage, TaskRound/Competition
+    %% records at the final aggregate. DeductPoints and Disqualify act on the
     %% final aggregate; ZeroFlight, ZeroRound and ZeroTask act on the raw score,
     %% which is the only stage at which a flight or a round is still a
     %% distinguishable thing to zero. All eleven definitions agreed before the
