@@ -62,10 +62,12 @@ public sealed record ReflightRule
 }
 
 /// <summary>
-/// There is no appliedAt: the pipeline stage is a property of the EFFECT.
-/// DeductPoints and Disqualify act on the final aggregate; ZeroFlight, ZeroRound
-/// and ZeroTask act on the raw score, the only stage at which a flight or a round
-/// is still a distinguishable thing to zero.
+/// There is no appliedAt: the pipeline stage is a property of the EFFECT within
+/// the stages where the recorded penalty's SCOPE makes it visible. Flight/Entry-
+/// scoped records act entirely at the task-round stage — Zero* zero the raw
+/// score and DeductPoints deducts pre-normalisation; TaskRound/Competition-
+/// scoped records act on the final aggregate (DeductPoints/Disqualify).
+/// Decision D1: kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md#wi-1.
 /// </summary>
 public sealed record PenaltyEffectSpec(PenaltyEffect Effect, decimal? Points = null);
 
