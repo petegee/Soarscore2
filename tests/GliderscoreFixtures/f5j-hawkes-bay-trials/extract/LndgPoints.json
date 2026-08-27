@@ -1,0 +1,99 @@
+{
+  "schema": {
+    "LndgNo": "Integer",
+    "Distance": "Double",
+    "Points": "Integer"
+  },
+  "rows": [
+    {
+      "LndgNo": 11,
+      "Distance": 100.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 99.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 98.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 97.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 96.0,
+      "Points": 50
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 95.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 94.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 93.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 92.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 91.0,
+      "Points": 45
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 90.0,
+      "Points": 40
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 85.0,
+      "Points": 35
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 80.0,
+      "Points": 30
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 75.0,
+      "Points": 25
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 70.0,
+      "Points": 20
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 65.0,
+      "Points": 15
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 60.0,
+      "Points": 10
+    },
+    {
+      "LndgNo": 11,
+      "Distance": 55.0,
+      "Points": 5
+    }
+  ]
+}

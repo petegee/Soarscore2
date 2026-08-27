@@ -1,0 +1,22 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "f3kGroupsPerRound": "Integer",
+    "f3kPilotsMax": "Integer",
+    "f3kDrawLocked": "Boolean",
+    "f3kAllowBackToBack": "Long",
+    "f3kDecimalsForTiming": "Long",
+    "f3kPilotsMin": "Text"
+  },
+  "rows": [
+    {
+      "CompNo": 17,
+      "f3kGroupsPerRound": 3,
+      "f3kPilotsMax": 14,
+      "f3kDrawLocked": false,
+      "f3kAllowBackToBack": 0,
+      "f3kDecimalsForTiming": 0,
+      "f3kPilotsMin": "0,1,0,1"
+    }
+  ]
+}
