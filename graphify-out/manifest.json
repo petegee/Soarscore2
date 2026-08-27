@@ -936,15 +936,15 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/extract.py": {
-    "mtime": 1787687949.6807883,
-    "seen": 1787693045.656579,
-    "ast_hash": "bdcb864a26bc1136fb41d15a44517fc9",
+    "mtime": 1787816746.600551,
+    "seen": 1787819007.8874223,
+    "ast_hash": "01bde09ed2ae897c55e868b45404ca55",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/validate.py": {
-    "mtime": 1787712369.755281,
-    "seen": 1787714360.3455055,
-    "ast_hash": "1df0736e0fe40aa734d181ea189e7903",
+    "mtime": 1787818963.6778512,
+    "seen": 1787819007.8874276,
+    "ast_hash": "825ae68ff0b23819b1fb3858c3e8b600",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj": {
@@ -2304,21 +2304,21 @@
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
-    "mtime": 1787269098.0924451,
-    "seen": 1787693045.6568131,
-    "ast_hash": "d61d470a382b989a5d6e60879f9e71f9",
+    "mtime": 1787823543.6383336,
+    "seen": 1787823561.0637252,
+    "ast_hash": "0be5faa23b8618a9b599755e0c16bc28",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/README.md": {
-    "mtime": 1787734872.3582203,
-    "seen": 1787735112.3814487,
-    "ast_hash": "bdb92f2ba4f2b9770cb527e886519eff",
+    "mtime": 1787818969.3358827,
+    "seen": 1787819007.8935385,
+    "ast_hash": "3a39373a8f39c013a4de04d323f08c37",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/index.md": {
-    "mtime": 1787714332.812993,
-    "seen": 1787714360.3498425,
-    "ast_hash": "14ddd1944eabec8184e8ac6bc0440911",
+    "mtime": 1787823242.9753807,
+    "seen": 1787823561.0637455,
+    "ast_hash": "469f839b1d597067109afd535da9ffbd",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/README.md": {
@@ -2754,9 +2754,9 @@
     "semantic_hash": ""
   },
   "kanban/backlog/pre-normalisation-score-view-field.md": {
-    "mtime": 1787735029.5818624,
-    "seen": 1787735112.3808572,
-    "ast_hash": "0e688b8e7a402478fd6e926ecd6d2b29",
+    "mtime": 1787799462.8528142,
+    "seen": 1787819007.8928993,
+    "ast_hash": "06dcd6ef4f1d0392a479be46b44a408a",
     "semantic_hash": ""
   },
   "kanban/backlog/ranking-secondary-rawscore-key.md": {
@@ -2877,6 +2877,462 @@
     "mtime": 1787798895.6316793,
     "seen": 1787798943.6925368,
     "ast_hash": "f43585ea8768fc27afdf9351ffc35da7",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json": {
+    "mtime": 1787816664.016151,
+    "seen": 1787819007.8874261,
+    "ast_hash": "b688a9cb65631178de01d2651de61983",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/CompPilots.json": {
+    "mtime": 1787817722.0048206,
+    "seen": 1787819007.887705,
+    "ast_hash": "a17c2bac2cf1e3ed05c84e91e710e102",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/Comps.json": {
+    "mtime": 1787817722.1003177,
+    "seen": 1787819007.8877058,
+    "ast_hash": "7ac32591f527dfbaa569d91aef3a593d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/DBParams.json": {
+    "mtime": 1787817722.1009877,
+    "seen": 1787819007.8877065,
+    "ast_hash": "7349a0cc3babcf575a7b37d1e658753d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/F3K.json": {
+    "mtime": 1787817722.1006653,
+    "seen": 1787819007.8877077,
+    "ast_hash": "4877f6c47ae85ea3fe459088ac787b29",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/F3KTaskByRound.json": {
+    "mtime": 1787817722.1008947,
+    "seen": 1787819007.8877084,
+    "ast_hash": "a7e5da2ec60b29835c67edb92e73ce5a",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/Scores.json": {
+    "mtime": 1787817722.0930035,
+    "seen": 1787819007.8877094,
+    "ast_hash": "235683a952e107085f161a496af0bb1a",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/extract/comps-field-provenance.json": {
+    "mtime": 1787817722.1010284,
+    "seen": 1787819007.8877106,
+    "ast_hash": "639d8e8f3959be123391d695d7fc201b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/competition.json": {
+    "mtime": 1787818785.9614732,
+    "seen": 1787819007.8879135,
+    "ast_hash": "ef3c95d9f58d49a0d8da2a6d0f9490ec",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/entries.json": {
+    "mtime": 1787818785.9566605,
+    "seen": 1787819007.8879144,
+    "ast_hash": "f1de1eb15a62f248ec0bb0ed732d40e4",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/expected-scores.json": {
+    "mtime": 1787818785.9613056,
+    "seen": 1787819007.8879156,
+    "ast_hash": "693844cfd740583d51b12ad7848598fa",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/CompPilots.json": {
+    "mtime": 1787817629.5999851,
+    "seen": 1787819007.8879166,
+    "ast_hash": "1a49568f65013e8cd26fa37534b6eb11",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/Comps.json": {
+    "mtime": 1787817629.6924238,
+    "seen": 1787819007.8879173,
+    "ast_hash": "3c5548540938ebe546f52eb019471cfb",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/DBParams.json": {
+    "mtime": 1787817629.6932206,
+    "seen": 1787819007.8879182,
+    "ast_hash": "7349a0cc3babcf575a7b37d1e658753d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/F3K.json": {
+    "mtime": 1787817629.6928678,
+    "seen": 1787819007.8879192,
+    "ast_hash": "ff71af422717f16b34f0c68a55c2392c",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/F3KTaskByRound.json": {
+    "mtime": 1787817629.6931343,
+    "seen": 1787819007.8879201,
+    "ast_hash": "00344ddd1358fc8352bf446f973b6517",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/Scores.json": {
+    "mtime": 1787817629.6852934,
+    "seen": 1787819007.8879209,
+    "ast_hash": "4330fe1fc8f5ae55b06a557903a4d7b2",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/extract/comps-field-provenance.json": {
+    "mtime": 1787817629.6932538,
+    "seen": 1787819007.8879216,
+    "ast_hash": "639d8e8f3959be123391d695d7fc201b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/provenance.json": {
+    "mtime": 1787822441.7791378,
+    "seen": 1787822511.6917384,
+    "ast_hash": "2eca7bba0b0e83e31a6e5068271c74ed",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/scores-raw.json": {
+    "mtime": 1787818785.960465,
+    "seen": 1787819007.8879235,
+    "ast_hash": "18b295d1dd782a2da967b310768b4c5b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/competition.json": {
+    "mtime": 1787821597.1589208,
+    "seen": 1787822511.69176,
+    "ast_hash": "8ad0e2f08de9a1db929b258620a908ed",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/entries.json": {
+    "mtime": 1787818821.9831486,
+    "seen": 1787819007.887925,
+    "ast_hash": "74c191f0fdb8c1461d37d7ddef805f2b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/expected-scores.json": {
+    "mtime": 1787818821.9931383,
+    "seen": 1787819007.8879259,
+    "ast_hash": "8362f9730fe7e493f85a090730a963ac",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/CompPilots.json": {
+    "mtime": 1787817772.333998,
+    "seen": 1787819007.8879266,
+    "ast_hash": "5639e24b75f3b13b453a02773ec5dca6",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/Comps.json": {
+    "mtime": 1787817945.0775337,
+    "seen": 1787819007.887927,
+    "ast_hash": "7ffa1c456ceed7c32969aaa3b577b07e",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/DBParams.json": {
+    "mtime": 1787817772.3400557,
+    "seen": 1787819007.8879278,
+    "ast_hash": "7349a0cc3babcf575a7b37d1e658753d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/Dur.json": {
+    "mtime": 1787817772.339908,
+    "seen": 1787819007.8879285,
+    "ast_hash": "125e1a3b56e3553198bc3eb6068d443c",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/LndgNames.json": {
+    "mtime": 1787817772.3399436,
+    "seen": 1787819007.8879294,
+    "ast_hash": "35236d71467e10626039e829a0d4bb27",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/LndgPoints.json": {
+    "mtime": 1787817772.3400183,
+    "seen": 1787819007.8879302,
+    "ast_hash": "5bd3920d99ad0f1777f6cead93dc342f",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/Scores.json": {
+    "mtime": 1787817772.3384402,
+    "seen": 1787819007.8879309,
+    "ast_hash": "8a54633a5a18f782748431180c8b8637",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/comps-field-provenance.json": {
+    "mtime": 1787817772.3400984,
+    "seen": 1787819007.8879316,
+    "ast_hash": "639d8e8f3959be123391d695d7fc201b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/provenance.json": {
+    "mtime": 1787822570.498471,
+    "seen": 1787822611.980589,
+    "ast_hash": "eb699089e9eb41b1cc5a4e1e45443cd4",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/scores-raw.json": {
+    "mtime": 1787818821.9916706,
+    "seen": 1787819007.8879333,
+    "ast_hash": "63feba1f5f11e9a516887449081aecb8",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/CompPilots.json": {
+    "mtime": 1787817656.1312656,
+    "seen": 1787819007.8879342,
+    "ast_hash": "47ba2cb8134286df6247c2d84b0a2f01",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/Comps.json": {
+    "mtime": 1787817656.2267025,
+    "seen": 1787819007.887935,
+    "ast_hash": "7d24fe8f1ae82affc2ac292a46c46650",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/DBParams.json": {
+    "mtime": 1787817656.1279979,
+    "seen": 1787819007.8879354,
+    "ast_hash": "7349a0cc3babcf575a7b37d1e658753d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/Dur.json": {
+    "mtime": 1787817656.2271667,
+    "seen": 1787819007.8879366,
+    "ast_hash": "bda3808277d7e53c369df28d5af312d9",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/LndgNames.json": {
+    "mtime": 1787817656.2273092,
+    "seen": 1787819007.887937,
+    "ast_hash": "35236d71467e10626039e829a0d4bb27",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/LndgPoints.json": {
+    "mtime": 1787817656.2282748,
+    "seen": 1787819007.887938,
+    "ast_hash": "5bd3920d99ad0f1777f6cead93dc342f",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/Scores.json": {
+    "mtime": 1787817656.219122,
+    "seen": 1787819007.8879387,
+    "ast_hash": "4758f8363f259a1310ae5cc7f30f6b99",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/comps-field-provenance.json": {
+    "mtime": 1787817656.1280513,
+    "seen": 1787819007.8879397,
+    "ast_hash": "639d8e8f3959be123391d695d7fc201b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/competition.json": {
+    "mtime": 1787818806.349034,
+    "seen": 1787819007.8879404,
+    "ast_hash": "d3157cfee67e5a56d13647d63435a2af",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/entries.json": {
+    "mtime": 1787818806.3495922,
+    "seen": 1787819007.8879411,
+    "ast_hash": "95f224defb685cc45ed1dcf063a4aa92",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/expected-scores.json": {
+    "mtime": 1787818806.3548906,
+    "seen": 1787819007.8879418,
+    "ast_hash": "a338925bdea2bf9b3403972b626cd9d0",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/CompPilots.json": {
+    "mtime": 1787817759.7653675,
+    "seen": 1787819007.8879426,
+    "ast_hash": "3c54bba139d533c86a33c3854255344e",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/Comps.json": {
+    "mtime": 1787817759.7655225,
+    "seen": 1787819007.8879435,
+    "ast_hash": "d45af7cf96a482d535903e6e101816cd",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/DBParams.json": {
+    "mtime": 1787817759.7655985,
+    "seen": 1787819007.887944,
+    "ast_hash": "7349a0cc3babcf575a7b37d1e658753d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/Dur.json": {
+    "mtime": 1787817759.765543,
+    "seen": 1787819007.8879447,
+    "ast_hash": "81e79eca214bcca504e254db46e254c7",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/LndgNames.json": {
+    "mtime": 1787817759.765562,
+    "seen": 1787819007.8879454,
+    "ast_hash": "35236d71467e10626039e829a0d4bb27",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/LndgPoints.json": {
+    "mtime": 1787817759.76558,
+    "seen": 1787819007.8879461,
+    "ast_hash": "5bd3920d99ad0f1777f6cead93dc342f",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/Scores.json": {
+    "mtime": 1787817759.7654586,
+    "seen": 1787819007.887947,
+    "ast_hash": "f7071fd8894dc34a43b62101f8d9b691",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/extract/comps-field-provenance.json": {
+    "mtime": 1787817759.7656162,
+    "seen": 1787819007.8879476,
+    "ast_hash": "639d8e8f3959be123391d695d7fc201b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/provenance.json": {
+    "mtime": 1787822672.7357357,
+    "seen": 1787823561.0586014,
+    "ast_hash": "256525aa747630f22f0f707c7452e3e1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/scores-raw.json": {
+    "mtime": 1787818806.354159,
+    "seen": 1787819007.887949,
+    "ast_hash": "027045b2a0a083d899d5f949b7b6e79a",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/competition.json": {
+    "mtime": 1787819088.5420835,
+    "seen": 1787822511.6911736,
+    "ast_hash": "bec8e7df9bfc03fa51163fe8080519a1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/entries.json": {
+    "mtime": 1787819066.3155572,
+    "seen": 1787822511.6911752,
+    "ast_hash": "64c002f0775851cf03212ce59f07caef",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/expected-result.json": {
+    "mtime": 1787822721.294243,
+    "seen": 1787823561.057288,
+    "ast_hash": "eedf98aa69b408efae16ca556ae2fb34",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/expected-scores.json": {
+    "mtime": 1787819066.3153112,
+    "seen": 1787822511.691177,
+    "ast_hash": "60852c9872b4bd359625d21a7f307f36",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/ladder.py": {
+    "mtime": 1787822472.4562173,
+    "seen": 1787822511.6913273,
+    "ast_hash": "da4f936ab2c2daf3be2b0dd713d906f1",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/provenance.json": {
+    "mtime": 1787822498.4992847,
+    "seen": 1787822511.691328,
+    "ast_hash": "9425401dbfbaa218421b9d114e7a18ed",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-june-2020/scores-raw.json": {
+    "mtime": 1787819066.3144495,
+    "seen": 1787822511.6913288,
+    "ast_hash": "90debfb076e89bb3687ad40c3760937b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/expected-result.json": {
+    "mtime": 1787822721.2250214,
+    "seen": 1787823561.0576491,
+    "ast_hash": "128722fffd285c8105614526e9dd0177",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f3k-southern-fling/ladder.py": {
+    "mtime": 1787822390.6520054,
+    "seen": 1787822511.691737,
+    "ast_hash": "b40f57ae064a62a777b024f5f71a4109",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/ladder.py": {
+    "mtime": 1787822504.4062998,
+    "seen": 1787822511.6919594,
+    "ast_hash": "524f27d4676e90b311b07320a9ddc156",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/competition.json": {
+    "mtime": 1787821818.2189186,
+    "seen": 1787822511.6919804,
+    "ast_hash": "6fe5bdf8b597f4b9e07042f546c1b829",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/entries.json": {
+    "mtime": 1787819277.7065787,
+    "seen": 1787822511.6919813,
+    "ast_hash": "13d03d4717dddf29d5bb4c309c3289aa",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/expected-result.json": {
+    "mtime": 1787822721.1913543,
+    "seen": 1787823561.0581613,
+    "ast_hash": "118d15d6494c0e9283f5294a931fae9e",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/expected-scores.json": {
+    "mtime": 1787819277.7128136,
+    "seen": 1787822511.6919827,
+    "ast_hash": "ef3ffa540cdb7e1751e75156fc596860",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/ladder.py": {
+    "mtime": 1787822464.5051966,
+    "seen": 1787822511.6921425,
+    "ast_hash": "067ad8c0375f83fc28961388f383c741",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/provenance.json": {
+    "mtime": 1787822488.565259,
+    "seen": 1787822511.692144,
+    "ast_hash": "88cd8b6013d0fb3e5712677f377e08c8",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/scores-raw.json": {
+    "mtime": 1787819277.7115495,
+    "seen": 1787822511.6921446,
+    "ast_hash": "981dfba51338db9a91cc2668ebf6aa61",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-christchurch-2019/expected-result.json": {
+    "mtime": 1787822537.0303843,
+    "seen": 1787822611.9801705,
+    "ast_hash": "f666117aad02412a9c0670bb139a1154",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/ladder.py": {
+    "mtime": 1787822657.095695,
+    "seen": 1787823561.0586004,
+    "ast_hash": "ea1e8c572d39d78e79091a14010b0869",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/f5j-nz-south-island/expected-result.json": {
+    "mtime": 1787822660.7117045,
+    "seen": 1787823561.0584269,
+    "ast_hash": "e4b8f1c5cccbc73e79e4a79fa64b9c17",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/nz-fixture-replay-scenarios.md": {
+    "mtime": 1787823522.488124,
+    "seen": 1787823561.0631082,
+    "ast_hash": "b5215c1343cad413a92682b4092972e9",
+    "semantic_hash": ""
+  },
+  "kanban/completed/grow-corpus-nz-master-five-fixtures.md": {
+    "mtime": 1787823549.2903824,
+    "seen": 1787823561.063421,
+    "ast_hash": "e4c08a0eacd2b8f41b506ad72fcbe72f",
     "semantic_hash": ""
   }
 }
