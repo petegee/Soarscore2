@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/ClassDefinition.cs": {
-    "mtime": 1785972054.8060145,
-    "seen": 1787693045.6565006,
-    "ast_hash": "4754b7ee3c4718266ec327f9130c63a2",
+    "mtime": 1787797297.9855378,
+    "seen": 1787797373.7970476,
+    "ast_hash": "bf1638a50ed13706c4f3fcab33b5944e",
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/ClassDefinitionEvents.cs": {
@@ -564,9 +564,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/Scoring/PenaltyEngine.cs": {
-    "mtime": 1787269098.0943933,
-    "seen": 1787693045.6565144,
-    "ast_hash": "a49a7cafbbccff7f4156cc5892b923db",
+    "mtime": 1787797292.5445032,
+    "seen": 1787797373.7972739,
+    "ast_hash": "472dce23456c87e6d33f02b904d5b205",
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/Scoring/PhaseAggregator.cs": {
@@ -990,9 +990,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/ScoringACompetitionSteps.cs": {
-    "mtime": 1787606321.1054559,
-    "seen": 1787693045.6565878,
-    "ast_hash": "edb3770531e6f93b581dcdae02e6ba68",
+    "mtime": 1787798596.3397758,
+    "seen": 1787798943.688502,
+    "ast_hash": "d651939a99f6cb313ab96ea8e18097ff",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/SeeingWhatIsRecordedSteps.cs": {
@@ -1560,9 +1560,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/PenaltyEngineTests.cs": {
-    "mtime": 1785963953.5305896,
-    "seen": 1787693045.6566863,
-    "ast_hash": "1e93c4e24e9143cf77d441f047f31015",
+    "mtime": 1787797510.5028846,
+    "seen": 1787798943.6904898,
+    "ast_hash": "c7eb6970f81238ebd2746399e64d6ad3",
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/PersonDecideTests.cs": {
@@ -2106,9 +2106,9 @@
     "semantic_hash": ""
   },
   "docs/soaring-domain-class-diagram.md": {
-    "mtime": 1787545041.9050157,
-    "seen": 1787693045.6567776,
-    "ast_hash": "82138df64f31fad0ffe3030244179d2e",
+    "mtime": 1787796902.8372903,
+    "seen": 1787797373.8043063,
+    "ast_hash": "6e0ee52629b3e10a045ab5683bb4a685",
     "semantic_hash": ""
   },
   "docs/soaring-domain-glossary.md": {
@@ -2298,9 +2298,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1787735063.022999,
-    "seen": 1787735112.381431,
-    "ast_hash": "690e7abd2fb27029ad91c4a926be6aff",
+    "mtime": 1787798915.881808,
+    "seen": 1787798943.6928957,
+    "ast_hash": "d66e5ddb88524d374eb91b1b0624755b",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -2753,12 +2753,6 @@
     "ast_hash": "d3fb81e30448892ce35a7b69de380999",
     "semantic_hash": ""
   },
-  "kanban/backlog/entry-scoped-deduct-points-penalties-inert.md": {
-    "mtime": 1787734985.7326834,
-    "seen": 1787735112.3808358,
-    "ast_hash": "0092b63f346118434f75049ab6a0bfd6",
-    "semantic_hash": ""
-  },
   "kanban/backlog/pre-normalisation-score-view-field.md": {
     "mtime": 1787735029.5818624,
     "seen": 1787735112.3808572,
@@ -2865,6 +2859,24 @@
     "mtime": 1787782530.35358,
     "seen": 1787782541.7709968,
     "ast_hash": "fd61de2c7d5d5ab3d7b7f41ca3974c18",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md": {
+    "mtime": 1787798904.8407378,
+    "seen": 1787798943.6922698,
+    "ast_hash": "5c69ac3810e09e4b5c030cb173db4296",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Domain.Tests/PenaltyEnginePropertyTests.cs": {
+    "mtime": 1787798010.8840559,
+    "seen": 1787798943.6904879,
+    "ast_hash": "63c999f8a6eed6cf60920553e6ef0fd2",
+    "semantic_hash": ""
+  },
+  "kanban/completed/entry-scoped-deduct-points-penalties-inert.md": {
+    "mtime": 1787798895.6316793,
+    "seen": 1787798943.6925368,
+    "ast_hash": "f43585ea8768fc27afdf9351ffc35da7",
     "semantic_hash": ""
   }
 }

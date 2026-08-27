@@ -1,9 +1,9 @@
 # Story — Entry-scoped point-deduction penalties are inert
 
-**Status:** In progress · **Raised:** 2026-08-26 (found by
+**Status:** Completed · **Raised:** 2026-08-26 (found by
 `kanban/completed/gliderscore-replay-and-compare-harness.md` WI-3) ·
 **Scoped:** 2026-08-27 — resolution is **option 1, wire it** (decision argued
-below; option 2 rejected).
+below; option 2 rejected). · **Completed:** 2026-08-27
 
 ## What
 

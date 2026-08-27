@@ -1,7 +1,7 @@
 # Story — Aggregate-scoped Zero* records zero nothing; entry-scoped Disqualify does nothing
 
 **Status:** Backlog · **Raised:** 2026-08-27 — mirrors of the no-ops left open
-by `kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md` (WI-0),
+by `kanban/completed/entry-scoped-deduct-points-penalties-inert.md` (WI-0),
 which wired the first direction (entry-scoped `DeductPoints` → raw stage) but
 deliberately narrowed rather than solved its siblings.
 

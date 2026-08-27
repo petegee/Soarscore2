@@ -216,6 +216,19 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   penalties are in real logs). Reopen as a `backlog/` story if a score-sheet read
   surface is wanted; today the audit trail is the stream itself.
 
+- **A declared-points deduction pre-normalisation stays direction-blind: no
+  LowerIsBetter-aware behaviour until a rulebook or fixture exercises it.**
+  **Decided 2026-08-27**
+  (`kanban/completed/entry-scoped-deduct-points-penalties-inert.md`, design
+  decision D4). At the raw stage a DeductPoints effect subtracts and floors at
+  zero — the HigherIsBetter analogue of FAI General §6 / C.19. For
+  LowerIsBetter tasks (F3B speed / F3F) deducting *points* from *seconds*
+  pre-normalisation has no rule-grounded meaning in either rulebook, and no
+  rulebook or fixture does it today; since `TaskResult` carries no direction,
+  giving one would add machinery only to make an arbitrary choice precise.
+  `ApplyRawPenalties`' function comment documents this. Surface it if a rulebook
+  or fixture ever records a points penalty against a lower-is-better raw score.
+
 ---
 
 ## Decisions that have since been taken up

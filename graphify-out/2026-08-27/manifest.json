@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/ClassDefinition.cs": {
-    "mtime": 1785972054.8060145,
-    "seen": 1787693045.6565006,
-    "ast_hash": "4754b7ee3c4718266ec327f9130c63a2",
+    "mtime": 1787797297.9855378,
+    "seen": 1787797373.7970476,
+    "ast_hash": "bf1638a50ed13706c4f3fcab33b5944e",
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/ClassDefinitionEvents.cs": {
@@ -564,9 +564,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/Scoring/PenaltyEngine.cs": {
-    "mtime": 1787269098.0943933,
-    "seen": 1787693045.6565144,
-    "ast_hash": "a49a7cafbbccff7f4156cc5892b923db",
+    "mtime": 1787797292.5445032,
+    "seen": 1787797373.7972739,
+    "ast_hash": "472dce23456c87e6d33f02b904d5b205",
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/Scoring/PhaseAggregator.cs": {
@@ -2106,9 +2106,9 @@
     "semantic_hash": ""
   },
   "docs/soaring-domain-class-diagram.md": {
-    "mtime": 1787545041.9050157,
-    "seen": 1787693045.6567776,
-    "ast_hash": "82138df64f31fad0ffe3030244179d2e",
+    "mtime": 1787796902.8372903,
+    "seen": 1787797373.8043063,
+    "ast_hash": "6e0ee52629b3e10a045ab5683bb4a685",
     "semantic_hash": ""
   },
   "docs/soaring-domain-glossary.md": {
@@ -2753,12 +2753,6 @@
     "ast_hash": "d3fb81e30448892ce35a7b69de380999",
     "semantic_hash": ""
   },
-  "kanban/backlog/entry-scoped-deduct-points-penalties-inert.md": {
-    "mtime": 1787734985.7326834,
-    "seen": 1787735112.3808358,
-    "ast_hash": "0092b63f346118434f75049ab6a0bfd6",
-    "semantic_hash": ""
-  },
   "kanban/backlog/pre-normalisation-score-view-field.md": {
     "mtime": 1787735029.5818624,
     "seen": 1787735112.3808572,
@@ -2784,9 +2778,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/csvparse.py": {
-    "mtime": 1787777102.648663,
-    "seen": 1787777411.0694308,
-    "ast_hash": "8c0b6989e6be4cd8eebd6107625bd0bb",
+    "mtime": 1787782264.9696736,
+    "seen": 1787782541.7662618,
+    "ast_hash": "2a7c812cf6a018f6e507b1cc2b9b92ac",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/fetch_comp.py": {
@@ -2814,15 +2808,15 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/tests/test_csvparse.py": {
-    "mtime": 1787777383.092631,
-    "seen": 1787777411.0694351,
-    "ast_hash": "ac242872b9db9bd636b2a3e0c547b790",
+    "mtime": 1787782422.8398077,
+    "seen": 1787782541.7663503,
+    "ast_hash": "b159bc302df0c23eda51f05a3e73d5d4",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/tests/test_fetch_comp.py": {
-    "mtime": 1787778773.4990332,
-    "seen": 1787778818.0730386,
-    "ast_hash": "113e1c85a34c60377267243d9167c1eb",
+    "mtime": 1787782476.2711916,
+    "seen": 1787782541.7663524,
+    "ast_hash": "639acf45e8a41b049db5ca845aaf0cb8",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/tests/test_gsclient.py": {
@@ -2838,15 +2832,15 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/tests/test_triage.py": {
-    "mtime": 1787778776.572061,
-    "seen": 1787778818.0730805,
-    "ast_hash": "8e3eda6dde342802c7b8ba717b36e953",
+    "mtime": 1787782507.2894144,
+    "seen": 1787782541.7663972,
+    "ast_hash": "271cf288b49281f7d60d268ea33ff940",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/triage.py": {
-    "mtime": 1787778779.9580915,
-    "seen": 1787778818.0730813,
-    "ast_hash": "f63676fca954efa2b3bc6bfb3a725a14",
+    "mtime": 1787782280.4247847,
+    "seen": 1787782541.7663984,
+    "ast_hash": "4c593da09c74ba61b71286f70a7c96dc",
     "semantic_hash": ""
   },
   "kanban/backlog/webmine-agent-skill-wrapper.md": {
@@ -2862,9 +2856,21 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/webmine/README.md": {
-    "mtime": 1787779188.444776,
-    "seen": 1787779284.172092,
-    "ast_hash": "2b899b169c77c4076aba48ad4f14e1a8",
+    "mtime": 1787782530.35358,
+    "seen": 1787782541.7709968,
+    "ast_hash": "fd61de2c7d5d5ab3d7b7f41ca3974c18",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md": {
+    "mtime": 1787796710.0182683,
+    "seen": 1787797373.8043935,
+    "ast_hash": "b5c0a757bf9babe90a830753a6972e07",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md": {
+    "mtime": 1787796694.5261862,
+    "seen": 1787797373.8050847,
+    "ast_hash": "981b0241df3e13b04f0bd763f02ed25f",
     "semantic_hash": ""
   }
 }
