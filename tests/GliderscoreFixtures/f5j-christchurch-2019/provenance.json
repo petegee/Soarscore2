@@ -1,7 +1,6 @@
 {
   "slug": "f5j-christchurch-2019",
   "sourceKind": "master-db-slice",
-  "expectedResultDeferred": true,
   "source": {
     "originalFilename": "NZContests.mdb",
     "masterSha256": "e62cbce8e11784e59938d5a39ef99d2f7052e52d7ef6f9a9af79fdc4fd1048e7",
@@ -75,6 +74,6 @@
     "[12] Shape facts: single task throughout (TaskNo=1 on all 324 rows); 3 drawn groups of 6 per configured round; no re-flights anywhere (OriginalRoundNo == RoundNo on all 324; ReFlightNo = 0 always); Penalty column all 0; Helper null everywhere; ModelID '' on all rows despite UseModels=true; ScoresChecked=False on all rows (inert evidence per pipeline story); Scores.Updated is Jet Text 'True'/'False', not Boolean.",
     "[13] Identity caveat: Comps.CompDate is empty — no date is stored anywhere for this comp (master inventory lists it among compsMissingDates; the dated comps end 2012-12-31); the name-year 2019 is not corroborated by any stored field and is recorded in the slug/name only. Recorded faithfully as \"\" in identity.CompDate.",
     "[14] PII check 2026-08-27: names-only exposure as with existing fixtures — entries.json carries CompPilots verbatim plus Pilots rows filtered to the 18 member PilotNos (from the master-wide extraction; real NZ pilot names carried like existing fixtures do). Contacts: every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for ALL 177 master rows, members included; CompPilots carries no contact columns. No team assignments (Team='0' ×18). The master .mdb itself is not committed (see deviationDeclaration).",
-    "[15] expectedResultDeferred=true: the final-ranking oracle (expected-result.json) is WI-3 work and is intentionally absent at this scores-stage pass (ranking-oracle decision: reconstructed-ladder default; drop activation impossible per note [9], so the ladder sums best-per-round NormalisedScore over the ragged snapshot as-is). Rules 1-5 + expected↔scores integrity PASS on the five curated files."
+    "[15] Ranking oracle landed (WI-3, 2026-08-27): expected-result.json present with source 'reconstructed-ladder' (no GS report transcript exists for any of the five NZ fixtures), derived and verified by ladder.py in this directory — the derivation of record. It independently recomputes all 324 persisted RawScore/NormalisedScore values from scores-raw + competition.json effective knobs (exact agreement with expected-scores.json on every cell; G4 discipline: persisted values asserted, never repr bits), then builds the Overall Results ladder: best-per-original-round sum over rounds 1-11, no drops fire per note [9], report-time re-round to the effective 1 dp grid, Score DESC / RawScore DESC; F5J ends the ladder at rung 2; ties display '=n' with intra-tie order PilotNo ascending as the documented curation decision (story WI-3 'decide at curation'). The expectedResultDeferred flag set at the scores-stage pass was cleared when the oracle landed (a declared deferral alongside a present oracle is a validator contradiction). Rules 1-5 + expected↔scores integrity PASS."
   ]
 }

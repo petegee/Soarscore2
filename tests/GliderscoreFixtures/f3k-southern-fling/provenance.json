@@ -39,7 +39,6 @@
     "extractionOfRecord": "tests/GliderscoreFixtures/f3k-southern-fling/extract/ (committed by WI-1)"
   },
   "who": "soarscore agent pass 2026-08-27",
-  "expectedResultDeferred": true,
   "perFileSha256": {
     "extract/CompPilots.json": "27e0969279be5854d9e2eef05aabed2ded40bff9d9373eed2c49c509f5972b01",
     "extract/Comps.json": "2c8b2736365b8f77128ccbaeb27152e2334f70f46766782e4051b23d68e9e02d",
@@ -60,6 +59,6 @@
     "Family-row format drift worth knowing before comparison work: F3K.f3kPilotsMin holds CSV '0,1,0,1' here, unlike f3k-sample-comp's query-string style ('TmProt=True&NbrPlts=10&GrpsInRnd=4...'), and draws no counts from it — pilot/group shape is witnessed from the Scores rows instead: 45 round-group pairs, 3 groups in every round of all 15 rounds, 15 pilots. The F3K row is otherwise the corpus-normal shape (draw/timing state only, no scoring knobs); dur/spd/dis/f5b/f5k families have zero rows for comp 17 (pure F3K comp).",
     "PII treatment deviates from the ZZ-shipped older fixtures on purpose: entries.pilots carries NAMES ONLY (PilotNo/FirstName/LastName) because these are real club members extracted from the shared Pilots master (177 named rows). All contact columns were verified empty in the master for these 15, the bulk master itself is never committed, and closure was asserted at curation: all 15 CompPilots members resolve to exactly the 15 emitted name rows.",
     "Provenance chain anchors: staged evidence twin /tmp/opencode/nz-pre/f3k-southern-fling/{VERIFICATION.md,stage-manifest.json} is ephemeral — its integrity block (group map, tie census, retirement pattern, phantom accounting, task catalogue) was re-verified against the committed extracts at curation and is summarised here and in competition.json/expected-scores.json. exportDate/exportedBy are null because no GUI export ran (deviation above); the extraction date is the WI-1 curation pass.",
-    "expected-result.json is deliberately absent from this WI-2 curation — the ranking oracle lands with story WI-3, which will default to reconstructed-ladder and must anchor on the retired-pilot semantics of pilot 89 plus the R9 whole-group ties."
+    "expected-result.json landed with story WI-3 as a reconstructed-ladder oracle: ladder.py beside this fixture is its derivation of record (byte-idempotent rerun), anchored on the retired-pilot semantics of pilot 89 (ranked on flown rounds only) plus the per-cell normalisation recompute; the R9 whole-group tie census is carried in the oracle notes but no final-ladder tie survives aggregation."
   ]
 }

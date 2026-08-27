@@ -1,7 +1,6 @@
 {
   "slug": "f3k-june-2020",
   "sourceKind": "master-db-slice",
-  "expectedResultDeferred": true,
   "who": "soarscore agent pass 2026-08-27",
   "curatedDate": "2026-08-27",
   "source": {
@@ -82,7 +81,7 @@
     "Penalty audit: Penalty, FlightScoreDeduction and Landing are 0 on all 199 rows, and Helper is NULL throughout while ModelID is '' throughout (despite UseModels=true) - the deductive/penalty surface of this fixture is entirely inert except as history.",
     "scheduleTables carries F3KTaskByRound only (13 rounds: B(1), D(1), G, H, M, A(2), E(1), C(1), I, J, K, L, F - round 4 is H holding the decode deviants, round 7 is E(1) carrying the re-draw). The other schedule/family tables have zero CompNo=54 rows and are recorded as omitted in deviationDeclaration.consequences.",
     "TaskNo=5 on all 199 Scores rows; task identity lives entirely in F3KTaskByRound, matching the f3k-sample-comp precedent.",
-    "expected-result.json is deliberately ABSENT at this stage and expectedResultDeferred=true is declared for validate.py: the ranking oracle lands at WI-3 of grow-corpus-nz-master-five-fixtures.md (default reconstructed-ladder, which there must additionally settle aggregation over the round-7 cancelled-zero group and the superseded placeholder). Until then the fixture is curated-complete but not harness-active.",
+    "Ranking oracle landed at WI-3 of grow-corpus-nz-master-five-fixtures.md (2026-08-27): reconstructed-ladder, derived by ladder.py beside the fixture, which additionally settled aggregation over the round-7 cancelled-zero group and the superseded placeholder; expectedResultDeferred was removed at that point.",
     "Extraction chain rationale in one line: pristine pinned access_parser 0.0.6 parses this comp's five data tables clean in one pass, but raises an IndexError on Comps (null-bitmap boundary, col ids 40..42 vs 40-slot bitmap) and silently drops its 12 variable-length Text columns; extract.py --tolerant surgically wraps only the bounds bug and --recovered-texts ingests the byte-validated trailer-crack texts, yielding the 40-column Comps surface plus comps-field-provenance.json - after which the comp-54 slice is a pure row filter of trusted output."
   ]
 }

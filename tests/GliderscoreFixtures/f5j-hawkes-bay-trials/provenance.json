@@ -1,7 +1,6 @@
 {
   "slug": "f5j-hawkes-bay-trials",
   "sourceKind": "master-db-slice",
-  "expectedResultDeferred": true,
   "source": {
     "originalFilename": "NZContests.mdb",
     "masterRepoPath": "gliderscore/NZContests.mdb",
@@ -94,6 +93,6 @@
     "extractFiles sha256s cite the committed repo copies byte-for-byte. The PRE-2 staging manifest (/tmp/opencode/nz-pre/f5j-hawkes-bay-trials/stage-manifest.json) hashed the same six non-Comps tables identically; its staged Comps.json encoded Jet nulls as '' whereas this canonical regeneration uses JSON null (value-identical — machinery cross-check found zero value mismatches, zero column-set differences).",
     "PII: contact columns (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) empty for all members; entries.json exposes names only, matching existing fixtures. Master Pilots (177 rows) filtered to the 18 members; shipped test dummies retained verbatim (pilot 84 'D Dummy', pilot 136 'The Dummy').",
     "Schema modelling note: 'Updated' is Jet Text ('True'/'False') while ScoresChecked/LandingOver75m/F5JMotorReStarted/durDrawLocked are real Jet Booleans — string-typed vs boolean-typed bools are modelled deliberately (PRE-2 finding, both families matter for rescoring gates). Verbatim-left-out Dur display/draw fields: durDecimalsForTiming=0; durGroupsPerRound=3; durPilotsMax=6; durDrawLocked=false; durNbrOfLanes=0.0; durAllowBackToBack=0; durPilotsMin=''. F5JMotorRestartOption IS carried in familyRows.Dur (unlike jerilderie-2010's inert default) because option 1 actively zeroes R6/G3 p100. CompDate never set (undated comp, carried as null); remaining Comps setup/detail columns (DrawMode/printCountry/printRegistration/BadgeSpecs/AudioProfile*/WasLastUploadPublic literal 'Online - Public'/CompID/ScoresLocked/UseClasses/UseModels/UsePilotNumbering/Enforce20KHz/UseRoles/AssignHelpers) stay out per WI-2 precedent. DurTargetTimeByRound exists DB-wide with zero rows for this comp — carried empty-with-schema like siblings.",
-    "expected-result.json is deliberately deferred to WI-3 (ranking oracle: default reconstructed-ladder; must state drops-not-fireable explicitly; mismatch policy needs source-level triage before indicting the engine). Validation of record for this fixture covers rules 1-5 plus the expected-scores<->scores-raw integrity check over these five files."
+    "expected-result.json landed at WI-3 as a reconstructed-ladder oracle, derived and reproducible via ladder.py in this directory (aggregation keys re-flight cells to orig-round cells by OriginalRoundNo alone; states drops-not-fireable explicitly; a mismatch needs source-level triage before indicting the engine). Validation of record now covers rules 1-5 plus the expected-scores<->scores-raw integrity check over these files and the oracle."
   ]
 }
