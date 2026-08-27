@@ -1,0 +1,160 @@
+{
+  "identity": {
+    "CompNo": 121,
+    "CompName": "NZ South Island F5J",
+    "GSCompClass": "F5J",
+    "CompVenue": "Lincoln New Zealand",
+    "CompDate": null
+  },
+  "scoring": {
+    "GSCompClass": "F5J",
+    "GroupScoreOption": null,
+    "GroupScoreDecimals": null,
+    "RoundOrTruncate": null,
+    "DropScoreOption": 0,
+    "Drop1AtRound": null,
+    "Drop2AtRound": null,
+    "Drop3AtRound": 99,
+    "Drop4AtRound": 99,
+    "Drop5AtRound": null,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "familyRows": {
+    "Dur": {
+      "CompNo": 121,
+      "durTargetTime": 600,
+      "DurPointsPerSecond": 1.0,
+      "durNumberOfTimekeepers": 1,
+      "durLndg": 11,
+      "durRefHeight": 200.0,
+      "durPenaltyUpToRefHeight": 0.5,
+      "durPenaltyOverRefHeight": 3.0,
+      "durFlightPenalty": 3,
+      "F5JMotorRestartOption": 1
+    }
+  },
+  "scheduleTables": {
+    "DurTargetTimeByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "TargetTime": "Long"
+      },
+      "rows": []
+    }
+  },
+  "lookups": {
+    "landingSchemes": [
+      {
+        "LndgNo": 11,
+        "Name": "F5J Enter Landing",
+        "points": [
+          {
+            "LndgNo": 11,
+            "Distance": 55.0,
+            "Points": 5
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 60.0,
+            "Points": 10
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 65.0,
+            "Points": 15
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 70.0,
+            "Points": 20
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 75.0,
+            "Points": 25
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 80.0,
+            "Points": 30
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 85.0,
+            "Points": 35
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 90.0,
+            "Points": 40
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 91.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 92.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 93.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 94.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 95.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 96.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 97.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 98.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 99.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 100.0,
+            "Points": 50
+          }
+        ]
+      }
+    ],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 3,
+    "CompSeriesNo": "0",
+    "PrelimCompNo": null,
+    "MergedComps": "",
+    "triageJustification": {
+      "teams": {
+        "evidence": "Scores carries no team columns (schema checked programmatically); team standings are report-time aggregations and can never alter an individual score. CompPilots.Team assignments are honest app defaults, not real teams: UseTeams=true with NbrForTeamScore=3, yet Team='0' and OmitFromTeamScore=false for all 13 pilots — no team was ever populated for this comp."
+      }
+    }
+  }
+}

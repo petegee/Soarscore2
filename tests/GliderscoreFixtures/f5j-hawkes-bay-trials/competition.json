@@ -1,0 +1,179 @@
+{
+  "identity": {
+    "CompNo": 135,
+    "CompName": "F5J Hawkes Bay and Team Trials",
+    "GSCompClass": "F5J",
+    "CompDate": null
+  },
+  "scoring": {
+    "GSCompClass": "F5J",
+    "GroupScoreOption": null,
+    "GroupScoreDecimals": null,
+    "RoundOrTruncate": null,
+    "DropScoreOption": 0,
+    "Drop1AtRound": null,
+    "Drop2AtRound": null,
+    "Drop3AtRound": 99,
+    "Drop4AtRound": 99,
+    "Drop5AtRound": null,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "familyRows": {
+    "Dur": {
+      "CompNo": 135,
+      "durTargetTime": 600,
+      "DurPointsPerSecond": 1.0,
+      "durNumberOfTimekeepers": 1,
+      "durLndg": 11,
+      "durRefHeight": 200.0,
+      "durPenaltyUpToRefHeight": 0.5,
+      "durPenaltyOverRefHeight": 3.0,
+      "durFlightPenalty": 3,
+      "F5JMotorRestartOption": 1
+    }
+  },
+  "scheduleTables": {
+    "DurTargetTimeByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "TargetTime": "Long"
+      },
+      "rows": []
+    }
+  },
+  "lookups": {
+    "landingSchemes": [
+      {
+        "LndgNo": 11,
+        "Name": "F5J Enter Landing",
+        "points": [
+          {
+            "LndgNo": 11,
+            "Distance": 100.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 99.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 98.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 97.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 96.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 95.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 94.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 93.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 92.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 91.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 90.0,
+            "Points": 40
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 85.0,
+            "Points": 35
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 80.0,
+            "Points": 30
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 75.0,
+            "Points": 25
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 70.0,
+            "Points": 20
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 65.0,
+            "Points": 15
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 60.0,
+            "Points": 10
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 55.0,
+            "Points": 5
+          }
+        ]
+      }
+    ],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 3,
+    "CompSeriesNo": "0",
+    "PrelimCompNo": null,
+    "MergedComps": "",
+    "triageJustification": {
+      "teams": {
+        "evidence": "Scores carries no team columns; team standings are report-time aggregations of unchanged individual normalised scores, never an input to them. The team fields are app defaults left untouched: UseTeams=true with UseTeamProtection=true and NbrForTeamScore=3, yet every one of the 18 CompPilots rows holds Team='0' (18x) and no team assignment exists anywhere in this comp's data. Despite the event name, 'Team Trials' is NAME-ONLY and no team mechanism reached any persisted score."
+      }
+    }
+  },
+  "configProvenance": {
+    "note": "Stored-vs-effective record for the Handoff §1 scoring-knob whitelist. The master's Comps row leaves several knobs EMPTY (Jet null recorded faithfully above; Decimals is null on all 168 Comps rows DB-wide — known artifact class), so stored config cannot prove scoring-time behaviour; the behaviourally verified EFFECTIVE value is recorded here next to the verbatim state. Drop fields are verbatim cells (compsCellsVerbatim): no threshold fires: unset (NULL) cells plus sentinel-99s can never reach an activation round under DropScoreOption=0 counting; the WI-3 ranking oracle will state drops-not-fireable explicitly",
+    "knobs": {
+      "GroupScoreOption": {
+        "stored": null,
+        "effective": 1,
+        "basis": "All 30 scored (round,group) pairs hold NS==1000 exactly at the group best, ruling out option-0 raw passthrough; every persisted sum is cleanly rounded on the 1-dp grid, which option-2 normalisation would leave un-rounded (NS=NormTime+Landing composite). Points-based option 1 is the only consistent reading; null is also what 167/168 master comps carry."
+      },
+      "GroupScoreDecimals": {
+        "stored": null,
+        "effective": 1,
+        "basis": "Every persisted NormalisedScore (288/288) sits on the <=1-dp rounding grid; also GS's new-comp default (CompNew.vb:692-693). The NZ master is known to null these cells even where a comp had configured them (f3j-international's Decimals=1 was lost the same way)."
+      },
+      "RoundOrTruncate": {
+        "stored": null,
+        "effective": 0,
+        "basis": "Nearest-up rounding witnessed where truncation would differ (170.5/346.5*1000=492.063... persists as 492.1); combo mapping 0=Rounded/1=Truncated per Comps1_MOD.vb:138-141 and the migration backfill 'means rounded' (UpdateDatabase_MOD.vb:35-48)."
+      }
+    }
+  }
+}

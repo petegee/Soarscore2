@@ -1,0 +1,137 @@
+{
+  "identity": {
+    "CompNo": 54,
+    "CompName": "2020 June F3K",
+    "GSCompClass": "F3K",
+    "CompDate": null,
+    "CompVenue": "Levin New Zealand",
+    "CompID": "4364bbfcbe3"
+  },
+  "scoring": {
+    "GSCompClass": "F3K",
+    "GroupScoreOption": null,
+    "GroupScoreDecimals": null,
+    "RoundOrTruncate": 0,
+    "DropScoreOption": 0,
+    "Drop1AtRound": null,
+    "Drop2AtRound": null,
+    "Drop3AtRound": 99,
+    "Drop4AtRound": 99,
+    "Drop5AtRound": 99,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "scoringCaveats": [
+    "Knobs are the verbatim Comps-row values; null is recorded where the DB stores NULL - nothing was substituted. The three meaningful unset knobs are GroupScoreOption, GroupScoreDecimals and Drop1/Drop2AtRound.",
+    "Observed effective normalisation grid, pinned on all 199 rows by the stage verification and re-verified at curation: NormalisedScore == round(RawScore/groupMax*1000, 1 dp) half-up, i.e. points-basis per-group scaling rounded at one decimal. For F3K-family task 5, GS options 1 and 2 share the same code path (Scoring_MOD.vb:416-439), so the stored null GroupScoreOption cannot be distinguished between them observationally; the F3K UI additionally coerces option 2 to 1. Effective grid to use until WI-3 rules otherwise: option 1 semantics at Decs=1.",
+    "A stored NULL knob does not zero or stale GliderScore's persisted scores here (199/199 rows carry well-formed persisted values), which is why the faithful nulls are recorded rather than treated as an invalid fixture: GS substitutes an in-code default when loading config; the arithmetic story cites DBNull fallbacks on its config-read paths.",
+    "Drop1/Drop2AtRound are NULL while Drop3..5 are 99 and DropScoreOption=0. Unset drop configuration never fires drops - batch resolution from the comp-135 analysis ('drop config unset DB-wide => NO drops fire'); assumed here identically and left to WI-3's ladder reconstruction to honour."
+  ],
+  "familyRows": {
+    "F3K": {
+      "CompNo": 54,
+      "f3kGroupsPerRound": 3,
+      "f3kPilotsMax": 5,
+      "f3kDrawLocked": false,
+      "f3kAllowBackToBack": 0,
+      "f3kDecimalsForTiming": 1,
+      "f3kPilotsMin": "0,1,0,1"
+    }
+  },
+  "scheduleTables": {
+    "F3KTaskByRound": {
+      "schema": {
+        "CompNo": "Integer",
+        "RoundNo": "Long",
+        "Task": "Text"
+      },
+      "rows": [
+        {
+          "CompNo": 54,
+          "RoundNo": 1,
+          "Task": "B(1)"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 2,
+          "Task": "D(1)"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 3,
+          "Task": "G"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 4,
+          "Task": "H"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 5,
+          "Task": "M"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 6,
+          "Task": "A(2)"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 7,
+          "Task": "E(1)"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 8,
+          "Task": "C(1)"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 9,
+          "Task": "I"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 10,
+          "Task": "J"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 11,
+          "Task": "K"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 12,
+          "Task": "L"
+        },
+        {
+          "CompNo": 54,
+          "RoundNo": 13,
+          "Task": "F"
+        }
+      ]
+    }
+  },
+  "lookups": {
+    "landingSchemes": [],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 3,
+    "CompSeriesNo": "0",
+    "PrelimCompNo": null,
+    "MergedComps": "",
+    "triageJustification": {
+      "series": {
+        "deadLinkCount": 0,
+        "evidence": "CompSeriesNo='0' - this comp references no series entry at all (GliderScore's own default meaning 'no series'), so nothing can pull series data into any individual score."
+      },
+      "teams": {
+        "evidence": "Scores carries no team columns; team standings are report-time aggregations of unchanged individual normalised scores, never an input to them. The team knobs are app defaults only: UseTeams=true/UseTeamProtection=true/NbrForTeamScore=3 are stored, but CompPilots.Team='0' on all 15 pilots - zero real team assignments exist in the data."
+      }
+    }
+  }
+}

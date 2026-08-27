@@ -1,0 +1,88 @@
+{
+  "slug": "f3k-june-2020",
+  "sourceKind": "master-db-slice",
+  "expectedResultDeferred": true,
+  "who": "soarscore agent pass 2026-08-27",
+  "curatedDate": "2026-08-27",
+  "source": {
+    "kind": "NZ competition manager's full GliderScore master database",
+    "originalFilename": "NZContests.mdb",
+    "originalPath": "/home/pete/Source/SoarScore2/gliderscore/NZContests.mdb (gitignored; slice, don't ship)",
+    "compsInMaster": 168,
+    "slice": "CompNo=54 only",
+    "sha256": "e62cbce8e11784e59938d5a39ef99d2f7052e52d7ef6f9a9af79fdc4fd1048e7"
+  },
+  "deviationDeclaration": {
+    "summary": "This fixture deviates from the pipeline story's normal sourcing: it is cut directly from the full NZ master DB rather than from a per-comp Export Competition(s) file.",
+    "why": "The GliderScore GUI export route is unexecutable on this host (no install, no wine), and the pristine pinned access_parser 0.0.6 crashes on the master's Comps table and silently drops its variable-length text columns - so per-comp exports cannot be produced or cleanly re-read here. WI-1 sourcing option 2 (tolerant master extraction + per-comp slice at curation) was invoked instead; the same decision governs all five fixtures of the grow-corpus batch.",
+    "consequences": [
+      "No source .mdb is committed for this fixture: committing the master is explicitly unacceptable (all 168 comps plus the full Pilots master => PII-broad) and would couple five fixtures to one file. Chain verifiability rests on hashes alone: the master sha256 above pins the origin; the per-file sha256s below pin each extracted table as committed under extract/.",
+      "Extracted tables carry comp-scoped rows only (CompPilots/Scores/F3K/F3KTaskByRound sliced to CompNo=54; DBParams verbatim). Global config tables without a CompNo column (F5KBonusData/F5KBonusNames/TimerSettings) and family/schedule tables holding zero CompNo=54 rows (Dur, Spd, Dis, F5B, F5K, DurTargetTimeByRound, F5KTaskandRefHeightByRound) were verified empty for this comp and omitted; LndgNames/LndgPoints not staged because no landing-scheme reference exists anywhere in this comp's data.",
+      "Degraded columns exist only in the Comps row - see recoveryEvidence and notes."
+    ]
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the master (verbatim in extract/DBParams.json)"
+  },
+  "extractionOfRecord": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py --tolerant --recovered-texts nz-master/comps-var-columns.json (repo commit 864c504, 'WI-1: five NZ fixture extracts')",
+    "accessParser": "0.0.6 (pinned, user-site Python 3.10 install)",
+    "tolerantMode": "opt-in surgical bounds-fix wrapper for access_parser 0.0.6's null-bitmap off-by-one in _parse_fixed_length_data (line 315 '>' vs line 320 '>='; column ids 40..42 vs a 40-slot bitmap): out-of-range reads resolve exactly as upstream resolves its own out-of-range branch; every in-range cell goes through the pristine library untouched",
+    "textRecovery": "the 12 variable-length Comps Text columns are ingested pre-recovered from nz-master/comps-var-columns.json - see recoveryEvidence",
+    "sliceStep": "full-master tolerant extraction cut to CompNo=54 at curation",
+    "preStagingCrossCheck": "PRE stage-task agent independently staged this comp's six tables from the same master (/tmp/opencode/nz-pre/f3k-june-2020/, VERIFICATION.md). Of the five data tables, CompPilots/DBParams/F3K/F3KTaskByRound/Scores are byte-identical here to those staged slices (matching sha256s); Comps matches cell-for-cell except for the documented machinery-vs-pristine JSON null convention ('' vs null on Jet-null cells), pristine output preferred."
+  },
+  "recoveryEvidence": {
+    "file": "tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json",
+    "sha256": "d2a9c74e207acb99ae9e3ba55c9ed857c814d547ef5488af2f7bb65543912d64",
+    "method": "custom reversed-record Jet4 trailer crack outside the repo, byte-validated; extractor anchors each recovered record on that row's own CompNo and refuses values for rows flagged untrusted upstream (comps 2 and 4 in this DB; comp 54 recovers trusted on every column)",
+    "columnsCoveredForThisRow": [
+      "CompName",
+      "CompVenue",
+      "CompSeriesNo",
+      "BadgeSpecs",
+      "MergedComps",
+      "CompID",
+      "AudioProfileDT",
+      "AudioProfileAP",
+      "AudioProfileBT",
+      "GSCompClass",
+      "WasLastUploadPublic",
+      "F3QDrop6to10"
+    ],
+    "patchedReadColumns": [
+      "IsPublic",
+      "UseRegistration",
+      "UseRegistrationIdx"
+    ],
+    "patchedReadTrust": "read through the site-A bounds fix (has_value fallback True); semantics of bits beyond the bitmap uncertain - none of these three fields reach competition.json and they do not participate in scoring."
+  },
+  "perFileSha256": {
+    "CompPilots": "ceffa5ea96e129998fb596eb16daa3c47640de4709bf925758e9d3fb7799aa0c",
+    "Comps": "e6ae70bc269efce40fbb24a2d1d2e46627eb3273ff44f9a1989643246493983f",
+    "DBParams": "6954d89c95f46ca3b4b518f2d533ffbbc967cc8d787bd9c357f51f73630be938",
+    "F3K": "b82657ee66402e48b8247e9465b72da2bff935b546deffd5100fc971feb02809",
+    "F3KTaskByRound": "41e803d4bdea991dd5a4872a0329ffb4479dfbb88cd85ffa102d4c10f27db117",
+    "comps-field-provenance.json": "5dd4fc841daa3d23bb9ad2468d996794f70657e8558dcba3e6717f0a93cb0061",
+    "Scores": "dad1f38d957e52fc9e528edfe7c3116511e87d44158d9605b1f505ab3ca8afc7"
+  },
+  "notes": [
+    "Identity facts: CompNo=54, CompName '2020 June F3K', venue 'Levin New Zealand', GSCompClass 'F3K'. CompID '4364bbfcbe3' comes from the recovered variable-length text columns. CompDate is stored NULL in the master and recorded faithfully as null - no date was invented.",
+    "PII check (2026-08-27, this fixture): CompPilots carries no contact columns; every Pilots contact column (Street/Town/State/PostCode/PrivatePhone/WorkPhone/Email) is empty across the whole 177-row master Pilots table, so the exposure is names anyway. entries.json therefore trims Pilots to names-only (PilotNo/FirstName/LastName) filtered to the 15 comp members; closure asserted (members found in the master == members referenced by Scores, no gaps). The master Pilots file itself is never shipped and the master DB stays gitignored.",
+    "Triage facts recorded honestly: UseTeams=true / UseTeamProtection=true / NbrForTeamScore=3 stored but Team='0' on all 15 CompPilots rows and Scores carries no team columns (sound teams justification in competition.json); CompSeriesNo='0' references nothing; PrelimCompNo NULL and MergedComps='' faithful. Prelim/mereged concept gaps are simply absent, not justified away.",
+    "MID-COMP GROUP RE-DRAW WITNESS (round 7, task E(1)) - the reason this fixture exists. Round 7 is ragged: G1 4 rows, G2 3 rows (draw slots 2-3 never occupied), G3 8 rows (five drawn slots seq1-5 plus three appended slots 6-8 beyond the draw), G4 brand-new 4 rows. Three cancelled zeros stand in their drawn G3 seats unchanged (G3 seq2=P101, seq3=P102, seq4=P128 - all Updated='True' marked-as-flown zeros); the fourth re-flown pilot P85 has no drawn-seat row at all, its G3 presence being an appended slot-7 placeholder Updated='False' superseded by its scored G4 row. The replacement group flew and scored normally: G4 = seq1 P101 275.0 -> 723.7, seq2 P128 380.0 -> 1000.0, seq3 P102 105.0 -> 276.3, seq4 P85 60.0 -> 157.9. Re-flight bookkeeping is ENTIRELY untouched: ReFlightNo=0 on all 199 rows of the comp and OriginalRoundNo==RoundNo everywhere - the re-draw lives outside the re-flight model as a plain new group. Cancellation state is FLAG-MIXED (three 'True'-flagged standing zeros vs one 'False' stale placeholder side by side in the same round/group); any single-flag heuristic keyed on ReFlightNo>0 or Updated alone will silently misread this comp. Per-group normalisation ran regardless: four distinct live anchors hit exactly 1000.0 in R7 (G1 max 585.5, G2 577.5, G3 330.0 over eight seats, G4 380.0). Scores.json keeps every one of these rows verbatim - nothing was reconciled, re-homed or de-duplicated; the WI-3 oracle must decide how cancelled zeros and the superseded placeholder aggregate.",
+    "ROUND-4 H-TASK DECODE DEVIANTS - five cells persisted RAW UNTOUCHED where the packed-mmss decoded slot-sum falls short of persisted RawScore: R4/G1 seq3 P89 short 12.3 s (sum 340.5 vs 328.2), R4/G1 seq4 P83 short 2.0 (513.5 vs 511.5), R4/G1 seq5 P140 short 4.0 (455.0 vs 451.0), R4/G2 seq2 P101 short 29.6 (576.9 vs 547.3), R4/G3 seq1 P78 short 12.0 (534.0 vs 522.0). On every one FlightScoreDeduction=0.0, Penalty=0 and Landing=0.0, so no configured deduction explains the gap, and Time2Secs is empty on ALL 19 round-4 rows - task H consumed the slot layout differently than any decodable rule. Flagged, not fixed: if a future validation hardens RawScore==decoded-slot-sum for F3K, these five keys must be whitelisted, never repaired. Verification basis: the decode rule (GetTimeInSeconds per slot, summing Laps/T1Mins/T1Secs/T2Mins[/T2Secs]) reproduces RawScore exactly on the other 194/199 rows of the comp, zero rows sit ABOVE slot-sum.",
+    "Zero-cell inventory (corrected against candidate report c54-june-f3k-2020 during PRE verification, confirmed at curation): 27 total RawScore=0 rows = 16 Updated='True' all-slot zeros {P81x6, P84x6, P101x1 (R7G3), P102x1 (R7G3), P128x2 (R7G3 cancelled seat + R12G2-seq1)} + 11 Updated='False' placeholders {P84x2, P85x3, P90x6}. The candidate report had double-counted P81 and misplaced leftovers; placeholder pilots are 84/85/90 only. Updated split overall: 188 True / 11 False.",
+    "Normalisation invariant: NormalisedScore == round(RawScore/groupMax*1000, 1dp) holds on 199/199 rows (plain half-up rounding; no boundary sensitivity encountered), with a best-in-group anchor hitting exactly 1000.0 in all 40 groups. This pins the effective grid despite GroupScoreOption/GroupScoreDecimals being stored NULL - see competition.json scoringCaveats. Persisted values are clean at <=1dp (zero string-repr residue); the binary32 persist-cast property for this comp is a simulation metric only (111/172 positive values change representation under a cast simulation) - assert the cast-witness property, never literal repr bits, following the c45 lesson.",
+    "RawScore storage quirks kept verbatim: three cells hold unrounded double-sum artefacts (R4/G2 P85 281.70000000000005, R5/G1 P77 682.5999999999999, R5/G3 P128 385.20000000000005). expected-scores.json carries them exactly as persisted.",
+    "DrawFreq is the constant 2.4 on every Scores row AND on every CompPilots entry - a comp-global statistic masquerading as per-round data. Retained consciously in both files (scores-raw must differ from Scores by exactly the two computed columns) and considered inert: never treat it as draw state.",
+    "Landing scheme: none exists for this comp - the F3K family schema has no landing pointer, and Landing=0.0 on all 199 rows. lookups.landingSchemes is carried empty and no Lndg* material is curated; validate rule 2 passes vacuously via the Dur-less shape.",
+    "Penalty audit: Penalty, FlightScoreDeduction and Landing are 0 on all 199 rows, and Helper is NULL throughout while ModelID is '' throughout (despite UseModels=true) - the deductive/penalty surface of this fixture is entirely inert except as history.",
+    "scheduleTables carries F3KTaskByRound only (13 rounds: B(1), D(1), G, H, M, A(2), E(1), C(1), I, J, K, L, F - round 4 is H holding the decode deviants, round 7 is E(1) carrying the re-draw). The other schedule/family tables have zero CompNo=54 rows and are recorded as omitted in deviationDeclaration.consequences.",
+    "TaskNo=5 on all 199 Scores rows; task identity lives entirely in F3KTaskByRound, matching the f3k-sample-comp precedent.",
+    "expected-result.json is deliberately ABSENT at this stage and expectedResultDeferred=true is declared for validate.py: the ranking oracle lands at WI-3 of grow-corpus-nz-master-five-fixtures.md (default reconstructed-ladder, which there must additionally settle aggregation over the round-7 cancelled-zero group and the superseded placeholder). Until then the fixture is curated-complete but not harness-active.",
+    "Extraction chain rationale in one line: pristine pinned access_parser 0.0.6 parses this comp's five data tables clean in one pass, but raises an IndexError on Comps (null-bitmap boundary, col ids 40..42 vs 40-slot bitmap) and silently drops its 12 variable-length Text columns; extract.py --tolerant surgically wraps only the bounds bug and --recovered-texts ingests the byte-validated trailer-crack texts, yielding the 40-column Comps surface plus comps-field-provenance.json - after which the comp-54 slice is a pure row filter of trusted output."
+  ]
+}

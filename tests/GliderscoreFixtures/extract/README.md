@@ -222,6 +222,14 @@ python3 validate.py --self-test
 
 Enforced rules (story WI-2):
 
+A curated directory normally carries six JSONs including `expected-result.json`
+(the final-ranking oracle). A fixture staged at the scores-only stage of the
+pipeline (WI-2 before the WI-3 ranking-oracle work) may declare the deferral
+explicitly — `"expectedResultDeferred": true` in `provenance.json` — which makes
+the missing oracle a loud stderr reminder instead of a failure; declaring the
+flag while the file exists fails as a contradiction, and without the declaration
+a missing oracle remains a hard failure.
+
 1. every `scores-raw` PilotNo appears among the entries members; TaskNo /
    RoundNo / GroupNo / SeqNo present (non-null) on every row.
 2. every non-zero `Landing` value exists among the referenced scheme's
@@ -231,7 +239,10 @@ Enforced rules (story WI-2):
    F3K/F5K shape have no landing scheme to consult and pass without one.
 3. `GroupScoreDecimals ∈ {0,1,2,3}` and `RoundOrTruncate ∈ {0,1}` — out-of-range
    values make GliderScore zero or stale its persisted scores, invalidating any
-   fixture.
+   fixture. Persisted null (unset) knobs are recorded faithfully as `null` and
+   warned but not failed: they carry no out-of-range semantics (scores persist
+   fine — a DB-wide pattern), and coercing them to defaults would falsify
+   curation.
 4. exactly one competition per fixture: a single distinct CompNo across
    competition identity, entries and `scores-raw`, matching `competition.json`.
 5. concept-gap triage flags (`UseTeams=true`, set series link `CompSeriesNo`,

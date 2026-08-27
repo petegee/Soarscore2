@@ -1,0 +1,259 @@
+{
+  "identity": {
+    "CompNo": 45,
+    "CompName": "2019 F5J Christchurch",
+    "GSCompClass": "F5J",
+    "CompDate": "",
+    "CompVenue": "Lincoln"
+  },
+  "scoring": {
+    "GSCompClass": "F5J",
+    "GroupScoreOption": null,
+    "GroupScoreDecimals": null,
+    "RoundOrTruncate": 0,
+    "DropScoreOption": null,
+    "Drop1AtRound": null,
+    "Drop2AtRound": null,
+    "Drop3AtRound": 99,
+    "Drop4AtRound": 99,
+    "Drop5AtRound": 99,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "configProvenance": {
+    "note": "Stored-vs-effective record for the Handoff §1 scoring-knob whitelist. The master's Comps row leaves several knobs EMPTY (Jet null recorded faithfully as null above; DB-wide unset on all 168 rows), so stored config cannot prove scoring-time behaviour. Where a definite value matters downstream (the rounding grid, the normalisation basis), the arithmetic-verified effective value is given here next to the verbatim stored state. The full row exactly as extracted (including its mixed ''/null conventions) sits in compsRowVerbatim.",
+    "knobs": {
+      "GroupScoreOption": {
+        "stored": null,
+        "effective": 1,
+        "basis": "reconstructed from arithmetic: every one of the 33 scored round-groups normalises on RawScore points-basis (winner maps to exactly 1000.0 even where the winner holds landing points - 32 of 33 groups - which rules out the option-2 landing-after-time mechanism); corroborated by GS guarded-reload DBNull fallback option->1 (GlobalFunctions_MOD.vb:1564-1580)"
+      },
+      "GroupScoreDecimals": {
+        "stored": null,
+        "effective": 1,
+        "basis": "reconstructed from arithmetic: all 162 positive NormalisedScore values match half-up rounding of 1000*Raw/group-max to exactly 1 dp and none match truncation or any other grid; persisted at 1 dp despite Decs being unset; corroborated by the new-comp factory default GroupScoreDecimals=1 (CompNew.vb:692-693)"
+      },
+      "RoundOrTruncate": {
+        "stored": 0,
+        "effective": 0,
+        "basis": "stored present (0 = rounded); consistent with the none-match-truncation finding"
+      },
+      "DropScoreOption": {
+        "stored": null,
+        "effective": 0,
+        "basis": "stored empty reads as 0 (drop worst task scores); moot while thresholds never activate"
+      },
+      "Drop1AtRound": {
+        "stored": null,
+        "basis": "unset; story notes drop config unset DB-wide => NO drops fire anywhere in this corpus batch"
+      },
+      "Drop2AtRound": {
+        "stored": null,
+        "basis": "unset"
+      },
+      "Drop3AtRound": {
+        "stored": 99,
+        "basis": "99 = never"
+      },
+      "Drop4AtRound": {
+        "stored": 99,
+        "basis": "99 = never"
+      },
+      "Drop5AtRound": {
+        "stored": 99,
+        "basis": "99 = never"
+      },
+      "F3QDrop6to10": {
+        "stored": "99,99,99,99,99",
+        "basis": "never; recovered var-text column"
+      },
+      "GSCompClass": {
+        "stored": "F5J",
+        "basis": "recovered var-text; corroborated by comp name and F5J-shaped Dur config (durRefHeight/motor-restart field)"
+      }
+    },
+    "effective-drop-conclusion": "With Drop1/Drop2 unset and Drop3-5 = 99 (= never), no drop-worst can activate within rounds 1-11; recorded explicitly rather than assumed from UI defaults."
+  },
+  "familyRows": {
+    "Dur": {
+      "CompNo": 45,
+      "durTargetTime": 600,
+      "DurPointsPerSecond": 1.0,
+      "durNumberOfTimekeepers": 1,
+      "durLndg": 11,
+      "durRefHeight": 200.0,
+      "durPenaltyUpToRefHeight": 0.5,
+      "durPenaltyOverRefHeight": 3.0,
+      "durFlightPenalty": 3,
+      "F5JMotorRestartOption": null
+    }
+  },
+  "scheduleTables": {
+    "DurTargetTimeByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "TargetTime": "Long"
+      },
+      "rows": []
+    }
+  },
+  "lookups": {
+    "landingSchemes": [
+      {
+        "LndgNo": 11,
+        "Name": "F5J Enter Landing",
+        "points": [
+          {
+            "LndgNo": 11,
+            "Distance": 100.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 99.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 98.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 97.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 96.0,
+            "Points": 50
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 95.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 94.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 93.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 92.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 91.0,
+            "Points": 45
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 90.0,
+            "Points": 40
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 85.0,
+            "Points": 35
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 80.0,
+            "Points": 30
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 75.0,
+            "Points": 25
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 70.0,
+            "Points": 20
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 65.0,
+            "Points": 15
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 60.0,
+            "Points": 10
+          },
+          {
+            "LndgNo": 11,
+            "Distance": 55.0,
+            "Points": 5
+          }
+        ]
+      }
+    ],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 2,
+    "CompSeriesNo": "0",
+    "PrelimCompNo": -1,
+    "MergedComps": "",
+    "triageJustification": {
+      "teams": {
+        "evidence": "Scores carries no team columns at all; team standings are report-time aggregations of unchanged individual normalised scores, never an input to them. UseTeams=true with UseTeamProtection=true is an app-level default set on every Comps row in this master DB, not a real assignment: all 18 CompPilots carry Team='0' (zero populated teams), NbrForTeamScore=2 is a stored default, and team data reaches no persisted score."
+      }
+    }
+  },
+  "compsRowVerbatim": {
+    "conventionsNote": "Verbatim extraction of the single Comps row (40 columns) with its inherent convention mix: Jet-nulls in fixed-length columns appear as \"\" (machinery encodings retained by the degraded assembly); UseRegistration carries JSON null because it was read through the patched path; the 12 variable-length Text columns are recovered (byte-validated) values, not parser output. 'NotRecorded' in WasLastUploadPublic is the literal stored text. See extract/comps-field-provenance.json for per-column recovery method.",
+    "row": {
+      "CompNo": 45,
+      "CompName": "2019 F5J Christchurch",
+      "CompDate": "",
+      "CompVenue": "Lincoln",
+      "Drop1AtRound": "",
+      "Drop2AtRound": "",
+      "Drop3AtRound": 99,
+      "Drop4AtRound": 99,
+      "Drop5AtRound": 99,
+      "UseTeams": true,
+      "UseTeamProtection": true,
+      "UseClasses": false,
+      "UseModels": true,
+      "UsePilotNumbering": true,
+      "Enforce20KHz": true,
+      "GroupScoreDecimals": "",
+      "ScoresLocked": false,
+      "NbrForTeamScore": 2,
+      "CompSeriesNo": "0",
+      "printCountry": true,
+      "RoundOrTruncate": 0,
+      "GroupScoreOption": "",
+      "printRegistration": 0,
+      "UseRoles": true,
+      "BadgeSpecs": "",
+      "DropScoreOption": "",
+      "MergedComps": "",
+      "CompID": "2CDAA176c8d4",
+      "AssignHelpers": true,
+      "AudioProfileDT": "",
+      "AudioProfileAP": "",
+      "AudioProfileBT": "",
+      "DrawMode": "",
+      "GSCompClass": "F5J",
+      "WasLastUploadPublic": "NotRecorded",
+      "PrelimCompNo": "",
+      "F3QDrop6to10": "99,99,99,99,99",
+      "IsPublic": 1,
+      "UseRegistration": null,
+      "UseRegistrationIdx": 0
+    }
+  }
+}
