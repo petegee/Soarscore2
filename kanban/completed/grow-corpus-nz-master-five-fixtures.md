@@ -1,6 +1,6 @@
 # Story — Grow golden corpus from NZContests.mdb (five fixtures)
 
-**Status:** In progress · **Raised:** 2026-08-27 · Evidence base:
+**Status:** Completed · **Raised:** 2026-08-27 · **Completed:** 2026-08-27 · Evidence base:
 `/tmp/opencode/nz-extract/` (extraction + inventory + 13 per-comp candidate
 reports; see `candidate-analysis.md` for the synthesis). The analysis was done
 against a full master-DB backup supplied by the NZ competition manager
@@ -210,3 +210,61 @@ harness surfaces, which are out of scope here and go to tech-debt/backlog).
   `pre-normalisation-score-view-field.md`,
   `ranking-secondary-rawscore-key.md`,
   `reflight-aggregate-destination.md`.
+
+## As built 2026-08-27
+
+Dispatched to sub-agents: PRE sentinel first, then PRE-2–5 in parallel; the
+fallback gate as one agent; WI-1, WI-2, WI-3 each as one agent per competition
+(five parallel dispatches per work item); WI-4 as one agent.
+
+- **PRE-1–5 (export route):** unexecutable on the host — no GliderScore install,
+  no wine — and independently blocked: pristine pinned access_parser 0.0.6
+  raises IndexError on `Comps` (null-bitmap off-by-one, col id 40 `IsPublic`;
+  ids 41/42 degrade) and silently drops its 12 variable-length Text columns;
+  every other user table parses clean. Verdict per the story's own failure
+  branch: fallback invoked, not pursued further.
+- **Fallback gate:** repo `extract.py` gained opt-in `--tolerant` (surgical
+  bounds workaround + loud degradation warnings) and `--recovered-texts`
+  (ingests `nz-master/comps-var-columns.json`, byte-validated upstream, hard
+  refuse on mismatch/trust failure), writing full 40-column `Comps` +
+  `comps-field-provenance.json`. Differential gate clean against all five PRE
+  staging sets; default mode re-proved byte-identical on the old sample export;
+  validate self-test extended 17/17.
+- **WI-1:** five `extract/` cuts committed, zero hard mismatches vs PRE staging;
+  only documented null-convention cells differ (pristine-wins).
+- **WI-2:** five fixtures curated to schema v1; validator extended with
+  declared-oracle-deferral (`expectedResultDeferred`) for the staged WI-3 flow
+  and faithful-null rule-3 notes (Decs/RoundOrTruncate are Jet-null DB-wide on
+  this master); corpus regression green throughout. competition.json carries a
+  `configProvenance` convention on two fixtures (45/135) — recorded as tech debt
+  to unify if ever consumed.
+- **WI-3:** all five oracles are `reconstructed-ladder` via per-fixture
+  `ladder.py` derivations-of-record; recomputed cells matched curated expected
+  values exactly everywhere — no divergences.json needed anywhere. Notable
+  in-ladder decisions: comp 17's retired pilot ranked on flown rounds; comp 54's
+  re-draw resolved by keep-highest-per-original-round dedup alone (cancellation
+  flags are flag-mixed, so blind dedup is the faithful semantics).
+- **WI-4:** index.md grew five active bullets; Diversity witnessed-list gained
+  F5J ×3, re-flights ×4 cells, first F3K multi-group per-group-normalisation,
+  mid-comp group re-draw, motor-restart-effect pairing, G4 cast-residue
+  (phrased as comparator property over clean stores); Still-open now names D6/G3
+  as confirmed unwitnessable from this source. `validate.py --index`: 10/10 PASS;
+  acceptance harness green 52/52 on sqlite (and postgres incidentally). Surfaced
+  carve-out: harness replay scenarios for the five NZ fixtures are a new backlog
+  stub (`nz-fixture-replay-scenarios.md`), not scope growth here.
+- **Plan corrections landed during verification** (prose vs data):
+  - Comp 121 has NO pilot-86 re-flight — real witnesses are R7/G1 SeqNos
+    {1,2,4,5} (shapes 4/5/4) and the −2026→norm-0 clamp row; original draw left
+    unreconstructed as instructed.
+  - Comp 54's re-draw round is round 7 (round 4 carries the H decode deviants);
+    zero breakdown corrected to {P81×6, P84×6, P101×1, P102×1, P128×2}.
+  - Comp 17's task catalogue holds A(2), not A(1); phantom-Landing census is
+    12/14 R9 rows (six of them also FlightScoreDeduction=200).
+  - F5J landing points confirmed ADDITIVE (+ scheme-11) by exact recompute on
+    all three F5J comps (164/164-equivalent counts; 147/147; 133/133).
+  - G4 discipline phrased precisely: stored values are clean exact-1dp doubles;
+    residue exists only under emulated binary32 persist casts (99/162 on #45)
+    — assert cast behaviour, never raw repr bits.
+- **No sources/*.mdb committed** — per sourcing option 2, provenance declares
+  `sourceKind: "master-db-slice"` with master sha256, recovery-evidence sha256
+  and degraded-column notes instead.
