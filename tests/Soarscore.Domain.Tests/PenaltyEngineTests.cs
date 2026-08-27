@@ -243,4 +243,222 @@ public class PenaltyEngineTests
         result.Deduction.Should().Be(0m);
         result.Disqualified.Should().BeFalse();
     }
+
+    // --------------------- Entry-scoped DeductPoints at the raw stage
+    //
+    // WI-2 pins the D1 wiring landed by WI-1:
+    // kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md#wi-2.
+    // Flight/Entry-scoped DeductPoints effects now act at the task-round stage,
+    // with accrual and exclusion-group semantics identical to the aggregate
+    // stage (shared Accrue path, D2).
+    //
+    // Behavioural-refactor guard (WI-2 last bullet): every aggregate-stage test
+    // above stays green unmodified through the extraction — nothing here
+    // replaces them.
+
+    [Fact]
+    public void DeductPoints_at_raw_stage_accrues_per_occurrence_per_record()
+    {
+        // Mirrors how GetEntryPenalties groups by infraction type: two records
+        // of the same type, each OccurrenceCount 2, accruing through ONE
+        // definition instance → 100×2 + 100×2 = 400.
+        var penalties = new[]
+        {
+            new RecordedPenalty("lateLanding", OccurrenceCount: 2),
+            new RecordedPenalty("lateLanding", OccurrenceCount: 2),
+        }.ToImmutableArray();
+
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "lateLanding",
+                Accrual = PenaltyAccrual.PerOccurrence,
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 100) }.ToImmutableArray(),
+            }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.Valid);
+        applied.RawScore.Should().Be(100m); // 500 − 400
+    }
+
+    [Fact]
+    public void OncePerAttempt_at_raw_stage_ignores_occurrence_count()
+    {
+        var penalties = new[] { new RecordedPenalty("x", OccurrenceCount: 3) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "x",
+                Accrual = PenaltyAccrual.OncePerAttempt,
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 50) }.ToImmutableArray(),
+            }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.Valid);
+        applied.RawScore.Should().Be(450m); // exactly 50, regardless of count 3
+    }
+
+    [Fact]
+    public void Exclusion_group_only_largest_survives_at_raw_stage()
+    {
+        // Same shape as the aggregate test above: safetyGroup holds
+        // objectContact(100) and personContact(300); only 300 is subtracted.
+        var penalties = new[]
+        {
+            new RecordedPenalty("objectContact", 1),
+            new RecordedPenalty("personContact", 1),
+        }.ToImmutableArray();
+
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "objectContact",
+                ExclusionGroups = new[] { "safetyGroup" }.ToImmutableArray(),
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 100) }.ToImmutableArray(),
+            },
+            new PenaltyDefinition
+            {
+                InfractionType = "personContact",
+                ExclusionGroups = new[] { "safetyGroup" }.ToImmutableArray(),
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 300) }.ToImmutableArray(),
+            },
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.Valid);
+        applied.RawScore.Should().Be(200m); // 500 − 300
+    }
+
+    [Fact]
+    public void Zeroing_effect_wins_over_deduction_in_one_definition_at_raw_stage()
+    {
+        // D3: zero-dominance early-out beats any accrued deduction.
+        var penalties = new[] { new RecordedPenalty("grossMisconduct", 1) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "grossMisconduct",
+                Effects = new[]
+                {
+                    new PenaltyEffectSpec(PenaltyEffect.ZeroFlight),
+                    new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 1000),
+                }.ToImmutableArray(),
+            }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.NoResult);
+        applied.RawScore.Should().Be(0m);
+        applied.Selection.Should().BeNull();
+    }
+
+    [Fact]
+    public void Deduction_pushing_raw_negative_floors_at_zero()
+    {
+        // D4: a deducted HigherIsBetter raw never goes below zero (FAI General
+        // §6 / C.19 analogue) — state stays Valid, Selection untouched.
+        var penalties = new[] { new RecordedPenalty("crossing", OccurrenceCount: 2) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "crossing",
+                Accrual = PenaltyAccrual.PerOccurrence,
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 300) }.ToImmutableArray(),
+            }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.Valid);
+        applied.RawScore.Should().Be(0m); // max(0, 500 − 600)
+        applied.Selection.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Pure_deduct_penalty_keeps_state_valid_and_selection_intact()
+    {
+        var penalties = new[] { new RecordedPenalty("lateLanding", OccurrenceCount: 1) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "lateLanding",
+                Accrual = PenaltyAccrual.PerOccurrence,
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 100) }.ToImmutableArray(),
+            }
+        }.ToImmutableArray();
+
+        var selection = new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+            new Dictionary<int, decimal?>());
+        var result = new TaskResult(TaskResultState.Valid, selection, RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.Valid);
+        applied.RawScore.Should().Be(400m);
+        applied.Selection.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void NoResult_input_stays_untouched_even_with_matching_penalties()
+    {
+        // WI-1 guard: penalties have nothing valid left to act on when the
+        // input already carries no result.
+        var penalties = new[] { new RecordedPenalty("lateLanding", OccurrenceCount: 2) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition
+            {
+                InfractionType = "lateLanding",
+                Accrual = PenaltyAccrual.PerOccurrence,
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 100) }.ToImmutableArray(),
+            }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.NoResult,
+            Selection: null,
+            RawScore: 777m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.State.Should().Be(TaskResultState.NoResult);
+        applied.RawScore.Should().Be(777m); // returned unchanged, not floored
+        applied.Selection.Should().BeNull();
+    }
 }
