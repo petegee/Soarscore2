@@ -2298,9 +2298,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1787876675.213036,
-    "seen": 1787876781.6593485,
-    "ast_hash": "5c9b0b485a47f34a1325a4513641f30b",
+    "mtime": 1787798915.881808,
+    "seen": 1787798943.6928957,
+    "ast_hash": "d66e5ddb88524d374eb91b1b0624755b",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -2676,9 +2676,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/ReplaySteps.cs": {
-    "mtime": 1787876288.9226809,
-    "seen": 1787876781.6551638,
-    "ast_hash": "6211c04697fb4fbffdb26250d0f7f026",
+    "mtime": 1787733841.453404,
+    "seen": 1787734353.1484518,
+    "ast_hash": "fb46b5a70efaec0ea99d48e56f5a74aa",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/Comparator.cs": {
@@ -2694,15 +2694,15 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/FixtureModels.cs": {
-    "mtime": 1787874412.116296,
-    "seen": 1787876781.6552932,
-    "ast_hash": "a94a38b81f057704547c4f367428cb84",
+    "mtime": 1787729714.8108652,
+    "seen": 1787730009.0294883,
+    "ast_hash": "bf5f3dd527723e2fd1bd56c000712101",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs": {
-    "mtime": 1787873630.656424,
-    "seen": 1787876781.6552944,
-    "ast_hash": "9eb58c32966dc6df66daa69953561358",
+    "mtime": 1787734083.13827,
+    "seen": 1787734353.148623,
+    "ast_hash": "74a58266c6262cecb1ba616ef2bc16a0",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international-flyoff/class-definition.json": {
@@ -3323,76 +3323,16 @@
     "ast_hash": "e4b8f1c5cccbc73e79e4a79fa64b9c17",
     "semantic_hash": ""
   },
+  "kanban/backlog/nz-fixture-replay-scenarios.md": {
+    "mtime": 1787823522.488124,
+    "seen": 1787823561.0631082,
+    "ast_hash": "b5215c1343cad413a92682b4092972e9",
+    "semantic_hash": ""
+  },
   "kanban/completed/grow-corpus-nz-master-five-fixtures.md": {
     "mtime": 1787823549.2903824,
     "seen": 1787823561.063421,
     "ast_hash": "e4c08a0eacd2b8f41b506ad72fcbe72f",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f3k-june-2020/class-definition.json": {
-    "mtime": 1787876234.4552171,
-    "seen": 1787876781.652555,
-    "ast_hash": "654cfd197364a3266c0bd5fd73d2fc4e",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f3k-june-2020/divergences.json": {
-    "mtime": 1787876301.9227107,
-    "seen": 1787876781.6525757,
-    "ast_hash": "4576e7e672a61c790513521d02e0b540",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f3k-southern-fling/class-definition.json": {
-    "mtime": 1787876234.4494731,
-    "seen": 1787876781.6529531,
-    "ast_hash": "9b7a19c2a9e31861005053dfc690ec17",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f3k-southern-fling/divergences.json": {
-    "mtime": 1787876234.4495292,
-    "seen": 1787876781.6529741,
-    "ast_hash": "90f601d21d2bfbae1510cd11bc9c2436",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f5j-christchurch-2019/class-definition.json": {
-    "mtime": 1787874071.1847878,
-    "seen": 1787876781.653216,
-    "ast_hash": "a894bf1146ec255218b49410cb2d8a48",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/class-definition.json": {
-    "mtime": 1787876234.437796,
-    "seen": 1787876781.653493,
-    "ast_hash": "fca4676f1852a1d4391ff177ad9a101c",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/divergences.json": {
-    "mtime": 1787876234.4378545,
-    "seen": 1787876781.6535115,
-    "ast_hash": "3f359c8dbe019c31e8aa208cde8c4938",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f5j-nz-south-island/class-definition.json": {
-    "mtime": 1787876234.4437466,
-    "seen": 1787876781.6537745,
-    "ast_hash": "0f5137cc9d327681dc7d9fa61e9792dc",
-    "semantic_hash": ""
-  },
-  "tests/GliderscoreFixtures/f5j-nz-south-island/divergences.json": {
-    "mtime": 1787876234.4438045,
-    "seen": 1787876781.653794,
-    "ast_hash": "77ce8621a70189ee86d3aac367383139",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/normalisation-lower-clamp.md": {
-    "mtime": 1787876649.907065,
-    "seen": 1787876781.6587029,
-    "ast_hash": "cfc13b386748c260d709ee7921e117cf",
-    "semantic_hash": ""
-  },
-  "kanban/completed/nz-fixture-replay-scenarios.md": {
-    "mtime": 1787876759.75296,
-    "seen": 1787876781.6591043,
-    "ast_hash": "92e13f2a45afa657c05cff3fe7fa427c",
     "semantic_hash": ""
   }
 }
