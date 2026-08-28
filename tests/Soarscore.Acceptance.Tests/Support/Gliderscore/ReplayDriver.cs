@@ -129,10 +129,33 @@ public sealed class ReplayDriver(HttpClient client)
     // analysis exactly. The two comparison mismatches this manufactured slot
     // produces ("no oracle cell", raw + normalised at 12/1/29) are ledgered in
     // the fixture's divergences.json citing D5.
+    //
+    // nz-fixture-replay-scenarios.md D5 item 6 — two NZ fixtures ride the same
+    // mechanism (story Verified ground truth, "Per-fixture shape"; group = the
+    // round's smallest group, ties → lowest GroupNo, which lands exactly on
+    // each vacated seat; SeqNo is the existing max+1 below):
+    //   f5j-hawkes-bay-trials (comp 135): pilot 128 is absent from rounds 1–4
+    //     entirely — his first four appearances are the four re-flight rows,
+    //     which D5 step 1 drops — and competitorMissing still demands him in
+    //     every round. The four synthetic slots ARE his re-flight make-ups
+    //     replacing those absences: R1/R3 sizes {G1 6, G2 5, G3 6} → group 2;
+    //     R2/R4 {G1 5, G2 6, G3 6} → group 1. They replay flight-less (cell 0);
+    //     the "no oracle cell" entries they generate are pre-triaged in the
+    //     story's D7.
+    //   f3k-southern-fling (comp 17): pilot 89 Retired=true after round 8,
+    //     absent R9–R15 (7 missing slots; R9–R15 sizes {G1 5, G2 5, G3 4} →
+    //     group 3). Zeros contribute nothing, so his total — and expected
+    //     place — match GS's flown-rounds ranking exactly; only "no oracle
+    //     cell" entries are ledgered (D7, the jerilderie WI-6 amendment
+    //     precedent).
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
         SyntheticSlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
         {
             ["jerilderie-2010"] = [(12, 1, 29)],
+            ["f5j-hawkes-bay-trials"] =
+                [(1, 2, 128), (2, 1, 128), (3, 2, 128), (4, 1, 128)],
+            ["f3k-southern-fling"] =
+                [(9, 3, 89), (10, 3, 89), (11, 3, 89), (12, 3, 89), (13, 3, 89), (14, 3, 89), (15, 3, 89)],
         };
 
     public async Task<ReplayOutcome> ReplayAsync(GliderscoreFixture fixture)
@@ -146,9 +169,19 @@ public sealed class ReplayDriver(HttpClient client)
         // ------------------------------------------------------------- create
         // Name/emails carry a run slug so scenarios sharing one store never
         // collide (the CapturingAScoreSteps discipline). CompDate gives the dates.
+        //
+        // nz-fixture-replay-scenarios.md D5 item 1 — CompDate is empty or null
+        // in ALL FIVE NZ fixtures' competition.json (story Verified ground
+        // truth), so the unconditional parse below threw on every one of them.
+        // The replay date is scoring-irrelevant (it feeds only
+        // CreateCompetition's display dates, never a score), so a fixed
+        // 2000-01-01 stands in for a missing one. Fixtures with real dates —
+        // the seven originals — parse exactly as before.
         var slug = Guid.NewGuid().ToString("N");
-        var compDate = DateOnly.Parse(
-            fixture.Competition.Identity.CompDate.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture);
+        var compDate = string.IsNullOrWhiteSpace(fixture.Competition.Identity.CompDate)
+            ? new DateOnly(2000, 1, 1)
+            : DateOnly.Parse(
+                fixture.Competition.Identity.CompDate.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture);
 
         var competitionId = await PostAsync<CompetitionId>(
             "/create-competition",
@@ -510,6 +543,21 @@ public sealed class ReplayDriver(HttpClient client)
             captures.Add(new SlotCapture("lateLandingDeduction", row.FlightScoreDeduction, Flight: 1));
         }
 
+        // nz-fixture-replay-scenarios.md D5 item 5 — F5J's height term. For an
+        // F5J fixture Scores.FlightScoreDeduction carries the launch HEIGHT in
+        // metres (story trap 5: idx=3, NOT a deduction payload), and the F5J
+        // class definitions (D3) declare it as the `launchHeight` metric their
+        // piecewise score term reads. The mutual exclusion with the
+        // lateLandingDeduction arm above is by DEFINITION CONTENT, not by
+        // driver branching: the F5J definitions declare launchHeight, the f3j
+        // fixtures declare lateLandingDeduction — never both (trap 5: never
+        // author lateLandingDeduction for an F5J fixture). Same Flight: 1 arm
+        // shape as its siblings.
+        if (declared.Contains("launchHeight"))
+        {
+            captures.Add(new SlotCapture("launchHeight", row.FlightScoreDeduction, Flight: 1));
+        }
+
         return captures;
     }
 
@@ -544,6 +592,28 @@ public sealed class ReplayDriver(HttpClient client)
     ///   C(3) 'AllUp 3:00*5' — five time slots, each clamped at 180 s;
     ///   X    'NoTaskSet' — placeholder rounds 6–9, nothing ever captured.
     ///
+    /// nz-fixture-replay-scenarios.md D5 item 2 widens the map to the full
+    /// 16-code catalogue the NZ fixtures' schedules name (story Verified
+    /// ground truth, "F3K task catalogue" — proven cell-exact, 417/417 across
+    /// comps 17 and 54; the VB source is not available on this machine, so the
+    /// committed oracles are the proof of record and new-code task names are
+    /// neutral descriptions, not GS's unverified strings):
+    ///   A(2) — one flight from the Laps slot (packed), capped at 300 s;
+    ///   B(1), B(2), D(1) — two slots (Laps, Time1Mins), UNCAPPED sum
+    ///        (witnessed above would-be caps: B(1) 182, D(1) 300 — trap 4);
+    ///   C(1) — three slots, each clamped at 180 s (the cap never bites this
+    ///        data; AllUp-family convention, noted per trap 4);
+    ///   E(1), I, J, M — three slots, uncapped sums (witnessed: E(1) 277.5,
+    ///        I 200, M 309.8 — trap 4);
+    ///   E    — five slots, uncapped sum (old E, no 2024 window reduction);
+    ///   K    — five slots POSITIONALLY clamped at 60/90/120/150/180 (comp 17
+    ///        P81 R1 slots [47,49,43,0,180] → 319); zero slots KEEP their seat
+    ///        (D5 item 4 — see the capture policy below);
+    ///   H    — four slots sorted DESCENDING, then positionally clamped at
+    ///        240/180/120/60 (comp 17 R5 P76 slots [221,60,120,166] → sorted
+    ///        [221,166,120,60] → 567; D5 item 3 — see the capture policy);
+    ///   L    — one flight from the Laps slot (packed), uncapped.
+    ///
     /// GS's working-window reduction (1 s per flown flight, D5) and its
     /// violation-zeroing are NOT expressible in our timing model — but they
     /// never bite this fixture's recorded data: every recorded slot set fits
@@ -554,7 +624,20 @@ public sealed class ReplayDriver(HttpClient client)
         {
             ["G"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs"],
             ["A(1)"] = ["Laps"],
+            ["A(2)"] = ["Laps"],
+            ["L"] = ["Laps"],
+            ["B(1)"] = ["Laps", "Time1Mins"],
+            ["B(2)"] = ["Laps", "Time1Mins"],
+            ["D(1)"] = ["Laps", "Time1Mins"],
             ["F"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["C(1)"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["E(1)"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["I"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["J"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["M"] = ["Laps", "Time1Mins", "Time1Secs"],
+            ["E"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs"],
+            ["K"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs"],
+            ["H"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins"],
             ["D"] = [
                 "Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs",
                 "Landing", "FlightScoreDeduction"],
@@ -576,13 +659,79 @@ public sealed class ReplayDriver(HttpClient client)
                 + "the F3K slot-column capture map — widen F3KSlotMap with its CalcRawScoreF3K semantics first.");
         }
 
+        // nz-fixture-replay-scenarios.md D5 items 3 and 4 — two codes carry a
+        // proven slot discipline beyond the plain skip-zeros walk, each SPIKE-
+        // PROVEN against the engine before adoption:
+        //   K (D5 item 4) — capture ALL FIVE slots, zeros included. K pairs
+        //     targets to SLOT positions (exactlyN 5, InOrder 60/90/120/150/180),
+        //     and comp 17 witnesses one interior gap (R1 P89, slots
+        //     [47,49,43,0,180] → GS raw 319): a skipped zero would shift every
+        //     later flight onto the wrong rung. Spike: the engine accepts a
+        //     zero flightTime flight and exactlyN selection scores it
+        //     min(0, target) = 0 with positional alignment intact. An all-zero
+        //     K row stays flight-less (D4 cell 0). Scoped to K ONLY — D keeps
+        //     its prefix-shaped discipline (trap 7).
+        //   H (D5 item 3) — decode the four slots, keep the non-zero values,
+        //     sort them DESCENDING, then assign flights. GS sorts then clamps
+        //     positionally against the descending targets 240/180/120/60
+        //     (44/44; comp 17 R5 P76 slots [221,60,120,166] → sorted
+        //     [221,166,120,60] → 567). Spike: exactlyN selection with FEWER
+        //     flights than its count pairs in order against the leading
+        //     targets without throwing, so H rows whose zero slots drop out
+        //     replay cleanly.
+        // Every other code keeps the plain walk below: zeros contribute
+        // nothing under `all`/`last` selection, and the only exactlyN code it
+        // serves is D, whose recorded rows are all prefix-shaped.
+        return taskCode switch
+        {
+            "K" => CaptureKSlotsInSlotOrder(row, F3KSlotMap[taskCode]),
+            "H" => CaptureHSlotsSortedDescending(row, F3KSlotMap[taskCode]),
+            _ => CaptureSlotsSkippingZeros(fixture, row, taskCode, F3KSlotMap[taskCode]),
+        };
+    }
+
+    /// <summary>Task K (nz-fixture-replay-scenarios.md D5 item 4): all five
+    /// slots as flights, zeros included, in slot order — targets pair to SLOT
+    /// positions. All-zero rows stay flight-less.</summary>
+    private static List<SlotCapture>? CaptureKSlotsInSlotOrder(ScoresRow row, IReadOnlyList<string> slots)
+    {
+        var decoded = slots.Select(s => DecodePackedMinutesSeconds(ColumnValue(row, s))).ToList();
+
+        return decoded.All(v => v == 0m)
+            ? null
+            : decoded
+                .Select((value, index) => new SlotCapture("flightTime", value, Flight: index + 1))
+                .ToList();
+    }
+
+    /// <summary>Task H (nz-fixture-replay-scenarios.md D5 item 3): the non-zero
+    /// slot values sorted descending become flights 1..n — GS sorts then clamps
+    /// positionally against its descending target ladder.</summary>
+    private static List<SlotCapture>? CaptureHSlotsSortedDescending(ScoresRow row, IReadOnlyList<string> slots)
+    {
+        var decoded = slots
+            .Select(s => DecodePackedMinutesSeconds(ColumnValue(row, s)))
+            .Where(v => v != 0m)
+            .OrderByDescending(v => v)
+            .ToList();
+
+        return decoded.Count == 0
+            ? null
+            : decoded
+                .Select((value, index) => new SlotCapture("flightTime", value, Flight: index + 1))
+                .ToList();
+    }
+
+    private static List<SlotCapture>? CaptureSlotsSkippingZeros(
+        GliderscoreFixture fixture, ScoresRow row, string taskCode, IReadOnlyList<string> slots)
+    {
         var captures = new List<SlotCapture>();
         var seenNonZero = false;
         var gapAfterNonZero = false;
 
-        for (var i = 0; i < F3KSlotMap[taskCode].Count; i++)
+        for (var i = 0; i < slots.Count; i++)
         {
-            var decoded = DecodePackedMinutesSeconds(ColumnValue(row, F3KSlotMap[taskCode][i]));
+            var decoded = DecodePackedMinutesSeconds(ColumnValue(row, slots[i]));
 
             if (decoded == 0m)
             {

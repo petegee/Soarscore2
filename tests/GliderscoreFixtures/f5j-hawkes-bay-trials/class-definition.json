@@ -1,0 +1,198 @@
+{
+  "name": "Gliderscore F5J (f5j-hawkes-bay-trials)",
+  "faiDesignation": "",
+  "version": "GliderScore NZ master export, authored per kanban/backlog/nz-fixture-replay-scenarios.md D3; arithmetic proven cell-exact against expected-scores.json (820/820 planning sweep)",
+  "parameters": [],
+  "reflight": {
+    "entitledScores": "UndefinedRequiresRuling",
+    "othersScore": "UndefinedRequiresRuling",
+    "minNewGroupSize": 2
+  },
+  "penalties": [],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 1
+      },
+      "drops": [],
+      "tasks": [
+        {
+          "code": "F5J",
+          "name": "F5J duration, two-rate height penalty, scheme-11 enter landing",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "launchHeight",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landingDistance",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "UntilAllFlightsComplete",
+            "maxLaunches": 1
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 0.1
+            }
+          },
+          "score": [
+            {
+              "$kind": "piecewise",
+              "metricRef": "flightTime",
+              "bands": [
+                {
+                  "from": 0,
+                  "to": 600,
+                  "ratePerUnit": 1
+                },
+                {
+                  "from": 600,
+                  "ratePerUnit": 0
+                }
+              ]
+            },
+            {
+              "$kind": "piecewise",
+              "metricRef": "launchHeight",
+              "bands": [
+                {
+                  "from": 0,
+                  "to": 200,
+                  "ratePerUnit": -0.5
+                },
+                {
+                  "from": 200,
+                  "ratePerUnit": -3.0
+                }
+              ]
+            },
+            {
+              "$kind": "lookup",
+              "metricRef": "landingDistance",
+              "rows": [
+                {
+                  "upTo": 0,
+                  "points": 0
+                },
+                {
+                  "upTo": 55,
+                  "points": 5
+                },
+                {
+                  "upTo": 60,
+                  "points": 10
+                },
+                {
+                  "upTo": 65,
+                  "points": 15
+                },
+                {
+                  "upTo": 70,
+                  "points": 20
+                },
+                {
+                  "upTo": 75,
+                  "points": 25
+                },
+                {
+                  "upTo": 80,
+                  "points": 30
+                },
+                {
+                  "upTo": 85,
+                  "points": 35
+                },
+                {
+                  "upTo": 90,
+                  "points": 40
+                },
+                {
+                  "upTo": 91,
+                  "points": 45
+                },
+                {
+                  "upTo": 92,
+                  "points": 45
+                },
+                {
+                  "upTo": 93,
+                  "points": 45
+                },
+                {
+                  "upTo": 94,
+                  "points": 45
+                },
+                {
+                  "upTo": 95,
+                  "points": 45
+                },
+                {
+                  "upTo": 96,
+                  "points": 50
+                },
+                {
+                  "upTo": 97,
+                  "points": 50
+                },
+                {
+                  "upTo": 98,
+                  "points": 50
+                },
+                {
+                  "upTo": 99,
+                  "points": 50
+                },
+                {
+                  "upTo": 100,
+                  "points": 50
+                }
+              ]
+            }
+          ],
+          "scoreNormalised": []
+        }
+      ]
+    }
+  ]
+}

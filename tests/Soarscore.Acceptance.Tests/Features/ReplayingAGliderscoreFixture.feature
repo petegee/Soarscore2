@@ -60,6 +60,56 @@ Feature: Replaying a GliderScore fixture
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 9 accepted divergences
 
+  Scenario: The f3k-june-2020 fixture reproduces GliderScore exactly at all three grains modulo its ledgered cancelled re-draw cells
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f3k-june-2020"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 11 accepted divergences
+
+  Scenario: The f3k-southern-fling fixture reproduces GliderScore exactly at all three grains across its twelve-task catalogue modulo its ledgered retired-pilot slots
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f3k-southern-fling"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 14 accepted divergences
+
+  Scenario: The f5j-christchurch-2019 fixture reproduces GliderScore exactly at all three grains with its float32 persist-cast witness
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f5j-christchurch-2019"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And the fixture carries no ledgered divergences
+    And the fixture's float32 persist-cast witness property holds over its scored normalised cells
+
+  Scenario: The f5j-hawkes-bay-trials fixture reproduces GliderScore exactly at all three grains modulo its ledgered re-flight cells
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f5j-hawkes-bay-trials"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 20 accepted divergences
+
+  Scenario: The f5j-nz-south-island fixture reproduces GliderScore exactly at all three grains modulo its ledgered normalised-clamp cell
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f5j-nz-south-island"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 4 accepted divergences
+
   Scenario: Replaying the ales-sample-comp fixture twice within one run issues identical command counts and compares exact twice
     Given the fixture corpus manifest
     When the harness replays the GliderScore fixture "ales-sample-comp" twice within this scenario

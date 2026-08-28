@@ -1,7 +1,7 @@
 # Story — Harness replay scenarios for the five NZ fixtures
 
-**Status:** In progress · **Raised:** 2026-08-27 · **Planned (fleshed out):** 2026-08-28 ·
-**Implementation started:** 2026-08-28 ·
+**Status:** Completed · **Raised:** 2026-08-27 · **Planned (fleshed out):** 2026-08-28 ·
+**Implementation started:** 2026-08-28 · **Completed:** 2026-08-28 ·
 Parent: `kanban/completed/grow-corpus-nz-master-five-fixtures.md` (WI-4 carve-out)
 
 ## What
@@ -649,3 +649,67 @@ cast-witness property; no `src/` file changed or mentions GliderScore; no
   by its own story.
 - Two-timekeeper fixtures, G1/G3 diversity gaps, F5L/F5B families — unchanged
   standing gaps in `index.md`.
+
+---
+
+# As built (2026-08-28)
+
+Where this section and the plan above disagree, this section wins.
+
+- **WI-0** — board move committed first (`62344d5`); the fleshed-out plan landed in that
+  commit (the backlog stub had never been committed).
+- **WI-1** — the dispatched agent stalled after D5 items 1, 5 and 6 (CompDate fallback,
+  `launchHeight` arm, SyntheticSlots) and left its spike tests behind; the orchestrator
+  completed items 2–4 and the two ReplaySteps changes, then deleted the spike file.
+  Baseline recovered properly: the partial diff was stashed and the untouched suite ran
+  **52/52 on sqlite** before the remaining edits landed. Spike outcomes: **(a)** the
+  engine accepts a zero `flightTime` flight and `exactlyN` selection scores it
+  `min(0, target) = 0` with positional alignment intact ([47,49,43,0,180] → 319) — so
+  task K's zero-slot capture was implemented as planned; **(b)** `exactlyN` with FEWER
+  flights than its count pairs in order against the leading targets without throwing —
+  so task H rows whose zero slots drop out replay cleanly. The K/H capture policies and
+  the plain walk are three separate methods off one switch in `CaptureF3KInputs`.
+- **WI-2 (sentinel)** — hand-checks matched all three D3 self-check rows (568/1000,
+  −2026/0.0, 170.5/492.1) and then STOPPED correctly on a shared-file blocker the plan
+  missed: all five NZ `competition.json` files carry `GroupScoreOption`/`GroupScoreDecimals`
+  (and three of them `RoundOrTruncate`) as stored **nulls**, while `CompetitionScoring`
+  (`FixtureModels.cs`) declared non-nullable `int`s — every NZ fixture failed at fixture
+  LOAD before any scoring. Orchestrator fix (WI-1 scope): the three properties widened
+  to `int?` with a comment citing the finding; nothing in the harness reads them. With
+  that, the scenario went green: all 324 oracle cells exact at raw and normalised
+  grains, ranking exact, conservation clean, empty ledger, G4 witness 99/162.
+- **WI-3–6 (parallel)** — dispatched as four parallel agents, but each in its own
+  rsync copy of the tree (`/tmp/opencode/nz-wi3..6`) rather than the one working tree:
+  a single shared test project makes concurrent `dotnet test` runs unsafe in-place, so
+  the D8 partition was honoured via isolated copies with strictly disjoint deliverables
+  (each fixture's two new files plus its scenario block, which the orchestrator landed
+  in slug order). Results, all matching the D7 predictions except where noted:
+  - **f5j-christchurch-2019** — empty ledger, exact everywhere (WI-2, above).
+  - **f5j-hawkes-bay-trials** — 20 entries: 8 + 8 raw/normalised exactly as predicted,
+    plus 4 ranking (P128 12→15, short 2482.9 — the predicted Σ held exactly; P122/P100/
+    P142 one place up each). No trap-3 (the only tie, P84/P136 at =17, is clean).
+  - **f5j-nz-south-island** — 4 entries: 1 normalised N1 at (3,3,99), ours −4031.8 vs
+    GS 0.0 (raw grain matched, −2026 both sides, no raw entry), plus 3 ranking (P99
+    10→12, short 4031.8; P131 11→10; P137 12→11). No trap-3.
+  - **f3k-southern-fling** — 14 entries (rounds 9–15 × {raw, normalised} at G3/P89),
+    and P89's total AND place MATCH the oracle exactly, as the ground truth required.
+    No trap-3. A full comp-17 arithmetic sweep reproduced all 218 oracle raws.
+  - **f3k-june-2020** — the 8 predicted D5 entries landed, ranking CLEAN — plus three
+    UNPREDICTED raw-grain mismatches (deltas ≤ 1e-13): the oracle deliberately
+    preserves three binary64 double-sum artefacts verbatim (R4/G2 P85 281.70000000000005,
+    R5/G1 P77 682.5999999999999, R5/G3 P128 385.20000000000005 — named by the fixture's
+    own `valuesAsPersisted` note). The planning sweep's "417/417 exact" was
+    double-faithful; the harness compares exact decimals. Stop-and-triage ruling
+    (story owner): new citation token **R1** — representation divergence, ledgered
+    never tolerated — 3 raw entries added, `ReplaySteps`' citation regex widened, the
+    scenario pins **11**. Reasoning recorded in `kanban/deferred-decisions.md`.
+- **Plan-prose erratum (D4 self-check line):** "comp 17 P81 R1 (task K) → raw 319" —
+  the [47,49,43,0,180]→319 witness row is **P89** (as D5 item 4 and the driver comment
+  already said); P81 R1 decodes [61,70,123,123,0] → 373 and also matches its oracle.
+  Both verified; prose slip only.
+- **Close-out** — `validate.py --index`: 10/10 PASS. Acceptance suite **57/57 on
+  sqlite and 57/57 on postgres**; solution-wide `dotnet test Soarscore.sln` 885/885
+  (Architecture 7, Application 210, Infrastructure 126, Domain 485, Acceptance 57).
+  `kanban/backlog/normalisation-lower-clamp.md` filed (discharges comp 121's N1
+  entries when landed); `tech-debt.md` — nothing added, nothing surfaced. Story
+  invariant held: no `src/` change, no `/docs` edit, both stores green.

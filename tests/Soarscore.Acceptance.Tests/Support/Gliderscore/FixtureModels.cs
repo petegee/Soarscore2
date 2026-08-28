@@ -52,10 +52,16 @@ public sealed record CompetitionIdentity(
     string GsCompClass,
     string CompDate);
 
+// nz-fixture-replay-scenarios.md — the five NZ competition.json files carry
+// the verbatim stored state for these knobs: GroupScoreOption and
+// GroupScoreDecimals are null in ALL FIVE, RoundOrTruncate null in three
+// (comps 135/121/17). Nothing in the harness reads them (WI-2 sentinel
+// stop-and-triage finding), so the properties widen to int? — deserialisation
+// must not falsify committed provenance to load.
 public sealed record CompetitionScoring(
-    int GroupScoreOption,
-    int GroupScoreDecimals,
-    int RoundOrTruncate);
+    int? GroupScoreOption,
+    int? GroupScoreDecimals,
+    int? RoundOrTruncate);
 
 /// <summary>The Dur family row — the duration-curve parameters grain 1 needs.</summary>
 public sealed record DurFamilyRow(

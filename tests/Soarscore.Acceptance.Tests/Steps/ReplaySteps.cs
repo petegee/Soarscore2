@@ -125,14 +125,93 @@ public sealed class ReplaySteps
         // ladder), so citing a D-number there would be dishonest. The pinning
         // "records exactly N" step keeps the widened acceptance from hiding
         // untriaged growth.
+        //
+        // nz-fixture-replay-scenarios.md D5 item 7 / D2 — `N1` joins the
+        // accepted tokens: GS floors NormalisedScore at 0 (option-1 branch,
+        // Scoring_MOD.vb:310) while our NormalisationEngine has no lower clamp
+        // (NormalisationEngine.cs:121) — an engine gap, not a rulebook
+        // conflict, pending a normalisation-floor story. Witness: comp 121
+        // cell 1/3/3/0/99 — raw −2026 both sides, GS NS 0.0, ours negative.
+        // Trap-3 precedent: the token exists so the ledger can be honest; the
+        // "records exactly N" pinning step still guards against untriaged
+        // growth.
+        //
+        // `R1` joins them per the WI-6 stop-and-triage ruling (2026-08-28,
+        // orchestrator + story owner): GS computes and persists RawScore in
+        // binary64, so comp 54's committed oracle carries three unrounded
+        // double-sum artefacts verbatim (R4/G2 P85, R5/G1 P77, R5/G3 P128 —
+        // named by the fixture's own valuesAsPersisted note); Soarscore's
+        // FlightInterpreter computes exact decimal, so ours reprs clean at
+        // 1dp and differs by ≤ 1e-13. Representation divergence only — the
+        // normalised grain washes it out on the 1-dp HalfUp grid. The
+        // planning sweep's "417/417 exact" was double-faithful; the harness
+        // compares exact decimals, so the artefact cells are ledgered, not
+        // tolerated. Same precedent: cite the token honestly, pin the count.
         var unattributed = Fixture!.Divergences
             .Where(d => !System.Text.RegularExpressions.Regex.IsMatch(
-                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b|\bN1\b|\bR1\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             .ToList();
 
         unattributed.Should().BeEmpty(
             $"every ledgered divergence must cite an arithmetic-story divergence ID; "
             + $"{Fixture.Slug} carries {unattributed.Count} without one.");
+    }
+
+    [Then(@"^the fixture's float32 persist-cast witness property holds over its scored normalised cells$")]
+    public void ThenTheFixtureSFloat32PersistCastWitnessPropertyHoldsOverItsScoredNormalisedCells()
+    {
+        // nz-fixture-replay-scenarios.md D6 — the G4 comparator-property step,
+        // over the fixture's oracle NormalisedScore values ALONE (no replay
+        // data, no comparator changes). GS persists NormalisedScore through a
+        // binary32 cast, so emulating `float f = (float)(double)ns` must
+        // re-round (HalfUp 1dp) back to the stored value for EVERY scored
+        // cell — otherwise the oracle's own storage would be lossy and the
+        // harness's exact-decimal comparison unsound. Two pins from the
+        // story's Verified ground truth ("G4 float32 persist-cast property —
+        // pinned 99/162") keep the property from going silently vacuous: the
+        // scored universe is exactly 162 cells, and exactly 99 of them carry
+        // cast residue ((double)f != exact). Parent G4 discipline: assert the
+        // cast BEHAVIOUR, never literal repr bits.
+        //
+        // Referenced only by comp 45's scenario (f5j-christchurch-2019) — its
+        // stored values are clean exact-1dp values, which is exactly the store
+        // this property guards.
+        const int expectedScoredCells = 162;
+        const int expectedCastResidue = 99;
+
+        var scored = Fixture!.ExpectedScores.Scores.Values
+            .Where(cell => cell.NormalisedScore != 0m)
+            .ToList();
+
+        scored.Should().HaveCount(
+            expectedScoredCells,
+            $"the story's ground truth pins comp 45's scored normalised universe at {expectedScoredCells} cells "
+            + "(324 total, NS ≠ 0); a different count means the fixture or the property's universe changed.");
+
+        var residue = new List<decimal>();
+
+        foreach (var cell in scored)
+        {
+            double exact = (double)cell.NormalisedScore;
+            float f = (float)exact;
+
+            if ((double)f != exact)
+            {
+                residue.Add(cell.NormalisedScore);
+            }
+
+            Math.Round((decimal)(double)f, 1, MidpointRounding.AwayFromZero)
+                .Should().Be(cell.NormalisedScore,
+                    "GS's binary32 persist cast re-rounds to the stored 1-dp value for every scored cell "
+                    + "(nz-fixture-replay-scenarios.md ground truth; parent G4 discipline: assert the cast "
+                    + "behaviour, never repr bits).");
+        }
+
+        residue.Should().HaveCount(
+            expectedCastResidue,
+            $"the story's ground truth pins the cast-residue count at exactly {expectedCastResidue} of "
+            + $"{expectedScoredCells} scored cells; a different count means the binary32 arithmetic shifted — "
+            + "stop and re-derive by hand before touching anything.");
     }
 
     [Then(@"^the fixture ledger records exactly (\d+) accepted divergences$")]

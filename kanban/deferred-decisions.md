@@ -166,6 +166,23 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   notation, not an input format) and **class-definition drift detection** — both settled
   out of scope.
 
+## GliderScore replay harness
+
+- **Exact-decimal oracle comparison stands; GliderScore's binary64 raw artefacts are
+  ledgered, never tolerated or emulated.** **Decided 2026-08-28** (WI-6 stop-and-triage
+  of `kanban/completed/nz-fixture-replay-scenarios.md`, story-owner ruling). Comp 54's
+  committed oracle deliberately preserves three unrounded double-sum RawScore values
+  verbatim (281.70000000000005, 682.5999999999999, 385.20000000000005 — named by the
+  fixture's own `valuesAsPersisted` note), because GS computes and persists raws in
+  binary64 while Soarscore's `FlightInterpreter` computes exact decimal; deltas ≤ 1e-13
+  and the 1-dp normalisation grid washes them out. The rejected alternatives: a
+  comparison tolerance (the harness exists to catch exactly this class of noise — the
+  original D6 stance), rounding the oracle (frozen output), and emulating binary64 in
+  the engine (bending the model to a storage artefact). Resolution: citation token
+  **R1** joins the accepted ledger tokens (D1–D6, trap 3, N1) and the three cells are
+  ledgered raw-grain divergences with the count pinned in the scenario. Anyone tempted
+  to "fix" the remaining 3-cell mismatch on f3k-june-2020 is looking at this decision.
+
 ## Score capture and corrections
 
 - **Correcting a flight's launch time is not built, and `Flight.LaunchAt` is not a
