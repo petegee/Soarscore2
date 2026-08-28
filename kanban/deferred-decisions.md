@@ -166,6 +166,24 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   one existing event already carries. Reopen only if a CD asks for a lighter-weight mark
   than withdrawal.
 
+## Scoring and ranking
+
+- **The ranking ladder stops at rung 2 (Score DESC, PreDropScore DESC); the
+  dropped-score rescue chain (rung 3) and the F3J/F5J qualifying-position rung
+  stay out.** **Decided 2026-08-29**
+  (`kanban/completed/ranking-secondary-rawscore-key.md`, decision D2). The
+  rescue chain — best dropped score, then a tie-break fly-off — is gated on F3K
+  in the prior art (see `kanban/completed/resolve-gliderscore-scoring-arithmetic.md`'s
+  *Ranking & tie-breaks* section), a class-specific rung the core system may
+  not know (CLAUDE.md's core architectural law), and no fixture oracle
+  exercises it — the NZ F3K ladder oracles are built explicitly from rungs 1–2.
+  The F3J/F5J fly-off rung — qualifying position breaks fly-off ties
+  (`F3J.11`, `5.5.11.13`) — is likewise a class-specific key the fixed ladder
+  cannot reproduce. Both rungs belong to the tie-break policy layer and land
+  when a fixture oracle or class definition demands it, via
+  `kanban/backlog/tie-break-policy-in-class-definition.md`, which absorbs this
+  entry when it does.
+
 ## Competition class model
 
 - **The `.class` notation parser** (`docs/competition-class-notation.md` is a writing

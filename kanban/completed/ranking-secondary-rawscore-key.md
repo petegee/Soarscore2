@@ -1,6 +1,6 @@
 # Story — Ranking's secondary key: RawScore tie-break
 
-**Status:** In progress · **Raised:** 2026-08-26 (found by
+**Status:** Completed · **Raised:** 2026-08-26 (found by
 `kanban/completed/gliderscore-replay-and-compare-harness.md` — story trap 3,
 fired for real on `jerilderie-2010`) · **Fleshed out:** 2026-08-28 · **Amended:** 2026-08-29 (FAI tie-break
 citations, NZ/F5L-silence correction, qualifying-position rung added to WI-3)
@@ -238,3 +238,29 @@ and loses exactly the penalty deduction `Score` loses; jerilderie-2010 replays
 exact at all three grains with an empty ledger; every other fixture's grains
 and ledgers are unchanged; both stores pass; no `src/` file names the prior
 art; no `/docs` change.
+
+## As built (2026-08-29)
+
+- **WI-0.** D1 sign-off taken from the user's instruction to implement the
+  sharpened story as written — the stated default ("proceed as planned" =
+  D1–D5 exactly).
+- **WI-1.** As planned, no deviations. Checkpoint green: 515 Domain /
+  216 Application / 7 Architecture tests.
+- **WI-2.** `divergences.json` emptied as planned, but the suite did not go
+  green on that alone: the jerilderie BDD scenario
+  (`ReplayingAGliderscoreFixture.feature`) pinned the ledger at its old
+  triaged size — title "modulo its ledgered tie-order divergence", a
+  divergence-ID step, and "the fixture ledger records exactly 1 accepted
+  divergences", whose guard exists precisely to force a re-triage when the
+  ledger changes. This story is that re-triage, so the scenario was
+  reconciled to the empty-ledger idiom `f3k-sample-comp` already uses
+  ("the fixture carries no ledgered divergences"). Strictly beyond WI-2's
+  "touch that file only", so recorded here; the comparator, driver and all
+  other fixtures were untouched. The replay itself produced **zero** new
+  diffs — trap 2 never fired; P4/P21 place 8/9 against oracle "8"/"9" and
+  the ales zero-tie group still shares.
+- **WI-2 postgres leg did not run:** no Docker in the implementing
+  environment; the sqlite leg is green (64/64). Per the story, postgres runs
+  "wherever Docker exists" — run it before claiming both-store proof.
+- **WI-3.** Deferred-decisions entry added under a new "Scoring and ranking"
+  heading; `tech-debt.md` unchanged (nothing deferred, as predicted).
