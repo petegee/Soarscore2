@@ -56,7 +56,7 @@ A group is the subset of competitors who fly a task at the same moment. Groups e
 
 ## Entry
 
-An entry is one competitor's turn within a group: a single working-time window in which to fly the task. Normally a competitor has one entry per task-round. If a pilot suffers interference beyond their control — a mid-air collision, a launch problem — they may be granted a reflight, which is a second entry, flown either with a later group or in a dedicated reflight group. Which of a competitor's entries counts toward their score is decided by the class rules or, where the class rules are silent, by the Contest Director's recorded ruling.
+An entry is one competitor's turn within a group: a single working-time window in which to fly the task. Normally a competitor has one entry per task-round. If a pilot suffers interference beyond their control — a mid-air collision, a launch problem — they may be granted a reflight, which is a second entry, flown either with a later group or in a dedicated reflight group. Which of a competitor's entries counts toward their score is decided by the class rules or, where the class rules are silent, by the Contest Director's recorded ruling. A re-flight flown with a later round's group may count for the competitor's missed round rather than the round it was flown in: the entry records that counts-for round, its score aggregates into the missed round's ladder slot, and it still normalises within the group that hosted it.
 
 ## Flight
 

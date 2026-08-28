@@ -1,0 +1,66 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "No GliderScore report transcript exists for this comp, so ranks come from the documented ladder (arithmetic story, THE LADDER): sum of best-per-original-round NormalisedScore minus penalty totals, floored at 0 pre-drop, report-time re-round to 1 dp half-up, sort Score DESC then RawScore DESC; class F5J has no rescue chain, so the ladder ends at rung 2; tied pilots share the displayed rank '=n'. A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine.",
+    "Per-cell ground truth is strong and machine-checked: ladder.py (beside this file, derivation-of-record) recomputes raw AND normalised scores from raw inputs and proves them equal to the persisted values on every run — 133 Updated='True' rows plus 75 all-zero placeholder rows (208 total) — before touching the ladder.",
+    "Derived scoring basis (stored knobs faithful-null; derivation mirrors sibling curators of comps 45/135): duration points-basis normalisation best-in-group -> 1000 rounded half-up to 1 dp, applied to the WHOLE raw (min(packed-mmss time, 600 s) - two-rate height penalty 0.5/m <=200 m then 100+3.0/m above + ADDITIVE scheme-11 'F5J Enter Landing' lookup). RawScore in report terms is the PRE-DROP normalised total — unrelated to the per-flight Scores.RawScore column.",
+    "Drops explicitly CANNOT fire: stored DropScoreOption=0 beside null-or-'99' thresholds throughout (Drop1/2/5 unset, Drop3/Drop4=99, F3QDrop6to10 all '99'), and only 11 of 16 drawn rounds carry score content anyway — so Score equals the pre-drop RawReportScore for every pilot.",
+    "Clamp witness behaviours asserted separately: the extreme-height row R3/G3 s2 P99 (launch height 1000 m) keeps its computed raw PERSISTED UNFLOORED at exactly -2026.0 in the cell ground truth, while normalisation clamps it to 0.0 — its contribution to the final ladder is 0.0 (Flooring location pinned empirically: clamp-before-scale and clamp-after-round agree on all 133 updated rows (the lone negative row is deeply negative), so this dataset cannot distinguish the two; the script encodes clamp-before-scale (documented GS floor '<0->0' inside normalisation) and asserts the equivalence on every run.)",
+    "Aggregation scope honesty: 16 drawn rounds x 13 pilots = 208 rows; scored content lives on rounds 1-11 only (R12-R16 are wholly placeholder no-show rows, kept verbatim at zeros and excluded from the ladder). No re-flights exist anywhere (ReFlightNo=0 and OriginalRoundNo==RoundNo on all 208 rows), so orig-round cells are plain round numbers. The vacant seat R7/G1 SeqNos {1,2,4,5} stays uninvented — a draw-realised gap only; aggregations are unaffected. Off-ladder landings stay silent: 29 scored rows carry Landing=0.0, not on the scheme-11 table, contributing 0 without error (asserted count). Motor-restart row R6/G1 s2 P131 (F5JMotorRestartOption=1) is a zeroed no-flight contributing 0; its non-droppability is moot because no drop can fire.",
+    "Intra-tie ordering of '=n' groups would be insignificant (identical displayed rank; HiddenRanking within ties is implementation-defined). Percent is display-only and deliberately not recorded."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 75,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 77,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 158,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 104,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 80,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 83,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 96,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 134,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 79,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 99,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 131,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 137,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 86,
+      "rank": "13"
+    }
+  ]
+}

@@ -1109,6 +1109,21 @@ public sealed record Competition
     // recorded as the role at open and as Reason on the reflight append
     // (kanban/in-progress/reflight-groups.md WI-3) — Competition cannot
     // adjudicate it, any more than it can hold Entry data.
+    //
+    // countsForRoundOrdinal/reason (reflight-aggregate-destination.md WI-2)
+    // carry the make-up datum — the round whose ladder slot the score
+    // aggregates into, and its required entitlement basis. Their write-side
+    // rules live here, in the story's order: destinationOnOriginalRole (D6
+    // bullet 1 — an Original counts for its own round, always),
+    // destinationNotFound, destinationNotEarlier (an earlier round of the
+    // same phase), reasonRequired (D4, the AppendReflightGroup parity). The
+    // drawn-check is relaxed for reflight-role entries only (D5): the CD's
+    // allocation is the act, so a reflight-role entry may be opened into any
+    // group of the addressed task-round for a registered, non-withdrawn
+    // competitor, and Group.CompetitorRefs stays "the drawn allocation, not
+    // who flew" (reflight-groups finding 4). The event carries the datum
+    // verbatim; the scoring side's destination-aware law
+    // (ScoringService/ReflightSelector) is the belt.
     public Result<EntryOpened> OpenEntry(
         EntryId id,
         int phaseOrdinal,
@@ -1117,7 +1132,9 @@ public sealed record Competition
         GroupId groupRef,
         CompetitorId competitorRef,
         ReflightRole role,
-        DateTimeOffset at)
+        DateTimeOffset at,
+        int? countsForRoundOrdinal = null,
+        string? reason = null)
     {
         var phase = Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal);
         if (phase is null)
@@ -1166,13 +1183,26 @@ public sealed record Competition
                 "openEntry.taskRoundClosed", "This task-round is complete or annulled.");
         }
 
-        if (!group.CompetitorRefs.Contains(competitorRef))
+        // D5 (reflight-aggregate-destination.md): enforced for Original-role
+        // opens only. A reflight-role entry may be opened into any group of
+        // the addressed task-round — the CD's allocation is the act, and
+        // Group.CompetitorRefs remains "the drawn allocation, not who flew".
+        if (role == ReflightRole.Original && !group.CompetitorRefs.Contains(competitorRef))
         {
             return Result<EntryOpened>.Failure(
                 "openEntry.competitorNotDrawn", "This competitor was not drawn into this group.");
         }
 
-        var competitor = Competitors.First(c => c.Id == competitorRef);
+        // Registration is now checked explicitly, for every role: the
+        // relaxation above removed the drawn-check that implicitly guaranteed
+        // it for reflight-role opens.
+        var competitor = Competitors.FirstOrDefault(c => c.Id == competitorRef);
+        if (competitor is null)
+        {
+            return Result<EntryOpened>.Failure(
+                "openEntry.competitorNotRegistered", "This competitor is not registered in this competition.");
+        }
+
         if (competitor.WithdrawnAt is not null)
         {
             return Result<EntryOpened>.Failure(
@@ -1218,6 +1248,40 @@ public sealed record Competition
             }
         }
 
+        // The make-up validations (reflight-aggregate-destination.md WI-2,
+        // D6/D4), in the story's order, only when a counts-for round is
+        // supplied — null means the entry's own round and none of this fires.
+        if (countsForRoundOrdinal is { } countsFor)
+        {
+            if (role == ReflightRole.Original)
+            {
+                return Result<EntryOpened>.Failure(
+                    "openEntry.destinationOnOriginalRole",
+                    "An Original entry always counts for its own round; a counts-for round belongs to a reflight-role entry.");
+            }
+
+            if (!phase.Rounds.Any(r => r.Ordinal == countsFor))
+            {
+                return Result<EntryOpened>.Failure(
+                    "openEntry.destinationNotFound",
+                    $"No round with ordinal {countsFor} exists in this phase — the counts-for round must be a drawn round of the same phase.");
+            }
+
+            if (countsFor < 1 || countsFor >= roundOrdinal)
+            {
+                return Result<EntryOpened>.Failure(
+                    "openEntry.destinationNotEarlier",
+                    $"The counts-for round ({countsFor}) must be an earlier round than this entry's own ({roundOrdinal}) — a make-up counts for a round the competitor missed.");
+            }
+
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return Result<EntryOpened>.Failure(
+                    "openEntry.reasonRequired",
+                    "A reason is required — it is the recorded entitlement ruling, not an audit breadcrumb.");
+            }
+        }
+
         return Result<EntryOpened>.Success(new EntryOpened(
             id,
             Id,
@@ -1227,7 +1291,9 @@ public sealed record Competition
             groupRef,
             competitorRef,
             role,
-            at));
+            at,
+            countsForRoundOrdinal,
+            reason));
     }
 
     // Task-round lifecycle decide functions — WI-1/WI-2/WI-2b

@@ -1,0 +1,100 @@
+[
+  {
+    "grain": "raw",
+    "round": 9,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: pilot 89 (CompPilots.Retired=true) flew R1-R8 and is silently absent from R9-R15 with no placeholder stubs in scores-raw; prescribeDraw.competitorMissing demands every registered competitor appear in every round, so the driver prescribes him into R9/G3 as a deliberate flight-less synthetic slot (nz-fixture-replay-scenarios.md D5 item 6, group = the round's smallest — the jerilderie-2010 WI-6 amendment precedent). NoResult means cell 0 and no oracle cell exists at 5/9/3/0/89 — his real flights all replayed earlier; this manufactured slot is ours alone."
+  },
+  {
+    "grain": "normalised",
+    "round": 9,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R9/G3 slot as the raw-grain entry — no oracle cell exists at 5/9/3/0/89."
+  },
+  {
+    "grain": "raw",
+    "round": 10,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: synthetic flight-less slot for the retired pilot in R10/G3 (jerilderie-2010 WI-6 amendment precedent) — no oracle cell exists at 5/10/3/0/89."
+  },
+  {
+    "grain": "normalised",
+    "round": 10,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R10/G3 slot as the raw-grain entry — no oracle cell exists at 5/10/3/0/89."
+  },
+  {
+    "grain": "raw",
+    "round": 11,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: synthetic flight-less slot for the retired pilot in R11/G3 (jerilderie-2010 WI-6 amendment precedent) — no oracle cell exists at 5/11/3/0/89."
+  },
+  {
+    "grain": "normalised",
+    "round": 11,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R11/G3 slot as the raw-grain entry — no oracle cell exists at 5/11/3/0/89."
+  },
+  {
+    "grain": "raw",
+    "round": 12,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: synthetic flight-less slot for the retired pilot in R12/G3 (jerilderie-2010 WI-6 amendment precedent) — no oracle cell exists at 5/12/3/0/89."
+  },
+  {
+    "grain": "normalised",
+    "round": 12,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R12/G3 slot as the raw-grain entry — no oracle cell exists at 5/12/3/0/89."
+  },
+  {
+    "grain": "raw",
+    "round": 13,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: synthetic flight-less slot for the retired pilot in R13/G3 (jerilderie-2010 WI-6 amendment precedent) — no oracle cell exists at 5/13/3/0/89."
+  },
+  {
+    "grain": "normalised",
+    "round": 13,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R13/G3 slot as the raw-grain entry — no oracle cell exists at 5/13/3/0/89."
+  },
+  {
+    "grain": "raw",
+    "round": 14,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: synthetic flight-less slot for the retired pilot in R14/G3 (jerilderie-2010 WI-6 amendment precedent) — no oracle cell exists at 5/14/3/0/89."
+  },
+  {
+    "grain": "normalised",
+    "round": 14,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R14/G3 slot as the raw-grain entry — no oracle cell exists at 5/14/3/0/89."
+  },
+  {
+    "grain": "raw",
+    "round": 15,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: synthetic flight-less slot for the retired pilot in R15/G3 (jerilderie-2010 WI-6 amendment precedent) — no oracle cell exists at 5/15/3/0/89."
+  },
+  {
+    "grain": "normalised",
+    "round": 15,
+    "group": 3,
+    "pilotNo": 89,
+    "reason": "D5: same manufactured flight-less R15/G3 slot as the raw-grain entry — no oracle cell exists at 5/15/3/0/89."
+  }
+]

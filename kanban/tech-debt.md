@@ -124,3 +124,12 @@ See CLAUDE.md house-keeping rule 5.
   each racing its own Testcontainer and its own first-touch schema migration. Left
   unfixed because nothing was diagnosed, only observed; recorded so the next person
   to see red on CI checks here before chasing their own change.
+- [ ] Effective-knob records are non-uniform across the five NZ fixtures.
+  `f5j-christchurch-2019` and `f5j-hawkes-bay-trials` carry structured
+  `configProvenance` blocks ({stored, effective, basis} per knob); the other
+  three (`f3k-southern-fling`, `f5j-nz-south-island`, `f3k-june-2020`) record
+  their behaviourally-derived effective-grid reasoning in provenance notes only
+  (GroupScoreOption / GroupScoreDecimals / RoundOrTruncate are Jet-null DB-wide
+  on the NZ master, so stored config cannot prove scoring-time behaviour).
+  Unify to the structured shape if any consumer ever needs machine-readable
+  effective knobs corpus-wide.

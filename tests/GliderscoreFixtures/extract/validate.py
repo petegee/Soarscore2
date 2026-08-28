@@ -22,8 +22,11 @@ REQUIRED_FILES = [
     "entries.json",
     "scores-raw.json",
     "expected-scores.json",
-    "expected-result.json",
 ]
+# Final-ranking oracle: absent while a fixture is at the scores stage of the
+# pipeline AND its provenance declares the deferral; otherwise required.
+ORACLE_FILE = "expected-result.json"
+DEFERRAL_FLAG = "expectedResultDeferred"
 CANONICAL_KEY_FORMAT = "{TaskNo}/{RoundNo}/{GroupNo}/{ReFlightNo}/{PilotNo}"
 SERIES_OFF = {"", "0"}
 PRELIM_OFF = {-1, 0}
@@ -96,14 +99,27 @@ def check_rule_2(competition, scores_raw, errors):
             )
 
 
-def check_rule_3(competition, errors):
+def check_rule_3(competition, errors, warnings):
     scoring = competition.get("scoring") or {}
     decs = scoring.get("GroupScoreDecimals")
     rot = scoring.get("RoundOrTruncate")
-    if decs not in (0, 1, 2, 3):
-        fail(errors, f"rule 3: GroupScoreDecimals={decs!r} outside {{0,1,2,3}} (GS zeroes/stales scores)")
-    if rot not in (0, 1):
-        fail(errors, f"rule 3: RoundOrTruncate={rot!r} outside {{0,1}} (GS stales NormalisedScore)")
+    for field, value, allowed in (
+        ("GroupScoreDecimals", decs, (0, 1, 2, 3)),
+        ("RoundOrTruncate", rot, (0, 1)),
+    ):
+        if value is None:
+            # Persisted Jet null (unset): scores demonstrably survive it (DB-wide
+            # pattern), unlike an out-of-range VALUE which zeroes/stales them.
+            # Record-and-warn; coercing to a default would falsify curation.
+            warnings.append(
+                f"rule 3 note: {field} unset (null) \u2014 recorded faithfully; "
+                f"the out-of-range guard concerns actual values only"
+            )
+        elif value not in allowed:
+            fail(
+                errors,
+                f"rule 3: {field}={value!r} outside {set(allowed)} (GS zeroes/stales scores)",
+            )
 
 
 def check_rule_4(competition, entries, scores_raw, errors):
@@ -258,7 +274,8 @@ def base_competition(triage):
     }
 
 
-def write_fixture(root, slug, triage, justification=None, extra_score_columns=None):
+def write_fixture(root, slug, triage, justification=None, extra_score_columns=None,
+                  omit_oracle=False, provenance_extra=None):
     fixture = root / slug
     fixture.mkdir(parents=True)
     if justification is not None:
@@ -266,13 +283,14 @@ def write_fixture(root, slug, triage, justification=None, extra_score_columns=No
     schema = {"CompNo": "Long", "TaskNo": "Integer", "RoundNo": "Long"}
     schema.update(extra_score_columns or {})
     documents = {
-        "provenance.json": {},
+        "provenance.json": {**(provenance_extra or {})},
         "competition.json": base_competition(triage),
         "entries.json": {"compPilots": {"rows": []}},
         "scores-raw.json": {"schema": schema, "rows": []},
         "expected-scores.json": {"keyFormat": CANONICAL_KEY_FORMAT, "scores": {}},
-        "expected-result.json": {},
     }
+    if not omit_oracle:
+        documents["expected-result.json"] = {}
     for name, document in documents.items():
         (fixture / name).write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     return fixture
@@ -407,6 +425,51 @@ def self_test():
             [str(prelim), "--index", str(index_path)], 1, ("PrelimCompNo",),
         )
 
+        staged = write_fixture(
+            root, "wi2-staged", TRIAGE_OFF,
+            omit_oracle=True, provenance_extra={DEFERRAL_FLAG: True},
+        )
+        run(
+            "declared oracle deferral passes without expected-result.json",
+            [str(staged)], 0, ("PASS", DEFERRAL_FLAG), ("missing file",),
+        )
+
+        undeclared = write_fixture(root, "oracle-undeclared", TRIAGE_OFF)
+        (undeclared / ORACLE_FILE).unlink()
+        run(
+            "undeclared missing oracle stays a hard failure",
+            [str(undeclared)], 1, ("missing file",),
+        )
+
+        contradicted = write_fixture(
+            root, "oracle-contradiction", TRIAGE_OFF,
+            provenance_extra={DEFERRAL_FLAG: True},
+        )
+        run(
+            "deferral declared while oracle present fails",
+            [str(contradicted)], 1, ("contradict",),
+        )
+
+        def null_knobs(root_slug, **overrides):
+            fixture = write_fixture(root, root_slug, TRIAGE_OFF)
+            competition_doc = json.loads((fixture / "competition.json").read_text(encoding="utf-8"))
+            competition_doc["scoring"].update(overrides)
+            (fixture / "competition.json").write_text(
+                json.dumps(competition_doc, indent=2) + "\n", encoding="utf-8"
+            )
+            return fixture
+
+        run(
+            "unset (null) scoring knobs warn but pass",
+            [str(null_knobs("null-knobs", GroupScoreDecimals=None, RoundOrTruncate=None))],
+            0, ("rule 3 note",), ("FAIL",),
+        )
+        run(
+            "out-of-range decimals keep failing under faithful-null rule 3",
+            [str(null_knobs("decimals-nine", GroupScoreDecimals=9))], 1,
+            ("outside",),
+        )
+
     run(
         "ales-sample-comp regression",
         [str(corpus_dir / "ales-sample-comp"), "--index", str(index_path)],
@@ -453,9 +516,31 @@ def main(argv=None):
 
     errors = []
     warnings = []
+
+    provenance = load_json(fixture_dir, "provenance.json", errors)
+    deferred = isinstance(provenance, dict) and provenance.get(DEFERRAL_FLAG) is True
+    oracle_path = fixture_dir / ORACLE_FILE
+    if not deferred:
+        load_json(fixture_dir, ORACLE_FILE, errors)
+    elif oracle_path.is_file():
+        fail(
+            errors,
+            f"{ORACLE_FILE} present but provenance declares {DEFERRAL_FLAG}=true "
+            f"(clear the flag or the file \u2014 they contradict)",
+        )
+    else:
+        warnings.append(
+            f"deferral WARNING: {fixture_dir.name} declares {DEFERRAL_FLAG}=true with no {ORACLE_FILE}; "
+            f"the ranking oracle must land before corpus activation"
+        )
+
     documents = {
-        name: load_json(fixture_dir, name, errors)
-        for name in REQUIRED_FILES
+        "provenance.json": provenance,
+        **{
+            name: load_json(fixture_dir, name, errors)
+            for name in REQUIRED_FILES
+            if name != "provenance.json"
+        },
     }
     if any(document is None for document in documents.values()):
         for message in errors:
@@ -473,7 +558,7 @@ def main(argv=None):
 
     check_rule_1(scores_raw, entries, errors)
     check_rule_2(competition, scores_raw, errors)
-    check_rule_3(competition, errors)
+    check_rule_3(competition, errors, warnings)
     check_rule_4(competition, entries, scores_raw, errors)
     check_rule_5(competition, scores_raw, slug, index_path, warnings, errors)
     check_integrity(expected_scores, scores_raw, entries, errors)

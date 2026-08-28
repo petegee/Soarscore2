@@ -1,0 +1,64 @@
+{
+  "slug": "f3k-southern-fling",
+  "sourceKind": "master-db-slice",
+  "deviation": {
+    "from": "schema-v1 default (per-comp GliderScore Export Competition(s) .mdb committed under sources/)",
+    "because": "The GliderScore GUI export route is unexecutable on this host (no install, no wine), and pristine pinned access_parser 0.0.6 cannot read the 168-comp master NZContests.mdb as-is: Comps raises IndexError on every row (Jet null-bitmap boundary, columns IsPublic 40 / UseRegistration 41 / UseRegistrationIdx 42) and silently drops Comps' 12 variable-length Text columns. Per grow-corpus story WI-1 sourcing option 2, the five NZ fixtures are cut directly from the master by the tolerant extractor; committing NZContests.mdb itself is deliberately NOT done (all 168 comps + full Pilots master, PII-broad, couples five fixtures to one file).",
+    "compensation": [
+      "master sha256 below pins the exact bytes this slice derives from; per-file sha256 of the committed extract of record is listed so any re-extraction is byte-comparable",
+      "WI-1's tolerant extract.py run reported zero hard mismatches vs the independent PRE-3 staging twin for CompNo=17 (commit 864c504); the single cell-convention divergence is null-vs-empty on Scores.Helper, with no value differences",
+      "the master .mdb lives at gliderscore/NZContests.mdb in a working copy of this repository but is intentionally uncommitted"
+    ]
+  },
+  "source": {
+    "originalFilename": "NZContests.mdb",
+    "path": "gliderscore/NZContests.mdb (working copy only — not committed)",
+    "sha256": "e62cbce8e11784e59938d5a39ef99d2f7052e52d7ef6f9a9af79fdc4fd1048e7",
+    "slice": "CompNo=17 cut from all-168-comp master at curation"
+  },
+  "recoveryEvidence": {
+    "file": "comps-var-columns.json",
+    "sha256": "d2a9c74e207acb99ae9e3ba55c9ed857c814d547ef5488af2f7bb65543912d64",
+    "path": "/tmp/opencode/nz-extract/comps-var-columns.json (ephemeral — facts and trusted values duplicated into the committed extract/)",
+    "role": "custom Jet4 trailer crack recovering Comps' 12 variable-length Text columns that access_parser drops; flags.varTextTrusted=true; comp 17 absent from the crack anomaly list (only comps 2 and 4 contaminated)"
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the master"
+  },
+  "exportedBy": null,
+  "exportDate": null,
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py (tolerant mode)",
+    "mode": "--tolerant --recovered-texts /tmp/opencode/nz-extract/comps-var-columns.json",
+    "accessParser": "0.0.6 (pristine-pinned, RECORD-verified)",
+    "python": "3.10.12",
+    "toleranceRationale": "--tolerant carries the one-line upstream bounds fix for the Comps IndexError (degradation trio IsPublic/UseRegistration/UseRegistrationIdx read via patched null-bitmap, semantics of bits beyond the bitmap uncertain) and ingests the recovered trailer-crack texts (rationale: byte-validated, varTextTrusted=true for this comp — 'Southern Fling'/'Levin'/'F3K' cross-check against VERIFICATION.md; two stale ghost slots benignly duplicate name/venue). Every other table extracts clean under the pristine parser.",
+    "extracted": "2026-08-27",
+    "extractionOfRecord": "tests/GliderscoreFixtures/f3k-southern-fling/extract/ (committed by WI-1)"
+  },
+  "who": "soarscore agent pass 2026-08-27",
+  "perFileSha256": {
+    "extract/CompPilots.json": "27e0969279be5854d9e2eef05aabed2ded40bff9d9373eed2c49c509f5972b01",
+    "extract/Comps.json": "2c8b2736365b8f77128ccbaeb27152e2334f70f46766782e4051b23d68e9e02d",
+    "extract/DBParams.json": "6954d89c95f46ca3b4b518f2d533ffbbc967cc8d787bd9c357f51f73630be938",
+    "extract/F3K.json": "81c1dc14eaa9af306a0f600e5caafa195cbdf527547495594209289802d5d1b8",
+    "extract/F3KTaskByRound.json": "047129f41466bcf85755db5c44862a6c9b9103448b56244c43dc69500a6fc79f",
+    "extract/Scores.json": "37a3fcb5ffb0e58fa6f8ceef6e3cf63ee35c672451fd0fad166e38cd38188de0",
+    "extract/comps-field-provenance.json": "5dd4fc841daa3d23bb9ad2468d996794f70657e8558dcba3e6717f0a93cb0061"
+  },
+  "notes": [
+    "[REDACTION-NEEDED NOISE] Round 9 phantom Landing values kept verbatim in scores-raw: exactly 12 of the 14 R9 rows carry Landing=145.0, and six of those twelve ALSO carry FlightScoreDeduction=200.0. There is NO landing scheme attached anywhere in this comp's schema — the F3K family row has no landing/scheme reference field, Scores exposes no scheme-ref column, LndgNames/LndgPoints are keyed only by LndgNo+Name without any CompNo link, so nothing about these cells is interpretable as landing-bonus evidence. R9 is also heavily auto-filled: all 14 rows share one time/laps set and RawScore takes only three values {210, 405, 525}. Do NOT read Landing=145.0 here as a real touchdown distance, do NOT read FlightScoreDeduction=200 as a real penalty, and an F3K-family score validator must NOT hard-code slot-sum or landing expectations off this fixture. validate.py rule 2 applies vacuously to this fixture (rule keys off the Dur family row; this comp has none).",
+    "Mid-comp retirement carried as a first-class observation: CompPilots PilotNo=89 has Retired=true (Role Plt, PilotClass Sprt); his last score rows are at R8, and he is wholly ABSENT from R9–R15 — silent absence with zero placeholder stubs (verified). His earlier R4G2 row is RawScore=0 with Updated='True', the comp's sole accepted-as-flown zero. Group sizes consequently run 5/5/5 through R8 then 5/5/4 from R9. WI-3 owns retired-pilot ladder-aggregation semantics; any loader claiming 'every entered pilot scores each round' or requiring dense draw-matrix keys is wrong by design.",
+    "Task catalogue verbatim from F3KTaskByRound over rounds 1–15: K, I, A(2), E, H, G, J, C(1), D, F, B(1), H, G, B(2), C(1). Letters E, I, J and K are FIRST corpus sightings; sub-numbered variants A(2)/B(1)/B(2)/C(1) confirmed; A(1) does NOT occur here. Scores.TaskNo stays constant 5 on all 218 rows — task identity lives entirely in F3KTaskByRound, decoupled from the numeric column, same as f3k-sample-comp; loaders must join via F3KTaskByRound and never infer tasks from Scores.",
+    "Per-group normalisation invariant verified again at curation on all 218/218 rows: NormalisedScore == round(1000 x RawScore / best-Raw-in-group, 1 dp) across all 45 round-groups x 11 task letters, including degenerate R9. Winners: 35 groups with a unique NS==1000.0 winner and 10 tied-winner groups (tie widths 2–5, including R9G1 whole-group 5-way tie @405 and R9G2 4-way @525); 64 rows sit at exactly NS 1000.0. F3K normalisation basis is per-GROUP throughout.",
+    "Precision: combined RawScore+NormalisedScore decimal tails split 301 zero-dp / 135 one-dp values (218 Raw all integral; 83 NS integral, 135 NS one-dp) — exact candidate-split reproduction. Persisted doubles carry zero string-repr residue; a binary32 persist-cast simulation would flip 120/217 positive NS representations, so assert ONLY on persisted values, never simulated cast bits.",
+    "Faithful-null scoring knobs: GroupScoreOption, GroupScoreDecimals, RoundOrTruncate, DropScoreOption, Drop1AtRound and Drop2AtRound persist as Jet-null in the Comps row (carried verbatim in competition.json scoring), while Drop3..Drop5AtRound=99 and F3QDrop6to10='99,99,99,99,99'. Despite the nulls the scores were demonstrably computed normally — the invariant note above holds 218/218 with one-dp tails — so GS's effective grid was empirically points-normalisation rounded to 1 dp. Carry the arithmetic-story guard ('Decs outside {0..3} zeroes/stales scores') into any replay assertions rather than assuming defaults. No drop threshold can fire here (configured state unset/99 throughout). CompDate is likewise Jet-null: no comp date exists anywhere.",
+    "Uniform row states: Updated='True' on all 218 rows (Text-typed, as in f3k-sample-comp — rescoring gate open throughout); Penalty=0 everywhere; LandingOver75m nowhere true; ScoresChecked=false everywhere (inert evidence under our no-sign-off trust model); Helper is Jet-null on every row; ReFlightNo>0 nowhere; OriginalRoundNo==RoundNo everywhere (no re-flights); ModelID='' and Flight1..Flight4=null on every row.",
+    "Family-row format drift worth knowing before comparison work: F3K.f3kPilotsMin holds CSV '0,1,0,1' here, unlike f3k-sample-comp's query-string style ('TmProt=True&NbrPlts=10&GrpsInRnd=4...'), and draws no counts from it — pilot/group shape is witnessed from the Scores rows instead: 45 round-group pairs, 3 groups in every round of all 15 rounds, 15 pilots. The F3K row is otherwise the corpus-normal shape (draw/timing state only, no scoring knobs); dur/spd/dis/f5b/f5k families have zero rows for comp 17 (pure F3K comp).",
+    "PII treatment deviates from the ZZ-shipped older fixtures on purpose: entries.pilots carries NAMES ONLY (PilotNo/FirstName/LastName) because these are real club members extracted from the shared Pilots master (177 named rows). All contact columns were verified empty in the master for these 15, the bulk master itself is never committed, and closure was asserted at curation: all 15 CompPilots members resolve to exactly the 15 emitted name rows.",
+    "Provenance chain anchors: staged evidence twin /tmp/opencode/nz-pre/f3k-southern-fling/{VERIFICATION.md,stage-manifest.json} is ephemeral — its integrity block (group map, tie census, retirement pattern, phantom accounting, task catalogue) was re-verified against the committed extracts at curation and is summarised here and in competition.json/expected-scores.json. exportDate/exportedBy are null because no GUI export ran (deviation above); the extraction date is the WI-1 curation pass.",
+    "expected-result.json landed with story WI-3 as a reconstructed-ladder oracle: ladder.py beside this fixture is its derivation of record (byte-idempotent rerun), anchored on the retired-pilot semantics of pilot 89 (ranked on flown rounds only) plus the per-cell normalisation recompute; the R9 whole-group tie census is carried in the oracle notes but no final-ladder tie survives aggregation."
+  ]
+}

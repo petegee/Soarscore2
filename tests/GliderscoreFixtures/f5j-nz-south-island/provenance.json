@@ -1,0 +1,90 @@
+{
+  "slug": "f5j-nz-south-island",
+  "source": {
+    "kind": "master-db-slice",
+    "originalFilename": "NZContests.mdb",
+    "masterPath": "gliderscore/NZContests.mdb",
+    "masterSha256": "e62cbce8e11784e59938d5a39ef99d2f7052e52d7ef6f9a9af79fdc4fd1048e7",
+    "recoveryEvidence": {
+      "path": "tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json",
+      "sha256": "d2a9c74e207acb99ae9e3ba55c9ed857c814d547ef5488af2f7bb65543912d64"
+    }
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the master DB"
+  },
+  "exportedBy": "none — no GliderScore GUI export exists for this comp; sourced as a master-db-slice instead (see notes)",
+  "exportDate": null,
+  "curatedBy": "soarscore agent pass 2026-08-27",
+  "curationDate": "2026-08-27",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "accessParser": "0.0.6",
+    "mode": "--tolerant --recovered-texts nz-master/comps-var-columns.json",
+    "python": "3.10.12",
+    "extracted": "2026-08-27"
+  },
+  "extractFiles": [
+    {
+      "table": "CompPilots",
+      "rows": 13,
+      "cols": 12,
+      "sha256": "2a4ec2cc89c449d90f4b1f3a77f3b943984700b64f2fb4744cc243190e01a844"
+    },
+    {
+      "table": "Comps",
+      "rows": 1,
+      "cols": 40,
+      "sha256": "4270b16b1933c44fb0a010344e9ad144fb93ee913a211ce1b2db59f2d5118e50"
+    },
+    {
+      "table": "DBParams",
+      "rows": 5,
+      "cols": 2,
+      "sha256": "6954d89c95f46ca3b4b518f2d533ffbbc967cc8d787bd9c357f51f73630be938"
+    },
+    {
+      "table": "Dur",
+      "rows": 1,
+      "cols": 17,
+      "sha256": "1215be76a08f6d973adb96bc5ce491351707bd7b2e0dfe8c6fae7bc28a1cf21e"
+    },
+    {
+      "table": "LndgNames",
+      "rows": 1,
+      "cols": 2,
+      "sha256": "5734cdc6e86b690d2fee4945a99295c0bd3fdb68cf379c6d9d6aa1c6850de90f"
+    },
+    {
+      "table": "LndgPoints",
+      "rows": 18,
+      "cols": 3,
+      "sha256": "215287b252c43ca8c713a54deb8b1c5eee15cbbd7e7d52a24eb083990dd42568"
+    },
+    {
+      "table": "Scores",
+      "rows": 208,
+      "cols": 29,
+      "sha256": "27a54aa335fe8c64b02cf503e7046a91f809c34d0a3a81dd357f5f787de9149f"
+    }
+  ],
+  "notes": [
+    "DEVIATION DECLARATION (sourceKind master-db-slice): no working GliderScore install (and no wine) on this host, so the Export Competition(s) route that produced every earlier fixture cannot run. The fixture is sliced at extraction time from the competition manager's full NZ master DB NZContests.mdb (168 competitions, sha256 above); the master file is gitignored and never committed (slice, don't ship), so provenance pins the master sha plus the recovery-evidence sha and per-file shas below.",
+    "Extraction chain rationale: pristine access_parser 0.0.6 crashes on this DB's wider Comps schema (Jet null-bitmap boundary, column_id 40..42 vs a 40-slot bitmap) AND silently drops all 12 variable-length Text columns of Comps on every run. extract.py --tolerant carries only the one-line bounds fix (every in-range cell still through the pristine library; each affected column warned loudly), and --recovered-texts ingests the byte-validated Jet4 record-trailer recovery comps-var-columns.json for the 12 dropped texts. Comp 121's recovered row is trusted upstream (_flags.varTextTrusted=true, dirtySlots=[], not among the contaminated rows [comps 2 and 4]); per-column field provenance sits beside the table in extract/comps-field-provenance.json (its column-level varTextTrusted=false is an aggregate over all 168 rows because of comps 2/4, not this row).",
+    "The pre-staging slice (/tmp staging agents, 2026-08-27) matched this extraction cell-for-cell on all seven tables except nine Comps cells that are pure null-convention deltas (machinery '' vs pristine parser null; pristine wins per the README differential-gate ruling). Scores here were extracted under the pristine repo conventions either way.",
+    "F5J scoring policy verified EXACT on all 133 Updated='True' rows (including 4 trivially-exact zero-time no-flights): RawScore = min(packed-mmss decoded seconds, 600) - height penalty - nothing else, where height penalty = 0.5/m up to 200 m then 100 + 3.0/m above 200 m, with launch height stored in Scores.FlightScoreDeduction; scheme-11 'F5J Enter Landing' points are ADDED (additive lookup, not a subtraction). Non-zero landings used span 70..100 m and all sit on-table; validate rule 2 enforces this closure.",
+    "Off-ladder landing hazard recorded: 29 scored rows carry Landing=0.0, which is NOT in the scheme-11 table and silently contributes 0 points without erroring. A model must treat out-of-table landing values as zero-contribution, never invalid data; rules and tests must likewise accept these rows verbatim.",
+    "Extreme-height clamp witness: exactly one computed-negative row exists — R3/G3 SeqNo 2 PilotNo 99 with launch height 1000 m (the batch's extreme-penalty max across 19 rows over 200 m): penalty 2900 vs best-case flight value leaves computed RawScore -2026.0, which is PERSISTED UNFLOORED verbatim. Only normalisation floors at 0 (max(raw,0) before scaling): its persisted NormalisedScore is 0.0. Assert both behaviours separately: RawScore keeps negatives; the floor lives in normalisation.",
+    "Motor-restart witness: exactly ONE flagged row in the whole matrix — R6/G1 SeqNo 2 PilotNo 131, F5JMotorReStarted=true with every score field zeroed but Updated='True' — paired with Dur.F5JMotorRestartOption=1 carried in this comp's single Dur family row itself (single-row engine config; no separate effect row exists anywhere for comp 121). Contrast set: the remaining 132 updated rows are genuine scores.",
+    "Structural honesty — vacant seat: the SOLE structural anomaly in the whole draw matrix is R7/G1 carrying SeqNos {1,2,4,5} (seat 3 absent: no row at all; the occupant is unknowable from data), making R7 the only round deviating from the baseline group shape G1=5/G2=4/G3=4 (R7 flies 4/5/4). Nothing re-flew into the gap — there are NO re-flights anywhere in the comp (ReFlightNo=0 and OriginalRoundNo==RoundNo on all 208 rows) — so the original draw is unrecoverable; it is noted here, NOT invented. Any replay engine must reject or reproduce this ragged round explicitly rather than paper over it.",
+    "Story-hint correction recorded: the story's earlier 'pilot 86 re-flight' expectation misfires. Pilot 86 flew once ever (R1/G3 SeqNo 4: t=958 -> 598 s, h=225 m, L95, raw 468.0, norm 838.7) and afterwards appears only as legitimately drawn placeholder rows (SeqNo assigned, all-zero, Updated='False') through rounds 2-16; his CompPilots.Retired stays false. No pilot re-flew in this competition.",
+    "Knobs recorded faithful-null: GroupScoreOption, GroupScoreDecimals, RoundOrTruncate, DrawMode, Drop1AtRound/Drop2AtRound/Drop5AtRound, PrelimCompNo and CompDate persist as Jet nulls in this DB-wide pattern and are recorded as null, not coerced to defaults (validate rule 3 exists for actual out-of-range VALUES such as Decs outside {0..3}; unset-as-null is out of its scope and harmless — verified live: scores recomputed fine despite nulls). DropScoreOption=0 sits beside sentinel Drop3AtRound=Drop4AtRound=99; with every other threshold null-or-never, NO drop can activate — recorded explicitly.",
+    "Normalisation observed (analysis-grade verification, GS round semantics Int-half-up): duration points-scaling 1000 * clampedRaw / groupBest rounded to 1 dp matches all 133 Updated='True' NormalisedScore values, and the group-best row hits exactly 1000.0 in all 33 scored (round,group) pairs — even though GroupScoreOption/GroupScoreDecimals/RoundOrTruncate persist null. This fixture records the nulls faithfully and does NOT model how null config maps onto that effective behaviour; that mapping belongs to the class-authoring/harness story.",
+    "Row split: 133 Updated='True' (129 genuine flights + 4 zero-time-but-updated no-flights R1G2/s2/P79, R2G1/s1/P79, R5G2/s2/P99, R6G1/s2/P131 — the last being the motor-restart row) vs 75 Updated='False' placeholder rows spread over rounds 2-16 (mostly pilots 79/86/99). All 208 rows verbatim, original order, 16 rounds x 13 pilots over 48 round-group pairs, TaskNo=1 throughout.",
+    "Entries Pilots section is a names-only slice (PilotNo/FirstName/LastName) of the master Pilots table filtered to the 13 members — corpus PII policy. Re-checked against the master anyway: every contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone/Club) is empty for all 13; CompPilots carries no contact columns.",
+    "Dur fields deliberately excluded from competition.json as display/draw-shape detail per WI-2 precedent, recorded here verbatim rather than dropped silently: durDecimalsForTiming=0; durGroupsPerRound=3; durPilotsMax=5; durDrawLocked=False; durNbrOfLanes=0.0; durAllowBackToBack=0; durPilotsMin=\"\". All omitted family/schedule tables (Spd, Dis, F3K*, F5B/F5K*, TimerSettings, DurTargetTimeByRound) have zero rows for CompNo=121; DurTargetTimeByRound is nonetheless carried empty-with-schema.",
+    "Ranking oracle landed with WI-3 (expected-result.json, reconstructed-ladder source) alongside ladder.py as its derivation-of-record: the documented-ladder aggregation of best-per-original-round NormalisedScore, with this comp's anchor behaviours asserted on every run — the clamp row's raw -2026 unfloored in cell ground truth vs normalised 0.0 / ladder contribution 0.0, drops provably un-fireable under stored DropScoreOption=0 + null/'99' thresholds, and the vacant R7/G1 seat left uninvented."
+  ]
+}

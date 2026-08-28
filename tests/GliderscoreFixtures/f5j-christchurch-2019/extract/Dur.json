@@ -1,0 +1,42 @@
+{
+  "schema": {
+    "CompNo": "Integer",
+    "durTargetTime": "Integer",
+    "durDecimalsForTiming": "Byte",
+    "durLndg": "Integer",
+    "durNumberOfTimekeepers": "Byte",
+    "durGroupsPerRound": "Byte",
+    "durPilotsMax": "Byte",
+    "durDrawLocked": "Boolean",
+    "durFlightPenalty": "Integer",
+    "durNbrOfLanes": "Double",
+    "durRefHeight": "Double",
+    "durPenaltyUpToRefHeight": "Double",
+    "durPenaltyOverRefHeight": "Double",
+    "durAllowBackToBack": "Long",
+    "DurPointsPerSecond": "Double",
+    "F5JMotorRestartOption": "Long",
+    "durPilotsMin": "Text"
+  },
+  "rows": [
+    {
+      "CompNo": 45,
+      "durTargetTime": 600,
+      "durDecimalsForTiming": 0,
+      "durLndg": 11,
+      "durNumberOfTimekeepers": 1,
+      "durGroupsPerRound": 3,
+      "durPilotsMax": 18,
+      "durDrawLocked": false,
+      "durFlightPenalty": 3,
+      "durNbrOfLanes": 0.0,
+      "durRefHeight": 200.0,
+      "durPenaltyUpToRefHeight": 0.5,
+      "durPenaltyOverRefHeight": 3.0,
+      "durAllowBackToBack": 0,
+      "DurPointsPerSecond": 1.0,
+      "F5JMotorRestartOption": null,
+      "durPilotsMin": "0,1,0,1"
+    }
+  ]
+}

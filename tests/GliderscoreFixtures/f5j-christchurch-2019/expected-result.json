@@ -1,0 +1,86 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "No GliderScore report transcript exists for this comp (none exists for any of the five NZ-corpus fixtures), so ranks come from the documented ladder (arithmetic story, THE LADDER): best-per-original-round normalised sum over rounds 1-11, minus per-pilot penalty totals (all 0 here), report-time re-round to GroupScoreDecimals effective 1 dp, Score DESC / RawScore DESC; class F5J ends the ladder at rung 2; tied pilots share the displayed rank '=n'.",
+    "NO drop-worst fires (recorded explicitly per WI-3): Drop1AtRound/Drop2AtRound unset (null), Drop3-5AtRound = 99 (= never), F3QDrop6to10 = '99,99,99,99,99', DropScoreOption unset/effective-0 and moot - no threshold can activate within the 11 scored rounds. Consequently Score is identical to RawScore (pre-drop total) and rung 2 cannot separate what rung 1 did not.",
+    "Mid-comp snapshot (the comp was captured after R11 and abandoned; rounds 12-18 are wholly-unflown placeholder rows Updated='False'): the rollup window ends at TaskLastRound = MAX(RoundNo where Updated='True') = 11 - the ladder covers exactly what exists, with ragged unflown slots contributing nothing and no backfilling. Single task, no re-flights (OriginalRoundNo == RoundNo on all 324 rows).",
+    "Tie decision at curation (story WI-3 'ties resolved by... decide at curation'): displayed per GS '=n' semantics including retroactive leader marking; intra-tie ORDER within this ranks list is PilotNo ascending, a deterministic documented choice because GS's HiddenRanking inside a fully-tied group is implementation-defined (arithmetic story, Ranking unresolved: DataView sort stability). Observed ties: exactly one group, the two zero scorers P84/P135 '=17'.",
+    "Per-cell ground truth is exact: ladder.py independently recomputed all 324 persisted RawScore and NormalisedScore values from scores-raw inputs + competition.json effective knobs (points-basis option-1 normalisation, half-up rounded to 1 dp) and agrees on every cell; what remains unverified against GliderScore itself is only the report-level aggregation step, covered by no transcript yet.",
+    "G4 float32 persist-cast discipline: stored values in expected-scores.json are clean exact-1dp doubles; binary32 residue appears only when the GS Single-typed persist cast is simulated (99/162 scored NormalisedScore values flip under pack/unpack('<f')). The oracle therefore ASSERTS persisted values numerically, never compares raw repr bits nor recomputed widened binary32 forms.",
+    "A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine. Percent is display-only (100 x Score / winner Score) and deliberately not recorded. If a GliderScore Overall Results R1-R11 transcript ever surfaces, add it as overall-results-transcript.csv and upgrade this oracle to gs-report-transcript."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 77,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 96,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 75,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 86,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 78,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 83,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 82,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 129,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 131,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 130,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 133,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 79,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 94,
+      "rank": "13"
+    },
+    {
+      "pilotNo": 134,
+      "rank": "14"
+    },
+    {
+      "pilotNo": 104,
+      "rank": "15"
+    },
+    {
+      "pilotNo": 132,
+      "rank": "16"
+    },
+    {
+      "pilotNo": 84,
+      "rank": "=17"
+    },
+    {
+      "pilotNo": 135,
+      "rank": "=17"
+    }
+  ]
+}

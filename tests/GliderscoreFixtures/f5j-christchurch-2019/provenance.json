@@ -1,0 +1,79 @@
+{
+  "slug": "f5j-christchurch-2019",
+  "sourceKind": "master-db-slice",
+  "source": {
+    "originalFilename": "NZContests.mdb",
+    "masterSha256": "e62cbce8e11784e59938d5a39ef99d2f7052e52d7ef6f9a9af79fdc4fd1048e7",
+    "recoveryEvidence": {
+      "file": "tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json",
+      "sha256": "d2a9c74e207acb99ae9e3ba55c9ed857c814d547ef5488af2f7bb65543912d64"
+    },
+    "slices": [
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/CompPilots.json",
+        "sha256": "ed89658dcee84a31b13117d0c4c76f0bed143787cef1dad9b131d140c8c173da"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/Comps.json",
+        "sha256": "aa5f30317e58ee0e58b593bad60b5cccca4c0cd1a05fbd41eb2322470856d30f"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/DBParams.json",
+        "sha256": "6954d89c95f46ca3b4b518f2d533ffbbc967cc8d787bd9c357f51f73630be938"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/Dur.json",
+        "sha256": "25b832c3396a808751f9c37cba72b3a5cc32fb37423f80a1e88c6b1fdc4a1a3a"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/LndgNames.json",
+        "sha256": "5734cdc6e86b690d2fee4945a99295c0bd3fdb68cf379c6d9d6aa1c6850de90f"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/LndgPoints.json",
+        "sha256": "215287b252c43ca8c713a54deb8b1c5eee15cbbd7e7d52a24eb083990dd42568"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/Scores.json",
+        "sha256": "88f0b8543eb9b76165eeb7fcf1fb828cdf2fd7a409c885388d8f63dc6b83c858"
+      },
+      {
+        "file": "tests/GliderscoreFixtures/f5j-christchurch-2019/extract/comps-field-provenance.json",
+        "sha256": "5dd4fc841daa3d23bb9ad2468d996794f70657e8558dcba3e6717f0a93cb0061"
+      }
+    ]
+  },
+  "deviationDeclaration": "sourceKind 'master-db-slice' — explicit deviation from the normal export route: NO GliderScore GUI export exists for comp 45. The Export Competition(s) route was unexecutable on this host (no GliderScore install, no wine; PRE-1 VERIFICATION.md §0), so this fixture's tables were cut at extraction time directly from the full master-DB backup supplied by the NZ competition manager (gliderscore/NZContests.mdb, sha256 e62cbce8…48e7, DBParams.UserName='Joe'), sliced to CompNo=45 and committed under extract/. Per story sourcing option 2: the master itself is deliberately NOT committed (all 168 comps + the 177-row Pilots master make it PII-broad and would couple five fixtures to one file). Per-file sha256s of every extract/ input consumed at curation are listed above; the Comps slice is a degraded assembly documented in notes [3]-[4] and competition.json compsRowVerbatim.",
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table of the master (DBVersion='6.78'; UserName='Joe', NativeName 'English (New Zealand)')"
+  },
+  "who": "soarscore agent pass 2026-08-27",
+  "curationDate": "2026-08-27",
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "invocation": "--tolerant --recovered-texts tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json",
+    "accessParser": "0.0.6 pristine-pinned (dist-info RECORD-verified)",
+    "python": "3.10.12",
+    "stagedAndVerified": "/tmp/opencode/nz-pre/f5j-christchurch-2019/ (VERIFICATION.md + stage-manifest.json); committed extract/ files are byte-identical to the staged slices (sha256 match)",
+    "extractedDate": "2026-08-27"
+  },
+  "notes": [
+    "[1] Deviation context (see deviationDeclaration): everything except Comps parses clean under the pristine pinned parser; only the Comps table needed tolerance. All other six tables here are direct pristine slices cross-checked cell-identical against the independent full-master machinery extraction.",
+    "[2] Degraded-column notes, Comps null-bitmap boundary: pristine access_parser 0.0.6 raises IndexError on column id 40 ('>' should be '>=' against the 40-entry null bitmap; affects Comps.IsPublic id 40, Comps.UseRegistration id 41, Comps.UseRegistrationIdx id 42 on all 168 rows). Resolution per column: Comps.IsPublic via _patchedRead — value readable, stored as 1; Comps.UseRegistration null (patched read reports no value); Comps.UseRegistrationIdx present but 0-degraded (has_value fallback of the patched read), semantics uncertain.",
+    "[3] Degraded-column notes, variable-length Text columns: pristine (and patched) access_parser 0.0.6 silently drops all 12 variable-length Text columns of Comps on this DB (CompName, CompVenue, CompSeriesNo, BadgeSpecs, MergedComps, CompID, AudioProfileDT/AP/BT, GSCompClass, WasLastUploadPublic, F3QDrop6to10). Recovered via a custom reversed-record Jet4 trailer crack, byte-validated upstream (_flags.varTextTrusted=true; ghost slots match live text); comp 45 is not among the two rows flagged contaminated upstream (CompNos 2 and 4), so trust is true for this comp. Decoded values: CompName='2019 F5J Christchurch', CompVenue='Lincoln', GSCompClass='F5J', CompID='2CDAA176c8d4', CompSeriesNo='0', MergedComps='', F3QDrop6to10='99,99,99,99,99'.",
+    "[4] Null conventions: the committed slices use the pristine repo extract.py convention (Jet null -> JSON null) wherever both readings existed — this beat the earlier analysis-machinery convention of encoding non-boolean nulls as \"\"; e.g. Scores.Helper is null on all 324 rows, Dur.F5JMotorRestartOption is null. Exception: inside competition.json compsRowVerbatim the fixed-length Comps subset retains the machinery \"\" encodings from the degraded assembly, as documented there.",
+    "[5] MID-COMP SNAPSHOT — curate exactly what exists, no backfilling: rounds 1-11 carry scores (164/324 rows Updated='True': R1 16, R2-R6 15-16, R7 14, R8 15, R9 14, R10 15, R11 14 of 18 pilots each); rounds 12-18 are wholly unflown placeholder rows Updated='False' (7x18=126 rows). Ragged partial groups INSIDE scored rounds too (per-round updated counts 14-16 of 18; 33 of 54 round-groups have any score). All 160 placeholder rows persist RawScore=NormalisedScore=0.0 and are kept verbatim in expected-scores.json. The comp was captured mid-stream and abandoned after R11 — a natural NFR-4 witness (normalisation computed over whatever existed).",
+    "[6] Two explained zero-scored rows (Updated='True', RawScore=0.0): R11G1 PilotNo 104 and R8G3 PilotNo 82, both LandingOver75m=True with t=0 and height 0 — cancelled flights consistent with FAI F5J 5.5.11.7 d (nose beyond 75 m zeroes the flight), i.e. rule-driven zeros, not artifacts.",
+    "[7] F5J scoring policy verified — RawScore = min(packed-mmss time,600 s) − height penalty (0.5/m ≤200 m then 100+3.0/m above; launch height stored in Scores column FlightScoreDeduction) + ADDITIVE scheme-11 \"F5J Enter Landing\" lookup points; normalisation best-in-group→1000 rounded 1 dp. Reproduced independently at curation time: persisted RawScore exact on 164/164 scored rows; persisted NormalisedScore exact on all 162 positive values across all 33 scored groups on a points-basis (winner → exactly 1000.0 even when holding landing points — 32 of 33 winners — which rules out the option-2 land-after-time mechanism). Height penalty: FlightScoreDeduction stores START HEIGHT in metres (column name misleads), H ∈ [66, 271] m over the 162 flights — 130 rows at the ≤200 m 0.5/m rate and 32 rows in the 3.0/m band; both regimes exercised in one fixture.",
+    "[8] G4 float32 persist-cast WITNESS — THIS FIXTURE CARRIES IT: stored NormalisedScore values are clean exact-1dp doubles, binary32 residue appears only when persist-cast is simulated (99/162 scored values flip, e.g. 573.1 → 573.0999755859375; verified count reproduced exactly at curation time); therefore assert persisted values, NEVER recompute-and-compare raw repr bits. Secondary G4 witness = comp 98 (F5J Hawkes Bay, NOT curated) per /tmp/opencode/nz-extract/candidates/c98-f5j-hawkes-bay.md (51 values flip under the same simulation).",
+    "[9] Effective-vs-stored scoring config: GroupScoreDecimals, GroupScoreOption and DropScoreOption are EMPTY in the Comps row on every row of this master, so stored config cannot evidence scoring-time behaviour; the curated scoring block records them faithfully as null (validator contract: persisted nulls are recorded-and-warned, never coerced), and the arithmetic-derived EFFECTIVE values (1 dp half-up grid; points basis; drop mode moot) are kept with per-knob derivation evidence in competition.json configProvenance.knobs. RoundOrTruncate=0 IS stored. Drop-worst explicitly does not fire: Drop1AtRound/Drop2AtRound unset, Drop3..5=99 (=never), F3QDrop6to10 all 99 — no drop can activate within rounds 1-11 (story note: drop config unset DB-wide across all 168 comps).",
+    "[10] Motor-restart witness: 22 scored rows carry F5JMotorReStarted=True while Dur.F5JMotorRestartOption is unset (null) — GS records the restart but takes no scoring effect when the option is off; the score formula fits those 22 rows unchanged.",
+    "[11] Landing scheme 11 'F5J Enter Landing' (global LndgNames/LndgPoints, not CompNo-keyed): 18 distances, 55 m→5 pts … 95–99→45/50, 91–100 graded; all 138 non-zero Landing values hit scheme distances exactly (zero off-scheme values); 17 distinct distances 60–100 m used. LandingOver75m=True appears only on the two cancelled rows of note [6].",
+    "[12] Shape facts: single task throughout (TaskNo=1 on all 324 rows); 3 drawn groups of 6 per configured round; no re-flights anywhere (OriginalRoundNo == RoundNo on all 324; ReFlightNo = 0 always); Penalty column all 0; Helper null everywhere; ModelID '' on all rows despite UseModels=true; ScoresChecked=False on all rows (inert evidence per pipeline story); Scores.Updated is Jet Text 'True'/'False', not Boolean.",
+    "[13] Identity caveat: Comps.CompDate is empty — no date is stored anywhere for this comp (master inventory lists it among compsMissingDates; the dated comps end 2012-12-31); the name-year 2019 is not corroborated by any stored field and is recorded in the slug/name only. Recorded faithfully as \"\" in identity.CompDate.",
+    "[14] PII check 2026-08-27: names-only exposure as with existing fixtures — entries.json carries CompPilots verbatim plus Pilots rows filtered to the 18 member PilotNos (from the master-wide extraction; real NZ pilot names carried like existing fixtures do). Contacts: every Pilots contact column (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) is empty for ALL 177 master rows, members included; CompPilots carries no contact columns. No team assignments (Team='0' ×18). The master .mdb itself is not committed (see deviationDeclaration).",
+    "[15] Ranking oracle landed (WI-3, 2026-08-27): expected-result.json present with source 'reconstructed-ladder' (no GS report transcript exists for any of the five NZ fixtures), derived and verified by ladder.py in this directory — the derivation of record. It independently recomputes all 324 persisted RawScore/NormalisedScore values from scores-raw + competition.json effective knobs (exact agreement with expected-scores.json on every cell; G4 discipline: persisted values asserted, never repr bits), then builds the Overall Results ladder: best-per-original-round sum over rounds 1-11, no drops fire per note [9], report-time re-round to the effective 1 dp grid, Score DESC / RawScore DESC; F5J ends the ladder at rung 2; ties display '=n' with intra-tie order PilotNo ascending as the documented curation decision (story WI-3 'decide at curation'). The expectedResultDeferred flag set at the scores-stage pass was cleared when the oracle landed (a declared deferral alongside a present oracle is a validator contradiction). Rules 1-5 + expected↔scores integrity PASS."
+  ]
+}

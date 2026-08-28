@@ -15,3 +15,5 @@ gliderscore/
 
 # Python bytecode from the hand-run fixture tooling (tests/GliderscoreFixtures/extract/)
 __pycache__/
+
+gliderscore/

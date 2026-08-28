@@ -1,0 +1,76 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "Derivation of record: ladder.py beside this fixture (python3 stdlib, standalone) recomputes and writes this file; rerun must reproduce it byte-for-byte.",
+    "Per-cell ground truth re-verified in-run: all 218/218 persisted NormalisedScore values equal round-half-up(1000 x RawScore / best-in-(TaskNo,RoundNo,GroupNo,ReFlightNo), 1 dp) under BOTH exact-decimal AND GS binary64 Int(Nbr+0.5e-d) emulation; per-cell normalisation basis is the GROUP throughout (F3K).",
+    "Retired-pilot semantics (WI-3 decision, D1 in ladder.py): pilot 89 (Gavin Rhodes, CompPilots.Retired=true) flew R1-R8 (his R4G2 RawScore=0 cell is accepted-as-flown and counts) and is silently absent R9-R15 with zero placeholder stubs; he IS ranked on his flown rounds only - unflown rounds contribute nothing (no zeros injected, no penalty, no retirement branch). Group sizes witness it: 5/5/5 through R8, 5/5/4 from R9.",
+    "Scoring knobs are faithfully Jet-null (GroupScoreOption/GroupScoreDecimals/RoundOrTruncate/DropScoreOption/Drop1AtRound/Drop2AtRound null; Drop3-5AtRound=99 sentinel; F3QDrop6to10 '99x5'): the effective grid was empirically points-normalisation half-up at 1 dp, every cell is an exact multiple of 0.1, so totals are too and the report-time re-round at 1 dp is the identity (decision D2; no default invented, no 0 dp re-round).",
+    "NO drops can fire (decision D3): unset/null Drop1-2 and DropScoreOption, 99 sentinels on Drop3-5 and Drop6-10 versus at most 15 scored rounds; hence Score == RawScore == sum of best-per-original-round NormalisedScore for every pilot (penalties 0 on all 218 rows, floor never engages), and the F3K-only dropped-score rescue chain (THE LADDER rung 3) is vacuous - its Drop1F3K..Drop5F3K inputs never populate without a firing drop. Effective ladder: Score DESC, RawScore DESC, then share rank.",
+    "[REDACTION-NEEDED NOISE] R9 phantom Landing=145.0 on 12/14 rows (six with FlightScoreDeduction=200.0) influences NOTHING: no landing scheme exists in this comp's schema (no Dur family row; empty landingSchemes - validate.py rule 2 applies vacuously) and the pipeline never reads Landing/FlightScoreDeduction (decision D4 in ladder.py, census pinned there). They scored by task points alone (R9 RawScore takes only 210/405/525).",
+    "Round-winner tie census: 10 of 45 groups carry tied winners (widths 2-5, including R9G1's whole-group 5-way tie at 1000.0), yet every final Score came out distinct, so no '=n' marks appear below; the standard-competition-numbering '=n' machinery remains implemented and tested in ladder.py.",
+    "Intra-tie emission order (pilotNo ASC) is insignificant - identical displayed rank; HiddenRanking within ties is implementation-defined in GliderScore. Percent is display-only and deliberately not recorded.",
+    "A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine (grow-corpus story WI-3 policy). If an Overall Results transcript for Southern Fling surfaces, upgrade this oracle to gs-report-transcript."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 82,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 77,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 75,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 76,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 86,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 80,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 78,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 88,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 90,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 79,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 87,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 81,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 91,
+      "rank": "13"
+    },
+    {
+      "pilotNo": 85,
+      "rank": "14"
+    },
+    {
+      "pilotNo": 89,
+      "rank": "15"
+    }
+  ]
+}

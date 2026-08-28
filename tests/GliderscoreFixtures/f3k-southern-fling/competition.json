@@ -1,0 +1,158 @@
+{
+  "identity": {
+    "CompNo": 17,
+    "CompName": "Southern Fling",
+    "GSCompClass": "F3K",
+    "CompDate": null
+  },
+  "scoring": {
+    "GSCompClass": "F3K",
+    "GroupScoreOption": null,
+    "GroupScoreDecimals": null,
+    "RoundOrTruncate": null,
+    "DropScoreOption": null,
+    "Drop1AtRound": null,
+    "Drop2AtRound": null,
+    "Drop3AtRound": 99,
+    "Drop4AtRound": 99,
+    "Drop5AtRound": 99,
+    "F3QDrop6to10": "99,99,99,99,99"
+  },
+  "familyRows": {
+    "F3K": {
+      "CompNo": 17,
+      "f3kGroupsPerRound": 3,
+      "f3kPilotsMax": 14,
+      "f3kDrawLocked": false,
+      "f3kAllowBackToBack": 0,
+      "f3kDecimalsForTiming": 0,
+      "f3kPilotsMin": "0,1,0,1"
+    }
+  },
+  "scheduleTables": {
+    "F3KTaskByRound": {
+      "schema": {
+        "CompNo": "Integer",
+        "RoundNo": "Long",
+        "Task": "Text"
+      },
+      "rows": [
+        {
+          "CompNo": 17,
+          "RoundNo": 1,
+          "Task": "K"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 2,
+          "Task": "I"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 3,
+          "Task": "A(2)"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 4,
+          "Task": "E"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 5,
+          "Task": "H"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 6,
+          "Task": "G"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 7,
+          "Task": "J"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 8,
+          "Task": "C(1)"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 9,
+          "Task": "D"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 10,
+          "Task": "F"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 11,
+          "Task": "B(1)"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 12,
+          "Task": "H"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 13,
+          "Task": "G"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 14,
+          "Task": "B(2)"
+        },
+        {
+          "CompNo": 17,
+          "RoundNo": 15,
+          "Task": "C(1)"
+        }
+      ]
+    },
+    "DurTargetTimeByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "TargetTime": "Long"
+      },
+      "rows": []
+    },
+    "F5KTaskandRefHeightByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "Task": "Text",
+        "RefHeight": "Long"
+      },
+      "rows": []
+    }
+  },
+  "lookups": {
+    "landingSchemes": [],
+    "f5kBonusSchemes": []
+  },
+  "triage": {
+    "UseTeams": true,
+    "UseTeamProtection": true,
+    "NbrForTeamScore": 2,
+    "UseClasses": false,
+    "CompSeriesNo": "0",
+    "PrelimCompNo": null,
+    "MergedComps": "",
+    "teamAssignmentsCount": 0,
+    "triageJustification": {
+      "series": {
+        "deadLinkCount": 0,
+        "evidence": "Recovered Comps.CompSeriesNo='0' (trailer-crack text, varTextTrusted=true) references no row of the CompSeries table, whose SeriesNos are {1,2,3}; the single series link is dead, so no series data can alter any individual score."
+      },
+      "teams": {
+        "evidence": "Scores carries no team columns; team standings are report-time aggregations of unchanged individual normalised scores, never an input to them. UseTeams=true sits app-default on every row of this 168-comp master; all 15 CompPilots.Team cells hold the single unassigned value 0 (Team='0' x15), so no team assignments reach any persisted score."
+      }
+    }
+  }
+}

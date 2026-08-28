@@ -1,4 +1,4 @@
-// Emits the canonical JSON for the eleven seed definitions and checks the four
+// Emits the canonical JSON for the twelve seed definitions and checks the four
 // things ADR-0002 §6 asks for before a transcription can be trusted:
 //
 //   1. SNAPSHOT      — the canonical JSON is written to json/. From

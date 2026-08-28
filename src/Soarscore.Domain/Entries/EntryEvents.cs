@@ -38,7 +38,20 @@ public abstract record EntryEvent : IDomainEvent
     private protected EntryEvent() { }
 }
 
-/// <summary>The creation event: opens one competitor's record for one task-round.</summary>
+/// <summary>
+/// The creation event: opens one competitor's record for one task-round.
+/// <para>
+/// <see cref="CountsForRoundOrdinal"/> (reflight-aggregate-destination.md D1)
+/// names the round whose ladder slot the score aggregates into — a make-up
+/// flight flown with a later round's group counts for the missed round while
+/// still normalising within the group that hosted it. Null means the entry's
+/// own round, so every ordinary entry is unchanged.
+/// <see cref="Reason"/> is the entitlement basis for that counts-for round
+/// (D4 — the AppendReflightGroup.reasonRequired parity), recorded for audit
+/// exactly like TaskRoundAnnulled's. Both are additive and optional; the write
+/// side owns their validation (WI-2).
+/// </para>
+/// </summary>
 public sealed record EntryOpened(
     EntryId Id,
     CompetitionId CompetitionRef,
@@ -48,7 +61,9 @@ public sealed record EntryOpened(
     GroupId GroupRef,
     CompetitorId CompetitorRef,
     ReflightRole Role,
-    DateTimeOffset At) : EntryEvent;
+    DateTimeOffset At,
+    int? CountsForRoundOrdinal = null,
+    string? Reason = null) : EntryEvent;
 
 /// <summary>Appends a new, initially empty Flight at the given sequence.</summary>
 public sealed record FlightOpened(

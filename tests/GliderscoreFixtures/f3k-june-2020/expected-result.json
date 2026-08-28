@@ -1,0 +1,74 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "Oracle reconstructed per WI-3 (grow-corpus-nz-master-five-fixtures.md): no GliderScore report transcript exists for this comp, so ranks come from the documented ladder (resolve-gliderscore-scoring-arithmetic.md, THE LADDER), computed by ladder.py beside this file as the derivation of record; derivation was applied to persisted cell values only (expected-scores.json), so a mismatch here needs source-level triage before it can indict the Soarscore engine.",
+    "Aggregation: single task (TaskNo=5 on all 199 rows; task identity lives in F3KTaskByRound, E(1)=task letter on schedule round 7), ReFlightNo=0 and OriginalRoundNo==RoundNo everywhere, so report cells key on original round per pilot (arithmetic story section 7). Every pilot holds at least one row in all 13 rounds (verified); the multi-row pilot-rounds are EXACTLY the four round-7 re-draw pairs.",
+    "MID-COMP GROUP RE-DRAW, round 7 (the anchor property this oracle pins): three standing cancelled-zero rows R7/G3 seq2=P101, seq3=P102, seq4=P128 (Updated='True', RawScore=0, contributing nothing) and the superseded appended-seq7 placeholder P85 (Updated='False') are EXCLUDED from round-7 contributions; each affected pilot enters ONCE from his replacement G4 cell (keys 5/7/4/0/<PilotNo>): P101 723.7, P128 1000.0, P102 276.3, P85 157.9. The unaffected live G3 seats stand (P78 1000.0 anchor, P81 909.1, P84 636.4, P140 181.8); empty drawn seats R7/G1 seq1 and R7/G2 seq2-3 are inert. Exclusion needs no cancellation-flag heuristic: GS's own rollup de-duplication (keep the highest NormalisedScore per original round) discards the zeros/lower duplicates; ladder.py encodes both the explicit per-pilot map above and that generic rule, and asserts they agree on every cell of the comp.",
+    "Zero-cell policy: genuine Updated='True' zeros {P81x6, P84x6, P101x1 (superseded R7 row), P102x1 (same), P128x2 (R7 superseded + a real flown zero R12/G2)} contribute 0 cells; Updated='False' placeholder rows (P84 x2, P85 x3, P90 x6) form 0-valued cells only where they are the pilot's sole row for that round (P84 R12/R13, P90 R9-R13) and are excluded wherever any live row exists. Inventory asserted 16 genuine / 11 placeholder against provenance.json.",
+    "No drops fire - recorded explicitly: DropScoreOption=0 with Drop1/Drop2AtRound stored NULL and Drop3-5=F3QDrop6to10 all 99 means GS's DropScores activation flag never becomes true and dtCompResults_ApplyDropScores is never called; Score equals the pre-drop total. Consequently no Drop1F3K..Drop5F3K dropper exists and THE LADDER's F3K rescue chain (rung 3) is provably inert; independently, no Score ties survive rung 2 at all (smallest rank-deciding gap 9.8 between P140 and P89), so all ranks display plainly 1..15.",
+    "Effective ranking grid Decs=1: GroupScoreOption/GroupScoreDecimals are stored NULL (see competition.json scoringCaveats); the observed effective grid pinned by the 199/199 normalisation check is used, both ladder keys re-rounded half-up (Int(x*10+0.5)/10) before comparison. Percent is display-only and deliberately not recorded.",
+    "Deviance discipline: the five round-4 H-task decode-deviant cells (R4/G1 P89, R4/G1 P83, R4/G1 P140, R4/G2 P101, R4/G3 P78) feed the ladder AS PERSISTED - ladder.py never reads slot columns nor re-derives RawScore, so there is no code path that could 'repair' them (flagged, not fixed). The 199/199 normalisation invariant (NS == round(Raw/groupMax*1000, 1 dp), anchors 1000.0 in all 40 groups) was RECOMPUTED by this derivation, including those five cells' persisted values."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 77,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 82,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 75,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 83,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 128,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 79,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 101,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 78,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 102,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 140,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 89,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 81,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 90,
+      "rank": "13"
+    },
+    {
+      "pilotNo": 85,
+      "rank": "14"
+    },
+    {
+      "pilotNo": 84,
+      "rank": "15"
+    }
+  ]
+}

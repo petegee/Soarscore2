@@ -1,0 +1,85 @@
+{
+  "source": "reconstructed-ladder",
+  "notes": [
+    "No GliderScore report transcript exists for this comp, so ranks come from the documented ladder (arithmetic story, THE LADDER: Score DESC, RawScore DESC after report-time re-round to the effective GroupScoreDecimals=1); class F5J ends the ladder at rung 2, so tied pilots share the displayed rank '=n'. Derivation of record: ladder.py in this directory (python3, stdlib-only, byte-deterministic; rerunning regenerates this file exactly, --check verifies).",
+    "Per-cell ground truth is the curated persisted-NormalisedScore layer (expected-scores.json, grid-checked); the per-cell values were already independently bit-verified by the curator (see provenance.json notes). What remains unverified against GliderScore itself is the report-level aggregation+ladder step.",
+    "Aggregation keys every row to its ORIGINAL-round cell via OriginalRoundNo alone (Rpt_Results_Overall_MOD.vb:2698-2706): the four re-flights (all pilot 128) normalise inside their NEW groups yet land in orig-round cells orig R1->flew R5/G2, R2->R5/G3, R3->R6/G3, R4->R6/G1. Their originals were deleted on re-flight (pilot 128 has no R1-R4 original cells), so the vacated slots contribute nothing. Group continuity does NOT hold (R2's vacated seat was in G1 yet the re-flight went to R5/G3; R3's was in G2 yet went to R6/G3) \u2014 hence keying on OriginalRoundNo alone. Detection uses RoundNo != OriginalRoundNo because ReFlightNo=0 throughout.",
+    "DROPS NOT FIREABLE, stated explicitly: DropScoreOption=0 with Drop1AtRound/Drop2AtRound/Drop5AtRound NULL (never configured), Drop3AtRound/Drop4AtRound=99 ('never' sentinels) and F3QDrop6to10='99,99,99,99,99'; no threshold can be reached within the 10 scored rounds, so no drop activates and Score == RawScore for every pilot (any Score tie is therefore a full Score+RawScore tie and genuinely shares a rank; rung 2 can never separate distinct raws).",
+    "Rounds 11-16 are wholly-unflown placeholder zeros and are excluded; penalties are 0 on all 288 rows (asserted by ladder.py).",
+    "Intra-tie ordering of '=n' groups in the ranks array is insignificant (it is pilotNo ascending here purely for determinism; HiddenRanking within ties is implementation-defined). Percent is display-only (100 x Score / winner Score) and deliberately not recorded. A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 75,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 77,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 83,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 151,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 96,
+      "rank": "5"
+    },
+    {
+      "pilotNo": 86,
+      "rank": "6"
+    },
+    {
+      "pilotNo": 80,
+      "rank": "7"
+    },
+    {
+      "pilotNo": 82,
+      "rank": "8"
+    },
+    {
+      "pilotNo": 125,
+      "rank": "9"
+    },
+    {
+      "pilotNo": 109,
+      "rank": "10"
+    },
+    {
+      "pilotNo": 88,
+      "rank": "11"
+    },
+    {
+      "pilotNo": 128,
+      "rank": "12"
+    },
+    {
+      "pilotNo": 122,
+      "rank": "13"
+    },
+    {
+      "pilotNo": 100,
+      "rank": "14"
+    },
+    {
+      "pilotNo": 142,
+      "rank": "15"
+    },
+    {
+      "pilotNo": 79,
+      "rank": "16"
+    },
+    {
+      "pilotNo": 84,
+      "rank": "=17"
+    },
+    {
+      "pilotNo": 136,
+      "rank": "=17"
+    }
+  ]
+}

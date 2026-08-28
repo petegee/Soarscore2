@@ -1,0 +1,115 @@
+{
+  "targetTable": "Comps",
+  "columns": {
+    "CompSeriesNo": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "BadgeSpecs": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "MergedComps": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "CompID": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "CompName": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "CompVenue": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "AudioProfileDT": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "AudioProfileAP": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "AudioProfileBT": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "GSCompClass": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "WasLastUploadPublic": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    },
+    "F3QDrop6to10": {
+      "sourceKind": "master-db-recovered-var-text",
+      "method": "ingested, byte-validated upstream",
+      "varTextTrusted": false,
+      "jetType": "Text",
+      "rowsMerged": 166,
+      "rowsNull": 2
+    }
+  },
+  "rowsNotTrusted": [
+    {
+      "CompNo": 2,
+      "why": "flagged contaminated upstream"
+    },
+    {
+      "CompNo": 4,
+      "why": "flagged contaminated upstream"
+    }
+  ],
+  "evidenceFile": "nz-master/comps-var-columns.json",
+  "evidenceSha256": "d2a9c74e207acb99ae9e3ba55c9ed857c814d547ef5488af2f7bb65543912d64",
+  "upstreamCrackMethod": "custom reversed-record Jet4 trailer crack; offsets absolute; candidate chosen minimising control-character penalty",
+  "rowsMergedAny": 166
+}

@@ -104,6 +104,20 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
   unavailable is feeding such rows through draw import; a future
   replay/compare-harness thread must replay jerilderie-2010's re-flight via the
   reflight-group mechanics, not the base draw.
+  **Resolved 2026-08-26** (`kanban/completed/gliderscore-replay-and-compare-harness.md`
+  WI-6): the harness does not replay the row through any draw or reflight-group
+  mechanics — no faithful mapping exists (three candidate mappings ruled out
+  with numeric evidence in that story's WI-6 design section). It replays with
+  the row excluded under D5 step 1 and ledgers every arithmetic consequence in
+  the fixture's `divergences.json`.
+  **Resolved 2026-08-28** (`kanban/completed/reflight-aggregate-destination.md`):
+  the faithful replay exists — the engine concept (Entry.CountsForRoundOrdinal,
+  the destination-aware scoring law) is implemented and both make-up fixtures
+  (jerilderie-2010, f5j-hawkes-bay-trials) replay exact at all three grains
+  with their make-up cells aggregated into their destination rounds (residual
+  ledgers: jerilderie 1 trap-3 entry; comp 135 empty). This bullet's
+  prescription half stands unchanged: base-draw import of re-flight rows is
+  still deferred.
 - **Mid-comp-withdrawal reproduction.** **Decided 2026-08-26**, same story (WI-8).
   An imported comp where someone withdrew mid-event flew earlier rounds alongside
   pilots our field-freeze model would have kept in every group; reproducing that
@@ -158,6 +172,23 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   notation, not an input format) and **class-definition drift detection** — both settled
   out of scope.
 
+## GliderScore replay harness
+
+- **Exact-decimal oracle comparison stands; GliderScore's binary64 raw artefacts are
+  ledgered, never tolerated or emulated.** **Decided 2026-08-28** (WI-6 stop-and-triage
+  of `kanban/completed/nz-fixture-replay-scenarios.md`, story-owner ruling). Comp 54's
+  committed oracle deliberately preserves three unrounded double-sum RawScore values
+  verbatim (281.70000000000005, 682.5999999999999, 385.20000000000005 — named by the
+  fixture's own `valuesAsPersisted` note), because GS computes and persists raws in
+  binary64 while Soarscore's `FlightInterpreter` computes exact decimal; deltas ≤ 1e-13
+  and the 1-dp normalisation grid washes them out. The rejected alternatives: a
+  comparison tolerance (the harness exists to catch exactly this class of noise — the
+  original D6 stance), rounding the oracle (frozen output), and emulating binary64 in
+  the engine (bending the model to a storage artefact). Resolution: citation token
+  **R1** joins the accepted ledger tokens (D1–D6, trap 3, N1) and the three cells are
+  ledgered raw-grain divergences with the count pinned in the scenario. Anyone tempted
+  to "fix" the remaining 3-cell mismatch on f3k-june-2020 is looking at this decision.
+
 ## Score capture and corrections
 
 - **Correcting a flight's launch time is not built, and `Flight.LaunchAt` is not a
@@ -207,6 +238,19 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   associate with the infraction, and retrofitting it later would be expensive once
   penalties are in real logs). Reopen as a `backlog/` story if a score-sheet read
   surface is wanted; today the audit trail is the stream itself.
+
+- **A declared-points deduction pre-normalisation stays direction-blind: no
+  LowerIsBetter-aware behaviour until a rulebook or fixture exercises it.**
+  **Decided 2026-08-27**
+  (`kanban/completed/entry-scoped-deduct-points-penalties-inert.md`, design
+  decision D4). At the raw stage a DeductPoints effect subtracts and floors at
+  zero — the HigherIsBetter analogue of FAI General §6 / C.19. For
+  LowerIsBetter tasks (F3B speed / F3F) deducting *points* from *seconds*
+  pre-normalisation has no rule-grounded meaning in either rulebook, and no
+  rulebook or fixture does it today; since `TaskResult` carries no direction,
+  giving one would add machinery only to make an arbitrary choice precise.
+  `ApplyRawPenalties`' function comment documents this. Surface it if a rulebook
+  or fixture ever records a points penalty against a lower-is-better raw score.
 
 ---
 

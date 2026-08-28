@@ -1,0 +1,314 @@
+{
+  "compPilots": {
+    "schema": {
+      "CompNo": "Integer",
+      "PilotNo": "Integer",
+      "Team": "Integer",
+      "DrawFreq": "Double",
+      "Retired": "Boolean",
+      "StartNo": "Integer",
+      "IsPilot": "Boolean",
+      "OmitFromTeamScore": "Boolean",
+      "PilotClass": "Text",
+      "Model": "Text",
+      "Role": "Text",
+      "ModelData": "Text"
+    },
+    "rows": [
+      {
+        "CompNo": 54,
+        "PilotNo": 75,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 79,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 77,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 78,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 82,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 128,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 81,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 85,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 83,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 102,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 89,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 140,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 101,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 90,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      },
+      {
+        "CompNo": 54,
+        "PilotNo": 84,
+        "Team": 0,
+        "DrawFreq": 2.4,
+        "Retired": false,
+        "StartNo": 0,
+        "IsPilot": true,
+        "OmitFromTeamScore": false,
+        "PilotClass": "",
+        "Model": null,
+        "Role": "Plt",
+        "ModelData": "-1"
+      }
+    ]
+  },
+  "pilots": {
+    "schema": {
+      "PilotNo": "Integer",
+      "FirstName": "Text",
+      "LastName": "Text"
+    },
+    "rows": [
+      {
+        "PilotNo": 75,
+        "FirstName": "Kevin",
+        "LastName": "Botherway"
+      },
+      {
+        "PilotNo": 77,
+        "FirstName": "Joe",
+        "LastName": "Wurts"
+      },
+      {
+        "PilotNo": 78,
+        "FirstName": "Len",
+        "LastName": "Drabble"
+      },
+      {
+        "PilotNo": 79,
+        "FirstName": "Kevin",
+        "LastName": "Campbell"
+      },
+      {
+        "PilotNo": 81,
+        "FirstName": "Clifton",
+        "LastName": "King"
+      },
+      {
+        "PilotNo": 82,
+        "FirstName": "Peter",
+        "LastName": "Williams"
+      },
+      {
+        "PilotNo": 83,
+        "FirstName": "Andrew",
+        "LastName": "Hiscock"
+      },
+      {
+        "PilotNo": 84,
+        "FirstName": "D",
+        "LastName": "Dummy"
+      },
+      {
+        "PilotNo": 85,
+        "FirstName": "Warren",
+        "LastName": "Whitcher"
+      },
+      {
+        "PilotNo": 89,
+        "FirstName": "Gavin",
+        "LastName": "Rhodes"
+      },
+      {
+        "PilotNo": 90,
+        "FirstName": "David",
+        "LastName": "James"
+      },
+      {
+        "PilotNo": 101,
+        "FirstName": "Lee",
+        "LastName": "Kleynhans"
+      },
+      {
+        "PilotNo": 102,
+        "FirstName": "Steve",
+        "LastName": "Warner"
+      },
+      {
+        "PilotNo": 128,
+        "FirstName": "Myles",
+        "LastName": "Moloney"
+      },
+      {
+        "PilotNo": 140,
+        "FirstName": "Barry",
+        "LastName": "Hall"
+      }
+    ]
+  }
+}

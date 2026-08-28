@@ -25,8 +25,8 @@ namespace Soarscore.Domain.Tests;
 /// each class's own Rounds.TasksPerRound — not a hard-coded file list — so a
 /// corpus change is picked up automatically; the same "scan, don't hard-code"
 /// discipline BindParameterPropertyTests property 5 and
-/// CatalogueDrawPropertyTests property 6 already apply. That leaves 10 of the
-/// 11 corpus classes.
+/// CatalogueDrawPropertyTests property 6 already apply. That leaves 11 of the
+/// 12 corpus classes.
 ///
 /// Drives the Domain decide functions directly — Soarscore.Domain.Tests
 /// cannot reference Soarscore.Application, so there is no handler/dispatcher
@@ -41,9 +41,10 @@ public class ScoringCorpusPropertyTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 9, 9, 0, 0, TimeSpan.Zero);
 
-    // Uniform across all eight classes: at or above every literal MinPerGroup
-    // in the set (F3F's 10 is the highest), and within every MaxRounds the
-    // set declares (NZ-N-ALES123 / NZ-P-Radian's 3 is the lowest) at Rounds=2.
+    // At or above every literal MinPerGroup in the drawable set (F3F's 10 is
+    // the highest). Rounds is an upper bound, not a requirement: a class whose
+    // MaxRounds is lower (Aggregate's 1 is the lowest) is drawn at its own
+    // ceiling, via Math.Min in ScoreEndToEnd.
     private const int FieldSize = 10;
     private const int Rounds = 2;
 
@@ -77,10 +78,10 @@ public class ScoringCorpusPropertyTests
         // the only remaining refusal, F3B's multi-task rounds).
         var drawable = Corpus.All.Where(c => c.Definition.Phases[0].Rounds.TasksPerRound == 1).ToImmutableArray();
 
-        // Guards the premise: exactly 10 of the 11 corpus classes (everything
+        // Guards the premise: exactly 11 of the 12 corpus classes (everything
         // but F3B). A corpus change that alters this set should fail here
         // loudly, rather than silently under- or over-testing.
-        drawable.Length.Should().Be(10);
+        drawable.Length.Should().Be(11);
 
         foreach (var seedClass in drawable)
         {
@@ -124,11 +125,12 @@ public class ScoringCorpusPropertyTests
         }
 
         var phaseDefinition = definition.Phases[0];
+        var rounds = Math.Min(Rounds, phaseDefinition.Rounds.MaxRounds ?? Rounds);
         var taskRefs = phaseDefinition.Rounds.Kind == CompositionKind.ChooseFromCatalogue
-            ? phaseDefinition.Tasks.Take(Rounds).Select(t => t.Code).ToImmutableArray()
+            ? phaseDefinition.Tasks.Take(rounds).Select(t => t.Code).ToImmutableArray()
             : ImmutableArray<string>.Empty;
 
-        var drawn = competition.DrawPhase(Rounds, taskRefs, Now);
+        var drawn = competition.DrawPhase(rounds, taskRefs, Now);
         drawn.IsSuccess.Should().BeTrue($"{seedClass.FileName}: {drawn.Code}");
         competition = competition.Apply(drawn.Value);
         // Entries open only against an accepted draw (D4) — arrangement here.

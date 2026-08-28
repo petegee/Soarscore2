@@ -153,6 +153,22 @@ public sealed record Entry
     public required ReflightRole Role { get; init; }
 
     /// <summary>
+    /// The round whose ladder slot this Entry's score aggregates into
+    /// (reflight-aggregate-destination.md D1) — GS's OriginalRoundNo analogue.
+    /// Null means the entry's own round, so ordinary scoring is untouched.
+    /// Normalisation is unaffected either way: the score is always computed
+    /// within the group that hosted the flight.
+    /// </summary>
+    public int? CountsForRoundOrdinal { get; init; }
+
+    /// <summary>
+    /// The entitlement basis recorded when the entry was opened — required
+    /// exactly when <see cref="CountsForRoundOrdinal"/> is set (D4), audit-only
+    /// like <see cref="Annulment"/>'s reason.
+    /// </summary>
+    public string? Reason { get; init; }
+
+    /// <summary>
     /// A ruling that this Entry does not count. An Entry annulled by ruling has
     /// no result (high-level-architecture.md, "Core-owned invariants").
     /// </summary>
@@ -174,6 +190,8 @@ public sealed record Entry
         GroupRef = @event.GroupRef,
         CompetitorRef = @event.CompetitorRef,
         Role = @event.Role,
+        CountsForRoundOrdinal = @event.CountsForRoundOrdinal,
+        Reason = @event.Reason,
         Annulment = null,
         Flights = [],
         Penalties = [],

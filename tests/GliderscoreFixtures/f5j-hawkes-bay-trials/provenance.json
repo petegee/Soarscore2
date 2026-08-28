@@ -1,0 +1,98 @@
+{
+  "slug": "f5j-hawkes-bay-trials",
+  "sourceKind": "master-db-slice",
+  "source": {
+    "originalFilename": "NZContests.mdb",
+    "masterRepoPath": "gliderscore/NZContests.mdb",
+    "masterSha256": "e62cbce8e11784e59938d5a39ef99d2f7052e52d7ef6f9a9af79fdc4fd1048e7",
+    "guiExportUnavailable": true,
+    "sliceRationale": "committing the 168-comp master itself was rejected (PII-broad full Pilots table; would couple five fixtures to one file), so no sources/*.mdb exists for this fixture by design; the slices committed under extract/ were cut to CompNo=135 at extraction time (WI-1 sourcing option 2).",
+    "masterProvenance": "full master-DB backup supplied by the NZ competition manager per kanban/in-progress/grow-corpus-nz-master-five-fixtures.md; DBParams.UserName='Joe' identifies the install owner, not a fixture exporter."
+  },
+  "producer": {
+    "product": "GliderScore",
+    "dbVersion": "6.78",
+    "source": "DBParams table"
+  },
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract.py",
+    "chain": "access_parser 0.0.6 pristine-pinned, then extract.py opt-in --tolerant bounds workaround over the master, then merge of the byte-validated recovered var-text columns (--recovered-texts), then slice to CompNo=135",
+    "invocation": "python3 extract.py gliderscore/NZContests.mdb --tolerant --recovered-texts tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json --out tests/GliderscoreFixtures --slug f5j-hawkes-bay-trials (slice-to-comp cut applied)",
+    "crashDegradationRationale": "pristine access_parser 0.0.6 cannot read this master's Comps table: IndexError at the Jet null-bitmap boundary (_parse_fixed_length_data, column id 40 'IsPublic' == null_table length, ids 41/42 'UseRegistration'/'UseRegistrationIdx' degrade silently on every row), and its dynamic-length path silently drops all 12 variable-length Text columns of Comps — hence the opt-in tolerant workaround plus ingestion of the trailer-crack recovery; every other table parses clean pristine.",
+    "accessParser": "0.0.6 pristine-pinned",
+    "tolerantMode": true,
+    "python": "3.10.12",
+    "extracted": "2026-08-27"
+  },
+  "recoveryEvidence": {
+    "path": "tests/GliderscoreFixtures/extract/nz-master/comps-var-columns.json",
+    "sha256": "d2a9c74e207acb99ae9e3ba55c9ed857c814d547ef5488af2f7bb65543912d64"
+  },
+  "compsFieldProvenance": {
+    "path": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/comps-field-provenance.json",
+    "sha256": "5dd4fc841daa3d23bb9ad2468d996794f70657e8558dcba3e6717f0a93cb0061"
+  },
+  "extractFiles": [
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/Scores.json",
+      "rows": 288,
+      "cols": 29,
+      "sha256": "896ddce440709e4f942d8e09988d70fb2596dbce5a5f5b71ea40c8b09637642a"
+    },
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/CompPilots.json",
+      "rows": 18,
+      "cols": 12,
+      "sha256": "52ca57bbaa414e3d001e450b9c4e45caa0c2e6a0e6615a34c8c8ad5a0fba181e"
+    },
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/Comps.json",
+      "rows": 1,
+      "cols": 40,
+      "sha256": "d98eaefde8183e205843db6f56fa742479662108e9042138339bf0f276993796"
+    },
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/Dur.json",
+      "rows": 1,
+      "cols": 17,
+      "sha256": "4dc5d9ddcb09d44d39b979426e1178b9b294feef1969cbdbcefe91d6ad0fa9e2"
+    },
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/LndgNames.json",
+      "rows": 1,
+      "cols": 2,
+      "sha256": "5734cdc6e86b690d2fee4945a99295c0bd3fdb68cf379c6d9d6aa1c6850de90f"
+    },
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/LndgPoints.json",
+      "rows": 18,
+      "cols": 3,
+      "sha256": "215287b252c43ca8c713a54deb8b1c5eee15cbbd7e7d52a24eb083990dd42568"
+    },
+    {
+      "file": "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/DBParams.json",
+      "rows": 5,
+      "cols": 2,
+      "sha256": "6954d89c95f46ca3b4b518f2d533ffbbc967cc8d787bd9c357f51f73630be938"
+    }
+  ],
+  "who": "soarscore agent pass 2026-08-27",
+  "curatedDate": "2026-08-27",
+  "notes": [
+    "Scoring-policy verification (independent recompute over the committed extraction): RawScore = min(packed-mmss(Time1Mins), 600 s) - heightPenalty + scheme11Points(Landing) is EXACT on 147/147 scored-positive rows (max delta 0.0), where heightPenalty = 0.5*min(h,200) + 3.0*max(0,h-200) points-per-metre policy from durRefHeight=200 / durPenaltyUpToRefHeight=0.5 / durPenaltyOverRefHeight=3.0, and h is the launch height in METRES stored in the Scores.FlightScoreDeduction column (the column stores metres, not points). The minus-sign landing variant matches nothing: it passes only 27/147 rows and fails 120 (each failure off by that row's landing points x2) — recorded explicitly so nobody 'fixes' the sign later. Fidelity caveat carried deliberately: scheme-11 points ADD, counter-intuitive against FAI F5J landing-penalty direction; the physical interpretation question is routed to domain discussion (see staging verification). This fixture guarantees GliderScore persistence behaviour, not sporting rationale.",
+    "Normalisation: best-in-group -> 1000 at 1 dp reproduced across ALL 30 scored (round,group) pairs including the four re-flown cells (225.0 vs group-best 562.5 -> 400.0; 299.0/470.5 -> 635.5; 170.5/346.5 -> 492.1; 524.0/548.5 -> 955.3, recomputed bit-exactly). All 288 persisted NormalisedScore values sit on the <=1-dp grid. The 45 .5-fraction RawScores are deterministic outputs of the 0.5 pt/m sub-ref-height penalty (clean decimal halves), NOT float32 persist-cast artifacts — G4 verdict NO for this comp.",
+    "Knob derivation summary (details in competition.json scoring.knobProvenance): Comps cells GroupScoreOption/GroupScoreDecimals/RoundOrTruncate are NULL; effective Option=1, Decimals=1, RoundOrTruncate=0 (=Rounded) derived from the persisted-score behaviour. Context: GroupScoreDecimals is null on all 168 master Comps rows (schema artifact class — the same loss that stripped f3j-international's Decimals=1 in this DB), so absence here cannot be read as 'integral'.",
+    "Drop-config asymmetry recorded verbatim from the Comps row: Drop1AtRound/Drop2AtRound/Drop5AtRound NULL, Drop3AtRound=99, Drop4AtRound=99 (GS 'never' sentinels), DropScoreOption=0 literal, F3QDrop6to10='99,99,99,99,99' (recovered var-text). Expected behaviour: no threshold fires whatever the option semantics; the full claim (drops-not-fireable) is stated explicitly by the WI-3 ranking oracle, not assumed here.",
+    "Re-flights — exactly four cells, all PilotNo 128, all ReFlightNo=0, all SeqNo=7: OriginalRoundNo 1 -> R5/G2 (t=505.0mmss=305 s, h=160 m -> raw 225.0, norm 400.0); 2 -> R5/G3 (706.0=426 s, h=209 -> 299.0/635.5); 4 -> R6/G1 (425.0=265 s, h=189 sub-ref-height! -> 170.5/492.1); 3 -> R6/G3 (958.0=598 s, h=188, landing 70 -> 524.0/955.3). Delete-on-reflight confirmed: pilot 128 has NO rows in rounds 1-4 (each holds 17 rows) and OriginalRoundNo != RoundNo is the only in-DB marker (ReFlightNo=0 throughout — detection trap). The orig->new mapping spans TWO destination rounds/groups (R5 gets re-flights from R1+R2 into G2+G3; R6 from R4+R3 into G1+G3): draw-aware replay must handle many-originals-to-many-new-cells across two rounds, not one-to-one.",
+    "Seat-count evidence check on the vacated slots: each source round R1-R4 is exactly one seat short of its 3 x <=6 layout, deficient groups R1=G2, R2=G1, R3=G2, R4=G1. Two coincide with the destination-group label (R1 vacated G2, re-flew into R5/G2; R4 vacated G1, re-flew into R6/G1) but two do NOT (R2's vacated seat sat in G1 yet pilot 128 re-flew into R5/G3; R3's sat in G2 yet he re-flew into R6/G3). Do NOT assume original-group==destination-group continuity anywhere downstream: aggregate on OriginalRoundNo alone, exactly as with jerilderie-2010's single re-flight.",
+    "The 600 s cap term in the verified formula is UNTESTED by this competition — modelled but standing on assumption: the longest flights are two 959.0-packed rows (9 m 59 s = 599 s); cap-engaged rows: 0 (max decoded time 599 s < 600 s).",
+    "Shape: rounds 1-16 drawn (16 rounds x 18 configured seats = 288 Scores rows exactly), rounds 1-10 actually scored. Updated='True' on 159 rows = 147 scored-positive + 12 genuine zeros; Updated='False' on 129 placeholder rows, all zeroed at 0.0/0.0 (108 of them the wholly-unflown R11-R16; the rest unfilled seats inside flown rounds — 17-row R1-R4 carry the re-flight-vacated seats, R5/R6 hold 20 rows absorbing the re-flights, R7-R10 are full 18s).",
+    "Zero-score witnesses: six genuine zero flights by pilot 79 across R1-R6 (persistent non-scoring participation); p125 R5G2 and p142 R10G1; four LandingOver75m=True rows zeroed outright (R6/G3 p100 — also the comp's single F5JMotorReStarted=True witness, pairing familyRow F5JMotorRestartOption=1 —, R9/G3 p122, R10/G2 p100, R10/G3 p88). Landing lookup: 120 non-zero values, all on scheme-11 distances (zero off-table misses). Penalty=0 on all 288 rows; ScoresChecked=false everywhere; Helper/Laps/Time2*/Time1Secs unused; TaskNo=1 throughout; DrawFreq constant 2.4 (dead default); ModelID/Flight1-4 mix ''/None.",
+    "Triage recorded honestly in competition.json triage/triageJustification: teams flag defaults never exercised ('Team Trials' is NAME-ONLY); series links ABSENT rather than dead — CompSeriesNo='0' matches no live SeriesNo (CompSeries holds 1-3); PrelimCompNo unset (null here; the machinery fixed-column read rendered '' for the same cell) and MergedComps='' — merged/prelim gaps not triggered.",
+    "Extraction chain of record: tests/GliderscoreFixtures/f5j-hawkes-bay-trials/extract/ was produced by the WI-1 tolerant pipeline from gliderscore/NZContests.mdb (sha256 in source block). Rationale: pristine access_parser 0.0.6 crashes on Comps (null-bitmap IndexError at column id 40 IsPublic; ids 41/42 degrade silently) and silently drops all 12 variable-length Text columns, hence --tolerant plus ingestion of the byte-validated reversed-record Jet4 trailer crack (extract/nz-master/comps-var-columns.json, sha256 in recoveryEvidence; per-field trust caveats in extract/comps-field-provenance.json). Degraded-read trio IsPublic=1/UseRegistration=null/UseRegistrationIdx=0 inherits the patched-read trust caveat; none affects scoring-relevant config.",
+    "extractFiles sha256s cite the committed repo copies byte-for-byte. The PRE-2 staging manifest (/tmp/opencode/nz-pre/f5j-hawkes-bay-trials/stage-manifest.json) hashed the same six non-Comps tables identically; its staged Comps.json encoded Jet nulls as '' whereas this canonical regeneration uses JSON null (value-identical — machinery cross-check found zero value mismatches, zero column-set differences).",
+    "PII: contact columns (Street/Town/State/PostCode/Email/PrivatePhone/WorkPhone) empty for all members; entries.json exposes names only, matching existing fixtures. Master Pilots (177 rows) filtered to the 18 members; shipped test dummies retained verbatim (pilot 84 'D Dummy', pilot 136 'The Dummy').",
+    "Schema modelling note: 'Updated' is Jet Text ('True'/'False') while ScoresChecked/LandingOver75m/F5JMotorReStarted/durDrawLocked are real Jet Booleans — string-typed vs boolean-typed bools are modelled deliberately (PRE-2 finding, both families matter for rescoring gates). Verbatim-left-out Dur display/draw fields: durDecimalsForTiming=0; durGroupsPerRound=3; durPilotsMax=6; durDrawLocked=false; durNbrOfLanes=0.0; durAllowBackToBack=0; durPilotsMin=''. F5JMotorRestartOption IS carried in familyRows.Dur (unlike jerilderie-2010's inert default) because option 1 actively zeroes R6/G3 p100. CompDate never set (undated comp, carried as null); remaining Comps setup/detail columns (DrawMode/printCountry/printRegistration/BadgeSpecs/AudioProfile*/WasLastUploadPublic literal 'Online - Public'/CompID/ScoresLocked/UseClasses/UseModels/UsePilotNumbering/Enforce20KHz/UseRoles/AssignHelpers) stay out per WI-2 precedent. DurTargetTimeByRound exists DB-wide with zero rows for this comp — carried empty-with-schema like siblings.",
+    "expected-result.json landed at WI-3 as a reconstructed-ladder oracle, derived and reproducible via ladder.py in this directory (aggregation keys re-flight cells to orig-round cells by OriginalRoundNo alone; states drops-not-fireable explicitly; a mismatch needs source-level triage before indicting the engine). Validation of record now covers rules 1-5 plus the expected-scores<->scores-raw integrity check over these files and the oracle."
+  ]
+}

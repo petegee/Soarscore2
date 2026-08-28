@@ -1,0 +1,9 @@
+[
+  {
+    "grain": "ranking",
+    "round": null,
+    "group": null,
+    "pilotNo": 21,
+    "reason": "story trap 3: pilots 4 and 21 tie on Score (11784) with different RawScore sums (9283 vs 9257); GS's ladder orders Score DESC, RawScore DESC and displays distinct ranks '8'/'9', while RankingEngine.Rank shares the numeric place among Score-ties (both 8). Independent of the re-flight choice — fires under a perfect replay too. Trap 3 pre-authorises 'a ledgered divergence' as its resolution pending a RawScore-secondary-key engine story; WI-8 records the finding in deferred-decisions.md."
+  }
+]
