@@ -108,6 +108,7 @@ classDiagram
         +int roundOrdinal
         +int taskRoundOrdinal
         +ReflightRole role
+        +CountsForRoundOrdinal : int?
     }
 
     class Annulment {
@@ -240,7 +241,7 @@ classDiagram
 
     note for AdoptedRules "The whole rulebook, copied in at creation. Scoring reads this, never the library class."
     note for Measurement "Raw and append-only; corrections recorded as Amendments"
-    note for Entry "A reflight is a second Entry; role decides which one counts"
+    note for Entry "A reflight is a second Entry; role decides which one counts; an optional counts-for round moves the score's aggregate destination to an earlier round (a make-up flight) while normalisation stays with the hosting group"
     note for Entry "phaseOrdinal/roundOrdinal/taskRoundOrdinal duplicate the Group's ancestry so the write path never scans the Competition to find its task"
     note for Finalisation "Captures what was declared; the raw record stays authoritative"
 

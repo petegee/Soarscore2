@@ -109,9 +109,15 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
   mechanics — no faithful mapping exists (three candidate mappings ruled out
   with numeric evidence in that story's WI-6 design section). It replays with
   the row excluded under D5 step 1 and ledgers every arithmetic consequence in
-  the fixture's `divergences.json`. A faithful replay waits on the engine
-  concept parked as `kanban/backlog/reflight-aggregate-destination.md`; this
-  bullet's prescription half stands unchanged.
+  the fixture's `divergences.json`.
+  **Resolved 2026-08-28** (`kanban/completed/reflight-aggregate-destination.md`):
+  the faithful replay exists — the engine concept (Entry.CountsForRoundOrdinal,
+  the destination-aware scoring law) is implemented and both make-up fixtures
+  (jerilderie-2010, f5j-hawkes-bay-trials) replay exact at all three grains
+  with their make-up cells aggregated into their destination rounds (residual
+  ledgers: jerilderie 1 trap-3 entry; comp 135 empty). This bullet's
+  prescription half stands unchanged: base-draw import of re-flight rows is
+  still deferred.
 - **Mid-comp-withdrawal reproduction.** **Decided 2026-08-26**, same story (WI-8).
   An imported comp where someone withdrew mid-event flew earlier rounds alongside
   pilots our field-freeze model would have kept in every group; reproducing that

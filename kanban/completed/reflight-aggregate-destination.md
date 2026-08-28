@@ -1,6 +1,6 @@
 # Story — Re-flight scores: aggregate destination ≠ entry's round
 
-**Status:** In progress · **Raised:** 2026-08-26 (found by
+**Status:** Completed · **Raised:** 2026-08-26 (found by
 `kanban/completed/gliderscore-replay-and-compare-harness.md` WI-6 — design
 recorded in that story file, "WI-6 design" section) ·
 **Fleshed out:** 2026-08-28 (owner decisions settled same day — see D1–D4)
@@ -567,3 +567,57 @@ is a second Entry; role decides which one counts") is extended with:
 > ; an optional counts-for round moves the score's aggregate destination to
 > an earlier round (a make-up flight) while normalisation stays with the
 > hosting group
+
+---
+
+# As built (2026-08-28)
+
+Executed WI-0 → WI-5 in plan order; WI-3 ∥ WI-4 via the prescribed isolated-tree
+pattern (rsync copies, deliverables landed in slug order). All four checkpoints
+green on first full verification; nothing widened to go green.
+
+- **WI-1** — as planned. `ReflightSelector.ShapePermits(roundOrdinal, liveEntries)`
+  is the destination-aware law; the old two-role `ShapePermits(roles)` was KEPT,
+  not deleted — the story's "single caller" held for production only, tests pin
+  the old form (`ReflightSelectorTests`). Non-earlier destinations are refused
+  by the shape law as `score.reflightShapeUnsupported` (D7's table has no
+  fourth score-side code; R7 asserts this). The D7 task-mismatch check treats
+  "destination round walked but no walked slot at the hosting (ordinal, code)"
+  as `taskMismatch`, which also covers a structurally-matching-but-unflown
+  destination task-round (R7).
+- **WI-2** — as planned, plus one new code the plan implied but did not name:
+  `openEntry.competitorNotRegistered` (the drawn-check relaxation removed the
+  check that implicitly guaranteed registration for reflight-role opens, so
+  registration is now explicit for every role). The WI-1 destination tests
+  seed the D7 shapes via directly-built `EntryOpened` events (`UnwritableEntry`):
+  since WI-2 the write side refuses those shapes at the decide, and D7 stays
+  tested as the belt for events already in a log.
+- **WI-3** — **plan correction:** scored scenarios run on F5J (`30-f5j`), not
+  F3K. Under F3K's `RequireDistinctTaskPerRound` draw (F3K.10) no two rounds
+  share a task, so a scored make-up always trips D7's
+  `score.reflightDestinationTaskMismatch` — the planner's "single-task rounds
+  always match" holds within a class only when rounds share the task. F5J is a
+  fixed-sequence single-task class and the comp-135 witness's class; the
+  refusal/regression and ordinary-reflight scenarios (4, 7) do run on F3K as
+  planned. 7 new scenarios; suite 64 (57+7) on both stores.
+- **WI-4** — as planned; converged on the first run with no triage: jerilderie
+  P29 10867 / rank "29" (drops {505@R5, 706@R4}), comp 135 P128 rank "12" with
+  P122/P100/P142 restored, all 882 + 288 oracle cells exact at both grains,
+  conservation clean. Two scenario titles updated (the old titles became false
+  statements once the divergences ceased to exist); pins 9→1 and 20→0 exactly.
+  Two-pass open order (trap 2) and prescription-only slots (trap 3, load-bearing
+  for D8) recorded in driver comments.
+- **WI-5** — doc amendments applied verbatim; deferred-decisions.md Draw bullet
+  resolved (faithful replay exists; prescription half unchanged); tech-debt:
+  nothing added (nothing deferred). No new feature surfaced during
+  implementation, so no backlog stubs were created (house rule 6).
+- **Sign-off invariant** — both make-up fixtures replay exact at all three
+  grains modulo their predicted ledgers; no synthesised-zero cell stands in for
+  a make-up anywhere; no glossary/docs change beyond the approved drafted text;
+  no `src/` file mentions GliderScore; both stores green; every new failure
+  code (`openEntry.destinationOnOriginalRole`, `destinationNotFound`,
+  `destinationNotEarlier`, `reasonRequired`, `competitorNotRegistered`,
+  `reflightAlreadyOpen` (widened), `reflightDestinationTaken`,
+  `score.reflightDestinationUnresolved`, `reflightDestinationTaskMismatch`,
+  `reflightDestinationConflict`, plus `score.reflightShapeUnsupported`
+  destination-aware) is asserted by at least one test at the layer that owns it.
