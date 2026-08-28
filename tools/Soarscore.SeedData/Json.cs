@@ -72,7 +72,7 @@ public static class SoarscoreJson
 // [JsonSerializable]: JsonSourceGenerationMode.Serialization emits a fast path
 // that cannot write a discriminator, and the generator does not walk
 // [JsonDerivedType], so an omission fails at RUN time, not at build. Program.cs
-// compares its output against reflection byte for byte on all eleven classes.
+// compares its output against reflection byte for byte on all twelve classes.
 [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Metadata)]
 [JsonSerializable(typeof(ClassDefinition))]
 [JsonSerializable(typeof(ScoreTerm))]

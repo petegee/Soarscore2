@@ -1,9 +1,11 @@
-// The eleven seed definitions, in file-name order.
+// The twelve seed definitions, in file-name order.
 //
-// Seven FAI classes and four NZ national ones. The NZ classes are here because
-// they are a DIFFERENT rulebook — they found four things the FAI corpus could
-// not (F24-F27), and one of them, F24, would have mis-scored a class that
-// adopted and ran cleanly.
+// Seven FAI classes, four NZ national soaring ones and one MFNZ free-flight
+// power class. The NZ classes are here because they are a DIFFERENT rulebook —
+// they found four things the FAI corpus could not (F24-F27), and one of them,
+// F24, would have mis-scored a class that adopted and ran cleanly. Aggregate is
+// here because it is a different DISCIPLINE — the first non-soaring class — and
+// the model expresses it without a single soaring concept.
 
 using System.Collections.Immutable;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -28,5 +30,6 @@ public static class Corpus
         new("81-nz-m-ndc", SeedNzMNdc.Definition),
         new("83-nz-n-ales123", SeedNzNAles123.Definition),
         new("85-nz-p-radian", SeedNzPRadian.Definition),
+        new("90-aggregate", SeedAggregate.Definition),
     ];
 }
