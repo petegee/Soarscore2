@@ -100,15 +100,14 @@ Feature: Replaying a GliderScore fixture
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 0 accepted divergences
 
-  Scenario: The f5j-nz-south-island fixture reproduces GliderScore exactly at all three grains modulo its ledgered normalised-clamp cell
+  Scenario: The f5j-nz-south-island fixture reproduces GliderScore exactly at all three grains
     Given the fixture corpus manifest
     When the harness replays the GliderScore fixture "f5j-nz-south-island"
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
-    And every ledgered divergence cites an arithmetic-story divergence ID
-    And the fixture ledger records exactly 4 accepted divergences
+    And the fixture carries no ledgered divergences
 
   Scenario: Replaying the ales-sample-comp fixture twice within one run issues identical command counts and compares exact twice
     Given the fixture corpus manifest

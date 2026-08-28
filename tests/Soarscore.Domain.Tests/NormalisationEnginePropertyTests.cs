@@ -16,6 +16,12 @@ public class NormalisationEnginePropertyTests
     private static readonly Gen<decimal> RawScore =
         Gen.Int[1, 100_000].Select(i => i / 100m);
 
+    // Negative-capable raws for the lower-clamp properties — deliberately
+    // separate from RawScore so the five pre-clamp properties keep their
+    // positive-only domain (kanban/completed/normalisation-lower-clamp.md WI-3).
+    private static readonly Gen<decimal> SignedRawScore =
+        Gen.Int[-100_000, 100_000].Select(i => i / 100m);
+
     private static readonly Gen<int> WinnerScore = Gen.Int[1, 5000];
 
     private static readonly Gen<NormalisationDirection> Direction =
@@ -184,6 +190,95 @@ public class NormalisationEnginePropertyTests
                 "G1", results.ToImmutableDictionary(), task, EmptyBindings);
 
             return keyed.All(k => group.Results[k.Key].RawScore % t.rounding.Precision == 0m);
+        });
+    }
+
+    // ------------------------------------------------------------ clamp
+
+    // Invariant: with a Normalisation present, every emitted normalised value
+    // is ≥ 0, whatever the raws. A positive basis raw coexists with signed
+    // raws; the winner's own result is exactly WinnerScore whenever the
+    // winning raw > 0 (a winnerRaw ≤ 0 group is zeroed wholesale before the
+    // clamp is even reached).
+    [Fact]
+    public void No_normalised_cell_is_negative()
+    {
+        (from direction in Direction
+         from winnerScore in WinnerScore
+         from basis in RawScore
+         from others in SignedRawScore.Array[1, 4]
+         select (direction, winnerScore, basis, others))
+        .Sample(t =>
+        {
+            var task = MakeTask(new Normalisation { Direction = t.direction, WinnerScore = t.winnerScore });
+
+            var raws = new[] { t.basis }.Concat(t.others).ToArray();
+            var results = raws
+                .Select((r, i) => ($"C{i}", ValidResult(r)))
+                .ToDictionary(x => x.Item1, x => x.Item2);
+
+            var group = NormalisationEngine.Normalise(
+                "G1", results.ToImmutableDictionary(), task, EmptyBindings);
+
+            if (group.Results.Values.Any(v => v.RawScore < 0m))
+                return false;
+
+            if (group.WinnerRef is not null)
+            {
+                var winnerRaw = t.direction == NormalisationDirection.HigherIsBetter
+                    ? raws.Max()
+                    : raws.Min();
+
+                if (winnerRaw > 0m && group.Results[group.WinnerRef].RawScore != t.winnerScore)
+                    return false;
+            }
+
+            return true;
+        });
+    }
+
+    // Invariant: the clamp collapses but never inverts — for raws a ≥ b the
+    // normalised pair satisfies n(a) ≥ n(b) (HigherIsBetter) / n(a) ≤ n(b)
+    // (LowerIsBetter), signed raws included; strict order may collapse to
+    // equality at the floor but never flips. Guarded on winnerRaw > 0: that is
+    // the domain where the pre-clamp transform is order-preserving (a negative
+    // winnerRaw inverts the ratio formula itself — unreachable for today's
+    // metrics, whose raws cannot go negative below a positive winner, and out
+    // of scope for the clamp per normalisation-lower-clamp.md D1).
+    [Fact]
+    public void Clamping_preserves_weak_order()
+    {
+        (from direction in Direction
+         from winnerScore in WinnerScore
+         from basis in RawScore
+         from lo in SignedRawScore
+         from deltaCents in Gen.Int[0, 100_000]
+         select (direction, winnerScore, basis, lo, hi: lo + deltaCents / 100m))
+        .Sample(t =>
+        {
+            var task = MakeTask(new Normalisation { Direction = t.direction, WinnerScore = t.winnerScore });
+
+            var raws = new[] { t.basis, t.lo, t.hi };
+            var results = raws
+                .Select((r, i) => ($"C{i}", ValidResult(r)))
+                .ToDictionary(x => x.Item1, x => x.Item2);
+
+            var group = NormalisationEngine.Normalise(
+                "G1", results.ToImmutableDictionary(), task, EmptyBindings);
+
+            var winnerRaw = t.direction == NormalisationDirection.HigherIsBetter
+                ? raws.Max()
+                : raws.Min();
+
+            if (winnerRaw <= 0m)
+                return true;  // zeroed wholesale, or the out-of-scope inverted domain
+
+            var loScore = group.Results["C1"].RawScore;
+            var hiScore = group.Results["C2"].RawScore;
+
+            return t.direction == NormalisationDirection.HigherIsBetter
+                ? loScore <= hiScore
+                : loScore >= hiScore;
         });
     }
 

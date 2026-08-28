@@ -189,6 +189,19 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   ledgered raw-grain divergences with the count pinned in the scenario. Anyone tempted
   to "fix" the remaining 3-cell mismatch on f3k-june-2020 is looking at this decision.
 
+- **Pass-through (a task with no `Normalise`) stays an identity on raws,
+  including negative ones — GS's option-0 floor is not replicated.** **Decided
+  2026-08-28** (`kanban/completed/normalisation-lower-clamp.md`, decision D4).
+  GS floors the rounded raw when a task has no normalisation
+  (`Scoring_MOD.vb:277`), but no fixture exercises a no-normalisation negative
+  raw, and flooring the pass-through would change raw-grain semantics the
+  fixture oracles pin — comp 121's negative raw (−2026) matches GS's persisted
+  score sheet exactly at the raw grain, and the negative-to-zero outcome is
+  implemented one grain later, uniformly, in `NormalisationEngine`'s lower
+  clamp (every task whose `Normalise` is non-null, both directions). If a
+  future fixture ever witnesses a negative pass-through raw, that is a new
+  triaged divergence, not a reason to floor here.
+
 ## Score capture and corrections
 
 - **Correcting a flight's launch time is not built, and `Flight.LaunchAt` is not a

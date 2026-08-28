@@ -126,15 +126,10 @@ public sealed class ReplaySteps
         // "records exactly N" step keeps the widened acceptance from hiding
         // untriaged growth.
         //
-        // nz-fixture-replay-scenarios.md D5 item 7 / D2 — `N1` joins the
-        // accepted tokens: GS floors NormalisedScore at 0 (option-1 branch,
-        // Scoring_MOD.vb:310) while our NormalisationEngine has no lower clamp
-        // (NormalisationEngine.cs:121) — an engine gap, not a rulebook
-        // conflict, pending a normalisation-floor story. Witness: comp 121
-        // cell 1/3/3/0/99 — raw −2026 both sides, GS NS 0.0, ours negative.
-        // Trap-3 precedent: the token exists so the ledger can be honest; the
-        // "records exactly N" pinning step still guards against untriaged
-        // growth.
+        // `N1` is retired: normalisation-lower-clamp.md landed the engine's
+        // lower clamp, emptying f5j-nz-south-island's ledger (its 4 entries
+        // discharged), so the token licenses nothing and is dropped from the
+        // regex below. Keeping it live would let an untriaged divergence pass.
         //
         // `R1` joins them per the WI-6 stop-and-triage ruling (2026-08-28,
         // orchestrator + story owner): GS computes and persists RawScore in
@@ -149,7 +144,7 @@ public sealed class ReplaySteps
         // tolerated. Same precedent: cite the token honestly, pin the count.
         var unattributed = Fixture!.Divergences
             .Where(d => !System.Text.RegularExpressions.Regex.IsMatch(
-                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b|\bN1\b|\bR1\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b|\bR1\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             .ToList();
 
         unattributed.Should().BeEmpty(

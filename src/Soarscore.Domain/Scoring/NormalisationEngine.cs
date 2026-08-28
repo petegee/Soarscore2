@@ -1,9 +1,10 @@
 // NormalisationEngine — kanban/completed/scoring-service-plan.md WI-5.
 //
 // Normalises task results within a group, applies post-normalisation score
-// terms (ScoreNormalised), rounds, and checks minValidResults for group
-// annulment (Issue #5). If the task has no Normalisation, raw scores pass
-// through unchanged.
+// terms (ScoreNormalised), rounds, floors the result at zero (lower clamp —
+// kanban/completed/normalisation-lower-clamp.md), and checks minValidResults
+// for group annulment (Issue #5). If the task has no Normalisation, raw
+// scores pass through unchanged.
 
 using System.Collections.Immutable;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -147,6 +148,15 @@ public static class NormalisationEngine
             // 8. Round again after adding normalised terms (if Round is set).
             if (norm.Round is not null)
                 normalised = RoundingSupport.ApplyRounding(normalised, norm.Round);
+
+            // 9. Lower clamp — F5J 5.5.11.12 f ("where the score is negative, a
+            // zero score will be recorded"), implemented at the normalised grain
+            // per GS's floors (Scoring_MOD.vb:310 option-1, :367 option-2 sum);
+            // nz-fixture-replay-scenarios.md D2/N1,
+            // kanban/completed/normalisation-lower-clamp.md D1-D3. `<=` so a
+            // rounded decimal -0.0 cannot escape.
+            if (normalised <= 0m)
+                normalised = 0m;
 
             resultBuilder[competitorRef] = taskResult with { RawScore = normalised };
         }

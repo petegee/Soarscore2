@@ -2106,15 +2106,15 @@
     "semantic_hash": ""
   },
   "docs/soaring-domain-class-diagram.md": {
-    "mtime": 1787796902.8372903,
-    "seen": 1787797373.8043063,
-    "ast_hash": "6e0ee52629b3e10a045ab5683bb4a685",
+    "mtime": 1787891707.9900367,
+    "seen": 1787891985.2742891,
+    "ast_hash": "cfcc8e22b1ed3e8392874f7a4ce65eaf",
     "semantic_hash": ""
   },
   "docs/soaring-domain-glossary.md": {
-    "mtime": 1787545012.3547158,
-    "seen": 1787693045.6567786,
-    "ast_hash": "36819138bb1da63e37d16a645a82075e",
+    "mtime": 1787891702.0430436,
+    "seen": 1787891985.27429,
+    "ast_hash": "2dcac6183fc69e3949558be6476cf765",
     "semantic_hash": ""
   },
   "docs/users.md": {
@@ -2298,9 +2298,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1787876675.213036,
-    "seen": 1787876781.6593485,
-    "ast_hash": "5c9b0b485a47f34a1325a4513641f30b",
+    "mtime": 1787891716.6760268,
+    "seen": 1787891985.2750187,
+    "ast_hash": "f24020392a14174d870578cc882ab733",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -2682,9 +2682,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/Comparator.cs": {
-    "mtime": 1787731769.5794942,
-    "seen": 1787731831.8663917,
-    "ast_hash": "79ffdfdf7d0826f0540d76fd23b40f2c",
+    "mtime": 1787891534.2581456,
+    "seen": 1787891985.2708762,
+    "ast_hash": "f6e128a1100450135305c59a3f25496d",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/FixtureLoader.cs": {
@@ -2700,9 +2700,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs": {
-    "mtime": 1787873630.656424,
-    "seen": 1787876781.6552944,
-    "ast_hash": "9eb58c32966dc6df66daa69953561358",
+    "mtime": 1787891534.2580311,
+    "seen": 1787891985.270919,
+    "ast_hash": "cfae582a8641b941fc4cc1b875383fc5",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international-flyoff/class-definition.json": {
@@ -2748,9 +2748,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/jerilderie-2010/divergences.json": {
-    "mtime": 1787734114.706383,
-    "seen": 1787734353.1476007,
-    "ast_hash": "d3fb81e30448892ce35a7b69de380999",
+    "mtime": 1787891534.2591662,
+    "seen": 1787891985.2692275,
+    "ast_hash": "9bd564c0b5d4f81955a5fe1aa6566a96",
     "semantic_hash": ""
   },
   "kanban/backlog/pre-normalisation-score-view-field.md": {
@@ -3360,9 +3360,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/divergences.json": {
-    "mtime": 1787876234.4378545,
-    "seen": 1787876781.6535115,
-    "ast_hash": "3f359c8dbe019c31e8aa208cde8c4938",
+    "mtime": 1787891534.2600617,
+    "seen": 1787891985.268324,
+    "ast_hash": "58e0494c51d30eb3494f7c9198986bb9",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-nz-south-island/class-definition.json": {
@@ -3407,16 +3407,22 @@
     "ast_hash": "f4cfd687bbf3a256700f8fced0b1721d",
     "semantic_hash": ""
   },
-  "kanban/in-progress/reflight-aggregate-destination.md": {
-    "mtime": 1787883878.0010064,
-    "seen": 1787887147.3756585,
-    "ast_hash": "df622799d7396602dc29cc6c842de7e5",
-    "semantic_hash": ""
-  },
   "tests/Soarscore.Infrastructure.Tests/ReflightDestinationEventStoreTests.cs": {
     "mtime": 1787888768.0476882,
     "seen": 1787889339.2758813,
     "ast_hash": "f64b809472a797b88a9e2639aae12cd8",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Steps/ReflightingForAMissedRoundSteps.cs": {
+    "mtime": 1787891534.2571,
+    "seen": 1787891985.2707603,
+    "ast_hash": "023b4f7865f2774547c97bf1514c646f",
+    "semantic_hash": ""
+  },
+  "kanban/completed/reflight-aggregate-destination.md": {
+    "mtime": 1787891747.679991,
+    "seen": 1787891985.27485,
+    "ast_hash": "615ee9d0073f44db85b4f88f1b1d5105",
     "semantic_hash": ""
   }
 }
