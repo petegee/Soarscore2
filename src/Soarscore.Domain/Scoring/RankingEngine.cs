@@ -42,9 +42,10 @@ public static class RankingEngine
             );
         }
 
-        // 2. Sort by Score descending (higher is better).
+        // 2. Sort by the ladder: Score descending, then PreDropScore descending (higher is better).
         var ranked = active
             .OrderByDescending(s => s.Score)
+            .ThenByDescending(s => s.PreDropScore)
             .ToList();
 
         // 3. Assign placings with ties.
@@ -55,10 +56,11 @@ public static class RankingEngine
         while (i < ranked.Count)
         {
             decimal currentScore = ranked[i].Score;
+            decimal currentPreDrop = ranked[i].PreDropScore;
 
             // Find the end of the tie group.
             int j = i + 1;
-            while (j < ranked.Count && ranked[j].Score == currentScore)
+            while (j < ranked.Count && ranked[j].Score == currentScore && ranked[j].PreDropScore == currentPreDrop)
                 j++;
 
             // All competitors from i to j-1 share place `currentPlace`.

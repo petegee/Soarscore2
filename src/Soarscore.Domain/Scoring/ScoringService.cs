@@ -137,6 +137,7 @@ public static class ScoringService
         // sum is exactly that phase's aggregate — see the plan's Out of scope
         // note on LastPhaseReplaces/SplitByPromotion.
         var totalsByCompetitor = new Dictionary<string, decimal>();
+        var preDropTotals = new Dictionary<string, decimal>();
 
         foreach (var phase in competition.Phases)
         {
@@ -446,6 +447,8 @@ public static class ScoringService
 
                 totalsByCompetitor[competitorRef] =
                     totalsByCompetitor.GetValueOrDefault(competitorRef) + phaseScores.Aggregate;
+                preDropTotals[competitorRef] =
+                    preDropTotals.GetValueOrDefault(competitorRef) + phaseScores.PreDropAggregate;
             }
         }
 
@@ -465,6 +468,7 @@ public static class ScoringService
             finalScores.Add(new FinalCompetitorScore(
                 CompetitorRef: competitorRef,
                 Score: totalScore - penaltyResult.Deduction,
+                PreDropScore: preDropTotals.GetValueOrDefault(competitorRef) - penaltyResult.Deduction,
                 Disqualified: penaltyResult.Disqualified));
         }
 

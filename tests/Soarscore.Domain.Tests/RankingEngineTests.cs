@@ -18,9 +18,9 @@ public class RankingEngineTests
     {
         var scores = new[]
         {
-            new FinalCompetitorScore("A", 1000m, false),
-            new FinalCompetitorScore("B", 900m, false),
-            new FinalCompetitorScore("C", 800m, false),
+            new FinalCompetitorScore("A", 1000m, 1000m, false),
+            new FinalCompetitorScore("B", 900m, 900m, false),
+            new FinalCompetitorScore("C", 800m, 800m, false),
         }.ToImmutableArray();
 
         var result = RankingEngine.Rank(scores, null, null);
@@ -37,10 +37,10 @@ public class RankingEngineTests
     {
         var scores = new[]
         {
-            new FinalCompetitorScore("A", 1000m, false),
-            new FinalCompetitorScore("B", 900m, false),
-            new FinalCompetitorScore("C", 900m, false),
-            new FinalCompetitorScore("D", 800m, false),
+            new FinalCompetitorScore("A", 1000m, 1000m, false),
+            new FinalCompetitorScore("B", 900m, 900m, false),
+            new FinalCompetitorScore("C", 900m, 900m, false),
+            new FinalCompetitorScore("D", 800m, 800m, false),
         }.ToImmutableArray();
 
         var result = RankingEngine.Rank(scores, null, null);
@@ -58,9 +58,9 @@ public class RankingEngineTests
     {
         var scores = new[]
         {
-            new FinalCompetitorScore("A", 1000m, false),
-            new FinalCompetitorScore("B", 900m, true),  // disqualified
-            new FinalCompetitorScore("C", 800m, false),
+            new FinalCompetitorScore("A", 1000m, 1000m, false),
+            new FinalCompetitorScore("B", 900m, 900m, true),  // disqualified
+            new FinalCompetitorScore("C", 800m, 800m, false),
         }.ToImmutableArray();
 
         var result = RankingEngine.Rank(scores, null, null);
@@ -88,12 +88,61 @@ public class RankingEngineTests
     {
         var scores = new[]
         {
-            new FinalCompetitorScore("A", 1000m, true),
-            new FinalCompetitorScore("B", 900m, true),
+            new FinalCompetitorScore("A", 1000m, 1000m, true),
+            new FinalCompetitorScore("B", 900m, 900m, true),
         }.ToImmutableArray();
 
         var result = RankingEngine.Rank(scores, null, null);
 
         result.Placings.Should().BeEmpty();
+    }
+
+    // ------------------------------------------------------ PreDropScore ladder
+
+    [Fact]
+    public void Score_tie_breaks_on_higher_PreDropScore()
+    {
+        var scores = new[]
+        {
+            new FinalCompetitorScore("A", 1000m, 1000m, false),
+            new FinalCompetitorScore("B", 1000m, 1100m, false),
+        }.ToImmutableArray();
+
+        var result = RankingEngine.Rank(scores, null, null);
+
+        result.Placings["B"].Should().Be(1);
+        result.Placings["A"].Should().Be(2);
+    }
+
+    [Fact]
+    public void Full_tie_on_both_keys_shares_place_and_skips()
+    {
+        var scores = new[]
+        {
+            new FinalCompetitorScore("A", 1000m, 1000m, false),
+            new FinalCompetitorScore("B", 1000m, 1000m, false),
+            new FinalCompetitorScore("C", 900m, 950m, false),
+        }.ToImmutableArray();
+
+        var result = RankingEngine.Rank(scores, null, null);
+
+        result.Placings["A"].Should().Be(1);
+        result.Placings["B"].Should().Be(1);
+        result.Placings["C"].Should().Be(3);
+    }
+
+    [Fact]
+    public void Differing_Scores_ignore_PreDropScore()
+    {
+        var scores = new[]
+        {
+            new FinalCompetitorScore("A", 1000m, 500m, false),
+            new FinalCompetitorScore("B", 900m, 5000m, false),
+        }.ToImmutableArray();
+
+        var result = RankingEngine.Rank(scores, null, null);
+
+        result.Placings["A"].Should().Be(1);
+        result.Placings["B"].Should().Be(2);
     }
 }

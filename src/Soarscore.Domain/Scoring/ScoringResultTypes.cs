@@ -113,7 +113,11 @@ public sealed record PhaseScores(
     decimal Aggregate,
     ImmutableArray<TaskRoundScore> AllScores,     // before drops
     ImmutableArray<TaskRoundScore> DroppedScores  // which scores were dropped
-);
+)
+{
+    /// <summary>The phase's pre-drop total: post-drop aggregate plus the dropped cells.</summary>
+    public decimal PreDropAggregate => Aggregate + DroppedScores.Sum(s => s.Score);
+}
 
 // --------------------------------------------------------------- penalties
 
@@ -135,6 +139,14 @@ public sealed record RecordedPenalty(
 public sealed record FinalCompetitorScore(
     string CompetitorRef,
     decimal Score,
+    /// <summary>
+    /// Ranking's secondary ladder key: the pre-drop total, less the same
+    /// aggregate-penalty deduction as <see cref="Score"/>. Score ties break on
+    /// this before places are shared
+    /// (kanban/completed/ranking-secondary-rawscore-key.md). Not the per-flight,
+    /// pre-normalisation RawScore — do not conflate the two.
+    /// </summary>
+    decimal PreDropScore,
     bool Disqualified
 );
 
