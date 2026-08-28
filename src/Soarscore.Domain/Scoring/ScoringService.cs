@@ -148,6 +148,16 @@ public static class ScoringService
             var roundData = ImmutableArray.CreateBuilder<RoundData>();
             var scoresByCompetitor = new Dictionary<string, List<TaskRoundScore>>();
 
+            // D7 bookkeeping for this phase (reflight-aggregate-destination.md
+            // WI-1): the walk's slot universe — every task-round the finding-5
+            // filter let through, keyed (round, task ordinal, task code), which
+            // is exactly the keying PhaseAggregator matches cells by — and
+            // every emitted cell with the task-round that hosted it, so the
+            // destination checks below can refuse loudly rather than let an
+            // unmatched cell vanish inside PhaseAggregator's Aggregate.
+            var walkedSlots = new HashSet<(int RoundOrdinal, int TaskOrdinal, string TaskCode)>();
+            var emittedCells = new List<EmittedCell>();
+
             foreach (var round in phase.Rounds)
             {
                 // Round-scoped, not task-round-scoped: ParameterBinding.RoundOrdinal
@@ -172,26 +182,33 @@ public static class ScoringService
                         continue;
 
                     // The reflight shape guard (reflight-groups.md WI-6b, replacing the old
-                    // score.reflightNotSupported refusal): each competitor's
-                    // LIVE entries must be one entry of any role, or exactly
-                    // one Original plus exactly one reflight-role entry.
-                    // ReflightSelector owns the shape law; this walks the guard
-                    // per competitor.
+                    // score.reflightNotSupported refusal; destination-aware per
+                    // reflight-aggregate-destination.md WI-1): each competitor's
+                    // LIVE entries must satisfy the destination-aware law — per
+                    // (competitor, task-round, destination), one entry of any
+                    // role, or exactly one Original plus exactly one
+                    // reflight-role entry, with every explicit counts-for naming
+                    // an earlier round of the phase. ReflightSelector owns the
+                    // shape law; this walks the guard per competitor.
                     foreach (var competitorGroup in taskRoundEntries.GroupBy(e => e.CompetitorRef))
                     {
-                        var roles = competitorGroup
+                        var live = competitorGroup
                             .Where(e => e.Annulment is null)
-                            .Select(e => e.Role)
+                            .Select(e => (e.Role, e.CountsForRoundOrdinal))
                             .ToList();
 
-                        if (!ReflightSelector.ShapePermits(roles))
+                        if (!ReflightSelector.ShapePermits(round.Ordinal, live))
                         {
                             return Result<CompetitionResult>.Failure(
                                 "score.reflightShapeUnsupported",
-                                $"Competitor {competitorGroup.Key} holds {roles.Count} live entries for "
+                                $"Competitor {competitorGroup.Key} holds {live.Count} live entries for "
                                 + $"phase {phase.Ordinal}/round {round.Ordinal}/task-round {taskRound.Ordinal} "
-                                + $"(roles: {string.Join(", ", roles)}). Expected one entry, or an Original "
-                                + "paired with one reflight-role entry.");
+                                + $"(roles: {string.Join(", ", live.Select(e => e.Role))}; "
+                                + "destinations: "
+                                + $"{string.Join(", ", live.Select(e => e.CountsForRoundOrdinal ?? round.Ordinal))}). "
+                                + "Expected, per destination: one entry of any role, or an Original "
+                                + "paired with one reflight-role entry, with any explicit counts-for "
+                                + "naming an earlier round of the phase.");
                         }
                     }
 
@@ -206,6 +223,8 @@ public static class ScoringService
                             $"Task-round references task '{taskRound.TaskRef}', which is not declared "
                             + "by the adopted class definition.");
                     }
+
+                    walkedSlots.Add((round.Ordinal, taskRound.Ordinal, taskRound.TaskRef));
 
                     var reflightRule = taskDefinition.Reflight ?? classDef.Reflight;
 
@@ -226,13 +245,17 @@ public static class ScoringService
                         .ToDictionary(g => g.Key, g => g.Last());
 
                     // Candidates per competitor across every group of this
-                    // task-round: one (role, normalised score) tuple per LIVE
-                    // entry. Candidate collection is per-entry (a competitor
-                    // may hold two live entries in one group — the Original
-                    // competing for the 1000 basis beside its reflight role,
-                    // decision 3); the collapse to ONE score per competitor
-                    // happens after the group loop (invariant R1, finding 9).
-                    var candidatesByCompetitor = new Dictionary<string, List<(ReflightRole Role, decimal Score)>>();
+                    // task-round: one (role, destination, normalised score)
+                    // tuple per LIVE entry (reflight-aggregate-destination.md
+                    // WI-1 — the destination is the entry's counts-for round,
+                    // resolved to the hosting round when null). Candidate
+                    // collection is per-entry (a competitor may hold several
+                    // live entries in one group — the Original competing for
+                    // the 1000 basis beside its reflight role, and comp-135's
+                    // make-ups beside both, decision 3); the collapse to one
+                    // score per (competitor, destination) happens after the
+                    // group loop (invariant R1′).
+                    var candidatesByCompetitor = new Dictionary<string, List<(ReflightRole Role, int Destination, decimal Score)>>();
 
                     foreach (var group in taskRound.Groups)
                     {
@@ -268,13 +291,30 @@ public static class ScoringService
                                 candidatesByCompetitor[competitorRef] = list;
                             }
 
-                            list.Add((entry.Role, taskResult.RawScore));
+                            list.Add((entry.Role, entry.CountsForRoundOrdinal ?? round.Ordinal, taskResult.RawScore));
                         }
                     }
 
                     // Collapse to ONE TaskRoundScore per competitor per
-                    // task-round (invariant R1 — finding 9), so the aggregate's
-                    // keying at the phase close cannot see a duplicate.
+                    // destination (invariant R1′ — reflight-aggregate-destination.md
+                    // WI-1), so the aggregate's keying at the phase close cannot
+                    // see a duplicate. Candidates group by destination; each
+                    // destination's candidates collapse per the class's
+                    // ReflightRule exactly as the two-role law always did — a
+                    // single-candidate destination passes Select unchanged (the
+                    // lone-make-up shape). The CD ruling (below) is passed to
+                    // every destination but can only ever land on the one
+                    // two-candidate destination: the shape law implies at most
+                    // one Original per (competitor, task-round), and only an
+                    // Original+reflight pair makes two candidates, so the
+                    // ruling's destination is never ambiguous.
+                    //
+                    // TaskCode/TaskOrdinal stay the HOSTING task-round's — the
+                    // flight is scored in the group that hosted it — while
+                    // RoundOrdinal is the destination, which is what keys the
+                    // cell into the destination round's ladder slot
+                    // (PhaseAggregator matches by (RoundOrdinal, TaskOrdinal,
+                    // TaskCode) and is deliberately unchanged, D8).
                     foreach (var (competitorRef, candidates) in candidatesByCompetitor)
                     {
                         // Absent → null → the selector behaves exactly as with
@@ -283,21 +323,33 @@ public static class ScoringService
                         // default member is Replacement, which would silently
                         // rule for everyone).
                         var ruled = rulingByCompetitor.GetValueOrDefault(competitorRef)?.Selection;
-                        var selected = ReflightSelector.Select(candidates, reflightRule, ruled);
-                        if (selected.IsFailure)
-                        {
-                            return Result<CompetitionResult>.Failure(
-                                selected.Code!, selected.Message!, selected.Defects);
-                        }
 
-                        if (!scoresByCompetitor.TryGetValue(competitorRef, out var list))
+                        foreach (var destinationGroup in candidates.GroupBy(c => c.Destination))
                         {
-                            list = [];
-                            scoresByCompetitor[competitorRef] = list;
-                        }
+                            var selected = ReflightSelector.Select(
+                                [.. destinationGroup.Select(c => (c.Role, c.Score))], reflightRule, ruled);
+                            if (selected.IsFailure)
+                            {
+                                return Result<CompetitionResult>.Failure(
+                                    selected.Code!, selected.Message!, selected.Defects);
+                            }
 
-                        list.Add(new TaskRoundScore(
-                            taskRound.TaskRef, round.Ordinal, taskRound.Ordinal, selected.Value));
+                            if (!scoresByCompetitor.TryGetValue(competitorRef, out var list))
+                            {
+                                list = [];
+                                scoresByCompetitor[competitorRef] = list;
+                            }
+
+                            list.Add(new TaskRoundScore(
+                                taskRound.TaskRef, destinationGroup.Key, taskRound.Ordinal, selected.Value));
+
+                            emittedCells.Add(new EmittedCell(
+                                competitorRef,
+                                destinationGroup.Key,
+                                taskRound.TaskRef,
+                                round.Ordinal,
+                                taskRound.Ordinal));
+                        }
                     }
 
                     // Total over the write-side states, with no `else`: the
@@ -329,6 +381,60 @@ public static class ScoringService
             }
 
             var rounds = roundData.ToImmutable();
+
+            // D7 (reflight-aggregate-destination.md): score-time validation,
+            // after the walk and before aggregation — a make-up's destination
+            // must resolve to a walked slot or scoring refuses, never silently
+            // drops the cell (an unmatched allScores entry vanishes inside
+            // PhaseAggregator's Aggregate today, which is exactly the silence
+            // these three checks exist to make unrepresentable).
+            var walkedRounds = walkedSlots.Select(s => s.RoundOrdinal).ToHashSet();
+
+            foreach (var cell in emittedCells.Where(c => c.RoundOrdinal != c.HostingRoundOrdinal))
+            {
+                if (!phase.Rounds.Any(r => r.Ordinal == cell.RoundOrdinal))
+                {
+                    return Result<CompetitionResult>.Failure(
+                        "score.reflightDestinationUnresolved",
+                        $"Competitor {cell.CompetitorRef} has a score counting for round {cell.RoundOrdinal}, "
+                        + $"which does not exist in phase {phase.Ordinal} "
+                        + $"(flown in round {cell.HostingRoundOrdinal}/task-round {cell.HostingTaskRoundOrdinal}).");
+                }
+
+                if (!walkedRounds.Contains(cell.RoundOrdinal))
+                {
+                    return Result<CompetitionResult>.Failure(
+                        "score.reflightDestinationUnresolved",
+                        $"Competitor {cell.CompetitorRef} has a score counting for round {cell.RoundOrdinal}, "
+                        + "which was not walked — no entries anywhere in it, so the finding-5 filter dropped "
+                        + $"it from the walk (flown in round {cell.HostingRoundOrdinal}/task-round "
+                        + $"{cell.HostingTaskRoundOrdinal}).");
+                }
+
+                if (!walkedSlots.Contains((cell.RoundOrdinal, cell.HostingTaskRoundOrdinal, cell.TaskCode)))
+                {
+                    return Result<CompetitionResult>.Failure(
+                        "score.reflightDestinationTaskMismatch",
+                        $"Competitor {cell.CompetitorRef}'s make-up flown in round {cell.HostingRoundOrdinal}"
+                        + $"/task-round {cell.HostingTaskRoundOrdinal} counts for round {cell.RoundOrdinal}, "
+                        + $"whose task-round at (ordinal {cell.HostingTaskRoundOrdinal}, '{cell.TaskCode}') does "
+                        + "not match the hosting task-round — single-task rounds always match; a multi-task "
+                        + "mismatch is unwitnessed and refused (D3).");
+                }
+            }
+
+            foreach (var conflict in emittedCells
+                .GroupBy(c => (c.CompetitorRef, c.RoundOrdinal, c.TaskCode))
+                .Where(g => g.Count() > 1))
+            {
+                return Result<CompetitionResult>.Failure(
+                    "score.reflightDestinationConflict",
+                    $"Competitor {conflict.Key.CompetitorRef} holds {conflict.Count()} scores for one "
+                    + $"destination slot (round {conflict.Key.RoundOrdinal}, task '{conflict.Key.TaskCode}') — "
+                    + "contributed by "
+                    + $"{string.Join(", ", conflict.Select(c => $"round {c.HostingRoundOrdinal}/task-round {c.HostingTaskRoundOrdinal}"))}. "
+                    + "Merging scores for one destination across task-rounds is unwitnessed and refused (D3).");
+            }
 
             foreach (var (competitorRef, scores) in scoresByCompetitor)
             {
@@ -370,6 +476,22 @@ public static class ScoringService
         return Result<CompetitionResult>.Success(
             Rank(finalScores.ToImmutable(), classDef.FinalRanking, promotion));
     }
+
+    // ---------------------------------------------------- D7 bookkeeping
+
+    /// <summary>
+    /// One TaskRoundScore emitted by the walk, with the task-round that hosted
+    /// it — D7's raw material. <see cref="RoundOrdinal"/> is the round the cell
+    /// aggregates into (the entry's counts-for round, or the hosting round when
+    /// null); a cell whose RoundOrdinal differs from its hosting round is the
+    /// destination-keyed make-up cell the checks below resolve.
+    /// </summary>
+    private sealed record EmittedCell(
+        string CompetitorRef,
+        int RoundOrdinal,
+        string TaskCode,
+        int HostingRoundOrdinal,
+        int HostingTaskRoundOrdinal);
 
     // ---------------------------------------------------- parameter bindings
 

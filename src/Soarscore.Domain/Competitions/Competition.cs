@@ -1109,6 +1109,13 @@ public sealed record Competition
     // recorded as the role at open and as Reason on the reflight append
     // (kanban/in-progress/reflight-groups.md WI-3) — Competition cannot
     // adjudicate it, any more than it can hold Entry data.
+    //
+    // countsForRoundOrdinal/reason (reflight-aggregate-destination.md WI-1)
+    // are additive pass-throughs at this point: the make-up validations —
+    // destinationOnOriginalRole, destinationNotFound, destinationNotEarlier,
+    // reasonRequired, and the reflight-role drawn-check relaxation — land in
+    // that story's WI-2. The event carries them verbatim; the scoring side's
+    // destination-aware law (ScoringService/ReflightSelector) is the belt.
     public Result<EntryOpened> OpenEntry(
         EntryId id,
         int phaseOrdinal,
@@ -1117,7 +1124,9 @@ public sealed record Competition
         GroupId groupRef,
         CompetitorId competitorRef,
         ReflightRole role,
-        DateTimeOffset at)
+        DateTimeOffset at,
+        int? countsForRoundOrdinal = null,
+        string? reason = null)
     {
         var phase = Phases.FirstOrDefault(p => p.Ordinal == phaseOrdinal);
         if (phase is null)
@@ -1227,7 +1236,9 @@ public sealed record Competition
             groupRef,
             competitorRef,
             role,
-            at));
+            at,
+            countsForRoundOrdinal,
+            reason));
     }
 
     // Task-round lifecycle decide functions — WI-1/WI-2/WI-2b

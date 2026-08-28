@@ -1,9 +1,13 @@
-// ReflightSelector — kanban/in-progress/reflight-groups.md WI-6a.
+// ReflightSelector — kanban/in-progress/reflight-groups.md WI-6a; the
+// destination-aware shape law is reflight-aggregate-destination.md WI-1.
 //
 // The pure rule that collapses a competitor's one or two live Entries for a
-// task-round to the ONE score that counts for that competitor. Holds no Entry
-// dependency and owns the shape law, so both ScoreCompetition and the shape
-// guard share it (WI-6b, finding 9's collapse-to-one invariant, R1).
+// task-round to the ONE score that counts for that competitor — per
+// destination, since a make-up entry counts for an earlier round while its
+// task-mates count for their own (D6). Holds no Entry dependency and owns the
+// shape law, so both ScoreCompetition and the shape guard share it (WI-6b,
+// finding 9's collapse-to-one invariant, R1 — restated per destination as R1′
+// by reflight-aggregate-destination.md).
 //
 // The applicable selection is read from the class's ReflightRule resolved as
 // data — never a branch on class (CLAUDE.md's core architectural law). The
@@ -45,6 +49,53 @@ public static class ReflightSelector
         || (roles.Count == 2
             && roles.Count(r => r == ReflightRole.Original) == 1
             && roles.Count(r => r != ReflightRole.Original) == 1);
+
+    /// <summary>
+    /// The destination-aware shape law (reflight-aggregate-destination.md WI-1,
+    /// D6's three bullets). Each live entry's destination is its counts-for
+    /// round, resolved to the entry's own <paramref name="roundOrdinal"/> when
+    /// the datum is null; then:
+    /// <list type="bullet">
+    /// <item>an Original counts for its own round, always — an Original naming
+    /// another round is corruption (bullet 1);</item>
+    /// <item>an explicit counts-for on a reflight-role entry must name an
+    /// earlier round of the phase — a non-earlier one is a shape violation
+    /// here, refused with the same <c>score.reflightShapeUnsupported</c> as
+    /// any other corruption, so a bad destination is never scored silently
+    /// (bullet 2; the write side's openEntry.* codes are WI-2);</item>
+    /// <item>per (competitor, task-round, destination) the live entries must
+    /// be exactly one entry of any role, or exactly one Original plus exactly
+    /// one reflight-role entry — the two-role law applied per destination
+    /// (bullet 3). This implies at most one Original per (competitor,
+    /// task-round), and it accepts the comp-135 shape: an Original plus two
+    /// make-ups with distinct destinations in one task-round.</item>
+    /// </list>
+    /// When no entry carries a counts-for, the law reduces exactly to
+    /// <see cref="ShapePermits(IReadOnlyList{ReflightRole})"/> over the whole
+    /// list — the R6 regression guarantee.
+    /// </summary>
+    public static bool ShapePermits(int roundOrdinal, IReadOnlyList<(ReflightRole Role, int? CountsFor)> liveEntries)
+    {
+        foreach (var (role, countsFor) in liveEntries)
+        {
+            if (countsFor is not { } destination)
+                continue; // null resolves to the entry's own round — always legal
+
+            if (role == ReflightRole.Original)
+            {
+                if (destination != roundOrdinal)
+                    return false;
+            }
+            else if (destination < 1 || destination >= roundOrdinal)
+            {
+                return false;
+            }
+        }
+
+        return liveEntries
+            .GroupBy(e => e.CountsFor ?? roundOrdinal)
+            .All(destinationGroup => ShapePermits(destinationGroup.Select(e => e.Role).ToList()));
+    }
 
     /// <summary>
     /// Collapse one competitor's candidates to their score for this task-round.
