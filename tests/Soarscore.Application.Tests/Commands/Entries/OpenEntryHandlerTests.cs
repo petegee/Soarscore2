@@ -44,8 +44,8 @@ public class OpenEntryHandlerTests
             AdoptedAt = Now,
         };
 
-    private static (FakeEventStore Store, CompetitionId CompetitionId, ImmutableArray<CompetitorId> Competitors, GroupId GroupRef)
-        SeedDrawnCompetition(int competitorCount = 2)
+    private static (FakeEventStore Store, CompetitionId CompetitionId, ImmutableArray<CompetitorId> Competitors, ImmutableArray<GroupId> RoundGroupRefs)
+        SeedCompetition(int competitorCount = 2, int roundCount = 1)
     {
         var store = new FakeEventStore();
         var id = CompetitionId.New();
@@ -71,17 +71,34 @@ public class OpenEntryHandlerTests
             version++;
         }
 
-        var groupRef = GroupId.New();
-        var group = new Group { Id = groupRef, Ordinal = 1, CompetitorRefs = [competitors[0]] };
-        var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "D", Groups = [group] };
-        var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
+        // One task-round of the same task ("D") per round, each with one group
+        // containing competitors[0] — the multi-round shape the make-up facts
+        // need (reflight-aggregate-destination.md WI-2).
+        var roundGroupRefs = ImmutableArray.CreateBuilder<GroupId>();
+        var rounds = ImmutableArray.CreateBuilder<Round>();
+        for (var ordinal = 1; ordinal <= roundCount; ordinal++)
+        {
+            var groupRef = GroupId.New();
+            var group = new Group { Id = groupRef, Ordinal = 1, CompetitorRefs = [competitors[0]] };
+            var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "D", Groups = [group] };
+            rounds.Add(new Round { Ordinal = ordinal, TaskRounds = [taskRound] });
+            roundGroupRefs.Add(groupRef);
+        }
+
         var draw = new Draw { CreatedAt = Now, Status = "drawn" };
         store.AppendAsync(
             id.Value, ExpectedVersion.Exact(version),
-            [new PhaseDrawn(0, PhaseType.Preliminary, draw, [round], Now), new DrawAccepted(0, Now)])
+            [new PhaseDrawn(0, PhaseType.Preliminary, draw, rounds.ToImmutable(), Now), new DrawAccepted(0, Now)])
             .GetAwaiter().GetResult();
 
-        return (store, id, competitors.ToImmutable(), groupRef);
+        return (store, id, competitors.ToImmutable(), roundGroupRefs.ToImmutable());
+    }
+
+    private static (FakeEventStore Store, CompetitionId CompetitionId, ImmutableArray<CompetitorId> Competitors, GroupId GroupRef)
+        SeedDrawnCompetition(int competitorCount = 2)
+    {
+        var (store, id, competitors, roundGroups) = SeedCompetition(competitorCount, roundCount: 1);
+        return (store, id, competitors, roundGroups[0]);
     }
 
     [Fact]
@@ -309,5 +326,159 @@ public class OpenEntryHandlerTests
         var second = EntryProjection.Apply(first, opened);
 
         second.Should().Be(first);
+    }
+
+    // reflight-aggregate-destination.md WI-2 handler facts. The duplicate
+    // guard becomes destination-aware (D6) and the D8 destination-conflict
+    // check joins it; the Original branch above is verbatim throughout.
+
+    [Fact]
+    public async Task A_second_live_Entitled_entry_for_the_same_destination_is_blocked_with_reflightAlreadyOpen()
+    {
+        // Same-destination duplicate: the existing Entitled counts for round 1
+        // and the new open counts for round 1 too — only the SAME destination
+        // blocks (the destination resolves to the entry's own round when its
+        // counts-for is null), and the message names it.
+        var (store, competitionId, competitors, roundGroups) = SeedCompetition(competitorCount: 2, roundCount: 2);
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Entitled));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Entitled, Now, 1, "Missed round 1")],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 2, 1, roundGroups[1], competitors[0],
+                ReflightRole.Entitled, CountsForRoundOrdinal: 1, Reason: "Missed round 1 again"),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.reflightAlreadyOpen");
+        result.Message.Should().Contain("round 1");
+    }
+
+    [Fact]
+    public async Task Two_make_ups_with_distinct_destinations_in_one_task_round_are_allowed()
+    {
+        // The comp-135 shape: a second reflight-role open with a DIFFERENT
+        // destination does not block on the first (D6), and the decide call
+        // carries the new datum through to the appended event.
+        var (store, competitionId, competitors, roundGroups) = SeedCompetition(competitorCount: 2, roundCount: 3);
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 3, 1, roundGroups[2], competitors[0], ReflightRole.Entitled));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 3, 1, roundGroups[2], competitors[0], ReflightRole.Entitled, Now, 1, "Missed round 1")],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 3, 1, roundGroups[2], competitors[0],
+                ReflightRole.Entitled, CountsForRoundOrdinal: 2, Reason: "Missed round 2"),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+        var opened = store.Streams[result.Value.Value][0].Should().BeOfType<EntryOpened>().Subject;
+        opened.Role.Should().Be(ReflightRole.Entitled);
+        opened.CountsForRoundOrdinal.Should().Be(2);
+        opened.Reason.Should().Be("Missed round 2");
+    }
+
+    [Fact]
+    public async Task A_make_up_does_not_unlock_an_Original_open_for_the_same_task_round()
+    {
+        // Trap 2's law, verbatim Original branch: a live reflight-role entry
+        // (make-up or not) blocks a new Original open with alreadyOpen — a
+        // make-up must never be openable before the competitor's Original.
+        var (store, competitionId, competitors, roundGroups) = SeedCompetition(competitorCount: 2, roundCount: 2);
+        var existingId = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            existingId, competitionId, 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Entitled));
+        await store.AppendAsync(existingId.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(existingId, competitionId, 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Entitled, Now, 1, "Missed round 1")],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 2, 1, roundGroups[1], competitors[0]),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.alreadyOpen");
+    }
+
+    [Fact]
+    public async Task A_make_up_for_a_round_the_competitor_also_flew_is_refused_with_reflightDestinationTaken()
+    {
+        // D8: the competitor holds a LIVE entry in the destination round's
+        // matching task-round — a make-up for a round the pilot also flew is
+        // exactly the unwitnessed shape D3 refuses.
+        var (store, competitionId, competitors, roundGroups) = SeedCompetition(competitorCount: 2, roundCount: 2);
+        var flownRound1 = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            flownRound1, competitionId, 0, 1, 1, roundGroups[0], competitors[0], ReflightRole.Original));
+        await store.AppendAsync(flownRound1.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(flownRound1, competitionId, 0, 1, 1, roundGroups[0], competitors[0], ReflightRole.Original, Now)],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 2, 1, roundGroups[1], competitors[0],
+                ReflightRole.Entitled, CountsForRoundOrdinal: 1, Reason: "Missed round 1"),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.reflightDestinationTaken");
+    }
+
+    [Fact]
+    public async Task An_annulled_entry_in_the_destination_round_does_not_block_the_make_up()
+    {
+        // D8: annulled entries don't block (the standing annulment stance);
+        // the stream load is what provides live/annulled truth — the index
+        // stays coordinate-only (trap 9).
+        var (store, competitionId, competitors, roundGroups) = SeedCompetition(competitorCount: 2, roundCount: 2);
+        var flownRound1 = EntryId.New();
+        var entryQuery = new FakeEntryQuery();
+        entryQuery.Seed(new EntrySummary(
+            flownRound1, competitionId, 0, 1, 1, roundGroups[0], competitors[0], ReflightRole.Original));
+        await store.AppendAsync(flownRound1.Value, ExpectedVersion.NoStream,
+            [new EntryOpened(flownRound1, competitionId, 0, 1, 1, roundGroups[0], competitors[0], ReflightRole.Original, Now)],
+            TestContext.Current.CancellationToken);
+        await store.AppendAsync(flownRound1.Value, ExpectedVersion.Exact(1),
+            [new EntryAnnulled(new Annulment { Reason = "protest upheld", By = "the jury", At = Now })],
+            TestContext.Current.CancellationToken);
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 2, 1, roundGroups[1], competitors[0],
+                ReflightRole.Entitled, CountsForRoundOrdinal: 1, Reason: "Missed round 1"),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task A_make_up_without_a_reason_surfaces_the_domain_reasonRequired_code()
+    {
+        // D4 enforced by the decide, surfaced through the handler unchanged —
+        // the handler's own guard passes the shape through (no duplicate, no
+        // live entry in the destination round).
+        var (store, competitionId, competitors, roundGroups) = SeedCompetition(competitorCount: 2, roundCount: 2);
+        var entryQuery = new FakeEntryQuery();
+        var handler = new OpenEntryHandler(store, entryQuery, new FakeClock(Now));
+
+        var result = await handler.HandleAsync(
+            new OpenEntry(competitionId, 0, 2, 1, roundGroups[1], competitors[0],
+                ReflightRole.Entitled, CountsForRoundOrdinal: 1),
+            TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.reasonRequired");
     }
 }

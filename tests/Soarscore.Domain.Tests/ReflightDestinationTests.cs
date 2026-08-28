@@ -147,6 +147,33 @@ public class ReflightDestinationTests
         return entry.Apply(captured.Value);
     }
 
+    /// <summary>
+    /// CaptureEntry's twin for shapes the write side refuses since WI-2's
+    /// decide validations (destination not found / not earlier) but which D7's
+    /// scoring law must still refuse loudly — the belt over the write-side
+    /// braces exists for events already in a log, and these are the shapes
+    /// such an event carries. Builds the EntryOpened directly, bypassing the
+    /// decide.
+    /// </summary>
+    private static Entry UnwritableEntry(
+        Competition competition,
+        GroupId group,
+        CompetitorId competitor,
+        int roundOrdinal,
+        decimal raw,
+        ReflightRole role = ReflightRole.Entitled,
+        int? countsForRoundOrdinal = null)
+    {
+        var opened = new EntryOpened(
+            EntryId.New(), competition.Id, 0, roundOrdinal, 1, group, competitor,
+            role, Now, countsForRoundOrdinal,
+            countsForRoundOrdinal is null ? null : "make-up for a missed round");
+        var entry = Entry.Create(opened).Apply(new FlightOpened(1, Now));
+        var captured = entry.CaptureMeasurement(1, "raw", MeasuredValue.Of(raw), Now, MetricDefs);
+        captured.IsSuccess.Should().BeTrue();
+        return entry.Apply(captured.Value);
+    }
+
     private static Dictionary<EntryId, Entry> Entries(params Entry[] list) => list.ToDictionary(e => e.Id);
 
     private static decimal Total(Result<CompetitionResult> result, CompetitorId competitor) =>
@@ -241,8 +268,11 @@ public class ReflightDestinationTests
         var entries = Entries(
             CaptureEntry(competition, groups[1], pilot, 1, raw: 100),
             CaptureEntry(competition, groups[3], pilot, 3, raw: 700),
-            CaptureEntry(competition, groups[3], pilot, 3, raw: 400,
-                ReflightRole.Entitled, countsForRoundOrdinal: 2),
+            // Counts-for 2 is no longer writable (the decide refuses it,
+            // openEntry.destinationNotFound) — D7's scoring-side refusal is
+            // the belt, tested here via UnwritableEntry.
+            UnwritableEntry(competition, groups[3], pilot, 3, raw: 400,
+                countsForRoundOrdinal: 2),
             CaptureEntry(competition, groups[1], competitors[1], 1, raw: 100),
             CaptureEntry(competition, groups[3], competitors[1], 3, raw: 100),
             CaptureEntry(competition, groups[1], competitors[2], 1, raw: 100),

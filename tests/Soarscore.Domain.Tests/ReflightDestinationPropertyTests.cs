@@ -137,6 +137,33 @@ public class ReflightDestinationPropertyTests
         return entry.Apply(captured.Value);
     }
 
+    /// <summary>
+    /// CaptureEntry's twin for the R7 shapes: destinations that are not
+    /// earlier rounds of the phase are refused by WI-2's decide
+    /// (openEntry.destinationNotFound / destinationNotEarlier), so they can no
+    /// longer be seeded through the write path — but D7/R7's scoring law must
+    /// still refuse them loudly (the belt over the write-side braces covers
+    /// events already in a log). Builds the EntryOpened directly.
+    /// </summary>
+    private static Entry UnwritableEntry(
+        Competition competition,
+        GroupId group,
+        CompetitorId competitor,
+        int roundOrdinal,
+        decimal raw,
+        ReflightRole role,
+        int? countsForRoundOrdinal)
+    {
+        var opened = new EntryOpened(
+            EntryId.New(), competition.Id, 0, roundOrdinal, 1, group, competitor,
+            role, Now, countsForRoundOrdinal,
+            countsForRoundOrdinal is null ? null : "make-up for a missed round");
+        var entry = Entry.Create(opened).Apply(new FlightOpened(1, Now));
+        var captured = entry.CaptureMeasurement(1, "raw", MeasuredValue.Of(raw), Now, MetricDefs);
+        captured.IsSuccess.Should().BeTrue();
+        return entry.Apply(captured.Value);
+    }
+
     private static decimal Total(Result<CompetitionResult> result, CompetitorId competitor) =>
         result.Value.Scores[competitor.ToString()].Score;
 
@@ -360,8 +387,11 @@ public class ReflightDestinationPropertyTests
             var entries = new Dictionary<EntryId, Entry>();
             var original = CaptureEntry(competition, groups[t.hostingRound], pilot, t.hostingRound, 500m);
             entries[original.Id] = original;
-            var makeUp = CaptureEntry(competition, groups[t.hostingRound], pilot, t.hostingRound, 400m,
-                ReflightRole.Entitled, countsForRoundOrdinal: destination);
+            // A non-earlier destination is unwritable since WI-2's decide —
+            // seeded directly (UnwritableEntry) so the scoring-side law alone
+            // is what this property proves.
+            var makeUp = UnwritableEntry(competition, groups[t.hostingRound], pilot, t.hostingRound, 400m,
+                ReflightRole.Entitled, destination);
             entries[makeUp.Id] = makeUp;
             foreach (var competitor in competitors.Skip(1))
             {

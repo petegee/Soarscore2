@@ -24,12 +24,8 @@ namespace Soarscore.Domain.Tests;
 /// </summary>
 public class OpenEntryDecideTests
 {
-    private static (Competition Competition, ImmutableArray<CompetitorId> Competitors, GroupId GroupRef) BuildDrawnCompetition(
-        ClassDefinition definition,
-        string taskCode,
-        int competitorCount,
-        DateTimeOffset at,
-        TaskRoundState taskRoundState = TaskRoundState.Drawn)
+    private static (Competition Competition, ImmutableArray<CompetitorId> Competitors) BuildRegisteredCompetition(
+        ClassDefinition definition, int competitorCount, DateTimeOffset at)
     {
         var adoptedRules = new AdoptedRules
         {
@@ -53,6 +49,18 @@ public class OpenEntryDecideTests
             competitors.Add(registered.Value.Competitor.Id);
         }
 
+        return (competition, competitors.ToImmutable());
+    }
+
+    private static (Competition Competition, ImmutableArray<CompetitorId> Competitors, GroupId GroupRef) BuildDrawnCompetition(
+        ClassDefinition definition,
+        string taskCode,
+        int competitorCount,
+        DateTimeOffset at,
+        TaskRoundState taskRoundState = TaskRoundState.Drawn)
+    {
+        var (competition, competitors) = BuildRegisteredCompetition(definition, competitorCount, at);
+
         var groupRef = GroupId.New();
         var group = new Group { Id = groupRef, Ordinal = 1, CompetitorRefs = [competitors[0]] };
         var taskRound = new TaskRound { Ordinal = 1, State = taskRoundState, TaskRef = taskCode, Groups = [group] };
@@ -64,7 +72,41 @@ public class OpenEntryDecideTests
         // DrawAcceptanceDecideTests.
         competition = competition.Apply(new DrawAccepted(0, at));
 
-        return (competition, competitors.ToImmutable(), groupRef);
+        return (competition, competitors, groupRef);
+    }
+
+    /// <summary>
+    /// A competition drawn with <paramref name="roundCount"/> rounds, each one
+    /// task-round of the named task with one group containing
+    /// <c>competitors[0]</c> — the multi-round shape the make-up facts need
+    /// (reflight-aggregate-destination.md WI-2: a counts-for round must be an
+    /// earlier round of the same phase).
+    /// </summary>
+    private static (Competition Competition, ImmutableArray<CompetitorId> Competitors, ImmutableArray<GroupId> RoundGroupRefs) BuildMultiRoundCompetition(
+        ClassDefinition definition,
+        string taskCode,
+        int competitorCount,
+        int roundCount,
+        DateTimeOffset at)
+    {
+        var (competition, competitors) = BuildRegisteredCompetition(definition, competitorCount, at);
+
+        var roundGroupRefs = ImmutableArray.CreateBuilder<GroupId>();
+        var rounds = ImmutableArray.CreateBuilder<Round>();
+        for (var ordinal = 1; ordinal <= roundCount; ordinal++)
+        {
+            var groupRef = GroupId.New();
+            var group = new Group { Id = groupRef, Ordinal = 1, CompetitorRefs = [competitors[0]] };
+            var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = taskCode, Groups = [group] };
+            rounds.Add(new Round { Ordinal = ordinal, TaskRounds = [taskRound] });
+            roundGroupRefs.Add(groupRef);
+        }
+
+        var draw = new Draw { CreatedAt = at, Status = "drawn" };
+        competition = competition.Apply(new PhaseDrawn(0, PhaseType.Preliminary, draw, rounds.ToImmutable(), at));
+        competition = competition.Apply(new DrawAccepted(0, at));
+
+        return (competition, competitors, roundGroupRefs.ToImmutable());
     }
 
     /// <summary>F3J's TaskD with its Fixed WorkingTime nulled out — a definition defect, not a shape the corpus itself contains.</summary>
@@ -279,4 +321,118 @@ public class OpenEntryDecideTests
     // kanban/in-progress/reflight-groups.md WI-3. The role is a ruling
     // recorded as data, not validated here — every existing fact above is
     // unchanged because the handler supplies ReflightRole.Original (WI-5).
+
+    // reflight-aggregate-destination.md WI-2 — the make-up validations (D6/D4)
+    // and the D5 drawn-check relaxation. One fact per new code; the pinned
+    // Original-role drawn refusal above (competitorNotDrawn) is unchanged.
+
+    [Fact]
+    public void OpenEntry_with_a_counts_for_round_on_an_Original_role_fails_with_destinationOnOriginalRole()
+    {
+        // D6 bullet 1: an Original counts for its own round, always.
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Original, at, countsForRoundOrdinal: 1);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.destinationOnOriginalRole");
+    }
+
+    [Fact]
+    public void OpenEntry_with_a_counts_for_round_the_phase_does_not_have_fails_with_destinationNotFound()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Entitled, at, countsForRoundOrdinal: 9);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.destinationNotFound");
+    }
+
+    [Theory]
+    [InlineData(1)] // the entry's own round
+    [InlineData(2)] // a later round of the same phase
+    public void OpenEntry_with_a_counts_for_round_not_earlier_than_the_entrys_own_fails_with_destinationNotEarlier(int countsFor)
+    {
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 1, 1, roundGroups[0], competitors[0], ReflightRole.Entitled, at, countsForRoundOrdinal: countsFor);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.destinationNotEarlier");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public void OpenEntry_with_a_counts_for_round_and_no_reason_fails_with_reasonRequired(string? reason)
+    {
+        // D4: the reason is the entitlement basis — required exactly when the
+        // counts-for round is set, mirroring AppendReflightGroup's rule.
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 2, 1, roundGroups[1], competitors[0], ReflightRole.Entitled, at, 1, reason);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.reasonRequired");
+    }
+
+    [Fact]
+    public void OpenEntry_for_a_reflight_role_into_a_group_the_competitor_was_not_drawn_into_succeeds()
+    {
+        // D5's relaxation: the CD's allocation is the act, so a reflight-role
+        // entry may be opened into any group of the addressed task-round for
+        // a registered, non-withdrawn competitor — including the priority-(a)
+        // shape (re-flown with a group the competitor was not drawn into).
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        // competitors[1] was registered but not placed in the (single-member) group.
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 2, 1, roundGroups[1], competitors[1], ReflightRole.Entitled, at);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OpenEntry_make_up_for_a_round_the_competitor_was_not_drawn_into_carries_the_datum()
+    {
+        // The make-up shape end to end at the decide: reflight-role entry,
+        // non-drawn group, counts-for an earlier round, reason recorded — and
+        // the event carries all of it verbatim.
+        var at = DateTimeOffset.UtcNow;
+        var (competition, competitors, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 2, 1, roundGroups[1], competitors[1], ReflightRole.Entitled, at, 1, "Missed round 1 — car trouble");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Role.Should().Be(ReflightRole.Entitled);
+        result.Value.CountsForRoundOrdinal.Should().Be(1);
+        result.Value.Reason.Should().Be("Missed round 1 — car trouble");
+    }
+
+    [Fact]
+    public void OpenEntry_for_an_unregistered_competitor_with_a_reflight_role_fails_with_competitorNotRegistered()
+    {
+        // The D5 relaxation removed the drawn-check that implicitly guaranteed
+        // registration for reflight-role opens, so registration is checked
+        // explicitly — for every role.
+        var at = DateTimeOffset.UtcNow;
+        var (competition, _, roundGroups) = BuildMultiRoundCompetition(SeedF3J.Definition, "D", 2, 2, at);
+
+        var result = competition.OpenEntry(
+            EntryId.New(), 0, 2, 1, roundGroups[1], CompetitorId.New(), ReflightRole.Entitled, at);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("openEntry.competitorNotRegistered");
+    }
 }
