@@ -47,7 +47,8 @@
 // WI-5 adds three SELF-CHECKS around the same machinery (no production change):
 //
 //   • conservation — per competitor, exactly:
-//         Σ our grain-2 normalised cells            (every /task-round-result row, role Original)
+//         Σ our grain-2 normalised cells            (every /task-round-result row,
+//                                                   destination-keyed: CountsFor ?? own round)
 //       − Σ contributions of the engine's DROPPED cells
 //       − aggregate-penalty deductions              (f3k-sample-comp's −100s)
 //         == the competitor's /competition-result Score,
@@ -235,7 +236,7 @@ public static class Comparator
 
         await CompareRawGrainAsync(fixture, outcome, competition, entries, taskNos[0], comparedRaw, rawMismatches);
         await CompareNormalisedGrainAsync(
-            fixture, outcome, client, taskNos[0], comparedNormalised, normalisedMismatches, cellsByCompetitor);
+            fixture, outcome, client, entries, taskNos[0], comparedNormalised, normalisedMismatches, cellsByCompetitor);
 
         // One fetch serves both the ranking grain and the conservation check.
         var finalScores = await GetAsync<CompetitionScoreView>(
@@ -421,6 +422,7 @@ public static class Comparator
         GliderscoreFixture fixture,
         ReplayOutcome outcome,
         HttpClient client,
+        IReadOnlyDictionary<EntryId, Entry> entries,
         int taskNo,
         HashSet<string> compared,
         List<GrainMismatch> mismatches,
@@ -442,7 +444,12 @@ public static class Comparator
             {
                 var (roundOfView, groupNo) = groupByGroupId[view.GroupRef];
 
-                foreach (var result in view.Results.Where(r => r.Role == ReflightRole.Original))
+                // reflight-aggregate-destination.md WI-4 (trap 10): ALL rows
+                // compare, not just Original ones — a make-up row's oracle
+                // cell sits at its HOSTING (round, group) (keyFormat is
+                // RoundNo-keyed), where GS scored it, even though its score
+                // aggregates into the counts-for round's slot.
+                foreach (var result in view.Results)
                 {
                     var pilotNo = pilotByCompetitor[result.CompetitorRef];
                     RecordCell("normalised", pilotNo, roundOfView, groupNo, taskNo, compared, mismatches);
@@ -451,16 +458,24 @@ public static class Comparator
                         mismatches, "normalised", pilotNo, roundOfView, groupNo, result.RawScore,
                         OracleCell(fixture, taskNo, roundOfView, groupNo, pilotNo)?.NormalisedScore);
 
-                    // WI-5 — the cell as ScoreCompetition would arrange it:
-                    // one TaskRoundScore per competitor per task-round (the
-                    // task-round ordinal is 1 throughout this harness). A
-                    // second cell for the same round would mean draw
-                    // derivation let a duplicate through (D5 step 3's job) —
-                    // fail loudly here rather than let Aggregate's FirstOrDefault
-                    // pick one silently.
+                    // WI-5 — the cell as ScoreCompetition would arrange it,
+                    // destination-aware per reflight-aggregate-destination.md
+                    // WI-4: the TaskRoundScore keys to the entry's
+                    // CountsForRoundOrdinal ?? its own round (D6 — the make-up
+                    // normalises in the hosting group but aggregates into the
+                    // destination round's slot; PhaseAggregator matches it
+                    // against the destination round's walk). Destinations are
+                    // read from the already-loaded entry streams — the task-
+                    // round view carries none (trap 9: EntrySummary stays
+                    // coordinate-only). The task code/task-round ordinal come
+                    // from the HOSTING task-round; a second cell for one
+                    // DESTINATION would mean two live entries collapsed into
+                    // one slot — fail loudly here rather than let Aggregate's
+                    // FirstOrDefault pick one silently.
+                    var entry = entries[outcome.EntryIdBySlot[(roundOfView, groupNo, pilotNo)]];
                     var cell = new TaskRoundScore(
                         outcome.TaskCodeByRoundNo[roundOfView],
-                        outcome.RoundOrdinalByRoundNo[roundOfView],
+                        entry.CountsForRoundOrdinal ?? outcome.RoundOrdinalByRoundNo[roundOfView],
                         TaskOrdinal: 1,
                         result.RawScore);
 
@@ -472,8 +487,9 @@ public static class Comparator
                     if (cells.Any(c => c.RoundOrdinal == cell.RoundOrdinal && c.TaskOrdinal == cell.TaskOrdinal))
                     {
                         throw new InvalidOperationException(
-                            $"Fixture '{fixture.Slug}': pilot {pilotNo} has two normalised cells in round "
-                            + $"{roundOfView} — draw derivation should have deduplicated their slots.");
+                            $"Fixture '{fixture.Slug}': pilot {pilotNo} has two normalised cells for destination "
+                            + $"round {cell.RoundOrdinal} (hosting round {roundOfView}) — the destination-aware law "
+                            + "(D6) should have refused or collapsed that shape.");
                     }
 
                     cells.Add(cell);
@@ -556,7 +572,9 @@ public static class Comparator
     /// <summary>
     /// WI-5 self-check 2 — conservation, per competitor, EXACTLY:
     ///
-    ///   Σ our grain-2 normalised cells        (every /task-round-result row, role Original)
+    ///   Σ our grain-2 normalised cells        (every /task-round-result row,
+    ///                                         destination-keyed per the entry's
+    ///                                         CountsFor ?? own round)
     /// − Σ contributions of the engine's dropped cells
     /// − aggregate-penalty deductions         (PenaltyEngine over the subject-filtered
     ///                                         competition penalties — f3k's −100s)

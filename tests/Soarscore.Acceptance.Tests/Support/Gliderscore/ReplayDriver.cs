@@ -46,6 +46,26 @@
 //     which our pipeline applies after aggregation before ranking
 //     (ScoringService.GetAggregatePenalties), the same placement as GS.
 //
+// reflight-aggregate-destination.md WI-4 widens three more places, cited
+// where they happen below:
+//   - destination-bearing make-up rows (OriginalRoundNo ≠ RoundNo): D5 step 1
+//     still keeps them out of the DRAW derivation (the prescription half stays
+//     deferred), but now COLLECTS them and opens each one's entry in a
+//     per-round SECOND pass — role Entitled, countsForRoundOrdinal =
+//     OriginalRoundNo, reason recorded — then flies + captures it exactly as
+//     any row. The two-pass order is trap 2's: the handler's Original branch
+//     refuses any open once a live entry exists, so every make-up must come
+//     after its competitor's Original in the same task-round; pass 1 opens
+//     every regular slot, pass 2 the make-ups in SeqNo order.
+//   - SyntheticSlots splits per trap 3: the two make-up fixtures' slots become
+//     DRAW-PRESCRIPTION-ONLY (prescribeDraw.competitorMissing stays satisfied,
+//     but NO entry is opened — the destination cell fills the slot), while
+//     f3k-southern-fling's retired-pilot slots stay flight-less entries.
+//   - OracleNormalisedScore keys by RoundNo, per the fixture's keyFormat
+//     {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"} (trap 1:
+//     the old OriginalRoundNo key was harmless while every row had
+//     OriginalRoundNo == RoundNo and fatal once make-ups replay).
+//
 // Deliberately NOT widened here: /record-entry-penalty calls. The WI-3 brief
 // expected Scores.FlightScoreDeduction to replay as an entry-scoped DeductPoints
 // penalty definition, but PenaltyEngine.ApplyRawPenalties honours only zeroing
@@ -118,42 +138,42 @@ public sealed class ReplayDriver(HttpClient client)
     // WI-6 — slots a fixture needs prescribed although no scores-raw row backs
     // them (the same per-fixture-data pattern as the round binds above).
     //
-    // jerilderie-2010: excluding the re-flight row (D5 step 1) leaves pilot 29
-    // absent from round 12 entirely, and prescribeDraw.competitorMissing
-    // demands every registered competitor appear in every round — late
-    // registration is no escape either (openEntry.competitorNotDrawn). He is
-    // therefore PRESCRIBED into R12/G1 as a flight-less slot: NoResult ⇒ cell
-    // 0, arithmetically the same candidate the aggregator would otherwise
-    // synthesise for the absent slot (PhaseAggregator.Aggregate's missing-score
-    // branch), so the replayed aggregation equals the story WI-6 mapping-(a)
-    // analysis exactly. The two comparison mismatches this manufactured slot
-    // produces ("no oracle cell", raw + normalised at 12/1/29) are ledgered in
-    // the fixture's divergences.json citing D5.
+    // reflight-aggregate-destination.md WI-4 (trap 3) splits the one table in
+    // two. BOTH kinds are prescribed — prescribeDraw.competitorMissing demands
+    // every registered competitor appear in every round — but only the second
+    // kind gets an entry opened.
     //
-    // nz-fixture-replay-scenarios.md D5 item 6 — two NZ fixtures ride the same
-    // mechanism (story Verified ground truth, "Per-fixture shape"; group = the
-    // round's smallest group, ties → lowest GroupNo, which lands exactly on
-    // each vacated seat; SeqNo is the existing max+1 below):
+    // SyntheticPrescriptionOnlySlots — make-up fixtures: the slot exists only
+    // because the pilot's appearance that round is a RE-FLIGHT make-up flown
+    // elsewhere (D5 step 1 drops that row from the draw). Under the faithful
+    // mapping NO entry is opened here — the make-up's score aggregates into
+    // this round's slot from its hosting round (counts-for), and a flight-less
+    // entry would both refuse nothing and DOUBLE the slot (the D8 check would
+    // then refuse the make-up open itself):
+    //   jerilderie-2010: excluding the re-flight row leaves pilot 29 absent
+    //     from round 12 entirely (R13/G1 SeqNo=14, OriginalRoundNo=12).
     //   f5j-hawkes-bay-trials (comp 135): pilot 128 is absent from rounds 1–4
     //     entirely — his first four appearances are the four re-flight rows,
-    //     which D5 step 1 drops — and competitorMissing still demands him in
-    //     every round. The four synthetic slots ARE his re-flight make-ups
-    //     replacing those absences: R1/R3 sizes {G1 6, G2 5, G3 6} → group 2;
-    //     R2/R4 {G1 5, G2 6, G3 6} → group 1. They replay flight-less (cell 0);
-    //     the "no oracle cell" entries they generate are pre-triaged in the
-    //     story's D7.
-    //   f3k-southern-fling (comp 17): pilot 89 Retired=true after round 8,
-    //     absent R9–R15 (7 missing slots; R9–R15 sizes {G1 5, G2 5, G3 4} →
-    //     group 3). Zeros contribute nothing, so his total — and expected
-    //     place — match GS's flown-rounds ranking exactly; only "no oracle
-    //     cell" entries are ledgered (D7, the jerilderie WI-6 amendment
-    //     precedent).
+    //     which D5 step 1 drops (R1/R3 sizes {G1 6, G2 5, G3 6} → group 2;
+    //     R2/R4 {G1 5, G2 6, G3 6} → group 1).
+    //
+    // SyntheticFlightLessSlots — flight-less-entry slots, unchanged (D4): a
+    // flight-less entry yields NoResult ⇒ cell 0, which is what puts GS's
+    // placeholder zeros into the drop-candidate pool. f3k-southern-fling
+    // (comp 17): pilot 89 Retired=true after round 8, absent R9–R15 (7 missing
+    // slots; R9–R15 sizes {G1 5, G2 5, G3 4} → group 3). These are a retired
+    // pilot's zeros, NOT make-ups — their behaviour is untouched (trap 3).
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
-        SyntheticSlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
+        SyntheticPrescriptionOnlySlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
         {
             ["jerilderie-2010"] = [(12, 1, 29)],
             ["f5j-hawkes-bay-trials"] =
                 [(1, 2, 128), (2, 1, 128), (3, 2, 128), (4, 1, 128)],
+        };
+
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
+        SyntheticFlightLessSlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
+        {
             ["f3k-southern-fling"] =
                 [(9, 3, 89), (10, 3, 89), (11, 3, 89), (12, 3, 89), (13, 3, 89), (14, 3, 89), (15, 3, 89)],
         };
@@ -212,15 +232,33 @@ public sealed class ReplayDriver(HttpClient client)
         }
 
         // -------------------------------------------------------------- draw
-        var keptRows = DeriveDrawRows(fixture);
+        var (keptRows, reflightRows) = DeriveDrawRows(fixture);
 
-        // WI-6 — append the fixture's synthetic slots (see SyntheticSlots) as
+        // WI-6 — append the fixture's synthetic slots (see the two tables) as
         // all-zero rows: zero time keeps CaptureDurationInputs flight-less
-        // (NoResult ⇒ cell 0), a SeqNo past every real row puts the slot last
-        // in its group's flying order, and OriginalRoundNo = RoundNo keeps any
-        // accidental re-derivation honest. Appended AFTER derivation so D5's
-        // partition assertion judges the real rows alone.
-        foreach (var (roundNo, groupNo, pilotNo) in SyntheticSlots.GetValueOrDefault(fixture.Slug) ?? [])
+        // (NoResult ⇒ cell 0) for the flight-less kind, a SeqNo past every
+        // real row puts the slot last in its group's flying order, and
+        // OriginalRoundNo = RoundNo keeps any accidental re-derivation honest.
+        // Appended AFTER derivation so D5's partition assertion judges the
+        // real rows alone. BOTH kinds join keptRows — the prescription
+        // structure (rounds, groups, drawn membership) needs every slot —
+        // but the prescription-only kind is filtered out of the entry-opening
+        // walk below (trap 3: no entry where a make-up's destination cell
+        // fills the slot).
+        var prescriptionOnlySlots = (SyntheticPrescriptionOnlySlots.GetValueOrDefault(fixture.Slug) ?? [])
+            .Select(s => (s.RoundNo, s.GroupNo, s.PilotNo))
+            .ToHashSet();
+
+        foreach (var (roundNo, groupNo, pilotNo) in SyntheticPrescriptionOnlySlots.GetValueOrDefault(fixture.Slug) ?? [])
+        {
+            keptRows.Add(new ScoresRow(
+                TaskNo: 1, RoundNo: roundNo, GroupNo: groupNo, ReFlightNo: 0, PilotNo: pilotNo,
+                SeqNo: keptRows.Where(r => r.RoundNo == roundNo).Max(r => r.SeqNo) + 1,
+                Laps: 0m, Time1Mins: 0m, Time1Secs: 0m, Time2Mins: 0m, Time2Secs: 0m,
+                FlightScoreDeduction: 0m, Landing: 0m, Penalty: 0, OriginalRoundNo: roundNo));
+        }
+
+        foreach (var (roundNo, groupNo, pilotNo) in SyntheticFlightLessSlots.GetValueOrDefault(fixture.Slug) ?? [])
         {
             keptRows.Add(new ScoresRow(
                 TaskNo: 1, RoundNo: roundNo, GroupNo: groupNo, ReFlightNo: 0, PilotNo: pilotNo,
@@ -315,6 +353,40 @@ public sealed class ReplayDriver(HttpClient client)
         // noticed.
         var entryIdBySlot = new Dictionary<(int RoundNo, int GroupNo, long PilotNo), EntryId>();
 
+        // The flight + capture half both passes share (reflight-aggregate-
+        // destination.md WI-4): every opened entry — regular, flight-less or
+        // make-up — is flown and captured identically (CaptureInputs unchanged).
+        async Task FlyAndCaptureAsync(EntryId entryId, ScoresRow row)
+        {
+            // Placeholder rows stay flight-less ⇒ NoResult ⇒ cell 0 (D4).
+            // A FLOWN slot opens ONE FLIGHT PER NON-ZERO SLOT VALUE —
+            // exactly one for the duration family (WI-3), up to seven
+            // for F3K's packed columns (WI-4); captures carry the
+            // flight sequence they belong to. Deliberate zeros inside a
+            // flown slot — see CaptureInputs (WI-3 widening).
+            var captures = CaptureInputs(fixture, row);
+
+            if (captures is not null)
+            {
+                var flights = captures
+                    .GroupBy(c => c.Flight)
+                    .OrderBy(g => g.Key)
+                    .ToList();
+
+                foreach (var flight in flights)
+                {
+                    await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
+
+                    foreach (var (metric, value, _) in flight)
+                    {
+                        await PostAsync<EntryId>(
+                            "/capture-measurement",
+                            new CaptureMeasurement(entryId, flight.Key, metric, MeasuredValue.Of(value)));
+                    }
+                }
+            }
+        }
+
         foreach (var roundNo in roundNosAscending)
         {
             var roundOrdinal = roundOrdinalByRoundNo[roundNo];
@@ -322,12 +394,17 @@ public sealed class ReplayDriver(HttpClient client)
                 .Where(r => r.RoundNo == roundNo)
                 .Select(r => r.GroupNo).Distinct().OrderBy(n => n);
 
+            // Pass 1 (trap 2) — every regular slot, group-ascending then
+            // SeqNo: the prescription-only synthetic slots are NOT opened
+            // (trap 3 — the destination cell fills them via the make-up's
+            // counts-for).
             foreach (var groupNo in groupNosAscending)
             {
                 var groupId = groupIdByRoundAndGroup[(roundNo, groupNo)];
 
                 foreach (var row in keptRows
-                    .Where(r => r.RoundNo == roundNo && r.GroupNo == groupNo)
+                    .Where(r => r.RoundNo == roundNo && r.GroupNo == groupNo
+                                && !prescriptionOnlySlots.Contains((r.RoundNo, r.GroupNo, r.PilotNo)))
                     .OrderBy(r => r.SeqNo))
                 {
                     var entryId = await PostAsync<EntryId>(
@@ -337,35 +414,35 @@ public sealed class ReplayDriver(HttpClient client)
                             groupId, competitorByPilotNo[row.PilotNo]));
 
                     entryIdBySlot[(row.RoundNo, row.GroupNo, row.PilotNo)] = entryId;
-
-                    // Placeholder rows stay flight-less ⇒ NoResult ⇒ cell 0 (D4).
-                    // A FLOWN slot opens ONE FLIGHT PER NON-ZERO SLOT VALUE —
-                    // exactly one for the duration family (WI-3), up to seven
-                    // for F3K's packed columns (WI-4); captures carry the
-                    // flight sequence they belong to. Deliberate zeros inside a
-                    // flown slot — see CaptureInputs (WI-3 widening).
-                    var captures = CaptureInputs(fixture, row);
-
-                    if (captures is not null)
-                    {
-                        var flights = captures
-                            .GroupBy(c => c.Flight)
-                            .OrderBy(g => g.Key)
-                            .ToList();
-
-                        foreach (var flight in flights)
-                        {
-                            await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
-
-                            foreach (var (metric, value, _) in flight)
-                            {
-                                await PostAsync<EntryId>(
-                                    "/capture-measurement",
-                                    new CaptureMeasurement(entryId, flight.Key, metric, MeasuredValue.Of(value)));
-                            }
-                        }
-                    }
+                    await FlyAndCaptureAsync(entryId, row);
                 }
+            }
+
+            // Pass 2 (trap 2) — the round's make-up rows, SeqNo order within
+            // the pass. Every competitor's Original in this task-round is open
+            // by now, which the handler's Original-branch law requires (any
+            // live entry blocks an Original open, so a make-up must never
+            // precede its competitor's Original in the same task-round) — GS's
+            // own flying order satisfies it. Role Entitled (D2), destination
+            // OriginalRoundNo, reason recorded (D4). Fixture rounds are
+            // contiguous from 1 in every corpus fixture (verified: jerilderie
+            // 1–14, comp 135 1–16), so the GS RoundNo IS the round ordinal.
+            foreach (var row in reflightRows
+                .Where(r => r.RoundNo == roundNo)
+                .OrderBy(r => r.SeqNo).ThenBy(r => r.GroupNo))
+            {
+                var groupId = groupIdByRoundAndGroup[(roundNo, row.GroupNo)];
+                var entryId = await PostAsync<EntryId>(
+                    "/open-entry",
+                    new OpenEntry(
+                        competitionId, phase.Ordinal, roundOrdinal, 1,
+                        groupId, competitorByPilotNo[row.PilotNo],
+                        Role: ReflightRole.Entitled,
+                        CountsForRoundOrdinal: (int)row.OriginalRoundNo,
+                        Reason: $"Gliderscore re-flight row (OriginalRoundNo={row.OriginalRoundNo})"));
+
+                entryIdBySlot[(row.RoundNo, row.GroupNo, row.PilotNo)] = entryId;
+                await FlyAndCaptureAsync(entryId, row);
             }
 
             await PostAsync<CompetitionId>(
@@ -404,13 +481,30 @@ public sealed class ReplayDriver(HttpClient client)
 
     // ------------------------------------------------------------- D5 draw
 
-    /// <summary>The scores-raw rows that form the realised draw, after D5's filters.</summary>
-    private static List<ScoresRow> DeriveDrawRows(GliderscoreFixture fixture)
+    /// <summary>
+    /// The scores-raw rows that form the realised draw, after D5's filters —
+    /// and the re-flight rows step 1 removes. reflight-aggregate-destination.md
+    /// WI-4: those rows are destination-bearing make-ups (every corpus row
+    /// carrying them is OriginalRoundNo ≠ RoundNo, ReFlightNo = 0); they stay
+    /// out of the draw (the prescription half stays deferred) but are now
+    /// COLLECTED so the replay can open each one's entry in the second pass.
+    /// </summary>
+    private static (List<ScoresRow> Kept, List<ScoresRow> ReflightRows) DeriveDrawRows(GliderscoreFixture fixture)
     {
         // Step 1 — re-flight rows have no base-draw prescription path yet
-        // (deferred-decisions.md "Draw"); WI-6 designs that mapping.
+        // (deferred-decisions.md "Draw"); collected for the WI-4 make-up pass.
+        var reflightRows = new List<ScoresRow>();
         var rows = fixture.ScoresRaw.Rows
-            .Where(r => !(r.ReFlightNo > 0 || r.OriginalRoundNo != r.RoundNo))
+            .Where(r =>
+            {
+                if (r.ReFlightNo > 0 || r.OriginalRoundNo != r.RoundNo)
+                {
+                    reflightRows.Add(r);
+                    return false;
+                }
+
+                return true;
+            })
             .ToList();
 
         // Step 2 — phantom repeats (GS phantom groups, f3j-international R1/G5):
@@ -439,18 +533,21 @@ public sealed class ReplayDriver(HttpClient client)
                 + $"{duplicated.Count()} times in round {duplicated.Key.RoundNo} after deduplication.");
         }
 
-        return kept;
+        return (kept, reflightRows);
     }
 
     /// <summary>
     /// Oracle lookup for D5 step 2, keyed exactly as expected-scores.json's
-    /// keyFormat states: {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"}.
-    /// A missing oracle cell ranks lowest rather than throwing — deduplication
-    /// needs an ordering, not a verdict.
+    /// keyFormat states: {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"}
+    /// — RoundNo, NOT OriginalRoundNo (reflight-aggregate-destination.md WI-4,
+    /// trap 1: the oracle is RoundNo-keyed; the old OriginalRoundNo key was
+    /// harmless while the rows seen here all had OriginalRoundNo == RoundNo,
+    /// and fatal once make-up rows replay). A missing oracle cell ranks lowest
+    /// rather than throwing — deduplication needs an ordering, not a verdict.
     /// </summary>
     private static decimal OracleNormalisedScore(GliderscoreFixture fixture, ScoresRow row) =>
         fixture.ExpectedScores.Scores.TryGetValue(
-                $"{row.TaskNo}/{row.OriginalRoundNo}/{row.GroupNo}/{row.ReFlightNo}/{row.PilotNo}",
+                $"{row.TaskNo}/{row.RoundNo}/{row.GroupNo}/{row.ReFlightNo}/{row.PilotNo}",
                 out var cell)
             ? cell.NormalisedScore
             : 0m;

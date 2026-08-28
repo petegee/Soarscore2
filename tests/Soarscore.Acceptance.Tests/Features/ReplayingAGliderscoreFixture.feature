@@ -50,7 +50,7 @@ Feature: Replaying a GliderScore fixture
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 
-  Scenario: The jerilderie-2010 fixture reproduces GliderScore exactly modulo its ledgered re-flight-row divergences
+  Scenario: The jerilderie-2010 fixture reproduces GliderScore exactly at all three grains modulo its ledgered tie-order divergence
     Given the fixture corpus manifest
     When the harness replays the GliderScore fixture "jerilderie-2010"
     Then every raw flight score matches the fixture oracle exactly
@@ -58,7 +58,7 @@ Feature: Replaying a GliderScore fixture
     And the final ranking matches the fixture oracle exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
-    And the fixture ledger records exactly 9 accepted divergences
+    And the fixture ledger records exactly 1 accepted divergences
 
   Scenario: The f3k-june-2020 fixture reproduces GliderScore exactly at all three grains modulo its ledgered cancelled re-draw cells
     Given the fixture corpus manifest
@@ -90,7 +90,7 @@ Feature: Replaying a GliderScore fixture
     And the fixture carries no ledgered divergences
     And the fixture's float32 persist-cast witness property holds over its scored normalised cells
 
-  Scenario: The f5j-hawkes-bay-trials fixture reproduces GliderScore exactly at all three grains modulo its ledgered re-flight cells
+  Scenario: The f5j-hawkes-bay-trials fixture reproduces GliderScore exactly at all three grains with its make-up flights aggregated into their destination rounds
     Given the fixture corpus manifest
     When the harness replays the GliderScore fixture "f5j-hawkes-bay-trials"
     Then every raw flight score matches the fixture oracle exactly
@@ -98,7 +98,7 @@ Feature: Replaying a GliderScore fixture
     And the final ranking matches the fixture oracle exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
-    And the fixture ledger records exactly 20 accepted divergences
+    And the fixture ledger records exactly 0 accepted divergences
 
   Scenario: The f5j-nz-south-island fixture reproduces GliderScore exactly at all three grains modulo its ledgered normalised-clamp cell
     Given the fixture corpus manifest
