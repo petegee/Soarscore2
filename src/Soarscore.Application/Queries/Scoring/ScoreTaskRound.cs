@@ -23,11 +23,18 @@ namespace Soarscore.Application.Queries.Scoring;
 /// Entry — distinguished by <see cref="Role"/>. Collapse to one score per
 /// task-round is the aggregate's job (ScoreCompetition), not this per-group
 /// view's (reflight-groups.md WI-7).</summary>
+/// <param name="RawScore">The post-normalisation score — unchanged semantics
+/// (pre-normalisation-score-view-field.md trap 5).</param>
+/// <param name="PreNormalisationScore">The engine's unnormalised (pre-normalisation)
+/// score for this row — the value <see cref="RawScore"/> held entering
+/// Normalise, preserved through the overwrite
+/// (kanban/in-progress/pre-normalisation-score-view-field.md#WI-2).</param>
 public sealed record CompetitorTaskResultView(
     CompetitorId CompetitorRef,
     ReflightRole Role,
     TaskResultState State,
-    decimal RawScore);
+    decimal RawScore,
+    decimal PreNormalisationScore);
 
 /// <summary>One group's scored result — the GET /task-round-result response shape.</summary>
 public sealed record GroupScoreView(
@@ -155,7 +162,8 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 entriesByKey[kv.Key].CompetitorRef,
                 entriesByKey[kv.Key].Role,
                 kv.Value.State,
-                kv.Value.RawScore))
+                kv.Value.RawScore,
+                result.PreNormalisationScores[kv.Key]))
             .ToImmutableArray();
 
         return new GroupScoreView(
