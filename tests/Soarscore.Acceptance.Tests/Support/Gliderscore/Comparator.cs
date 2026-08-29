@@ -4,7 +4,17 @@
 // ledger that starts EMPTY.
 //
 //   grain 1 (raw)     — GS's persisted Scores.RawScore vs our pre-normalisation
-//                       score, computed IN-PROCESS per Q1: the harness folds
+//                       score. WI-3 (pre-normalisation-score-view-field.md D6)
+//                       splits the mechanism on a runtime classification of the
+//                       loaded class definition (ScoreNormalisedFree): if every
+//                       task of every phase carries an EMPTY scoreNormalised
+//                       array, the value is read straight off GET
+//                       /task-round-result's preNormalisationScore column —
+//                       with nothing composed after normalising, the engine's
+//                       pre-normalisation score IS GS's composed raw. Fixtures
+//                       whose classes DO author scoreNormalised terms
+//                       (ales-sample-comp, option-2) keep the Q1 IN-PROCESS
+//                       mirror: the harness folds
 //                       the Competition and Entry streams through the direct
 //                       provider (AcceptanceFixture.EventStore) and replays the
 //                       public granular pipeline exactly as ScoringService.
@@ -13,7 +23,8 @@
 //                       per flight → FlightInterpreter.Interpret →
 //                       ScoringService.SelectFlights → PenaltyEngine.ApplyRawPenalties
 //                       — taking TaskResult.RawScore before any normalisation.
-//                       One semantic mapping is applied and documented below
+//                       On that path one semantic mapping is applied and
+//                       documented below
 //                       (GsEquivalentRaw): under the story's D3 arrangement the
 //                       landing lookup lives in ScoreNormalised, while GS composes
 //                       landing INTO its persisted RawScore BEFORE normalising
@@ -22,10 +33,11 @@
 //                       contributions onto our pre-normalisation raw so both sides
 //                       speak GS's composition; the engine's own evaluation of
 //                       those same terms is exercised end-to-end by grain 2.
-//                       WI-4: the task definition resolves PER ROUND (f3k-
-//                       sample-comp prescribes a different GS task each round);
-//                       its fixtures carry no ScoreNormalised terms, so there
-//                       GsEquivalentRaw passes our raw straight through.
+//                       WI-4 (in-process path only): the task definition
+//                       resolves PER ROUND (f3k-sample-comp prescribes a
+//                       different GS task each round); that fixture is
+//                       scoreNormalised-free and now takes the HTTP path,
+//                       leaving ales-sample-comp as the mapping's remaining user.
 //   grain 2 (normalised) — GS NormalisedScore vs GET /task-round-result per
 //                       round. CompetitorTaskResultView.RawScore carries the
 //                       POST-normalisation value (NormalisationEngine.cs line 151
@@ -234,7 +246,18 @@ public static class Comparator
         // conservation self-check folds exactly what the read path published.
         var cellsByCompetitor = new Dictionary<CompetitorId, List<TaskRoundScore>>();
 
-        await CompareRawGrainAsync(fixture, outcome, competition, entries, taskNos[0], comparedRaw, rawMismatches);
+        // WI-3 (pre-normalisation-score-view-field.md D6): grain 1 splits on
+        // the runtime classification — HTTP preNormalisationScore where the
+        // class is scoreNormalised-free, the Q1 in-process mirror otherwise.
+        if (ScoreNormalisedFree(fixture))
+        {
+            await CompareRawGrainViaHttpAsync(
+                fixture, outcome, client, competition, entries, taskNos[0], comparedRaw, rawMismatches);
+        }
+        else
+        {
+            await CompareRawGrainAsync(fixture, outcome, competition, entries, taskNos[0], comparedRaw, rawMismatches);
+        }
         await CompareNormalisedGrainAsync(
             fixture, outcome, client, entries, taskNos[0], comparedNormalised, normalisedMismatches, cellsByCompetitor);
 
@@ -300,6 +323,136 @@ public static class Comparator
     }
 
     // ------------------------------------------------------------- grain 1
+
+    /// <summary>
+    /// WI-3 classification (pre-normalisation-score-view-field.md D6.1/D6.2):
+    /// true iff every task of every phase of the fixture's LOADED class
+    /// definition carries an empty ScoreNormalised array — nothing is composed
+    /// after normalising, so the engine's pre-normalisation score is already
+    /// GS's composed raw and grain 1 can read it over HTTP. Derived at runtime
+    /// from the definition, never a per-slug table.
+    /// </summary>
+    private static bool ScoreNormalisedFree(GliderscoreFixture fixture) =>
+        fixture.Definition.Phases.SelectMany(phase => phase.Tasks)
+            .All(task => task.ScoreNormalised.IsEmpty);
+
+    /// <summary>
+    /// WI-3 grain 1 over HTTP (pre-normalisation-score-view-field.md D6.3) for
+    /// scoreNormalised-free fixtures: one GET /task-round-result per round —
+    /// the same plumbing as grain 2 — reading each row's PreNormalisationScore
+    /// and comparing it exactly against the oracle RawScore. ALL rows compare,
+    /// not just Original ones (trap 10): a make-up row's oracle cell sits at
+    /// its HOSTING (round, group), exactly as grain 2 treats it, and the
+    /// fetched row universe equals outcome.EntryIdBySlot by construction
+    /// (D6.5) — so RecordCell bookkeeping stays identical to the legacy path
+    /// and EnsureOracleCoverage remains honest.
+    /// </summary>
+    private static async Task CompareRawGrainViaHttpAsync(
+        GliderscoreFixture fixture,
+        ReplayOutcome outcome,
+        HttpClient client,
+        Competition competition,
+        IReadOnlyDictionary<EntryId, Entry> entries,
+        int taskNo,
+        HashSet<string> compared,
+        List<GrainMismatch> mismatches)
+    {
+        // D6.2 belt-and-braces: routing and classification are the same
+        // predicate today; if they ever disagree, refuse loudly rather than
+        // compare a value that is not GS's composition.
+        if (!ScoreNormalisedFree(fixture))
+        {
+            throw new NotSupportedException(
+                $"Fixture '{fixture.Slug}': routed to the HTTP raw grain but its class definition "
+                + "carries ScoreNormalised terms — the classification and the routing disagree.");
+        }
+
+        var groupByGroupId = outcome.GroupIdByRoundAndGroup.ToDictionary(kv => kv.Value, kv => kv.Key);
+        var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+        foreach (var roundNo in outcome.RoundOrdinalByRoundNo.Keys.OrderBy(n => n))
+        {
+            var views = await GetAsync<IReadOnlyList<GroupScoreView>>(
+                client,
+                $"/task-round-result?competitionRef={outcome.CompetitionId.Value}"
+                + $"&phaseOrdinal={outcome.PhaseOrdinal}"
+                + $"&roundOrdinal={outcome.RoundOrdinalByRoundNo[roundNo]}"
+                + "&taskRoundOrdinal=1");
+
+            foreach (var view in views)
+            {
+                var (roundOfView, groupNo) = groupByGroupId[view.GroupRef];
+
+                foreach (var result in view.Results)
+                {
+                    var pilotNo = pilotByCompetitor[result.CompetitorRef];
+                    RecordCell("raw", pilotNo, roundOfView, groupNo, taskNo, compared, mismatches);
+
+                    var fetched = result.PreNormalisationScore;
+
+                    // TRANSITIONAL PARITY GATE (D6.4): while both grain-1
+                    // mechanisms exist, the fetched value must equal the
+                    // legacy in-process computation for every cell. Any
+                    // difference is a harness bug in this flip — NOT a scoring
+                    // difference, never ledgerable (D6.5) — so stop loudly.
+                    var legacy = LegacyGsRawForSlot(outcome, competition, entries, (roundOfView, groupNo, pilotNo));
+
+                    if (legacy != fetched)
+                    {
+                        throw new InvalidOperationException(
+                            $"Fixture '{fixture.Slug}': grain-1 parity gate failed at (round {roundOfView}, "
+                            + $"group {groupNo}, pilot {pilotNo}) — legacy in-process {legacy} != fetched "
+                            + $"preNormalisationScore {fetched}. This is a harness bug in the WI-3 flip, "
+                            + "not a scoring difference.");
+                    }
+
+                    AddIfDifferent(
+                        mismatches, "raw", pilotNo, roundOfView, groupNo, fetched,
+                        OracleCell(fixture, taskNo, roundOfView, groupNo, pilotNo)?.RawScore);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// TRANSITIONAL (D6.4) — the legacy grain-1 computation for ONE slot,
+    /// verbatim from CompareRawGrainAsync's body (per-round task resolution
+    /// included), so the parity gate compares the exact value the in-process
+    /// path would have produced. Deleted with the gate once the flip runs
+    /// green; CompareRawGrainAsync itself stays untouched.
+    /// </summary>
+    private static decimal LegacyGsRawForSlot(
+        ReplayOutcome outcome,
+        Competition competition,
+        IReadOnlyDictionary<EntryId, Entry> entries,
+        (int RoundNo, int GroupNo, long PilotNo) slot)
+    {
+        var classDef = competition.AdoptedRules.Definition;
+
+        var taskDef = classDef.Phases[outcome.PhaseOrdinal]
+            .Tasks.Single(t => t.Code == outcome.TaskCodeByRoundNo[slot.RoundNo]);
+
+        var bindings = ScoringService.FlattenParameterBindings(
+            competition.ParameterBindings, outcome.PhaseOrdinal,
+            outcome.RoundOrdinalByRoundNo[slot.RoundNo]);
+
+        var resolvedTask = ParameterResolver.ResolveTask(taskDef, bindings, classDef.Parameters);
+
+        var entry = entries[outcome.EntryIdBySlot[slot]];
+
+        var interpretedFlights = entry.Flights
+            .Select(flight =>
+            {
+                var resolved = MeasurementDigest.Resolve(flight);
+                return FlightInterpreter.Interpret(resolvedTask, flight.Sequence, resolved.Metrics);
+            })
+            .ToImmutableArray();
+
+        var taskResult = ScoringService.SelectFlights(entry, resolvedTask, bindings, interpretedFlights);
+        taskResult = PenaltyEngine.ApplyRawPenalties(taskResult, EntryPenalties(entry), classDef.Penalties);
+
+        return GsEquivalentRaw(resolvedTask, taskResult);
+    }
 
     private static async Task CompareRawGrainAsync(
         GliderscoreFixture fixture,
