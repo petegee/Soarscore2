@@ -4,7 +4,9 @@
 // terms (ScoreNormalised), rounds, floors the result at zero (lower clamp —
 // kanban/completed/normalisation-lower-clamp.md), and checks minValidResults
 // for group annulment (Issue #5). If the task has no Normalisation, raw
-// scores pass through unchanged.
+// scores pass through unchanged. Each row's incoming raw score is captured
+// into GroupResult.PreNormalisationScores before the overwrite
+// (kanban/in-progress/pre-normalisation-score-view-field.md#WI-1).
 
 using System.Collections.Immutable;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -19,7 +21,9 @@ public static class NormalisationEngine
     /// <summary>
     /// Normalise a group's task results. If the task has no Normalisation,
     /// raw scores pass through unchanged. NoResult entries are excluded
-    /// from winner finding.
+    /// from winner finding. Populates PreNormalisationScores with each
+    /// row's incoming raw score
+    /// (kanban/in-progress/pre-normalisation-score-view-field.md#WI-1).
     /// </summary>
     /// <param name="groupRef">Which group (informational — not used in computation).</param>
     /// <param name="taskResults">CompetitorRef → TaskResult.</param>
@@ -53,10 +57,18 @@ public static class NormalisationEngine
                 kv => kv.Key,
                 kv => kv.Value);
 
+            // Pass-through is the identity, so the pre-normalisation values
+            // are the same numbers as the final results
+            // (kanban/in-progress/pre-normalisation-score-view-field.md#WI-1).
+            var preScores = taskResults.ToImmutableDictionary(
+                kv => kv.Key,
+                kv => kv.Value.RawScore);
+
             return new GroupResult(
                 Results: passThrough,
                 WinnerRef: null,
                 ValidCount: validCount,
+                PreNormalisationScores: preScores,
                 IsAnnulled: isAnnulled
             );
         }
@@ -83,6 +95,15 @@ public static class NormalisationEngine
                 winnerRaw = best.Value.RawScore;
             }
         }
+
+        // Capture each row's incoming raw score from the incoming
+        // taskResults — never from post-modification copies — so every
+        // overwrite below (zero-guard continues, LowerIsBetter backstop,
+        // the normalised rewrite) leaves the original value in the map
+        // (kanban/in-progress/pre-normalisation-score-view-field.md#WI-1).
+        var preNormalisationScores = taskResults.ToImmutableDictionary(
+            kv => kv.Key,
+            kv => kv.Value.RawScore);
 
         // 5. Compute normalised scores and add ScoreNormalised terms.
         var resultBuilder = ImmutableDictionary.CreateBuilder<string, TaskResult>();
@@ -165,6 +186,7 @@ public static class NormalisationEngine
             Results: resultBuilder.ToImmutable(),
             WinnerRef: winnerRef,
             ValidCount: validCount,
+            PreNormalisationScores: preNormalisationScores,
             IsAnnulled: isAnnulled
         );
     }

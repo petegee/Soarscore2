@@ -91,6 +91,14 @@ public sealed record GroupResult(
     /// <summary>Count of Valid (non-NoResult) results in this group.</summary>
     int ValidCount,
     /// <summary>
+    /// Per-result-key pre-normalisation score: the <see cref="TaskResult.RawScore"/>
+    /// this row held when it entered Normalise, preserved through the overwrite.
+    /// Keys are exactly <see cref="Results"/>' keys. Single writer:
+    /// <see cref="NormalisationEngine.Normalise"/>
+    /// (kanban/in-progress/pre-normalisation-score-view-field.md#WI-1).
+    /// </summary>
+    ImmutableDictionary<string, decimal> PreNormalisationScores,
+    /// <summary>
     /// True when ValidCount &lt; MinValidResults — the group is annulled (Issue #5).
     /// The orchestrator reads this flag to annul the TaskRound on the Competition aggregate.
     /// </summary>

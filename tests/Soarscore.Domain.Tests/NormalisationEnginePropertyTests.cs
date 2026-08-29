@@ -45,6 +45,15 @@ public class NormalisationEnginePropertyTests
         from raw in RawScore
         select (state, raw);
 
+    // Signed counterpart of Entry for the pre-normalisation-map properties:
+    // RawScore (positive cents) never produces 0 or a negative, which would
+    // leave the zero-winner guard and the LowerIsBetter zero-backstop
+    // unreachable through generated inputs.
+    private static readonly Gen<(TaskResultState state, decimal raw)> SignedEntry =
+        from state in ResultState
+        from raw in SignedRawScore
+        select (state, raw);
+
     // -------------------------------------------------------------- winner
 
     [Fact]
@@ -279,6 +288,94 @@ public class NormalisationEnginePropertyTests
             return t.direction == NormalisationDirection.HigherIsBetter
                 ? loScore <= hiScore
                 : loScore >= hiScore;
+        });
+    }
+
+    // ------------------------------------------- pre-normalisation map (WI-1)
+
+    // P1 — pre-normalisation preservation
+    // (kanban/in-progress/pre-normalisation-score-view-field.md, "Property-based
+    // testing"): for any group of arbitrary task results under any task
+    // definition, Normalise preserves every row's received raw score —
+    // ∀k: output.PreNormalisationScores[k] == input[k].RawScore — with the
+    // map's key set EQUAL to the results' key set, while Results[k].RawScore
+    // legitimately changes. TaskResults are built DIRECTLY from the generated
+    // (state, raw) pairs so NoResult rows can carry non-zero raws (story trap
+    // 1); raws come from the signed domain so 0 and negatives are reachable,
+    // exercising all four branches (pass-through, valid-scale, zero-winner
+    // guard, LowerIsBetter backstop). Signed raws are sound here: P1 pins
+    // map-vs-input, orthogonal to the final-value arithmetic that the
+    // negative-winner "inverted domain" caveat concerns.
+    [Fact]
+    public void PreNormalisationScores_preserve_every_received_raw_score()
+    {
+        (from direction in Direction
+         from winnerScore in WinnerScore
+         from rounding in RoundingGen
+         from normalised in Gen.Bool
+         from entries in SignedEntry.Array[1, 6]
+         select (direction, winnerScore, rounding, normalised, entries))
+        .Sample(t =>
+        {
+            var norm = new Normalisation
+            {
+                Direction = t.direction,
+                WinnerScore = t.winnerScore,
+                Round = t.rounding,
+            };
+            var task = t.normalised ? MakeTask(norm) : MakeUnnormalisedTask();
+
+            var keyed = t.entries
+                .Select((e, i) => (Key: $"C{i}", e.state, e.raw))
+                .ToList();
+
+            // Built DIRECTLY from (state, raw): a NoResult row keeps its
+            // generated raw instead of collapsing to 0 (story trap 1).
+            var results = keyed.ToDictionary(
+                k => k.Key,
+                k => new TaskResult(k.state, null, k.raw));
+
+            var group = NormalisationEngine.Normalise(
+                "G1", results.ToImmutableDictionary(), task, EmptyBindings);
+
+            if (!results.Keys.ToHashSet()
+                    .SetEquals(group.PreNormalisationScores.Keys))
+                return false;
+
+            return keyed.All(k =>
+                group.PreNormalisationScores[k.Key] == results[k.Key].RawScore);
+        });
+    }
+
+    // P2 — pass-through transparency: when task.Normalise is null the map
+    // equals the final results — ∀k: PreNormalisationScores[k] ==
+    // Results[k].RawScore; they are the same number there (story D1). Added
+    // as a distinct invariant from P1 on explicit user request: P1 pins
+    // map-vs-input, P2 pins map-vs-output for the identity branch.
+    [Fact]
+    public void Pass_through_map_equals_final_results()
+    {
+        SignedEntry.Array[1, 6].Sample(entries =>
+        {
+            var task = MakeUnnormalisedTask();
+
+            var keyed = entries
+                .Select((e, i) => (Key: $"C{i}", e.state, e.raw))
+                .ToList();
+
+            var results = keyed.ToDictionary(
+                k => k.Key,
+                k => new TaskResult(k.state, null, k.raw));
+
+            var group = NormalisationEngine.Normalise(
+                "G1", results.ToImmutableDictionary(), task, EmptyBindings);
+
+            if (!results.Keys.ToHashSet()
+                    .SetEquals(group.PreNormalisationScores.Keys))
+                return false;
+
+            return keyed.All(k =>
+                group.PreNormalisationScores[k.Key] == group.Results[k.Key].RawScore);
         });
     }
 

@@ -307,6 +307,132 @@ public class NormalisationEngineTests
         group.ValidCount.Should().Be(2);
     }
 
+    // ------------------------------------------------------ PreNormalisationScores
+
+    // kanban/in-progress/pre-normalisation-score-view-field.md#WI-1 — the map
+    // carries each row's incoming RawScore through every overwrite branch.
+    // Key-set equality with Results is part of the contract (story trap 4),
+    // asserted on every group below.
+
+    [Fact]
+    public void PreNormalisationScores_pass_through_task_equals_inputs()
+    {
+        var task = MakeUnnormalisedTask();
+        var results = new Dictionary<string, TaskResult>
+        {
+            ["A"] = ValidResult(600m),
+            ["B"] = NoResultResult(),
+        };
+
+        var group = NormalisationEngine.Normalise(
+            "G1", results.ToImmutableDictionary(), task, EmptyBindings());
+
+        group.PreNormalisationScores["A"].Should().Be(600m);
+        group.PreNormalisationScores["B"].Should().Be(0m);
+        group.PreNormalisationScores.Keys.Should().BeEquivalentTo("A", "B");
+    }
+
+    [Fact]
+    public void PreNormalisationScores_winner_keeps_input_raw_through_rounding()
+    {
+        // Same numbers as Normalised_score_rounding_applied: A=400, B=333,
+        // B = 1000 × 333 / 400 = 832.5 → HalfUp to 0.1.
+        var normalise = new Normalisation
+        {
+            Direction = NormalisationDirection.HigherIsBetter,
+            WinnerScore = 1000,
+            Round = new Rounding(RoundingMode.HalfUp, 0.1m),
+        };
+
+        var task = MakeNormalisedTask(normalise);
+        var results = new Dictionary<string, TaskResult>
+        {
+            ["A"] = ValidResult(400m),
+            ["B"] = ValidResult(333m),
+        };
+
+        var group = NormalisationEngine.Normalise(
+            "G1", results.ToImmutableDictionary(), task, EmptyBindings());
+
+        group.WinnerRef.Should().Be("A");
+        group.Results["A"].RawScore.Should().Be(1000m);
+        group.Results["B"].RawScore.Should().Be(832.5m);
+        group.PreNormalisationScores["A"].Should().Be(400m);
+        group.PreNormalisationScores["B"].Should().Be(333m);
+        group.PreNormalisationScores.Keys.Should().BeEquivalentTo("A", "B");
+    }
+
+    // Real selectors never emit a NoResult carrying a non-zero raw, but the
+    // record permits it and the semantics must survive (story trap 1): the
+    // zero-guard overwrites the final to 0 while the pre-value survives.
+    [Fact]
+    public void PreNormalisationScores_NoResult_row_keeps_non_zero_input_raw()
+    {
+        var task = MakeNormalisedTask(HigherIsBetter(1000));
+        var results = new Dictionary<string, TaskResult>
+        {
+            ["A"] = ValidResult(600m),
+            ["B"] = ValidResult(500m),
+            ["C"] = new TaskResult(TaskResultState.NoResult, null, 7m),
+        };
+
+        var group = NormalisationEngine.Normalise(
+            "G1", results.ToImmutableDictionary(), task, EmptyBindings());
+
+        group.WinnerRef.Should().Be("A");
+        group.Results["C"].RawScore.Should().Be(0m);
+        group.PreNormalisationScores["C"].Should().Be(7m);
+        group.PreNormalisationScores["A"].Should().Be(600m);
+        group.PreNormalisationScores.Keys.Should().BeEquivalentTo("A", "B", "C");
+    }
+
+    // Zero-winner guard: results overwritten to 0, pre-values are whatever
+    // came in — not special-cased in the map builder (story trap 2).
+    [Fact]
+    public void PreNormalisationScores_all_NoResult_group_keeps_input_raws()
+    {
+        var task = MakeNormalisedTask(HigherIsBetter(1000));
+        var results = new Dictionary<string, TaskResult>
+        {
+            ["A"] = NoResultResult(),
+            ["B"] = new TaskResult(TaskResultState.NoResult, null, 9m),
+        };
+
+        var group = NormalisationEngine.Normalise(
+            "G1", results.ToImmutableDictionary(), task, EmptyBindings());
+
+        group.WinnerRef.Should().BeNull();
+        group.Results["A"].RawScore.Should().Be(0m);
+        group.Results["B"].RawScore.Should().Be(0m);
+        group.PreNormalisationScores["A"].Should().Be(0m);
+        group.PreNormalisationScores["B"].Should().Be(9m);
+        group.PreNormalisationScores.Keys.Should().BeEquivalentTo("A", "B");
+    }
+
+    // Mirror of LowerIsBetter_non_winning_zero_raw_score_scores_zero_without_
+    // dividing_by_zero: the backstop'd row's final stays 0 (no division) while
+    // its pre-value — and the negative winner's — survive in the map.
+    [Fact]
+    public void PreNormalisationScores_LowerIsBetter_backstop_row_keeps_input_raw()
+    {
+        var task = MakeNormalisedTask(LowerIsBetter(1000));
+        var results = new Dictionary<string, TaskResult>
+        {
+            ["A"] = ValidResult(-5m),
+            ["B"] = ValidResult(0m),
+        };
+
+        var group = NormalisationEngine.Normalise(
+            "G1", results.ToImmutableDictionary(), task, EmptyBindings());
+
+        group.WinnerRef.Should().Be("A");
+        group.Results["A"].RawScore.Should().Be(1000m);
+        group.Results["B"].RawScore.Should().Be(0m);
+        group.PreNormalisationScores["A"].Should().Be(-5m);
+        group.PreNormalisationScores["B"].Should().Be(0m);
+        group.PreNormalisationScores.Keys.Should().BeEquivalentTo("A", "B");
+    }
+
     // ------------------------------------------------------ helpers
 
     private static TaskResult ValidResult(decimal rawScore) => new(
