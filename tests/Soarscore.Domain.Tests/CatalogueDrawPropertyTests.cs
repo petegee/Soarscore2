@@ -341,10 +341,10 @@ public class CatalogueDrawPropertyTests
             .ToImmutableArray();
 
         // A sanity floor, not a hard-coded name list: today's corpus has
-        // exactly F3K and F5K in this shape. A future catalogue-choice class
-        // should be picked up here without editing this test — only this
-        // assertion would need raising.
-        catalogueClasses.Length.Should().Be(2);
+        // exactly F3K, F5K and the NZ F3K NDC in this shape. A future
+        // catalogue-choice class should be picked up here without editing this
+        // test — only this assertion would need raising.
+        catalogueClasses.Length.Should().Be(3);
 
         foreach (var (fileName, definition) in catalogueClasses)
         {

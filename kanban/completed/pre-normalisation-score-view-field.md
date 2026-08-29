@@ -1,6 +1,6 @@
 # Story — Expose the pre-normalisation score over HTTP
 
-**Status:** In progress · **Raised:** 2026-08-26 (decision recorded in
+**Status:** Completed · **Raised:** 2026-08-26 (decision recorded in
 `kanban/completed/gliderscore-replay-and-compare-harness.md`, Q1) ·
 **Fleshed out:** 2026-08-27
 
@@ -345,3 +345,38 @@ green.
   mirrors where classification demands it (D6).
 - Consumers beyond the acceptance suite: nothing else calls this today; the
   field ships because HTTP exposure was wanted, not because a caller waits.
+
+---
+
+# As-built (2026-08-29)
+
+All five WIs landed. Commits: WI-0 `3f29b0a`, WI-1 `af2aa7b`, WI-2 `d54a3f4`,
+WI-3 `3a7f03a` + `136467a`. Zero behavioural change anywhere: every checkpoint
+suite green with identical pass/fail profiles; the WI-3 parity gate compared
+every cell of all nine flipped fixtures and never fired.
+
+Deviations from the plan, as built:
+
+- **D2 placement (WI-1):** `IsAnnulled` carries a default value, and C#
+  forbids a required parameter after an optional one (CS1737), so
+  `PreNormalisationScores` sits BEFORE `IsAnnulled` in the positional record
+  declaration — the binding law (no default value) is kept, and both
+  construction sites are named-argument, so the compiler still forces the map
+  at every future site.
+- **Active fixtures (WI-3):** the story's "five" was stale — ten fixtures are
+  active in `index.md` and the feature file. Runtime classification
+  (`ScoreNormalisedFree` over `fixture.Definition`, never per-slug booleans)
+  flipped NINE to the HTTP path; `ales-sample-comp` alone (its task D carries
+  a `scoreNormalised` term) retains the legacy in-process grain-1 path
+  verbatim, so `GsEquivalentRaw`/`EvaluatePostNormalisationTerm`/
+  `EvaluateLookup`/`EntryPenalties` stayed reachable — nothing else went dead.
+- **D6.3's `Role == ReflightRole.Original` filter was stale vs. the code:**
+  grain 2 compares ALL rows (trap 10). The HTTP grain 1 therefore compares all
+  rows too — no filter — and `EnsureOracleCoverage` stayed honest; the
+  binding statement was D6.5's zero-change law, which the parity gate proved.
+- **P2 property (WI-1):** added on explicit user request as new grounds —
+  pass-through transparency (`Normalise is null` ⇒ map values equal final
+  `RawScore`s, D1's identity consequence). NOT the forbidden
+  re-derivation-of-normalised-scores property, which stays skipped.
+- **Postgres acceptance leg skipped:** Docker unavailable in the
+  implementing environment; sqlite leg green (64/64) at both WI-3 checkpoints.

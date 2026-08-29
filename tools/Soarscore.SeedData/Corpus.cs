@@ -1,6 +1,6 @@
-// The twelve seed definitions, in file-name order.
+// The thirteen seed definitions, in file-name order.
 //
-// Seven FAI classes, four NZ national soaring ones and one MFNZ free-flight
+// Seven FAI classes, five NZ national soaring ones and one MFNZ free-flight
 // power class. The NZ classes are here because they are a DIFFERENT rulebook —
 // they found four things the FAI corpus could not (F24-F27), and one of them,
 // F24, would have mis-scored a class that adopted and ran cleanly. Aggregate is
@@ -30,6 +30,7 @@ public static class Corpus
         new("81-nz-m-ndc", SeedNzMNdc.Definition),
         new("83-nz-n-ales123", SeedNzNAles123.Definition),
         new("85-nz-p-radian", SeedNzPRadian.Definition),
+        new("85b-nz-f3k-ndc", SeedNzF3kNdc.Definition),
         new("90-aggregate", SeedAggregate.Definition),
     ];
 }

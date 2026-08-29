@@ -78,10 +78,10 @@ public class ScoringCorpusPropertyTests
         // the only remaining refusal, F3B's multi-task rounds).
         var drawable = Corpus.All.Where(c => c.Definition.Phases[0].Rounds.TasksPerRound == 1).ToImmutableArray();
 
-        // Guards the premise: exactly 11 of the 12 corpus classes (everything
+        // Guards the premise: exactly 12 of the 13 corpus classes (everything
         // but F3B). A corpus change that alters this set should fail here
         // loudly, rather than silently under- or over-testing.
-        drawable.Length.Should().Be(11);
+        drawable.Length.Should().Be(12);
 
         foreach (var seedClass in drawable)
         {
