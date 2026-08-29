@@ -251,8 +251,7 @@ public static class Comparator
         // class is scoreNormalised-free, the Q1 in-process mirror otherwise.
         if (ScoreNormalisedFree(fixture))
         {
-            await CompareRawGrainViaHttpAsync(
-                fixture, outcome, client, competition, entries, taskNos[0], comparedRaw, rawMismatches);
+            await CompareRawGrainViaHttpAsync(fixture, outcome, client, taskNos[0], comparedRaw, rawMismatches);
         }
         else
         {
@@ -351,8 +350,6 @@ public static class Comparator
         GliderscoreFixture fixture,
         ReplayOutcome outcome,
         HttpClient client,
-        Competition competition,
-        IReadOnlyDictionary<EntryId, Entry> entries,
         int taskNo,
         HashSet<string> compared,
         List<GrainMismatch> mismatches)
@@ -388,70 +385,12 @@ public static class Comparator
                     var pilotNo = pilotByCompetitor[result.CompetitorRef];
                     RecordCell("raw", pilotNo, roundOfView, groupNo, taskNo, compared, mismatches);
 
-                    var fetched = result.PreNormalisationScore;
-
-                    // TRANSITIONAL PARITY GATE (D6.4): while both grain-1
-                    // mechanisms exist, the fetched value must equal the
-                    // legacy in-process computation for every cell. Any
-                    // difference is a harness bug in this flip — NOT a scoring
-                    // difference, never ledgerable (D6.5) — so stop loudly.
-                    var legacy = LegacyGsRawForSlot(outcome, competition, entries, (roundOfView, groupNo, pilotNo));
-
-                    if (legacy != fetched)
-                    {
-                        throw new InvalidOperationException(
-                            $"Fixture '{fixture.Slug}': grain-1 parity gate failed at (round {roundOfView}, "
-                            + $"group {groupNo}, pilot {pilotNo}) — legacy in-process {legacy} != fetched "
-                            + $"preNormalisationScore {fetched}. This is a harness bug in the WI-3 flip, "
-                            + "not a scoring difference.");
-                    }
-
                     AddIfDifferent(
-                        mismatches, "raw", pilotNo, roundOfView, groupNo, fetched,
+                        mismatches, "raw", pilotNo, roundOfView, groupNo, result.PreNormalisationScore,
                         OracleCell(fixture, taskNo, roundOfView, groupNo, pilotNo)?.RawScore);
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// TRANSITIONAL (D6.4) — the legacy grain-1 computation for ONE slot,
-    /// verbatim from CompareRawGrainAsync's body (per-round task resolution
-    /// included), so the parity gate compares the exact value the in-process
-    /// path would have produced. Deleted with the gate once the flip runs
-    /// green; CompareRawGrainAsync itself stays untouched.
-    /// </summary>
-    private static decimal LegacyGsRawForSlot(
-        ReplayOutcome outcome,
-        Competition competition,
-        IReadOnlyDictionary<EntryId, Entry> entries,
-        (int RoundNo, int GroupNo, long PilotNo) slot)
-    {
-        var classDef = competition.AdoptedRules.Definition;
-
-        var taskDef = classDef.Phases[outcome.PhaseOrdinal]
-            .Tasks.Single(t => t.Code == outcome.TaskCodeByRoundNo[slot.RoundNo]);
-
-        var bindings = ScoringService.FlattenParameterBindings(
-            competition.ParameterBindings, outcome.PhaseOrdinal,
-            outcome.RoundOrdinalByRoundNo[slot.RoundNo]);
-
-        var resolvedTask = ParameterResolver.ResolveTask(taskDef, bindings, classDef.Parameters);
-
-        var entry = entries[outcome.EntryIdBySlot[slot]];
-
-        var interpretedFlights = entry.Flights
-            .Select(flight =>
-            {
-                var resolved = MeasurementDigest.Resolve(flight);
-                return FlightInterpreter.Interpret(resolvedTask, flight.Sequence, resolved.Metrics);
-            })
-            .ToImmutableArray();
-
-        var taskResult = ScoringService.SelectFlights(entry, resolvedTask, bindings, interpretedFlights);
-        taskResult = PenaltyEngine.ApplyRawPenalties(taskResult, EntryPenalties(entry), classDef.Penalties);
-
-        return GsEquivalentRaw(resolvedTask, taskResult);
     }
 
     private static async Task CompareRawGrainAsync(
