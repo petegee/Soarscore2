@@ -1,6 +1,6 @@
 # Story — Expose the pre-normalisation score over HTTP
 
-**Status:** Backlog · **Raised:** 2026-08-26 (decision recorded in
+**Status:** In progress · **Raised:** 2026-08-26 (decision recorded in
 `kanban/completed/gliderscore-replay-and-compare-harness.md`, Q1) ·
 **Fleshed out:** 2026-08-27
 
