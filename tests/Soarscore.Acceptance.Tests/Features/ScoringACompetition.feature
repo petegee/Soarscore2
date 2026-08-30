@@ -65,3 +65,16 @@ Feature: Scoring a competition
     When competitor 1 commits the infraction twice and everyone else flies clean
     Then competitor 1's pre-normalisation group score is 200 lower than their unpenalised raw
     And competitor 1 is not the group winner-anchor if any clean flight outscores their deducted raw
+
+  Scenario: A task-round-scoped zero penalty zeroes the named round's flight score
+    Given a published class declaring a Zero-carrying penalty like F3B's nonConformingWinch
+    And a competition adopting it, drawn, with competitor 1 having flown round 1
+    When the CD records that infraction against competitor 1 scoped to round 1's task-round
+    Then competitor 1's round 1 result is NoResult and they are not the group winner
+    And competitor 1's final total is still reduced by the definition's point deduction
+
+  Scenario: An entry-scoped disqualification removes the competitor from the placings
+    Given a published class declaring a Disqualify-carrying penalty
+    And a competition adopting it, drawn, with competitor 1 having flown
+    When the CD records that infraction against competitor 1's entry
+    Then competitor 1's score is unchanged but they hold no placing

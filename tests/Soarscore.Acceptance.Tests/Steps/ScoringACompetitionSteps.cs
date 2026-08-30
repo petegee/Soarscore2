@@ -69,6 +69,44 @@ public sealed class ScoringACompetitionSteps
         Penalties = [.. F5JDefinition.Penalties, LateLandingDeduction],
     };
 
+    // WI-4 (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-4):
+    // a shape-alike of F3B's nonConformingWinch (SeedF3B.cs — the seed class
+    // itself is not imported): the rule zeroes the flight AND deducts 1000
+    // from the final score (F3B.2.2 p), so one recorded infraction acts in
+    // both stages — the mixed-effect rule, D-A4. Declared on the F5J corpus
+    // class so these steps' task machinery flies it unchanged; no Accrual, no
+    // exclusion group — the seed definition carries neither.
+    private static readonly PenaltyDefinition NonConformingWinchZero = new()
+    {
+        InfractionType = "nonConformingWinch",
+        Effects = [new(PenaltyEffect.ZeroFlight), new(PenaltyEffect.DeductPoints, 1000m)],
+    };
+
+    private static readonly ClassDefinition F5JWithNonConformingWinchZero = F5JDefinition with
+    {
+        Name = "RC Electric Powered Thermal Duration Gliders (acceptance fixture: nonConformingWinch zero)",
+        Version = "FAI F5 Electric 2026 ed.2 + acceptance nonConformingWinch",
+        Penalties = [.. F5JDefinition.Penalties, NonConformingWinchZero],
+    };
+
+    // WI-4: a Disqualify-carrying definition shaped like F3F's
+    // prohibitedTelemetry (SeedF3F.cs) — flag-only at every stage (D-B2): no
+    // arithmetic change, the competitor simply leaves the placings. It joins
+    // no exclusion group, and adoption check 16 admits only all-DeductPoints
+    // definitions into one anyway, so nothing can suppress the flag (D-B4).
+    private static readonly PenaltyDefinition ProhibitedTelemetryDisqualify = new()
+    {
+        InfractionType = "prohibitedTelemetry",
+        Effects = [new(PenaltyEffect.Disqualify)],
+    };
+
+    private static readonly ClassDefinition F5JWithProhibitedTelemetryDisqualify = F5JDefinition with
+    {
+        Name = "RC Electric Powered Thermal Duration Gliders (acceptance fixture: prohibitedTelemetry disqualification)",
+        Version = "FAI F5 Electric 2026 ed.2 + acceptance prohibitedTelemetry",
+        Penalties = [.. F5JDefinition.Penalties, ProhibitedTelemetryDisqualify],
+    };
+
     private string? _classContentHash;
     private CompetitionId _competitionId;
     private readonly List<CompetitorId> _competitors = [];
@@ -105,6 +143,17 @@ public sealed class ScoringACompetitionSteps
     // from the deducted-ratio arithmetic the Then steps assert.
     private readonly Dictionary<CompetitorId, decimal> _entryDeductionExpectedScores = new();
 
+    // Populated by the task-round-scoped zero scenario's Given, read by its
+    // Then steps (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-4).
+    private CompetitorId _taskRoundZeroCompetitor;
+    private CompetitorId _taskRoundZeroCleanWinner;
+
+    // Populated by the entry-scoped disqualification scenario's Given, read by
+    // its When/Then steps (same story, #wi-4).
+    private CompetitorId _entryDisqualifyCompetitor;
+    private CompetitorId _entryDisqualifyCleanBest;
+    private EntryId _entryDisqualifyEntryId;
+
     // ---------------------------------------------------------------- Given
 
     [Given(@"^the F5J class is published$")]
@@ -119,6 +168,20 @@ public sealed class ScoringACompetitionSteps
     {
         _classContentHash = await ApiClient.PostCommandAsync<string>(
             Client, "/publish-class-definition", new PublishClassDefinition(F5JWithEntryScopedDeduction));
+    }
+
+    [Given(@"^a published class declaring a Zero-carrying penalty like F3B's nonConformingWinch$")]
+    public async Task GivenAPublishedClassDeclaringAZeroCarryingPenaltyLikeF3BsNonConformingWinch()
+    {
+        _classContentHash = await ApiClient.PostCommandAsync<string>(
+            Client, "/publish-class-definition", new PublishClassDefinition(F5JWithNonConformingWinchZero));
+    }
+
+    [Given(@"^a published class declaring a Disqualify-carrying penalty$")]
+    public async Task GivenAPublishedClassDeclaringADisqualifyCarryingPenalty()
+    {
+        _classContentHash = await ApiClient.PostCommandAsync<string>(
+            Client, "/publish-class-definition", new PublishClassDefinition(F5JWithProhibitedTelemetryDisqualify));
     }
 
     [Given(@"^a competition is created adopting it, with (\d+) registered competitors$")]
@@ -149,6 +212,61 @@ public sealed class ScoringACompetitionSteps
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/draw-phase", new DrawPhase(_competitionId, rounds));
         // D4: scoring scenarios fly flights — the draw must be accepted first.
         await ApiClient.PostCommandAsync<CompetitionId>(Client, "/accept-draw", new AcceptDraw(_competitionId));
+    }
+
+    // WI-4 — the story's Given text states the flying as already-done setup,
+    // so this step makes it true: the same create/draw/fly walk the sibling
+    // scenarios' Givens and Whens make, reusing those binding methods rather
+    // than duplicating their bodies. Competitor 1 flies the group's LONGEST
+    // time (600) — their unpenalised winner-anchor position — so a pipeline
+    // that fails to zero them leaves them the placed winner and the Then
+    // steps fail loudly instead of vacuously.
+    [Given(@"^a competition adopting it, drawn, with competitor 1 having flown round 1$")]
+    public async Task GivenACompetitionAdoptingItDrawnWithCompetitor1HavingFlownRound1()
+    {
+        await GivenACompetitionIsCreatedAdoptingItWithRegisteredCompetitors(6);
+        await GivenThePreliminaryPhaseIsDrawnForRounds(1);
+
+        var group = await ResolveGroupAsync(roundOrdinal: 1);
+
+        // Winner-anchor times: competitor 1's 600 is the group's longest, the
+        // clean best is 500, and every clean normalised score (600, 640, 680,
+        // 720, 1000 against the 500 anchor) is an exact decimal.
+        var times = new decimal[] { 600m, 300m, 320m, 340m, 360m, 500m };
+        foreach (var (competitorRef, i) in group.CompetitorRefs.Select((r, i) => (r, i)))
+        {
+            await CaptureFlightAsync(1, group.Id, competitorRef, times[i]);
+        }
+
+        _taskRoundZeroCompetitor = group.CompetitorRefs[0];
+        _taskRoundZeroCleanWinner = group.CompetitorRefs[5]; // the best clean flight, 500
+    }
+
+    [Given(@"^a competition adopting it, drawn, with competitor 1 having flown$")]
+    public async Task GivenACompetitionAdoptingItDrawnWithCompetitor1HavingFlown()
+    {
+        await GivenACompetitionIsCreatedAdoptingItWithRegisteredCompetitors(6);
+        await GivenThePreliminaryPhaseIsDrawnForRounds(1);
+
+        var group = await ResolveGroupAsync(roundOrdinal: 1);
+
+        // The same anchor-shape reasoning: competitor 1 flies the group's
+        // longest (600 → the 1000 basis), the clean best is 500.
+        var times = new decimal[] { 600m, 300m, 340m, 380m, 420m, 500m };
+
+        EntryId competitor1EntryId = default;
+        for (var i = 0; i < group.CompetitorRefs.Length; i++)
+        {
+            var entryId = await CaptureFlightAsync(1, group.Id, group.CompetitorRefs[i], times[i]);
+            if (i == 0)
+            {
+                competitor1EntryId = entryId;
+            }
+        }
+
+        _entryDisqualifyCompetitor = group.CompetitorRefs[0];
+        _entryDisqualifyCleanBest = group.CompetitorRefs[5]; // the best clean flight, 500
+        _entryDisqualifyEntryId = competitor1EntryId;
     }
 
     /// <summary>
@@ -470,6 +588,31 @@ public sealed class ScoringACompetitionSteps
         _entryDeductionCleanWinner = group.CompetitorRefs[5]; // index 5 flies the clean best, 500
     }
 
+    [When(@"^the CD records that infraction against competitor 1 scoped to round 1's task-round$")]
+    public async Task WhenTheCdRecordsThatInfractionAgainstCompetitor1ScopedToRound1sTaskRound()
+    {
+        // The aggregate-side command — the same /record-competition-penalty
+        // surface the 300-point safety scenario drives — now scoped to the
+        // task-round: the payload's TaskRound coordinate is what anchors the
+        // zeroing to round 1 (D-A2), and the write side refuses a
+        // Zero*-carrying record without one (D-A3).
+        await ApiClient.PostCommandAsync<CompetitionId>(
+            Client, "/record-competition-penalty",
+            new RecordCompetitionPenalty(_competitionId, "nonConformingWinch", PenaltyScope.TaskRound,
+                _taskRoundZeroCompetitor, new TaskRoundCoordinate(0, 1, 1), "the contest director"));
+    }
+
+    [When(@"^the CD records that infraction against competitor 1's entry$")]
+    public async Task WhenTheCdRecordsThatInfractionAgainstCompetitor1sEntry()
+    {
+        // The same /record-entry-penalty surface the late-landing scenario
+        // drives. Recorded AFTER capture — NFR-4, no imposed ordering on score
+        // capture: scoring happens only at read time.
+        await ApiClient.PostCommandAsync<EntryId>(
+            Client, "/record-entry-penalty",
+            new RecordEntryPenalty(_entryDisqualifyEntryId, "prohibitedTelemetry", PenaltyScope.Entry, "the scorer"));
+    }
+
     // ----------------------------------------------------------------- Then
 
     [Then(@"^the group's result holds a normalised score for each of its 6 competitors$")]
@@ -689,6 +832,60 @@ public sealed class ScoringACompetitionSteps
         view.WinnerRef.Should().Be(_entryDeductionCleanWinner);
         view.Results.Single(r => r.CompetitorRef == _entryDeductionCleanWinner)
             .RawScore.Should().Be(1000m);
+    }
+
+    [Then(@"^competitor 1's round 1 result is NoResult and they are not the group winner$")]
+    public async Task ThenCompetitor1sRound1ResultIsNoResultAndTheyAreNotTheGroupWinner()
+    {
+        var view = (await FetchAllGroupViewsAsync(roundOrdinal: 1)).Single();
+
+        var zeroed = view.Results.Single(r => r.CompetitorRef == _taskRoundZeroCompetitor);
+        zeroed.State.Should().Be(TaskResultState.NoResult);
+        zeroed.RawScore.Should().Be(0m);
+
+        // The zeroed competitor is excluded from normalisation's winner-finding
+        // — the same guarantee an entry-scoped Zero* gets (D-A1). Competitor 1
+        // flew the group's longest time, so a pipeline that failed to zero them
+        // would keep them the 1000 anchor and this would fail loudly.
+        view.WinnerRef.Should().NotBeNull();
+        view.WinnerRef.Should().NotBe(_taskRoundZeroCompetitor);
+        view.WinnerRef.Should().Be(_taskRoundZeroCleanWinner);
+        view.Results.Single(r => r.CompetitorRef == _taskRoundZeroCleanWinner)
+            .RawScore.Should().Be(1000m);
+    }
+
+    [Then(@"^competitor 1's final total is still reduced by the definition's point deduction$")]
+    public async Task ThenCompetitor1sFinalTotalIsStillReducedByTheDefinitionsPointDeduction()
+    {
+        var view = await ApiClient.GetAsync<CompetitionScoreView>(Client, $"/competition-result?competitionRef={_competitionId.Value}");
+        var score = view.Scores.Single(s => s.CompetitorRef == _taskRoundZeroCompetitor);
+
+        // The definition's two halves act once each (D-A4): the ZeroFlight
+        // half zeroed the task-round result, so 0 feeds the aggregate, and the
+        // DeductPoints 1000 half still deducts at the aggregate stage —
+        // total 0 - 1000, not the un-deducted 0 a dropped half would leave.
+        score.Disqualified.Should().BeFalse();
+        score.Score.Should().Be(-1000m);
+    }
+
+    [Then(@"^competitor 1's score is unchanged but they hold no placing$")]
+    public async Task ThenCompetitor1sScoreIsUnchangedButTheyHoldNoPlacing()
+    {
+        var view = await ApiClient.GetAsync<CompetitionScoreView>(Client, $"/competition-result?competitionRef={_competitionId.Value}");
+
+        var score = view.Scores.Single(s => s.CompetitorRef == _entryDisqualifyCompetitor);
+
+        // Flag-only (D-B2): competitor 1 flew the 1000 anchor and keeps the
+        // score unchanged — but RankingEngine excludes flagged competitors
+        // from placings, so Placing is null and the best clean competitor is
+        // placed 1st in their stead. (A pipeline that failed to set the flag
+        // would leave competitor 1 placed 1st.)
+        score.Disqualified.Should().BeTrue();
+        score.Score.Should().Be(1000m);
+        score.Placing.Should().BeNull();
+
+        view.Scores.Single(s => s.CompetitorRef == _entryDisqualifyCleanBest)
+            .Placing.Should().Be(1);
     }
 
     // --------------------------------------------------------------- helpers
