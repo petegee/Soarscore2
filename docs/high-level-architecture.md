@@ -230,6 +230,18 @@ the combinations absence makes incoherent.
     `DeductPoints` effects — notation §3, diagram §2, since "the largest
     applies" is undefined across effect kinds. A penalty may name several groups
     (F28); the check is per group.
+17. A `QualifyingPosition` tie-break rung's `SourcePhaseOrdinal` names an
+    existing phase with a strictly lower ordinal — notation §4, diagram §2
+    (`F3J.11.4`, `5.5.11.13 h`). The figure is a *previous* phase's placing, so
+    the rung is unwritable on phase 1 — what makes the figure unsupplyable in
+    the single-phase world.
+18. A phase's `TieBreaks` containing `UndefinedRequiresRuling` contains only
+    it — notation §4, diagram §2. Mixing "the rulebook is silent" with stated
+    rungs is a self-contradiction.
+19. `BestDroppedScore` on a phase that declares no `DropPolicy` is rejected —
+    notation §4, diagram §2. No drop policy means no dropped cell ever exists,
+    so the rung is provably inert (the check-13 precedent: reject what the
+    rules have already ruled out).
 
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in

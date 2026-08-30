@@ -341,10 +341,90 @@ re-derived.
     validity   minRounds <n> [minTasks <n>]
     [drop      <ByRound|ByTask> <count> [whenRounds >= <n>] [whenResults >= <n>]
                  … (one or more, in order)]                       # optional
+    [tiebreak  <directive> … (one or more, in order)]             # optional
     promotion  <TopN <n> | TopPercent <pct>> group <min>..<max>
                  carryPenalties <true|false|param(<name>)>
     task … (one or more — the catalogue available in this phase)
 ```
+
+`<directive>` ∈ `bestDroppedScore | qualifyingPosition <ordinal> |
+additionalFullRound | tiebreakFlyoff | classificationRounds |
+undefinedRequiresRuling`.
+
+**`tiebreak` is optional, and absence keeps the display ladder.** Rung 1 is
+always Score DESC and is core-owned — it is what "rank" means, not class data.
+A phase that writes no `tiebreak` states the ordinary thing, that its rules
+say nothing about ties, and the class-agnostic display ladder applies: the
+PreDropScore countback at rung 2, the established practice the frozen fixture
+oracles are built on. A phase that writes a list is making a different
+statement, and the list is the complete tie-break ladder after Score — it
+**supersedes** the display rung 2 rather than appending to it. The reason is
+load-bearing: under append, F3B's stated `additionalFullRound` could never
+fire — the countback at rung 2 would separate every Score tie first, deciding
+by a mechanism `F3B.2.8` does not state (the rulebook's answer to a tie is
+*fly*, not count back). The class-data ladder must be able to say "no
+countback".
+
+**The stated list is walked in order.** Comparator rungs narrow the tie group;
+the first operational or `undefinedRequiresRuling` rung reached with the group
+still tied halts evaluation — the group shares places and the requirement
+surfaces to contest flow as data (the engine never resolves more flying) —
+and rungs after the halt stay dormant. F3F is the shape that needs the
+dormancy: its comparator is stated *after* the operational rung, as the "if
+this is not possible" fallback the rulebook's own future:
+
+```
+    tiebreak classificationRounds          # F3F.1.13 "classification rounds are
+                                           #   flown until the ties are broken"
+            bestDroppedScore               # F3F.1.13 "if this is not possible,
+                                           #   the result of the discarded round"
+```
+
+A comparator ladder fully exhausted with the tie intact also leaves the places
+shared — F3J's fly-off: equal aggregate *and* equal qualifying position share
+the final place, and the rulebook states nothing further. That is a settled
+shared place, not a surfaced requirement.
+
+The six directives, with what each reads and the rule that states it:
+
+| Directive | Meaning | Source |
+|---|---|---|
+| `bestDroppedScore` | the max dropped CELL, not the sum — with one drop it coincides with the countback, and it diverges exactly where drops are plural | `F3K.10.2`, `5.5.10.17` "the best dropped score defines the ranking" |
+| `qualifyingPosition <ordinal>` | the competitor's placing in the ranking of the phase whose Ordinal is written; the lower number wins | `F3J.11.4`, `5.5.11.13 h` "their respective position in the qualifying rounds" |
+| `additionalFullRound` | the tied competitors fly one additional full round — all the class's tasks | `F3B.2.8` |
+| `tiebreakFlyoff` | a separate fly-off for the tied competitors; the CD defines one task | `F3K.10.2`, `5.5.10.17` |
+| `classificationRounds` | more rounds of the class's task are flown until the ties break | `F3F.1.13` |
+| `undefinedRequiresRuling` | the rulebook is silent; the tie stands (shared places) and a CD ruling is required | F5L `5.5.12.12` states classification and stops; the NZ general rules state no tie-break anywhere; FAI General `C.15.6.1` likewise |
+
+`bestDroppedScore` is the max dropped *cell* and so requires the phase to
+declare a drop policy — no policy means no dropped cell ever exists, and
+**adoption rejects the rung on a phase with no `drop`** (the check-13
+precedent: reject what the rules have already ruled out).
+`qualifyingPosition`'s ordinal names an existing phase with a strictly lower
+ordinal than the phase writing the rung — the figure is a *previous* phase's
+placing, so the rung is unwritable on phase 1 — and **adoption rejects any
+other value**. A ladder containing `undefinedRequiresRuling` must contain
+*only* it — mixing "the rulebook is silent" with stated rungs is a
+self-contradiction — and **adoption rejects the mix**. Directives *after* an
+operational one are deliberately not rejected: `F3F.1.13` requires exactly
+that shape. These are adoption checks 17, 18 and 19.
+
+**`undefinedRequiresRuling` suppresses the countback.** Behind a stated
+silence the tie stands and the PreDropScore countback does not apply — nothing
+has ruled, and applying the countback would be the software deciding what the
+CD has not. This is the re-flight block's NotPermitted/Undefined distinction
+applied to lists, and it is why there is deliberately no
+`notPermitted`-analogue here: no rulebook in either corpus states a definite
+"ties are never broken" — the corpus is silent, not negative, and the silence
+is stateable so that grepping a definition finds it.
+
+**The F3K and F5K clauses are preliminary-scoped.** `F3K.10.2` sits between
+10.1 (the preliminary's final score) and 10.3 (the fly-off), and its "a
+*separate* fly-off for the relevant competitors" presupposes the regular
+fly-off has not absorbed the tied pilots. Both definitions therefore state the
+directives on the **preliminary** and write nothing on the fly-off, which
+falls back to the display ladder — where PreDropScore ≡ Score, since fly-off
+phases declare no drops across the whole corpus, so ties share.
 
 **A phase does not say whether it is mandatory**, and the reason is more
 interesting than the redundancy that first suggested removing the token. Across
@@ -713,11 +793,14 @@ predicates. It stays statically validatable at adoption.
   `landing`, `height`, `motor`, `lap` and every hit is a *metric name* or a
   *comment* — never a keyword. That is the CLAUDE.md test, mechanised, and it
   still holds across a second rulebook.
-- **No tie-breaking.** Deliberately unmodelled; the hole is left open. F3B
-  (`F3B.2.8`, an extra full round), F3K/F5K (`F3K.10`, best dropped score then
-  a one-task tie-break flyoff) and F3F (`F3F.1.13`, "classification rounds" flown
-  until the tie breaks, then the discarded round decides) all need it and none is
-  writable. See finding F15 — three of seven classes now.
+- **Tie-breaking, now written (F15 resolved).** The former hole is closed by
+  the `tiebreak` phase block (§4): F3B's additional full round, F3K/F5K's best
+  dropped score then tie-break fly-off, F3F's classification rounds, F3J/F5J's
+  qualifying position, and `undefinedRequiresRuling` for the classes whose
+  rulebooks state none. What the notation still cannot say is F3F.1.13's
+  "concerning the five best scores" scoping — a contest-flow scope recorded as
+  deliberately unmodelled, readmitted as a scope field the day a second class
+  needs one.
 - **No team classification.** Every FAI class defines one — `F3F.1.14` adds the
   final scores of a national team's best three — and no definition in
   `tools/Soarscore.SeedData/` says a word about it. That is a scope decision, not an oversight:
@@ -1198,7 +1281,7 @@ of this document already states about each. Nothing below is new.
 | F11 | Five variants removed: `LastPhaseOnly`, `NormalisedRoundScore`, `ZeroScoreTerm`, `wholeFieldAsOneGroup`, `DuringRound` | no class in the six required them; each is readmitted the day one does, with the citation |
 | F12 | `no default` — `Parameter.defaultValue` left unset | rules that state no default at all — F3B's group minimum, F5L's `5.5.12.9`, NZ Class M's `NZ.3.12.5 l` |
 | F14 | Target values are written in the units of the metric scored, not in points | the model did not originally say whether `FlightSelection.targetValues` were metric units or points |
-| F15 | Tie-breaking left deliberately unmodelled | F3B (`F3B.2.8`), F3K/F5K (`F3K.10`) and, later, F3F (`F3F.1.13`) all need one and none is writable |
+| F15 | ~~Tie-breaking left deliberately unmodelled~~ **Resolved** — the `tiebreak` phase block (§4), six directive kinds in two families: comparators (best dropped score, qualifying position) and operational directives (additional full round, tie-break fly-off, classification rounds), plus `undefinedRequiresRuling` for the silent classes | F3B (`F3B.2.8`), F3K/F5K (`F3K.10`, `5.5.10.17`) and, later, F3F (`F3F.1.13`) all needed one and none was writable |
 
 `F7`, `F10` and `F13` do not appear anywhere else in this document, and no earlier
 draft naming them survives in git history. They are treated as retired — findings
@@ -1409,8 +1492,8 @@ contain, so the multiplicity was wrong rather than the classes.
   seed definition follows Class N. **This is a question for the NZMAA, not a
   model gap**, and it is flagged in `SeedNzPRadian.cs` so it is not silently
   inherited.
-- **Tie-break: all three state none** — consistent with F15, now three of ten
-  classes needing one and none able to write it.
+- **Tie-break: all three state none** — consistent with F15 at the time;
+  the silence is now stateable (`undefinedRequiresRuling`, §4).
 
 ---
 
@@ -1479,12 +1562,15 @@ where the person contact is the largest member of both its groups.
 
 ### Left open
 
-- **Tie-break, unchanged** (F15). `F3F.1.13`'s first half — "classification
-  rounds are flown until the ties are broken" — needs nothing new, since a CD
-  can already schedule further rounds and F3F states no `maxRounds`; note that
-  doing so can carry a fourteen-round contest over the `>= 15` gate and change
-  the discard for the whole field, which is what the rule says. The second half,
-  the discarded round deciding, still reads a score the drop has removed.
+- **Tie-break** (F15) — resolved since this section was written: the clauses
+  are now the `classificationRounds` then `bestDroppedScore` ladder (§4). At
+  the time, the first half — "classification rounds are flown until the ties
+  are broken" — needed nothing new, since a CD could already schedule further
+  rounds and F3F states no `maxRounds`; note that doing so can carry a
+  fourteen-round contest over the `>= 15` gate and change the discard for the
+  whole field, which is what the rule says. The second half, the discarded
+  round deciding, is the `bestDroppedScore` fallback rung, dormant until
+  contest flow has acted.
 - **Re-flight scheduling, unchanged.** `F3F.1.5`'s "after a fixed number of
   pilots" remains a `param` nothing reads — now legal by statement rather than by
   omission (§3).

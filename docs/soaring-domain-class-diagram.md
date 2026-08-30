@@ -317,6 +317,7 @@ classDiagram
     class PhaseDefinition {
         +int ordinal
         +PhaseType type
+        +TieBreakDirective[] tieBreaks
     }
     %% There is no `mandatory` flag. It was perfectly correlated with type
     %% across all eleven definitions, but only because it mis-recorded the one
@@ -325,6 +326,24 @@ classDiagram
     %% and both were written "optional" because mandatoriness there is
     %% conditional on the EVENT LEVEL, which nothing in the model represents.
     %% Readmitting the flag needs that concept first, not another class.
+    %%
+    %% tieBreaks is the phase's tie-break ladder after the core-owned rung 1
+    %% (Score DESC), and MAY BE EMPTY. The empty default is a statement: the
+    %% class-agnostic display ladder applies — the PreDropScore countback at
+    %% rung 2, established practice and what every frozen fixture oracle is
+    %% built on. A STATED list supersedes rung 2 rather than appending to it:
+    %% under append, F3B.2.8's additionalFullRound could never fire — the
+    %% countback would separate every Score tie first, deciding by a mechanism
+    %% the rulebook does not state. Stated, the list is walked in order:
+    %% comparators narrow the tie group; the first operational or
+    %% UndefinedRequiresRuling rung reached with the group still tied halts
+    %% evaluation — the group shares places and the requirement surfaces to
+    %% contest flow; rungs after the halt stay dormant (F3F's bestDroppedScore
+    %% fallback is stated for exactly that future). An exhausted comparator
+    %% ladder also leaves the tie shared. Per-phase, not class-level: the
+    %% directives attach to phase rankings and genuinely differ within one
+    %% class (F3J's preliminary is silent, its fly-off states qualifying
+    %% position) — the same grain and reasoning as the drop list below.
 
     class RoundComposition {
         <<value object>>
@@ -366,6 +385,84 @@ classDiagram
     %% mis-scored; what was wrong was recording a discard rule for a phase
     %% whose rules state none. F3K.10 and 5.5.11.13 apply their discards to the
     %% PRELIMINARY aggregate, which is why the fly-offs have nothing to state.
+
+    class TieBreakDirective {
+        <<abstract>>
+    }
+    %% Six kinds, and the kind IS the type — FlightSelection's idiom (§3): a
+    %% subtype and a tag naming it are two records of one fact. Two families.
+    %% Comparators are engine-evaluable: each names a figure and narrows the
+    %% tie group. Operational directives are never engine-resolved — reaching
+    %% one with the group still tied halts evaluation, shares the places and
+    %% surfaces the requirement to contest flow as data (PendingTieBreak);
+    %% surfacing is their whole effect. An ordered list of comparators alone
+    %% cannot express "fly more", which is why this is a discriminated union
+    %% and not a sort-key list. There is deliberately NO NotPermitted-analogue
+    %% ("ties are definitely never broken"): no rulebook in either corpus
+    %% states one — the corpus is silent, not negative, and the model admits a
+    %% construct only when a rule requires it (the F11 / no-anyOf precedents).
+
+    class BestDroppedScore {
+        <<value object>>
+    }
+    %% The max dropped CELL, not the sum (F3K.10.2 / 5.5.10.17: "the best
+    %% dropped score defines the ranking"). Diverges from the PreDropScore
+    %% countback exactly where drops are plural — with one dropped cell the two
+    %% keys coincide. A round-level figure: aggregate penalties deduct once
+    %% from the final score, so no penalty adjustment on this key. Requires the
+    %% phase to declare a drop policy — no policy means no dropped cell ever
+    %% exists (adoption check 19, the check-13 precedent).
+
+    class QualifyingPosition {
+        <<value object>>
+        +int sourcePhaseOrdinal
+    }
+    %% The competitor's placing in the ranking of the earlier phase whose
+    %% Ordinal is sourcePhaseOrdinal — F3J.11.4 / 5.5.11.13 h: "their
+    %% respective position in the qualifying rounds". The better prior placing
+    %% (the lower number) wins. Adoption check 17 requires the source to name
+    %% an existing phase with a strictly lower ordinal, so the rung is
+    %% unwritable on phase 1 — which is what makes the figure unsupplyable in
+    %% the single-phase world unreachable today (multi-phase contest flow will
+    %% supply it).
+
+    class AdditionalFullRound {
+        <<value object>>
+    }
+    %% The tied competitors fly one additional full round — all the class's
+    %% tasks (F3B.2.8). The rulebook's answer to a tie is fly, not count back:
+    %% why a stated ladder supersedes the PreDropScore countback.
+
+    class TieBreakFlyoff {
+        <<value object>>
+    }
+    %% A separate fly-off for the tied competitors; the CD defines one task
+    %% (F3K.10.2 / 5.5.10.17). "Separate" presupposes the regular fly-off has
+    %% not absorbed the tied pilots — the reading that scopes both classes'
+    %% tie clauses to the preliminary (the clause sits between 10.1, the
+    %% preliminary's final score, and 10.3, the fly-off).
+
+    class ClassificationRounds {
+        <<value object>>
+    }
+    %% More rounds of the class's task are flown until the ties break
+    %% (F3F.1.13). Its "concerning the five best scores" scoping is
+    %% deliberately not modelled — contest-flow guidance, readmitted as a
+    %% scope field the day a second class needs one.
+
+    class UndefinedRequiresRuling {
+        <<value object>>
+    }
+    %% The rulebook is silent: the tie stands (shared places) and a CD ruling
+    %% is required. F5L's 5.5.12.12 states classification and stops; the NZ
+    %% general rules state no tie-break anywhere; FAI General C.15.6.1 likewise
+    %% states none. The re-flight block's precedent applied to lists: the
+    %% silence is stateable so that grepping a definition finds it, and behind
+    %% it the display ladder's PreDropScore countback does NOT apply — nothing
+    %% has ruled, and applying the countback would be the software deciding
+    %% what the CD has not. It can never share a list with a stated rung
+    %% (adoption check 18): mixing "the rulebook is silent" with stated rungs
+    %% is a self-contradiction.
 
     class ValidityRule {
         <<value object>>
@@ -538,8 +635,16 @@ classDiagram
     PhaseDefinition "1" *-- "1..*" Task : catalogue
     Task "1" *-- "0..1" ReflightRule : overrides the class default
     PhaseDefinition "1" *-- "0..*" DropPolicy : ordered, first match wins
+    PhaseDefinition "1" *-- "0..*" TieBreakDirective : ordered; absent = display-ladder fallback
     PhaseDefinition "1" *-- "1" ValidityRule
     PhaseDefinition "1" *-- "0..1" PromotionRule : entry criteria
+
+    TieBreakDirective <|-- BestDroppedScore
+    TieBreakDirective <|-- QualifyingPosition
+    TieBreakDirective <|-- AdditionalFullRound
+    TieBreakDirective <|-- TieBreakFlyoff
+    TieBreakDirective <|-- ClassificationRounds
+    TieBreakDirective <|-- UndefinedRequiresRuling
 
     note for PhaseDefinition "A flyoff changes working times, caps, available tasks and penalty carry-over. Those rules live here, not on the class."
     note for ReflightRule "Two roles, one event: the entitled competitor takes the reflight; everyone else in the group takes the better of two. The class states the default; a Task overrides it where its rules differ."
@@ -1217,10 +1322,7 @@ stage reads anything new from `AdoptedRules` for it.
   construct only when a rule requires it. This is not an expression language —
   no arithmetic, no functions — so a definition stays statically validatable at
   adoption.
-- **Tie-breaking is not yet modelled**, and when it is it will need two kinds,
-  not one: comparison against another figure (a best dropped score, a qualifying
-  position) and *scheduling more flying* (an additional full round, a one-task
-  tie-break flyoff). An ordered list of comparators cannot express the second.
+- **Tie-breaking is phase data with two directive kinds.** `PhaseDefinition.TieBreaks` is an ordered list of `TieBreakDirective`s, because the corpus's mechanisms are genuinely two things: *comparison against another figure* (a best dropped score, a qualifying position — engine-evaluable) and *scheduling more flying* (an additional full round, a one-task tie-break fly-off, classification rounds — never engine-resolved; reaching one with the tie intact halts evaluation and surfaces the requirement to contest flow). An ordered list of comparators cannot express the second, which is why the directives are a discriminated union rather than a sort-key list. The ladder semantics live on the field: absent keeps the display ladder, stated supersedes its rung 2, and `UndefinedRequiresRuling` makes the rulebook's silence stateable for F5L and the NZ classes.
 - **Two rule exceptions remain unwritable.** `F3B.2.3 b` and `F3B.2.4 f` zero a
   flight that misses the landing area *"except in the case of midair collision"*
   — an exception to a score term, which no predicate over measurements reaches.
