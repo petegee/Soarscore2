@@ -246,17 +246,13 @@ public static class Comparator
         // conservation self-check folds exactly what the read path published.
         var cellsByCompetitor = new Dictionary<CompetitorId, List<TaskRoundScore>>();
 
-        // WI-3 (pre-normalisation-score-view-field.md D6): grain 1 splits on
-        // the runtime classification — HTTP preNormalisationScore where the
-        // class is scoreNormalised-free, the Q1 in-process mirror otherwise.
-        if (ScoreNormalisedFree(fixture))
-        {
-            await CompareRawGrainViaHttpAsync(fixture, outcome, client, taskNos[0], comparedRaw, rawMismatches);
-        }
-        else
-        {
-            await CompareRawGrainAsync(fixture, outcome, competition, entries, taskNos[0], comparedRaw, rawMismatches);
-        }
+        // WI-1 (http-grain-one-metric-bridge.md D5): the classification split
+        // dissolves — EVERY fixture routes through the HTTP bridge, which
+        // composes the ScoreNormalised contribution onto the fetched
+        // preNormalisationScore (D1) and runs the D6 parity gate against the
+        // legacy in-process chain while that still exists.
+        await CompareRawGrainViaHttpAsync(
+            fixture, outcome, competition, entries, client, taskNos[0], comparedRaw, rawMismatches);
         await CompareNormalisedGrainAsync(
             fixture, outcome, client, entries, taskNos[0], comparedNormalised, normalisedMismatches, cellsByCompetitor);
 
@@ -336,12 +332,14 @@ public static class Comparator
             .All(task => task.ScoreNormalised.IsEmpty);
 
     /// <summary>
-    /// WI-3 grain 1 over HTTP (pre-normalisation-score-view-field.md D6.3) for
-    /// scoreNormalised-free fixtures: one GET /task-round-result per round —
-    /// the same plumbing as grain 2 — reading each row's PreNormalisationScore
-    /// and comparing it exactly against the oracle RawScore. ALL rows compare,
-    /// not just Original ones (trap 10): a make-up row's oracle cell sits at
-    /// its HOSTING (round, group), exactly as grain 2 treats it, and the
+    /// WI-1 grain 1 over HTTP (http-grain-one-metric-bridge.md D1–D5) for ALL
+    /// fixtures: one GET /task-round-result per round — the same plumbing as
+    /// grain 2 — reading each row's PreNormalisationScore, composing the
+    /// ScoreNormalised terms' contributions over the slot entry's decoded
+    /// flight metrics (D2-guarded to be selection-equivalent), and comparing
+    /// exactly against the oracle RawScore. ALL rows compare, not just
+    /// Original ones (trap 10): a make-up row's oracle cell sits at its
+    /// HOSTING (round, group), exactly as grain 2 treats it, and the
     /// fetched row universe equals outcome.EntryIdBySlot by construction
     /// (D6.5) — so RecordCell bookkeeping stays identical to the legacy path
     /// and EnsureOracleCoverage remains honest.
@@ -349,26 +347,49 @@ public static class Comparator
     private static async Task CompareRawGrainViaHttpAsync(
         GliderscoreFixture fixture,
         ReplayOutcome outcome,
+        Competition competition,
+        IReadOnlyDictionary<EntryId, Entry> entries,
         HttpClient client,
         int taskNo,
         HashSet<string> compared,
         List<GrainMismatch> mismatches)
     {
-        // D6.2 belt-and-braces: routing and classification are the same
-        // predicate today; if they ever disagree, refuse loudly rather than
-        // compare a value that is not GS's composition.
-        if (!ScoreNormalisedFree(fixture))
-        {
-            throw new NotSupportedException(
-                $"Fixture '{fixture.Slug}': routed to the HTTP raw grain but its class definition "
-                + "carries ScoreNormalised terms — the classification and the routing disagree.");
-        }
-
+        var classDef = competition.AdoptedRules.Definition;
         var groupByGroupId = outcome.GroupIdByRoundAndGroup.ToDictionary(kv => kv.Value, kv => kv.Key);
         var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
 
+        // D3 — the task resolves PER ROUND (WI-4 of the prior story: f3k
+        // prescribes a different task each round); cache per round number.
+        var resolvedTaskByRoundNo = new Dictionary<int, ResolvedTask>();
+
         foreach (var roundNo in outcome.RoundOrdinalByRoundNo.Keys.OrderBy(n => n))
         {
+            var taskDef = classDef.Phases[outcome.PhaseOrdinal]
+                .Tasks.Single(t => t.Code == outcome.TaskCodeByRoundNo[roundNo]);
+
+            // Round-scoped bindings win per per-round-parameter-bindings-plan.md;
+            // the same flattening ScoreTaskRoundHandler performs over HTTP.
+            var bindings = ScoringService.FlattenParameterBindings(
+                competition.ParameterBindings, outcome.PhaseOrdinal,
+                outcome.RoundOrdinalByRoundNo[roundNo]);
+
+            var resolvedTask = ParameterResolver.ResolveTask(taskDef, bindings, classDef.Parameters);
+            resolvedTaskByRoundNo[roundNo] = resolvedTask;
+
+            // D2.3 — target-clamp guard (http-grain-one-metric-bridge.md#WI-1):
+            // the engine evaluates ScoreNormalised over metrics AFTER
+            // ApplyTargets/ClampAndRecompute rewrote them, while this bridge
+            // decodes unclamped metrics from the entry stream. Refuse rather
+            // than guess; never reached by the corpus.
+            if (!resolvedTask.ScoreNormalised.IsEmpty
+                && TargetBearing(resolvedTask.Flights, out var selectionKind))
+            {
+                throw new NotSupportedException(
+                    $"Fixture '{fixture.Slug}': task '{resolvedTask.Code}' (round {roundNo}) carries ScoreNormalised "
+                    + $"terms over a target-bearing flight selection ({selectionKind}) — the bridge decodes UNCLAMPED "
+                    + "metrics, so exact composition is impossible; widen the harness or expose the selection over HTTP.");
+            }
+
             var views = await GetAsync<IReadOnlyList<GroupScoreView>>(
                 client,
                 $"/task-round-result?competitionRef={outcome.CompetitionId.Value}"
@@ -385,12 +406,149 @@ public static class Comparator
                     var pilotNo = pilotByCompetitor[result.CompetitorRef];
                     RecordCell("raw", pilotNo, roundOfView, groupNo, taskNo, compared, mismatches);
 
+                    // D1 — the slot's entry, keyed by the hosting (round, group, pilot).
+                    var entry = entries[outcome.EntryIdBySlot[(roundOfView, groupNo, pilotNo)]];
+
+                    // D1 — composed = fetched preNormalisationScore + the
+                    // ScoreNormalised contribution, gated on the row state ONLY
+                    // (trap 1: mirror GsEquivalentRaw's state gate; NoResult
+                    // contributes 0 even with flights on the entry).
+                    var contribution = 0m;
+
+                    if (result.State == TaskResultState.Valid)
+                    {
+                        var roundResolvedTask = resolvedTaskByRoundNo[roundOfView];
+
+                        // D2.2 — contradiction guard: Valid with a flight-less
+                        // entry is impossible under FlightSelector.
+                        if (entry.Flights.IsEmpty)
+                        {
+                            throw new InvalidOperationException(
+                                $"Fixture '{fixture.Slug}': slot (round {roundOfView}, group {groupNo}, pilot {pilotNo}) "
+                                + "is Valid but its entry holds no flights — FlightSelector cannot produce that shape.");
+                        }
+
+                        // D2.1 — flight-count guard: with at most one flight
+                        // every selection kind yields exactly that flight, so
+                        // all-flights ≡ selected-flights; with an EMPTY
+                        // ScoreNormalised the sum is empty and every selection
+                        // is equivalent by construction (the F3K corpus's
+                        // multi-flight tasks are all scoreNormalised-free).
+                        // AllFlights carries no targets and needs no guard.
+                        if (!roundResolvedTask.ScoreNormalised.IsEmpty
+                            && roundResolvedTask.Flights is not AllFlights && entry.Flights.Length > 1)
+                        {
+                            throw new NotSupportedException(
+                                $"Fixture '{fixture.Slug}': slot (round {roundOfView}, group {groupNo}, pilot {pilotNo}) "
+                                + $"holds {entry.Flights.Length} flights but task '{roundResolvedTask.Code}' selects "
+                                + $"{roundResolvedTask.Flights.GetType().Name} — the all-flights bridge composition "
+                                + "cannot be proven selection-equivalent.");
+                        }
+
+                        // D4 — build each flight's metrics exactly as
+                        // FlightInterpreter.Interpret does (resolved metrics +
+                        // the flight.sequence intrinsic) WITHOUT calling
+                        // Interpret: evaluating raw score terms is not the
+                        // bridge's business, and the engine's step-7 metrics
+                        // are these regardless of flightValidWhen (trap 2:
+                        // no per-flight validity gating — the row state is the
+                        // only gate).
+                        foreach (var flight in entry.Flights)
+                        {
+                            var metrics = new Dictionary<string, MeasuredValue>(
+                                MeasurementDigest.Resolve(flight).Metrics)
+                            {
+                                ["flight.sequence"] = MeasuredValue.Of(flight.Sequence)
+                            };
+
+                            foreach (var term in roundResolvedTask.ScoreNormalised)
+                            {
+                                contribution += EvaluatePostNormalisationTerm(term, metrics);
+                            }
+                        }
+                    }
+
+                    var composed = result.PreNormalisationScore + contribution;
+
+                    // D6 — transitional parity gate (http-grain-one-metric-bridge.md#WI-1):
+                    // while the legacy in-process chain still exists, every
+                    // grain-1 cell is computed BOTH ways; any exact-decimal
+                    // difference is a HARNESS BUG, not a ledgerable mismatch.
+                    var legacy = LegacyGsEquivalentRaw(outcome, competition, entries, roundOfView, groupNo, pilotNo);
+
+                    if (legacy != composed)
+                    {
+                        throw new InvalidOperationException(
+                            $"Harness bug (parity gate, http-grain-one-metric-bridge.md#WI-1): fixture '{fixture.Slug}' "
+                            + $"task {taskNo} round {roundOfView} group {groupNo} pilot {pilotNo} — legacy grain-1 value "
+                            + $"{legacy} but bridge value {composed}.");
+                    }
+
                     AddIfDifferent(
-                        mismatches, "raw", pilotNo, roundOfView, groupNo, result.PreNormalisationScore,
+                        mismatches, "raw", pilotNo, roundOfView, groupNo, composed,
                         OracleCell(fixture, taskNo, roundOfView, groupNo, pilotNo)?.RawScore);
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// D2.3 — true iff the selection is target-bearing (the engine clamps
+    /// selected flights' metrics to assigned targets before evaluating
+    /// ScoreNormalised). Only BestNFlights and ExactlyNInOrder carry targets.
+    /// </summary>
+    private static bool TargetBearing(FlightSelection selection, out string kind)
+    {
+        kind = selection.GetType().Name;
+
+        return selection switch
+        {
+            BestNFlights bn => bn.TargetValues.Length > 0,
+            ExactlyNInOrder en => en.TargetValues.Length > 0,
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// D6 — the legacy per-slot grain-1 computation, exactly what
+    /// CompareRawGrainAsync computes for one slot: the full in-process pipeline
+    /// copy (Interpret → SelectFlights → ApplyRawPenalties) folded through
+    /// GsEquivalentRaw. Kept reachable by the parity gate; WI-2 deletes it with
+    /// the rest of the legacy path.
+    /// </summary>
+    private static decimal LegacyGsEquivalentRaw(
+        ReplayOutcome outcome,
+        Competition competition,
+        IReadOnlyDictionary<EntryId, Entry> entries,
+        int roundNo,
+        int groupNo,
+        long pilotNo)
+    {
+        var classDef = competition.AdoptedRules.Definition;
+
+        var taskDef = classDef.Phases[outcome.PhaseOrdinal]
+            .Tasks.Single(t => t.Code == outcome.TaskCodeByRoundNo[roundNo]);
+
+        var bindings = ScoringService.FlattenParameterBindings(
+            competition.ParameterBindings, outcome.PhaseOrdinal,
+            outcome.RoundOrdinalByRoundNo[roundNo]);
+
+        var resolvedTask = ParameterResolver.ResolveTask(taskDef, bindings, classDef.Parameters);
+
+        var entry = entries[outcome.EntryIdBySlot[(roundNo, groupNo, pilotNo)]];
+
+        var interpretedFlights = entry.Flights
+            .Select(flight =>
+            {
+                var resolved = MeasurementDigest.Resolve(flight);
+                return FlightInterpreter.Interpret(resolvedTask, flight.Sequence, resolved.Metrics);
+            })
+            .ToImmutableArray();
+
+        var taskResult = ScoringService.SelectFlights(entry, resolvedTask, bindings, interpretedFlights);
+        taskResult = PenaltyEngine.ApplyRawPenalties(taskResult, EntryPenalties(entry), classDef.Penalties).Result;
+
+        return GsEquivalentRaw(resolvedTask, taskResult);
     }
 
     private static async Task CompareRawGrainAsync(
