@@ -1,6 +1,6 @@
 # Story — Model tie-break policy as class data
 
-**Status:** In progress · **Raised:** 2026-08-29 (board discussion alongside
+**Status:** Completed · **Raised:** 2026-08-29 (board discussion alongside
 `kanban/completed/ranking-secondary-rawscore-key.md`; the gap is already
 recorded in `docs/soaring-domain-class-diagram.md`, closing note "Tie-breaking
 is not yet modelled", and notation finding F15) · **Fleshed out:** 2026-08-30
@@ -477,3 +477,78 @@ table; adoption checks 17–19 guard the vocabulary; every frozen fixture
 replays byte-identical at all three grains with no ledger change; both stores
 pass; no `/docs` change beyond the WI-0-approved wording; no `src/` file
 names the prior art.
+
+## Record (close-out 2026-08-30)
+
+All six WIs landed. Sign-offs: D8+D3, D10, D7, docs wording (all as pitched,
+no glossary sentence), corpus encoding table — approved at WI-0.
+
+- **WI-1** (8840b82): `TieBreakPolicy.cs` (six-kind hierarchy, `$kind`
+  discriminator, JSON kinds camelCase), `PhaseDefinition.TieBreaks`,
+  `PhaseScores.BestDroppedAggregate`, `FinalCompetitorScore.BestDroppedScore`
+  (after `PreDropScore`, positional), `CompetitionResult.PendingTieBreaks` +
+  `PendingTieBreak` (init property, default empty — no construction-site
+  churn), `TieBreakContext` (Directives + QualifyingPositions; `Display` is
+  the empty policy), engine rewrite (sort keys = Score + comparators before
+  the first operational/ruling rung; halt groups share and surface; countback
+  belongs to the EMPTY policy only — keyed on `directives.IsEmpty`, not
+  comparator count), ScoringService mirror-accumulate (Math.Max across phases,
+  no penalty adjustment), seed JSON context registered the six subtypes.
+  11 new unit tests + the property suite extended to stated policies (all
+  four Invariant T clauses; generator cells 1..2 cover single/multi-drop).
+  Invariant R's regression clause is the `Empty_policy_is_byte_identical_to_the_display_ladder`
+  property.
+- **WI-2** (8291035): checks 17–19 in `ClassDefinitionValidation.cs`
+  (`...check-17.qualifying-position-source-not-earlier`,
+  `...check-18.undefined-requires-ruling-mixed-with-stated`,
+  `...check-19.best-dropped-score-without-drop-policy`), one test each.
+  **Check-17 reading (settled here, correcting a sub-agent deviation):**
+  `SourcePhaseOrdinal` is a `PhaseDefinition.Ordinal` — the definition's own
+  1-based ordinal vocabulary, which is the only reading under which the
+  corpus table's `[qualifyingPosition 1]` for the F3J/F5J fly-offs is
+  writable (0-based positional would make source 1 self-referential and
+  rejected). Check 17 therefore requires the source to name an existing
+  phase *by Ordinal* AND sit strictly below the declaring phase's Ordinal —
+  which delivers "unwritable on phase 1" without dropping the
+  names-an-existing-phase half. Seeds state 1; the engine never reads the
+  field (D9 — the context map is the figure source).
+- **WI-3** (11e0067): the eleven definitions state exactly the corpus table;
+  SeedF3F carries the D7 deviation comment, SeedF3K/SeedF5K the D10 scope
+  comment, F5L/NZ the silence comments. Seed run: all four checks green
+  (round-trip byte-identical, context agreement, depth 11/24, hashes printed).
+  Structural finding: NZ M ALES 200 is single-phase (no fly-off), so its
+  preliminary carries the directive alone.
+- **WI-4** (c5d871b): diagram §2 hierarchy + field + ladder-semantics
+  comments, gap note retired; notation §4 `tiebreak` block (grammar,
+  walk semantics, directive table, checks 17–19, countback suppression, D10
+  note), §6 bullet resolved, §10 F15 row resolved; inventory lines 17–19.
+  Beyond the approved list, two minimal amendments (flagged to Pete): the
+  §13/§14 "Left open" tie-break bullets, which would otherwise contradict
+  the resolved §6/§10 in the same document, now point at the resolution.
+- **WI-5**: `SOARSCORE_TEST_STORE=sqlite` acceptance 66/66 — **zero new
+  fixture diffs** (trap 1); jerilderie P4/P21 and the zero-tie group shapes
+  intact (trap 2). Content hashes: no pinned hash literals anywhere (trap 6
+  grep clean; README prints, never pins). `kanban/tech-debt.md`: nothing
+  added, nothing discharged (house rules 5–6). `kanban/deferred-decisions.md`:
+  the "ranking ladder stops at rung 2" entry absorbed — deleted from
+  *Scoring and ranking*, carried briefly under *Decisions that have since
+  been taken up* per that section's own convention.
+
+**Not run in this environment (Docker absent):** the `postgres` legs —
+`Infrastructure.Tests` `Category=Storage` (Testcontainers) and
+`SOARSCORE_TEST_STORE=postgres` acceptance. The story's own instruction was
+"postgres wherever Docker exists"; it does not here. The sqlite store passes
+the whole Infrastructure fast suite (64) and the whole acceptance suite (66).
+
+**Residual notes carried from the absorbed deferred-decisions entry** (so
+they survive in a record, per WI-5):
+
+- *Dormant rungs*: rungs after an operational or ruling rung are never
+  evaluated by the engine — they are what the rulebook does once contest flow
+  has acted (F3F's `bestDroppedScore` fallback). `PendingTieBreaks` is the
+  surface; acting on it is the future contest-flow story.
+- *Display-ladder callers*: the granular `ScoringService.Rank` and any direct
+  `RankingEngine.Rank` caller passing `TieBreakContext.Display` get the
+  class-agnostic display ladder by design; `ScoreCompetition` is the caller
+  that reads `Phases[0].TieBreaks`. A future caller that ranks outside
+  `ScoreCompetition` must supply the phase's context itself.
