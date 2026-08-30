@@ -77,7 +77,19 @@ public enum TaskResultState { Valid, NoResult }
 public sealed record TaskResult(
     TaskResultState State,
     SelectedFlights? Selection,  // null when NoResult
-    decimal RawScore             // summed + clamped + rounded
+    decimal RawScore,            // summed + clamped + rounded
+    /// <summary>
+    /// Flag-only Disqualify marker, set only by the raw-stage engine path
+    /// (PenaltyEngine.ApplyRawPenalties) for Disqualify effects on
+    /// Flight/Entry-scoped records — no arithmetic change: state stays Valid
+    /// and RawScore untouched (aggregate-stage Disqualify does not zero, so
+    /// entry-scoped does not either), and OR-accumulated through the
+    /// ScoreCompetition walk into
+    /// <see cref="FinalCompetitorScore.Disqualified"/>
+    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
+    /// D-B2). RankingEngine excludes flagged competitors from placings.
+    /// </summary>
+    bool Disqualified = false
 );
 
 // --------------------------------------------------------------- normalisation
@@ -132,6 +144,20 @@ public sealed record PhaseScores(
 /// <summary>Penalties applied to one competitor at the aggregate stage.</summary>
 public sealed record PenaltyApplication(
     decimal Deduction,
+    bool Disqualified
+);
+
+/// <summary>
+/// The task-round stage's outcome: the (possibly zeroed or deducted)
+/// TaskResult plus the Disqualify flag accrued from the same records
+/// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
+/// D-B1). Every declared effect acts at the stage that owns the record —
+/// Zero* → NoResult, DeductPoints → subtract, Disqualify → the flag here,
+/// carried out of the walk to final assembly. Flag-only (D-B2): no score
+/// change, OR-accumulated into <see cref="FinalCompetitorScore.Disqualified"/>.
+/// </summary>
+public sealed record RawPenaltyApplication(
+    TaskResult Result,
     bool Disqualified
 );
 

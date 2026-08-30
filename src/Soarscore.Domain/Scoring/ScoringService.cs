@@ -129,6 +129,12 @@ public static class ScoringService
             //     GetAggregatePenalties/ApplyAggregatePenalties, which are
             //     unchanged: each half of the record acts once, in its own
             //     stage (D-A4, no double-count by construction).
+            //
+            //     The returned Disqualified flag (D-B1) rides on the TaskResult
+            //     itself (D-B2) — flag-only, no score change — and Normalise's
+            //     with-rebuilds preserve it, so the caller sees it in
+            //     groupResult.Results and threads it to final assembly
+            //     (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
             var entryPenalties = GetEntryPenalties(entry);
 
             // Subject-keyed merge: the map is per competitor, the entries dict
@@ -138,8 +144,10 @@ public static class ScoringService
                     ? zeros
                     : ImmutableArray<RecordedPenalty>.Empty;
 
-            taskResult = PenaltyEngine.ApplyRawPenalties(
+            var applied = PenaltyEngine.ApplyRawPenalties(
                 taskResult, entryPenalties.AddRange(routed), classDef.Penalties);
+
+            taskResult = applied.Result;
 
             taskResults[competitorRef] = taskResult;
         }
@@ -168,6 +176,16 @@ public static class ScoringService
         // note on LastPhaseReplaces/SplitByPromotion.
         var totalsByCompetitor = new Dictionary<string, decimal>();
         var preDropTotals = new Dictionary<string, decimal>();
+
+        // Entry-scoped Disqualify flags (WI-2, D-B2): competitorRef → set when
+        // any of their TaskResults anywhere in the walk came back flagged from
+        // the raw-stage engine. OR-accumulated across the whole walk, all
+        // phases, all reflight destinations, and ORed into
+        // FinalCompetitorScore.Disqualified at final assembly alongside the
+        // aggregate-stage flag. Flag-only (D-B2): no score change —
+        // aggregate-stage Disqualify does not zero, so entry-scoped does not
+        // either; RankingEngine excludes flagged competitors from placings.
+        var rawDisqualified = new HashSet<string>();
 
         foreach (var phase in competition.Phases)
         {
@@ -289,17 +307,22 @@ public static class ScoringService
                         .ToDictionary(g => g.Key, g => g.Last());
 
                     // Candidates per competitor across every group of this
-                    // task-round: one (role, destination, normalised score)
-                    // tuple per LIVE entry (reflight-aggregate-destination.md
-                    // WI-1 — the destination is the entry's counts-for round,
-                    // resolved to the hosting round when null). Candidate
-                    // collection is per-entry (a competitor may hold several
-                    // live entries in one group — the Original competing for
-                    // the 1000 basis beside its reflight role, and comp-135's
-                    // make-ups beside both, decision 3); the collapse to one
-                    // score per (competitor, destination) happens after the
-                    // group loop (invariant R1′).
-                    var candidatesByCompetitor = new Dictionary<string, List<(ReflightRole Role, int Destination, decimal Score)>>();
+                    // task-round: one (role, destination, normalised score,
+                    // raw-stage Disqualify flag) tuple per LIVE entry
+                    // (reflight-aggregate-destination.md WI-1; the bool per
+                    // WI-2, D-B2). The destination is the entry's counts-for
+                    // round, resolved to the hosting round when null. The flag
+                    // travels OUTSIDE ReflightSelector.Select — the collapse
+                    // ORs it across a competitor's candidates per destination
+                    // and the walk accumulates it per competitor, so a flag
+                    // can never be lost by which candidate a rule selects.
+                    // Candidate collection is per-entry (a competitor may hold
+                    // several live entries in one group — the Original
+                    // competing for the 1000 basis beside its reflight role,
+                    // and comp-135's make-ups beside both, decision 3); the
+                    // collapse to one score per (competitor, destination)
+                    // happens after the group loop (invariant R1′).
+                    var candidatesByCompetitor = new Dictionary<string, List<(ReflightRole Role, int Destination, decimal Score, bool Disqualified)>>();
 
                     foreach (var group in taskRound.Groups)
                     {
@@ -330,13 +353,20 @@ public static class ScoringService
                             var entry = groupEntries[entryKey];
                             var competitorRef = entry.CompetitorRef.ToString();
 
+                            // Flag-only Disqualify from the raw stage
+                            // (D-B2) — TaskResult.Disqualified survives
+                            // Normalise's with-rebuilds (WI-2 verification).
+                            if (taskResult.Disqualified)
+                                rawDisqualified.Add(competitorRef);
+
                             if (!candidatesByCompetitor.TryGetValue(competitorRef, out var list))
                             {
                                 list = [];
                                 candidatesByCompetitor[competitorRef] = list;
                             }
 
-                            list.Add((entry.Role, entry.CountsForRoundOrdinal ?? round.Ordinal, taskResult.RawScore));
+                            list.Add((entry.Role, entry.CountsForRoundOrdinal ?? round.Ordinal,
+                                taskResult.RawScore, taskResult.Disqualified));
                         }
                     }
 
@@ -378,6 +408,15 @@ public static class ScoringService
                                 return Result<CompetitionResult>.Failure(
                                     selected.Code!, selected.Message!, selected.Defects);
                             }
+
+                            // The flag ORs across ALL this destination's
+                            // candidates (WI-2, D-B2) — ReflightSelector.Select
+                            // is untouched, so the collapse itself carries the
+                            // flag outside the selection rule.
+                            var destinationDisqualified =
+                                destinationGroup.Any(c => c.Disqualified);
+                            if (destinationDisqualified)
+                                rawDisqualified.Add(competitorRef);
 
                             if (!scoresByCompetitor.TryGetValue(competitorRef, out var list))
                             {
@@ -513,7 +552,9 @@ public static class ScoringService
                 CompetitorRef: competitorRef,
                 Score: totalScore - penaltyResult.Deduction,
                 PreDropScore: preDropTotals.GetValueOrDefault(competitorRef) - penaltyResult.Deduction,
-                Disqualified: penaltyResult.Disqualified));
+                // Aggregate-stage Disqualify (above) ORed with the raw-stage
+                // entry-scoped flag threaded through the walk (WI-2, D-B2).
+                Disqualified: penaltyResult.Disqualified || rawDisqualified.Contains(competitorRef)));
         }
 
         // PromotionRule "appears only on a phase after the first"

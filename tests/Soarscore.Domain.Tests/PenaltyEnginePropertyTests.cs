@@ -105,7 +105,7 @@ public class PenaltyEnginePropertyTests
                 raw, penalties, PureDeductDefinitions).Deduction;
 
             var actual = PenaltyEngine.ApplyRawPenalties(
-                ValidResult(raw), penalties, PureDeductDefinitions);
+                ValidResult(raw), penalties, PureDeductDefinitions).Result;
 
             actual.State.Should().Be(TaskResultState.Valid);
             actual.RawScore.Should().Be(Math.Max(0m, raw - expectedDeduction));
@@ -137,7 +137,7 @@ public class PenaltyEnginePropertyTests
             var (raw, penalties) = t;
 
             var rawApplied = PenaltyEngine.ApplyRawPenalties(
-                ValidResult(raw), penalties, DefinitionsWithZeroCoDef);
+                ValidResult(raw), penalties, DefinitionsWithZeroCoDef).Result;
 
             rawApplied.State.Should().Be(TaskResultState.NoResult);
             rawApplied.RawScore.Should().Be(0m);
@@ -177,9 +177,9 @@ public class PenaltyEnginePropertyTests
             var (penalties, permutedA, permutedB) = t;
 
             var input = ValidResult(OrderProbeRawScore);
-            var original = PenaltyEngine.ApplyRawPenalties(input, t.penalties, PureDeductDefinitions);
-            var reorderedA = PenaltyEngine.ApplyRawPenalties(input, t.permutedA.ToImmutableArray(), PureDeductDefinitions);
-            var reorderedB = PenaltyEngine.ApplyRawPenalties(input, t.permutedB.ToImmutableArray(), PureDeductDefinitions);
+            var original = PenaltyEngine.ApplyRawPenalties(input, t.penalties, PureDeductDefinitions).Result;
+            var reorderedA = PenaltyEngine.ApplyRawPenalties(input, t.permutedA.ToImmutableArray(), PureDeductDefinitions).Result;
+            var reorderedB = PenaltyEngine.ApplyRawPenalties(input, t.permutedB.ToImmutableArray(), PureDeductDefinitions).Result;
 
             foreach (var reordered in new[] { reorderedA, reorderedB })
             {

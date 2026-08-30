@@ -31,7 +31,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.NoResult);
         applied.RawScore.Should().Be(0m);
@@ -50,7 +50,7 @@ public class PenaltyEngineTests
 
         var applied = PenaltyEngine.ApplyRawPenalties(
             result, ImmutableArray<RecordedPenalty>.Empty,
-            ImmutableArray<PenaltyDefinition>.Empty);
+            ImmutableArray<PenaltyDefinition>.Empty).Result;
 
         applied.State.Should().Be(TaskResultState.Valid);
         applied.RawScore.Should().Be(500m);
@@ -216,7 +216,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var raw = PenaltyEngine.ApplyRawPenalties(taskResult, penalties, definitions);
+        var raw = PenaltyEngine.ApplyRawPenalties(taskResult, penalties, definitions).Result;
         raw.State.Should().Be(TaskResultState.NoResult);
         raw.RawScore.Should().Be(0m);
 
@@ -283,7 +283,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.Valid);
         applied.RawScore.Should().Be(100m); // 500 − 400
@@ -308,7 +308,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.Valid);
         applied.RawScore.Should().Be(450m); // exactly 50, regardless of count 3
@@ -346,7 +346,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.Valid);
         applied.RawScore.Should().Be(200m); // 500 − 300
@@ -375,7 +375,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.NoResult);
         applied.RawScore.Should().Be(0m);
@@ -403,7 +403,7 @@ public class PenaltyEngineTests
                 new Dictionary<int, decimal?>()),
             RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.Valid);
         applied.RawScore.Should().Be(0m); // max(0, 500 − 600)
@@ -428,7 +428,7 @@ public class PenaltyEngineTests
             new Dictionary<int, decimal?>());
         var result = new TaskResult(TaskResultState.Valid, selection, RawScore: 500m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.Valid);
         applied.RawScore.Should().Be(400m);
@@ -455,7 +455,7 @@ public class PenaltyEngineTests
             Selection: null,
             RawScore: 777m);
 
-        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions).Result;
 
         applied.State.Should().Be(TaskResultState.NoResult);
         applied.RawScore.Should().Be(777m); // returned unchanged, not floored

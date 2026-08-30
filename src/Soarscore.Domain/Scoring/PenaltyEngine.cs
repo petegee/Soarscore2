@@ -1,14 +1,18 @@
 // PenaltyEngine — kanban/completed/scoring-service-plan.md WI-6; stage routing
-// amended per D1: kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md#wi-1.
+// amended per D1: kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md#wi-1;
+// raw-stage Disqualify flag per
+// kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2.
 //
 // Applies penalties at both pipeline stages, with exclusion-group semantics and
 // accrual. The stage follows the RECORDED SCOPE of each penalty record (D1):
 // Flight/Entry-scoped records act entirely at the task-round stage (raw,
 // pre-normalisation) — all their declared effects, DeductPoints included, land
 // there; TaskRound/Competition-scoped records act at the final aggregate as
-// before. Exclusion-group suppression is single-pass: compute all accrued
-// contributions first, suppress, then apply survivors. The result does not
-// depend on evaluation order.
+// before. Every declared effect now acts at its owning stage: Zero* → NoResult,
+// DeductPoints → subtract, Disqualify → the RawPenaltyApplication flag carried
+// to final assembly (D-B2). Exclusion-group suppression is single-pass:
+// compute all accrued contributions first, suppress, then apply survivors. The
+// result does not depend on evaluation order.
 
 using System.Collections.Immutable;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -20,14 +24,18 @@ namespace Soarscore.Domain.Scoring;
 /// (design rule #6); instead the pipeline stage follows the RECORDED penalty's
 /// SCOPE (D1): Flight/Entry-scoped records are owned by the task-round stage
 /// (raw/pre-normalisation), TaskRound/Competition-scoped records by the final
-/// aggregate — and every declared effect acts within its owning stage.
+/// aggregate — and every declared effect acts within its owning stage
+/// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
 /// </summary>
 public static class PenaltyEngine
 {
     /// <summary>
     /// Apply ALL effects of Flight/Entry-scoped records at the task-round stage —
-    /// ZeroFlight/ZeroRound/ZeroTask AND DeductPoints (D1). Called BEFORE
-    /// normalisation.
+    /// ZeroFlight/ZeroRound/ZeroTask, DeductPoints AND Disqualify (D1, D-B1).
+    /// Called BEFORE normalisation. Returns the possibly-penalised TaskResult
+    /// plus the Disqualify flag, which is flag-only (D-B2): no arithmetic
+    /// change, OR-accumulated at final assembly into
+    /// FinalCompetitorScore.Disqualified.
     ///
     /// A matched DeductPoints effect subtracts pre-normalisation, so the
     /// deducted raw feeds winner-finding directly: the group's 1000 anchors on
@@ -43,29 +51,30 @@ public static class PenaltyEngine
     /// the arithmetic below is direction-blind: the same subtract-and-floor
     /// applies either way.
     ///
-    /// Residual R1 (D6): a Disqualify effect encountered on an entry-owned
-    /// record is acknowledged-not-actioned here, not silently dropped without
-    /// trace — see
-    /// kanban/backlog/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md.
-    /// Unmatched infraction types remain skipped (events-already-in-log safety
-    /// net). If any matched penalty definition has a zeroing effect, the
-    /// TaskResult is zeroed to NoResult so that the penalized competitor is
-    /// excluded from winner-finding (design rule #4).
+    /// A Zero* effect zeroes to NoResult so the penalized competitor is
+    /// excluded from winner-finding (design rule #4); the Disqualify flag
+    /// survives that early-out (D-B3), so a Zero* + Disqualify definition
+    /// yields NoResult AND the flag — both declared effects acted.
+    ///
+    /// The Disqualify flag does not zero: aggregate-stage Disqualify sets
+    /// FinalCompetitorScore.Disqualified without arithmetic change, so
+    /// entry-scoped Disqualify does not either (D-B2). Unmatched infraction
+    /// types remain skipped (events-already-in-log safety net).
     /// </summary>
     /// <param name="result">The task result to potentially penalise or zero.</param>
     /// <param name="penalties">Recorded penalties scoped to this Entry/TaskRound.</param>
     /// <param name="definitions">Penalty definitions from the adopted rules.</param>
-    public static TaskResult ApplyRawPenalties(
+    public static RawPenaltyApplication ApplyRawPenalties(
         TaskResult result,
         ImmutableArray<RecordedPenalty> penalties,
         ImmutableArray<PenaltyDefinition> definitions)
     {
         // NoResult input stays untouched: penalties have nothing valid left to act on.
         if (result.State is not TaskResultState.Valid)
-            return result;
+            return new RawPenaltyApplication(result, Disqualified: false);
 
         if (penalties.IsDefaultOrEmpty)
-            return result;
+            return new RawPenaltyApplication(result, Disqualified: false);
 
         var defLookup = BuildDefinitionLookup(definitions);
 
@@ -73,9 +82,15 @@ public static class PenaltyEngine
         var contributions = Accrue(penalties, defLookup);
 
         if (contributions.Count == 0)
-            return result;
+            return new RawPenaltyApplication(result, Disqualified: false);
 
         var surviving = ResolveExclusion(contributions);
+
+        // D-B3: the Disqualify accrual must be known BEFORE the Zero* scan so
+        // the early-out below can carry the flag — a Zero* + Disqualify
+        // definition then yields NoResult AND the flag, both declared effects
+        // acted (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
+        var anyDisqualify = contributions.Values.Any(i => i.HasDisqualify);
 
         // Zero-dominance (D3), checked across ALL contributed definitions,
         // suppressed or not: Zero*-carrying definitions cannot join exclusion
@@ -89,19 +104,25 @@ public static class PenaltyEngine
                                  or PenaltyEffect.ZeroTask)
                 {
                     // Zeroed by a raw penalty → NoResult so the competitor
-                    // is excluded from normalisation's winner finding.
-                    return result with
+                    // is excluded from normalisation's winner finding. The
+                    // Disqualify flag rides along (D-B3) — the flag does not
+                    // zero (D-B2).
+                    return new RawPenaltyApplication(result with
                     {
                         State = TaskResultState.NoResult,
                         Selection = null,
                         RawScore = 0m
-                    };
+                    }, anyDisqualify);
                 }
             }
         }
 
-        // Residual R1 (D6): any Disqualify effect accrued above (HasDisqualify)
-        // is deliberately NOT actioned at this stage — see the residual stub.
+        // Disqualify (D-B1/D-B2): the accrued flag (HasDisqualify, possibly
+        // computed above) is now actioned as the returned flag — flag-only,
+        // no score change, carried to final assembly via ScoreGroup's walk.
+        // A Disqualify-carrying definition can never be suppressed out of
+        // flagging: exclusion groups admit only all-DeductPoints definitions
+        // (adoption check 16, D-B4).
 
         decimal totalDeduction = 0m;
         foreach (var (def, info) in contributions)
@@ -115,7 +136,9 @@ public static class PenaltyEngine
         // Subtracted pre-normalisation (feeds winner finding); floored per D4 —
         // HigherIsBetter analogue of FAI General §6 / C.19. State stays Valid,
         // Selection untouched: normalisation and reflight collapse read them.
-        return result with { RawScore = Math.Max(0m, result.RawScore - totalDeduction) };
+        return new RawPenaltyApplication(
+            result with { RawScore = Math.Max(0m, result.RawScore - totalDeduction) },
+            anyDisqualify);
     }
 
     /// <summary>

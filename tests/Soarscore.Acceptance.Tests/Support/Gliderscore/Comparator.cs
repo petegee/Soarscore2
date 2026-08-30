@@ -433,7 +433,7 @@ public static class Comparator
                     .ToImmutableArray();
 
                 var taskResult = ScoringService.SelectFlights(entry, resolvedTask, bindings, interpretedFlights);
-                taskResult = PenaltyEngine.ApplyRawPenalties(taskResult, EntryPenalties(entry), classDef.Penalties);
+                taskResult = PenaltyEngine.ApplyRawPenalties(taskResult, EntryPenalties(entry), classDef.Penalties).Result;
 
                 var ours = GsEquivalentRaw(resolvedTask, taskResult);
                 RecordCell("raw", slot.PilotNo, slot.RoundNo, slot.GroupNo, taskNo, compared, mismatches);
