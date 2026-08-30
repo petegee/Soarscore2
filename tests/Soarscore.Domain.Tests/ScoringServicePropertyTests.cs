@@ -405,14 +405,11 @@ public class ScoringServicePropertyTests
     // exclusion suppression can never hide a Disqualify flag and this
     // property exercises the un-suppressible shape.
     //
-    // P-FlagOrAccumulation (the story's other WI-3 property) is WITHHELD: the
-    // entry-scoped half of the OR fails against WI-2 as landed — ScoreGroup
-    // step 2c drops RawPenaltyApplication.Disqualified (it unpacks only
-    // applied.Result, and the engine's rebuilt TaskResults never assign the
-    // flag), so an entry-scoped Disqualify record reaches
-    // FinalCompetitorScore.Disqualified as false. Reported to the user
-    // 2026-08-30 with the minimal failing case; the property lands once the
-    // unpack threads the flag (story D-B1: "ScoreGroup step 2c unpacks it").
+    // P-FlagOrAccumulation (the story's other WI-3 property) is below. It
+    // found the one wiring defect of WI-2 as first landed — ScoreGroup step 2c
+    // unpacked only applied.Result, dropping RawPenaltyApplication.Disqualified,
+    // so an entry-scoped Disqualify reached FinalCompetitorScore.Disqualified
+    // as false — fixed in-story by threading the flag at the unpack (D-B1).
 
     // ------------------------------------------------- P-ZeroRoutingEquivalence
 
@@ -544,5 +541,121 @@ public class ScoringServicePropertyTests
         }
 
         return entry;
+    }
+
+    // ------------------------------------------------- P-FlagOrAccumulation
+
+    // Pure-effect definitions only, and deliberately non-grouped (D-B4):
+    // adoption check 16 admits only all-DeductPoints definitions into
+    // exclusion groups (ClassDefinitionValidation.CheckExclusionGroupsAreDeductOnly),
+    // so a Disqualify-carrying definition can never be suppressed out of
+    // flagging — these generators exercise the un-suppressible shape.
+    private static readonly ImmutableArray<PenaltyDefinition> FlagOrAccumulationDefs =
+    [
+        new()
+        {
+            InfractionType = "lateLanding",
+            Accrual = PenaltyAccrual.PerOccurrence,
+            Effects = [new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 100)],
+        },
+        new()
+        {
+            InfractionType = "grossMisconduct",
+            Effects = [new PenaltyEffectSpec(PenaltyEffect.Disqualify)],
+        },
+    ];
+
+    private static readonly Gen<(string InfractionType, PenaltyScope Scope)> FlagOrAccumulationFactGen =
+        from infractionType in Gen.OneOfConst("lateLanding", "grossMisconduct")
+        from scope in Gen.OneOfConst(PenaltyScope.Entry, PenaltyScope.Competition)
+        select (infractionType, scope);
+
+    /// <summary>
+    /// Score the synthetic 100-raw field with the given records folded in list
+    /// order — entry-scoped onto the subject's Entry via its decide function,
+    /// aggregate-scoped onto the Competition — and return the subject's final
+    /// score row. Rebuilt fresh for each call so permutations start from
+    /// identical state (folding mutates both aggregates).
+    /// </summary>
+    private static FinalCompetitorScore ScoreSubjectWithRecords(
+        List<(string InfractionType, PenaltyScope Scope)> records)
+    {
+        var (competition, entries, competitors) = BuildCompetitionWithPenalties(2, FlagOrAccumulationDefs);
+        var subject = competitors[0];
+        var definitions = competition.AdoptedRules.Definition.Penalties;
+
+        var aggregateRecords = new List<Penalty>();
+
+        foreach (var (infractionType, scope) in records)
+        {
+            if (scope == PenaltyScope.Entry)
+            {
+                var entryId = entries.Keys.Single(id => entries[id].CompetitorRef == subject);
+                var decided = entries[entryId].RecordPenalty(
+                    new Penalty { InfractionType = infractionType, Scope = PenaltyScope.Entry }, definitions);
+                decided.IsSuccess.Should().BeTrue();
+                entries[entryId] = entries[entryId].Apply(decided.Value);
+            }
+            else
+            {
+                aggregateRecords.Add(new Penalty
+                {
+                    InfractionType = infractionType,
+                    Scope = PenaltyScope.Competition,
+                    CompetitorRef = subject,
+                });
+            }
+        }
+
+        competition = competition with { Penalties = aggregateRecords.ToImmutableArray() };
+
+        var result = ScoringService.ScoreCompetition(competition, entries);
+        result.IsSuccess.Should().BeTrue();
+        return result.Value.Scores[subject.ToString()];
+    }
+
+    /// <summary>
+    /// P-FlagOrAccumulation
+    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
+    /// the final <see cref="FinalCompetitorScore.Disqualified"/> equals the OR
+    /// over every recorded entry- AND aggregate-scoped Disqualify effect for
+    /// that competitor — a Disqualify at either scope flags, and none leaves
+    /// the score untouched (D-B2 flag-only). Invariant under permutation of the
+    /// recorded penalties (order-independence, mirroring P-RawOrderIndependence
+    /// of PenaltyEnginePropertyTests): two re-folded permutations of the same
+    /// record set must produce identical Disqualified and Score.
+    /// </summary>
+    [Fact]
+    public void P_FlagOrAccumulation_final_disqualified_is_the_order_independent_or_over_both_scopes()
+    {
+        FlagOrAccumulationFactGen.Array[0, 5].Sample(records =>
+        {
+            var list = records.ToList();
+
+            var expectedDisqualified = list.Any(r => r.InfractionType == "grossMisconduct");
+            var entryDeduct = 100m * list.Count(r => r is ("lateLanding", PenaltyScope.Entry));
+            var aggregateDeduct = 100m * list.Count(r => r is ("lateLanding", PenaltyScope.Competition));
+
+            // Score oracle: the 100-raw subject's DeductPoints halves act at
+            // the stage their scope names — entry-scoped pre-normalisation
+            // (floored at zero, D4), aggregate-scoped flat after drops. A
+            // pure-Disqualify record changes no arithmetic.
+            var expectedScore = Math.Max(0m, 100m - entryDeduct) - aggregateDeduct;
+
+            var original = ScoreSubjectWithRecords(list);
+            original.Disqualified.Should().Be(expectedDisqualified);
+            original.Score.Should().Be(expectedScore);
+
+            // Permutation invariance: the OR and the sum do not care about
+            // the order the records were folded in.
+            var reversed = ScoreSubjectWithRecords(list.AsEnumerable().Reverse().ToList());
+            reversed.Disqualified.Should().Be(original.Disqualified);
+            reversed.Score.Should().Be(original.Score);
+
+            var rotated = list.Skip(list.Count / 2).Concat(list.Take(list.Count / 2)).ToList();
+            var rotatedScore = ScoreSubjectWithRecords(rotated);
+            rotatedScore.Disqualified.Should().Be(original.Disqualified);
+            rotatedScore.Score.Should().Be(original.Score);
+        });
     }
 }

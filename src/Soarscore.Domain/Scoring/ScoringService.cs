@@ -147,7 +147,14 @@ public static class ScoringService
             var applied = PenaltyEngine.ApplyRawPenalties(
                 taskResult, entryPenalties.AddRange(routed), classDef.Penalties);
 
-            taskResult = applied.Result;
+            // D-B1's unpack must carry BOTH halves of the return: the result
+            // AND the flag. `applied.Disqualified` is the raw stage's actioned
+            // Disqualify (D-B1) — dropping it here would strand an entry-scoped
+            // Disqualify record as a no-op again, the exact bug this story
+            // closes. Stored on the TaskResult so normalisation's
+            // `with`-rebuilds carry it out of ScoreGroup for the walk to
+            // OR-accumulate into FinalCompetitorScore (D-B2).
+            taskResult = applied.Result with { Disqualified = applied.Disqualified };
 
             taskResults[competitorRef] = taskResult;
         }
