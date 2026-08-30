@@ -90,6 +90,13 @@ public static class SoarscoreJson
 [JsonSerializable(typeof(LastNFlights))]
 [JsonSerializable(typeof(BestNFlights))]
 [JsonSerializable(typeof(ExactlyNInOrder))]
+[JsonSerializable(typeof(TieBreakDirective))]
+[JsonSerializable(typeof(BestDroppedScore))]
+[JsonSerializable(typeof(QualifyingPosition))]
+[JsonSerializable(typeof(AdditionalFullRound))]
+[JsonSerializable(typeof(TieBreakFlyoff))]
+[JsonSerializable(typeof(ClassificationRounds))]
+[JsonSerializable(typeof(UndefinedRequiresRuling))]
 [JsonSerializable(typeof(NumberOrParam))]
 [JsonSerializable(typeof(FlagOrParam))]
 public sealed partial class ClassDefinitionContext : JsonSerializerContext;

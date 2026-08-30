@@ -58,12 +58,18 @@ public static class ScoringService
         IReadOnlyDictionary<string, TaskRoundScore> allScores) =>
         PhaseAggregator.Aggregate(competitorRef, phase, rounds, allScores);
 
-    /// <summary>Rank competitors by final scores.</summary>
+    /// <summary>
+    /// Rank competitors by final scores. Null <paramref name="tieBreaks"/> uses
+    /// the class-agnostic display ladder (Score DESC, PreDropScore DESC,
+    /// nothing surfaced as pending); <see cref="ScoreCompetition"/> is the
+    /// caller that reads a phase's tie-break policy.
+    /// </summary>
     public static CompetitionResult Rank(
         ImmutableArray<FinalCompetitorScore> scores,
         FinalRankingKind? finalRanking,
-        PromotionRule? promotion) =>
-        RankingEngine.Rank(scores, finalRanking, promotion);
+        PromotionRule? promotion,
+        TieBreakContext? tieBreaks = null) =>
+        RankingEngine.Rank(scores, finalRanking, promotion, tieBreaks ?? TieBreakContext.Display);
 
     // ---------------------------------------------------- convenience methods
 
@@ -183,6 +189,16 @@ public static class ScoringService
         // note on LastPhaseReplaces/SplitByPromotion.
         var totalsByCompetitor = new Dictionary<string, decimal>();
         var preDropTotals = new Dictionary<string, decimal>();
+
+        // The BestDroppedScore comparator's per-competitor figure
+        // (tie-break-policy-in-class-definition.md D4): mirror-accumulated in
+        // the phase loop beside the other two totals, as the MAX dropped cell
+        // across phases. Multi-phase combination semantics are unreachable
+        // today (only phase 0 is drawn) — same stance as the ranking story's
+        // mirror-accumulate: do not invent special handling. No penalty
+        // adjustment at final assembly: the dropped cell is a round-level
+        // figure and aggregate penalties deduct once from the final score.
+        var bestDroppedScores = new Dictionary<string, decimal>();
 
         // Entry-scoped Disqualify flags (WI-2, D-B2): competitorRef → set when
         // any of their TaskResults anywhere in the walk came back flagged from
@@ -539,6 +555,8 @@ public static class ScoringService
                     totalsByCompetitor.GetValueOrDefault(competitorRef) + phaseScores.Aggregate;
                 preDropTotals[competitorRef] =
                     preDropTotals.GetValueOrDefault(competitorRef) + phaseScores.PreDropAggregate;
+                bestDroppedScores[competitorRef] =
+                    Math.Max(bestDroppedScores.GetValueOrDefault(competitorRef), phaseScores.BestDroppedAggregate);
             }
         }
 
@@ -559,6 +577,10 @@ public static class ScoringService
                 CompetitorRef: competitorRef,
                 Score: totalScore - penaltyResult.Deduction,
                 PreDropScore: preDropTotals.GetValueOrDefault(competitorRef) - penaltyResult.Deduction,
+                // D4: no penalty adjustment — the max dropped cell is a
+                // round-level figure; the prior art subtracts from
+                // total-scale keys only.
+                BestDroppedScore: bestDroppedScores.GetValueOrDefault(competitorRef),
                 // Aggregate-stage Disqualify (above) ORed with the raw-stage
                 // entry-scoped flag threaded through the walk (WI-2, D-B2).
                 Disqualified: penaltyResult.Disqualified || rawDisqualified.Contains(competitorRef)));
@@ -569,8 +591,16 @@ public static class ScoringService
         // ScoreCompetition always used, kept for when a second phase exists.
         var promotion = classDef.Phases.Length > 1 ? classDef.Phases[1].Promotion : null;
 
+        // The tie-break policy of the ranking phase — Phases[0]'s, the only
+        // reachable ranking today (D9): an empty qualifying-positions map,
+        // since no second phase can be drawn to supply prior placings. The
+        // per-phase orchestration a multi-phase ranking would need belongs to
+        // future multi-phase contest flow.
         return Result<CompetitionResult>.Success(
-            Rank(finalScores.ToImmutable(), classDef.FinalRanking, promotion));
+            Rank(finalScores.ToImmutable(), classDef.FinalRanking, promotion,
+                new TieBreakContext(
+                    classDef.Phases[0].TieBreaks,
+                    ImmutableDictionary<string, int>.Empty)));
     }
 
     // ---------------------------------------------------- D7 bookkeeping

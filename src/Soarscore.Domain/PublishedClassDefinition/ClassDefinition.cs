@@ -218,6 +218,31 @@ public sealed record PhaseDefinition
     /// <summary>Ordered, first match wins; MAY BE EMPTY, and empty means no discard.</summary>
     public ImmutableArray<DropPolicy> Drops { get; init; } = [];
 
+    /// <summary>
+    /// The phase's tie-break ladder, after the core-owned rung 1 (Score DESC).
+    /// MAY BE EMPTY, and the empty default is a statement: a phase that states
+    /// no tie-breaks keeps the class-agnostic display ladder — the PreDropScore
+    /// countback at rung 2, established practice settled by
+    /// kanban/completed/ranking-secondary-rawscore-key.md. A STATED list is the
+    /// complete tie-break ladder after Score and SUPERSEDES the display rung 2
+    /// rather than appending to it: comparators narrow the tie group in order;
+    /// the first operational or <see cref="UndefinedRequiresRuling"/> rung
+    /// reached with the group still tied halts evaluation — the group shares
+    /// places, the requirement surfaces to contest flow, and rungs after the
+    /// halt stay dormant (F3F.1.13's bestDroppedScore fallback is stated for
+    /// exactly that future; the engine never evaluates past the halt). A
+    /// comparator ladder fully exhausted with the tie intact also leaves places
+    /// shared. Under append, F3B's stated additionalFullRound could never fire
+    /// — the PreDropScore countback would separate every Score tie first,
+    /// deciding by a mechanism F3B.2.8 does not state. Per-phase, not
+    /// class-level, because the corpus's directives attach to phase rankings and
+    /// genuinely differ within one class (F3J's preliminary is silent while its
+    /// fly-off states qualifying position) — same grain and reasoning as
+    /// <see cref="Drops"/>. kanban/in-progress/tie-break-policy-in-class-definition.md
+    /// D1/D3.
+    /// </summary>
+    public ImmutableArray<TieBreakDirective> TieBreaks { get; init; } = [];
+
     /// <summary>Appears only on a phase after the first.</summary>
     public PromotionRule? Promotion { get; init; }
 

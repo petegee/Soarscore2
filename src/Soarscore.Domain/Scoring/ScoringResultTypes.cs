@@ -137,6 +137,20 @@ public sealed record PhaseScores(
 {
     /// <summary>The phase's pre-drop total: post-drop aggregate plus the dropped cells.</summary>
     public decimal PreDropAggregate => Aggregate + DroppedScores.Sum(s => s.Score);
+
+    /// <summary>
+    /// The best (max) dropped cell, normalised scale, or 0 when nothing was
+    /// dropped — the <see cref="PublishedClassDefinition.BestDroppedScore"/>
+    /// comparator's per-phase figure. The max dropped CELL, not the sum (D4):
+    /// F3K.10.2's "the best dropped score" is explicit, and with plural drops
+    /// max(a,b) need not order like a+b — which is exactly where this key
+    /// diverges from <see cref="PreDropAggregate"/> (the SUM of dropped cells).
+    /// A round-level figure: aggregate penalties deduct once from the final
+    /// score, so NO penalty adjustment here — the prior art subtracts from
+    /// total-scale keys only. kanban/in-progress/tie-break-policy-in-class-definition.md
+    /// D4.
+    /// </summary>
+    public decimal BestDroppedAggregate => DroppedScores.Length == 0 ? 0 : DroppedScores.Max(s => s.Score);
 }
 
 // --------------------------------------------------------------- penalties
@@ -178,17 +192,53 @@ public sealed record FinalCompetitorScore(
     /// aggregate-penalty deduction as <see cref="Score"/>. Score ties break on
     /// this before places are shared
     /// (kanban/completed/ranking-secondary-rawscore-key.md). Not the per-flight,
-    /// pre-normalisation RawScore — do not conflate the two.
+    /// pre-normalisation RawScore — do not conflate the two. The UNSTATED-policy
+    /// fallback rung: superseded whenever the ranking phase states a
+    /// <see cref="PublishedClassDefinition.TieBreakDirective"/> list.
     /// </summary>
     decimal PreDropScore,
+    /// <summary>
+    /// The STATED-policy comparator figure: the max dropped cell across the
+    /// competitor's phase scores (D4). Never the sum of dropped cells — that is
+    /// <see cref="PreDropScore"/> minus <see cref="Score"/>; see
+    /// <see cref="PhaseScores.BestDroppedAggregate"/> for the per-phase figure
+    /// and why there is no penalty adjustment. Read only when the ranking phase
+    /// states a tie-break policy; the absent-policy display ladder never reads
+    /// it (zero fixture impact).
+    /// </summary>
+    decimal BestDroppedScore,
     bool Disqualified
 );
+
+/// <summary>
+/// One tie group whose next unevaluated rung is operational or
+/// <see cref="PublishedClassDefinition.UndefinedRequiresRuling"/> — the class
+/// policy requires contest flow to act (fly the round / fly-off / classification
+/// rounds) or the CD to rule, and the engine has not resolved anything (D5).
+/// The group's places are already shared; this is the read-side annotation that
+/// says why.
+/// </summary>
+public sealed record PendingTieBreak(
+    ImmutableArray<string> CompetitorRefs,
+    PublishedClassDefinition.TieBreakDirective Directive);
 
 /// <summary>The final competition result.</summary>
 public sealed record CompetitionResult(
     ImmutableDictionary<string, FinalCompetitorScore> Scores,
     ImmutableDictionary<string, int> Placings
-);
+)
+{
+    /// <summary>
+    /// One per tie group whose next unevaluated rung is operational or
+    /// UndefinedRequiresRuling (D5) — empty for the display ladder and for
+    /// comparator-only ladders, where an exhausted ladder is a settled shared
+    /// place. A read-side annotation, never a write gate (NFR-4): shared places
+    /// are assigned exactly as today while the tie stands. HTTP/read-model
+    /// exposure is out of scope (no route, DTO or projection change) — the
+    /// surface exists when contest flow wants it, as data.
+    /// </summary>
+    public ImmutableArray<PendingTieBreak> PendingTieBreaks { get; init; } = [];
+}
 
 // --------------------------------------------------------------- resolved task
 
