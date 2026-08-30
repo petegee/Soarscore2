@@ -364,6 +364,13 @@ public static class SeedF5K
                         ApplyWhenRoundsCompletedAtLeast = 7,                    // 5.5.10.16 "if 7 or more rounds are flown"
                     },
                 ],
+                // Tie-breaks: 5.5.10.17 — best dropped score first, then a separate
+                // tie-break fly-off. D10 scope reading: 5.5.10.17's tie clause is
+                // preliminary-scoped; the fly-off phase states nothing and falls
+                // back to the display ladder (where PreDropScore ≡ Score since the
+                // fly-off declares no drops, so ties share).
+                TieBreaks = [new BestDroppedScore(), new TieBreakFlyoff()],      // 5.5.10.17
+                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = Catalogue,
             },
 
@@ -392,6 +399,9 @@ public static class SeedF5K
                 },
                 Validity = new() { MinRounds = 3 },                             // 5.5.10 "if fewer than 3 complete, preliminary results stand"
                 // no drop: 5.5.10 states no fly-off discard
+                // no tie-breaks: 5.5.10.17's tie clause is preliminary-scoped (D10);
+                //   the fly-off states nothing and falls back to the display ladder
+                //   (PreDropScore ≡ Score here — no drops — so ties share)
                 Tasks = Catalogue,
             },
         ],

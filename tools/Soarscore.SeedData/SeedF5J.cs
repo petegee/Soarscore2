@@ -201,6 +201,8 @@ public static class SeedF5J
                         ApplyWhenRoundsCompletedAtLeast = 5,                    // 5.5.11.13 "if more than 4, the lowest round score is dropped"
                     },
                 ],
+                // no tie-breaks: 5.5.11.13 h covers fly-off placing only — the
+                //   qualifying aggregate is silence
                 Tasks = [TaskD],
             },
 
@@ -218,6 +220,11 @@ public static class SeedF5J
                 },
                 Validity = new() { MinRounds = NumberOrParam.Param("flyoffMinRounds") },  // not stated for F5J (F12)
                 // no drop: 5.5.11.13's discard applies to the qualifying aggregate
+                // Tie-breaks: 5.5.11.13 h — the competitor's position in the
+                //   ranking of the qualifying rounds. SourcePhaseOrdinal 1 is the
+                //   preliminary's PhaseDefinition.Ordinal (check 17).
+                TieBreaks = [new QualifyingPosition { SourcePhaseOrdinal = 1 }],  // 5.5.11.13 h
+                                                                                  //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [FlyoffTaskD],
             },
         ],

@@ -105,6 +105,10 @@ public static class SeedNzNAles123
                 },
                 Validity = new() { MinRounds = 3 },                             // NZ.3.13
                 // no drop: NZ.3.13.1 i "each flight counts"
+                // no tie-breaks: the NZ rules state none anywhere
+                //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
+                TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
+                                                                               //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },
         ],

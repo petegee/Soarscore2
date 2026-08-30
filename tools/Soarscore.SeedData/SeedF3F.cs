@@ -159,6 +159,14 @@ public static class SeedF3F
                         ApplyWhenRoundsCompletedAtLeast = 4,                    // F3F.1.13 "in this case the lowest round score of each
                     },                                                          //   competitor will be discarded"
                 ],
+                // Tie-breaks: F3F.1.13 — fly more rounds of the task until the tie
+                // breaks (operational first); if that is not possible, the best
+                // dropped score defines the ranking (the comparator fallback).
+                // D7 deviation: F3F.1.13's "concerning the five best scores"
+                // scoping is deliberately unmodelled — readmitted as a scope field
+                // the day a second class needs one.
+                TieBreaks = [new ClassificationRounds(), new BestDroppedScore()],  // F3F.1.13
+                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [TaskS],
             },
         ],

@@ -184,6 +184,10 @@ public static class SeedNzF3kNdc
                 Validity = new() { MinRounds = 4 },                            // ruling
                 // no drop: NZ.0.2.1 a "Total is sum of raw scores" — a dropped
                 //   round would contradict it
+                // no tie-breaks: the NZ rules state none anywhere
+                //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
+                TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
+                                                                               //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [TaskB, TaskD, TaskG, TaskH],                          // NZ.0.2.1 a catalogue B/D/G/H only
             },
         ],

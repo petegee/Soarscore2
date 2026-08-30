@@ -108,6 +108,10 @@ public static class SeedNzMNdc
                 },
                 Validity = new() { MinRounds = 4 },                             // NZ.3.12.7 a
                 // no drop: NZ.3.12.7 c "the sum of the four rounds"
+                // no tie-breaks: the NZ rules state none anywhere
+                //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
+                TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
+                                                                               //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },
         ],

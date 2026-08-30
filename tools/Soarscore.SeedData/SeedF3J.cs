@@ -154,6 +154,8 @@ public static class SeedF3J
                 Ordinal = 1,
                 Type = PhaseType.Preliminary,
                 Validity = new() { MinRounds = 4 },                             // F3J.3.1 a
+                // no tie-breaks: F3J.11 covers fly-off placing only — the
+                //   qualifying aggregate is silence
                 Drops =
                 [
                     new()
@@ -180,6 +182,11 @@ public static class SeedF3J
                 },                                                              //   at setup and the choice is logged (F12)
                 Validity = new() { MinRounds = NumberOrParam.Param("flyoffMinRounds") },  // not stated for F3J (F12)
                 // no drop: F3J.3.1 a's discard applies to the qualifying aggregate
+                // Tie-breaks: F3J.11.4 — the competitor's position in the ranking
+                //   of the qualifying rounds. SourcePhaseOrdinal 1 is the
+                //   preliminary's PhaseDefinition.Ordinal (check 17).
+                TieBreaks = [new QualifyingPosition { SourcePhaseOrdinal = 1 }],  // F3J.11.4
+                                                                                  //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [FlyoffTaskD],
             },
         ],

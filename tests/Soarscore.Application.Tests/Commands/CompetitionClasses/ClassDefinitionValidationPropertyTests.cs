@@ -2,7 +2,7 @@
 // "Verify" section proposes this: "generate a valid definition (a corpus
 // definition plus one random mutation drawn from a table mapping 'this
 // mutation' -> 'should trip check N'), assert the *only* defect raised is
-// check N." ClassDefinitionValidationTests.cs's sixteen fixed examples prove
+// check N." ClassDefinitionValidationTests.cs's nineteen fixed examples prove
 // each check CAN fire; they cannot prove a check fires ONLY on its own
 // trigger and never masks or duplicates an adjacent one — the checks share
 // traversal helpers (AllTasks, AllTermsOf, WalkPredicate), so a bug in a

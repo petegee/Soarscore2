@@ -138,6 +138,10 @@ public static class SeedF5L
                         ApplyWhenRoundsCompletedAtLeast = 6,                    // 5.5.12.12 "if more than 5, the lowest round score is dropped"
                     },
                 ],
+                // Tie-breaks: 5.5.12.12 states classification and stops — silence
+                //   (UndefinedRequiresRuling), both phases.
+                TieBreaks = [new UndefinedRequiresRuling()],                    // 5.5.12.12
+                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },
 
@@ -157,6 +161,10 @@ public static class SeedF5L
                 },
                 Validity = new() { MinRounds = 2 },                             // 5.5.12.4 "minimum 2 rounds"
                 // no drop: 5.5.12 states no fly-off discard
+                // no tie-breaks: 5.5.12.12 states classification and stops —
+                //   silence (UndefinedRequiresRuling), both phases
+                TieBreaks = [new UndefinedRequiresRuling()],                    // 5.5.12.12
+                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = [FlyoffTaskD],
             },
         ],

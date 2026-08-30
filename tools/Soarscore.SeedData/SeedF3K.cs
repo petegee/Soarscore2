@@ -323,6 +323,13 @@ public static class SeedF3K
                         ApplyWhenRoundsCompletedAtLeast = 6,                    // F3K.10 "if 6 or more rounds are flown"
                     },
                 ],
+                // Tie-breaks: F3K.10.2 — best dropped score first, then a separate
+                // tie-break fly-off. D10 scope reading: F3K.10.2's tie clause is
+                // preliminary-scoped; the fly-off phase states nothing and falls
+                // back to the display ladder (where PreDropScore ≡ Score since the
+                // fly-off declares no drops, so ties share).
+                TieBreaks = [new BestDroppedScore(), new TieBreakFlyoff()],      // F3K.10.2
+                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
                 Tasks = Catalogue,
             },
 
@@ -352,6 +359,9 @@ public static class SeedF3K
                 Validity = new() { MinRounds = 3 },                             // F3K.10.3
                 // no drop: F3K.10's discard applies to the preliminary aggregate
                 //   only, so the fly-off has no discard rule to state
+                // no tie-breaks: F3K.10.2's tie clause is preliminary-scoped (D10);
+                //   the fly-off states nothing and falls back to the display ladder
+                //   (PreDropScore ≡ Score here — no drops — so ties share)
                 Tasks = [.. Catalogue, TaskM],
             },
         ],
