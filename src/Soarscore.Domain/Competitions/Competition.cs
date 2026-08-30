@@ -1688,6 +1688,7 @@ public sealed record Competition
             ?? ValidateCompetitorExists(penalty.CompetitorRef!.Value)
             ?? ValidateTaskRoundCoordinate(penalty.TaskRound, "recordPenalty")
             ?? ValidateInfractionType(penalty.InfractionType)
+            ?? ValidateZeroEffectHasTaskRound(penalty)
             ?? ValidateByNotBlank(penalty.By, "recordPenalty");
 
         return defect is not null
@@ -1741,11 +1742,38 @@ public sealed record Competition
         return null;
     }
 
+    // The single infraction-type lookup for the decide chain (WI-1:
+    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-1) —
+    // extracted so ValidateInfractionType and the Zero*-anchoring check below
+    // share it instead of each re-scanning AdoptedRules.Definition.Penalties.
+    // First match wins, the same discipline PenaltyEngine.BuildDefinitionLookup
+    // uses at score time.
+    private PenaltyDefinition? FindPenaltyDefinition(string infractionType) =>
+        AdoptedRules.Definition.Penalties.FirstOrDefault(d => d.InfractionType == infractionType);
+
     private Defect? ValidateInfractionType(string infractionType) =>
-        AdoptedRules.Definition.Penalties.Any(d => d.InfractionType == infractionType)
+        FindPenaltyDefinition(infractionType) is not null
             ? null
             : new Defect("recordPenalty.infractionTypeNotDeclared", "$.infractionType",
                 $"'{infractionType}' is not an infraction type declared by the adopted class definition.");
+
+    // WI-1, D-A3 (write side): every zeroing clause in the rule corpus names its
+    // round (F3K.1.2, F3K.4.1, F3B.2.2 p — story cross-references), so a
+    // Zero*-carrying record without a task-round coordinate is incomplete data,
+    // not a differently-scoped one: the coordinate is what routes the zeroing
+    // to the one stage that can act on it (ScoringService's task-round walk).
+    // Keyed off PenaltyEffect values generically, never on a class (NFR-1).
+    // Wired after ValidateInfractionType so the definition lookup is shared.
+    private Defect? ValidateZeroEffectHasTaskRound(Penalty penalty) =>
+        FindPenaltyDefinition(penalty.InfractionType) is { } def
+        && def.Effects.Any(e => e.Effect is PenaltyEffect.ZeroFlight
+                                         or PenaltyEffect.ZeroRound
+                                         or PenaltyEffect.ZeroTask)
+        && penalty.TaskRound is null
+            ? new Defect("recordPenalty.zeroEffectRequiresTaskRound", "$.taskRound",
+                $"'{penalty.InfractionType}' carries a zeroing effect, which acts on the task-round it "
+                + "zeroes — a task-round coordinate is required.")
+            : null;
 
     private static Defect? ValidateByNotBlank(string? by, string command) =>
         by is not null && string.IsNullOrWhiteSpace(by)

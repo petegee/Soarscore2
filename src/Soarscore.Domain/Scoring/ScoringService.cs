@@ -82,12 +82,25 @@ public static class ScoringService
     /// names the result row.
     /// </param>
     /// <param name="parameterBindings">Bound parameter values (from Competition.ParameterBindings).</param>
+    /// <param name="taskRoundPenalties">
+    /// Aggregate-scoped Zero* penalties routed to this task-round, keyed by
+    /// competitor (stringified CompetitorRef) — from
+    /// <see cref="GetTaskRoundZeroPenalties"/>. Optional: null/empty is exactly
+    /// the pre-WI-1 behaviour. Merged into the entry's own penalties at step 2c
+    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-1,
+    /// D-A1: an aggregate-scoped Zero* record zeroes the named task-round via
+    /// the same raw-stage engine path an entry-scoped one takes, not a third
+    /// apply function). The map is keyed by COMPETITOR, so lookup is by the
+    /// entry's subject — <c>entry.CompetitorRef</c>, never the dictionary key,
+    /// which under reflights is the entry key (ReflightSelector.EntryKey).
+    /// </param>
     public static GroupResult ScoreGroup(
         string groupRef,
         TaskDefinition task,
         ClassDefinition classDef,
         ImmutableDictionary<string, Entry> entries,
-        IReadOnlyDictionary<string, MeasuredValue> parameterBindings)
+        IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
+        ImmutableDictionary<string, ImmutableArray<RecordedPenalty>>? taskRoundPenalties = null)
     {
         // 1. Resolve task parameters.
         var resolvedTask = ParameterResolver.ResolveTask(task, parameterBindings, classDef.Parameters);
@@ -106,10 +119,27 @@ public static class ScoringService
             var taskResult = FlightSelector.SelectAndScore(
                 entry, resolvedTask, parameterBindings, interpretedFlights);
 
-            // 2c. Apply raw penalties scoped to this Entry (Flight/Entry scope).
+            // 2c. Apply raw penalties scoped to this Entry (Flight/Entry scope),
+            //     plus any aggregate-scoped Zero* records routed to this
+            //     task-round (WI-1/D-A1 — see the taskRoundPenalties doc). The
+            //     Zero* dominance early-out in ApplyRawPenalties returns before
+            //     its deduction loop, so a mixed-effect definition's
+            //     DeductPoints half is never applied at this stage — the
+            //     deduction still acts at the aggregate stage via
+            //     GetAggregatePenalties/ApplyAggregatePenalties, which are
+            //     unchanged: each half of the record acts once, in its own
+            //     stage (D-A4, no double-count by construction).
             var entryPenalties = GetEntryPenalties(entry);
+
+            // Subject-keyed merge: the map is per competitor, the entries dict
+            // may be keyed by entry under reflights (see the param doc).
+            var routed = taskRoundPenalties is not null
+                && taskRoundPenalties.TryGetValue(entry.CompetitorRef.ToString(), out var zeros)
+                    ? zeros
+                    : ImmutableArray<RecordedPenalty>.Empty;
+
             taskResult = PenaltyEngine.ApplyRawPenalties(
-                taskResult, entryPenalties, classDef.Penalties);
+                taskResult, entryPenalties.AddRange(routed), classDef.Penalties);
 
             taskResults[competitorRef] = taskResult;
         }
@@ -227,6 +257,19 @@ public static class ScoringService
 
                     walkedSlots.Add((round.Ordinal, taskRound.Ordinal, taskRound.TaskRef));
 
+                    // Route this task-round's share of aggregate-scoped Zero*
+                    // penalties into the raw stage (WI-1, D-A1/D-A2). Only
+                    // task-rounds the walk actually reaches anchor zeros —
+                    // skipped (entries-absent) task-rounds never get here.
+                    var coordinate = new TaskRoundCoordinate(phase.Ordinal, round.Ordinal, taskRound.Ordinal);
+
+                    var taskRoundZeroPenalties = GetTaskRoundZeroPenalties(competition.Penalties, classDef, coordinate);
+                    if (taskRoundZeroPenalties.IsFailure)
+                    {
+                        return Result<CompetitionResult>.Failure(
+                            taskRoundZeroPenalties.Code!, taskRoundZeroPenalties.Message!, taskRoundZeroPenalties.Defects);
+                    }
+
                     var reflightRule = taskDefinition.Reflight ?? classDef.Reflight;
 
                     // The CD rulings for this task-round, keyed by competitor
@@ -279,7 +322,8 @@ public static class ScoringService
                             continue;
 
                         var groupResult = ScoreGroup(
-                            group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings);
+                            group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings,
+                            taskRoundZeroPenalties.Value);
 
                         foreach (var (entryKey, taskResult) in groupResult.Results)
                         {
@@ -570,6 +614,83 @@ public static class ScoringService
             .GroupBy(p => p.InfractionType)
             .Select(g => new RecordedPenalty(g.Key, g.Count()))
             .ToImmutableArray();
+
+    /// <summary>
+    /// The per-competitor map of aggregate-scoped Zero* penalties that anchor to
+    /// one task-round (WI-1, D-A2) — the routing input <see cref="ScoreGroup"/>
+    /// merges at its raw stage. A record qualifies when:
+    /// <list type="bullet">
+    /// <item>its recorded scope is TaskRound or Competition (aggregate scope),</item>
+    /// <item>the class definition matching its infraction type (first match
+    /// wins, mirroring PenaltyEngine.BuildDefinitionLookup) carries at least one
+    /// ZeroFlight/ZeroRound/ZeroTask effect — keyed off <c>PenaltyEffect</c>
+    /// values generically, never on a class (NFR-1),</item>
+    /// <item>its <see cref="Penalty.TaskRound"/> coordinate equals
+    /// <paramref name="coordinate"/> component-wise — the task-round the record
+    /// names is the one that zeroes (D-A2), and</item>
+    /// <item>it names a subject (<c>CompetitorRef</c>, same filter as
+    /// GetAggregatePenalties — one competitor's penalty never hits the field).</item>
+    /// </list>
+    /// A Zero*-carrying record with a NULL coordinate cannot be anchored to any
+    /// task-round: refused loudly here (D-A3 read-side safety net for events
+    /// already in the log — the write side now rejects them at
+    /// <c>Competition.RecordPenalty</c>), never skipped.
+    /// One record is one occurrence; occurrences are grouped per competitor and
+    /// infraction type, the same shape GetEntryPenalties produces.
+    /// GetAggregatePenalties/ApplyAggregatePenalties are unchanged: the
+    /// aggregate stage ignores Zero* effects, so no effect acts twice (D-A4).
+    /// </summary>
+    public static Result<ImmutableDictionary<string, ImmutableArray<RecordedPenalty>>> GetTaskRoundZeroPenalties(
+        ImmutableArray<Penalty> competitionPenalties,
+        ClassDefinition classDef,
+        TaskRoundCoordinate coordinate)
+    {
+        // First-match-wins, same lookup discipline PenaltyEngine builds for both
+        // of its stages.
+        var defLookup = new Dictionary<string, PenaltyDefinition>();
+        foreach (var def in classDef.Penalties)
+        {
+            if (!defLookup.ContainsKey(def.InfractionType))
+                defLookup[def.InfractionType] = def;
+        }
+
+        static bool CarriesZeroEffect(PenaltyDefinition def) =>
+            def.Effects.Any(e => e.Effect is PenaltyEffect.ZeroFlight
+                                            or PenaltyEffect.ZeroRound
+                                            or PenaltyEffect.ZeroTask);
+
+        // Read-side safety net (D-A3): a Zero*-carrying aggregate record with no
+        // coordinate would silently zero nothing if skipped — refuse instead.
+        foreach (var p in competitionPenalties.Where(p =>
+                     p.Scope is PenaltyScope.TaskRound or PenaltyScope.Competition))
+        {
+            if (defLookup.TryGetValue(p.InfractionType, out var def)
+                && CarriesZeroEffect(def)
+                && p.TaskRound is null)
+            {
+                return Result<ImmutableDictionary<string, ImmutableArray<RecordedPenalty>>>.Failure(
+                    "score.zeroEffectUnanchored",
+                    $"Penalty '{p.InfractionType}' against competitor "
+                    + $"{p.CompetitorRef!.Value} (scope {p.Scope}) carries a zeroing effect but names no "
+                    + "task-round — a zeroing rule always names the round it zeroes, so the record "
+                    + "cannot be anchored and scoring refuses rather than zero nothing.");
+            }
+        }
+
+        var map = competitionPenalties
+            .Where(p => p.Scope is PenaltyScope.TaskRound or PenaltyScope.Competition)
+            .Where(p => defLookup.TryGetValue(p.InfractionType, out var def) && CarriesZeroEffect(def))
+            .Where(p => p.TaskRound == coordinate)
+            .Where(p => p.CompetitorRef is not null)
+            .GroupBy(p => p.CompetitorRef!.Value.ToString())
+            .ToImmutableDictionary(
+                g => g.Key,
+                g => g.GroupBy(p => p.InfractionType)
+                    .Select(t => new RecordedPenalty(t.Key, t.Count()))
+                    .ToImmutableArray());
+
+        return Result<ImmutableDictionary<string, ImmutableArray<RecordedPenalty>>>.Success(map);
+    }
 
     /// <summary>
     /// Extract TaskRound/Competition-scoped penalties from the Competition

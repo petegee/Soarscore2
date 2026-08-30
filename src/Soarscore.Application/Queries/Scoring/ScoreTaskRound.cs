@@ -120,6 +120,21 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
         var classDef = competition.AdoptedRules.Definition;
         var bindings = ScoringService.FlattenParameterBindings(competition.ParameterBindings, query.PhaseOrdinal, query.RoundOrdinal);
 
+        // Aggregate-scoped Zero* penalties routed to this task-round (WI-1,
+        // D-A2 of the story it cites): the per-competitor map is shared by every
+        // group here, exactly as ScoreCompetition shares it across its walk, so
+        // the provisional leaderboard shows the zeroing too.
+        var taskRoundZeroPenalties = ScoringService.GetTaskRoundZeroPenalties(
+            competition.Penalties,
+            classDef,
+            new TaskRoundCoordinate(query.PhaseOrdinal, query.RoundOrdinal, query.TaskRoundOrdinal));
+
+        if (taskRoundZeroPenalties.IsFailure)
+        {
+            return Result<IReadOnlyList<GroupScoreView>>.Failure(
+                taskRoundZeroPenalties.Code!, taskRoundZeroPenalties.Message!, taskRoundZeroPenalties.Defects);
+        }
+
         var views = new List<GroupScoreView>();
 
         foreach (var group in groups)
@@ -144,7 +159,8 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 continue;
 
             var groupResult = ScoringService.ScoreGroup(
-                group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings);
+                group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings,
+                taskRoundZeroPenalties.Value);
 
             views.Add(MapGroupResult(group.Id, groupResult, groupEntries));
         }
