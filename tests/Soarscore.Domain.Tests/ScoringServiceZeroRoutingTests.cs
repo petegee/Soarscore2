@@ -11,7 +11,7 @@ namespace Soarscore.Domain.Tests;
 
 /// <summary>
 /// Sociable facts for WI-3's read-path fixes
-/// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
+/// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
 /// aggregate-scoped Zero* records route into the task-round stage through
 /// <see cref="ScoringService.ScoreGroup"/>'s taskRoundPenalties parameter
 /// (D-A1, D-A2), and a coordinate-less aggregate Zero* record is refused

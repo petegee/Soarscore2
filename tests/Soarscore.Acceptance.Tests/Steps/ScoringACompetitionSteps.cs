@@ -69,7 +69,7 @@ public sealed class ScoringACompetitionSteps
         Penalties = [.. F5JDefinition.Penalties, LateLandingDeduction],
     };
 
-    // WI-4 (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-4):
+    // WI-4 (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-4):
     // a shape-alike of F3B's nonConformingWinch (SeedF3B.cs — the seed class
     // itself is not imported): the rule zeroes the flight AND deducts 1000
     // from the final score (F3B.2.2 p), so one recorded infraction acts in
@@ -144,7 +144,7 @@ public sealed class ScoringACompetitionSteps
     private readonly Dictionary<CompetitorId, decimal> _entryDeductionExpectedScores = new();
 
     // Populated by the task-round-scoped zero scenario's Given, read by its
-    // Then steps (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-4).
+    // Then steps (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-4).
     private CompetitorId _taskRoundZeroCompetitor;
     private CompetitorId _taskRoundZeroCleanWinner;
 

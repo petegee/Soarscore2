@@ -465,7 +465,7 @@ public class PenaltyEngineTests
     // --------------------- Disqualify at the raw stage
     //
     // WI-3 pins the D-B1..D-B3 wiring landed by WI-2:
-    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3.
+    // kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3.
     // Every declared effect now acts at the task-round stage: DeductPoints
     // subtracts (parent D1, already pinned above), Disqualify sets the
     // RawPenaltyApplication flag carried out of the walk (D-B1/D-B2), and the
@@ -511,7 +511,7 @@ public class PenaltyEngineTests
         // Parent D1 + D-B1: every declared effect acts at the stage that owns
         // the record — the deduction subtracts pre-normalisation AND the flag
         // is carried out of the same call
-        // (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3).
+        // (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3).
         // Non-grouped definition, D-B4 above.
         var penalties = new[] { new RecordedPenalty("unsafeLaunch", 1) }.ToImmutableArray();
         var definitions = new[]

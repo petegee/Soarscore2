@@ -269,7 +269,7 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   associate with the infraction, and retrofitting it later would be expensive once
   penalties are in real logs). Reopen as a `backlog/` story if a score-sheet read
   surface is wanted; today the audit trail is the stream itself.
-  *Amended 2026-08-30* (`kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md`,
+  *Amended 2026-08-30* (`kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md`,
   D-A2/WI-1): the coordinate now also has a **scoring** reader — aggregate-scoped
   Zero* effects are routed by it to the task-round stage that zeroes. The deferred
   *score-sheet report* half above stands unchanged.

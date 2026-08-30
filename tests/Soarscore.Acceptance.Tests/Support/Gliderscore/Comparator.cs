@@ -456,10 +456,13 @@ public static class Comparator
     /// deduction column), so our raw is ALREADY GS-composed
     /// (time + landing − deduction) before this mapping. A fixture that
     /// authored a DeductPoints entry-scoped penalty definition would need the
-    /// deduction mirrored here AND at grain 2 it could not be mirrored at all:
-    /// PenaltyEngine.ApplyRawPenalties honours zeroing effects only and
-    /// GetAggregatePenalties filters to TaskRound/Competition scope, so such a
-    /// penalty reaches no scoring stage — see ReplayDriver.cs header.
+    /// deduction mirrored here: PenaltyEngine.ApplyRawPenalties now acts on
+    /// every declared effect of an entry-scoped record — Zero* → NoResult,
+    /// DeductPoints → subtract, Disqualify → flag — and aggregate-scoped Zero*
+    /// records route into the same raw path
+    /// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md,
+    /// D-A1); the aggregate stage filters to TaskRound/Competition scope, so
+    /// such a penalty is never invisible — see ReplayDriver.cs header.
     /// </summary>
     private static decimal GsEquivalentRaw(ResolvedTask task, TaskResult result)
     {

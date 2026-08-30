@@ -1,6 +1,8 @@
 # Story — Aggregate-scoped Zero* records zero nothing; entry-scoped Disqualify does nothing
 
-**Status:** In progress · **Raised:** 2026-08-27 — mirrors of the no-ops left open
+**Status:** Completed 2026-08-30 — (a) and (b) landed (WI-1..WI-5); one WI-2
+wiring defect found by WI-3's P-FlagOrAccumulation and fixed in-story. (c)
+remains glossary-gated below. · **Raised:** 2026-08-27 — mirrors of the no-ops left open
 by `kanban/completed/entry-scoped-deduct-points-penalties-inert.md` (WI-0),
 which wired the first direction (entry-scoped `DeductPoints` → raw stage) but
 deliberately narrowed rather than solved its siblings. ·

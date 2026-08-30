@@ -104,7 +104,7 @@ public class RecordCompetitionPenaltyDecideTests
     // task-round coordinate is incomplete data — refused at record time with
     // recordPenalty.zeroEffectRequiresTaskRound, completing the payload rather
     // than refusing the scope (D-A3:
-    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3).
+    // kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3).
     // nonConformingWinch (F3B.2.2 p, ZeroFlight + DeductPoints 1000) is the
     // corpus's own Zero*-carrying definition.
 

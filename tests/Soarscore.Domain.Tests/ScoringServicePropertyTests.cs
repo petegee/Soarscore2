@@ -397,7 +397,7 @@ public class ScoringServicePropertyTests
 
     // ============================================================ WI-3 properties
     // P-ZeroRoutingEquivalence —
-    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3,
+    // kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3,
     // invariant named at planning. The definition used below is deliberately
     // non-grouped (D-B4): adoption check 16 admits only all-DeductPoints
     // definitions into exclusion groups
@@ -440,7 +440,7 @@ public class ScoringServicePropertyTests
 
     /// <summary>
     /// P-ZeroRoutingEquivalence
-    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
+    /// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
     /// a Zero* infraction recorded at TaskRound scope naming coordinate (0,1,1)
     /// produces, for the subject, the same observable task-round outcome —
     /// NoResult state, RawScore 0, Selection null, excluded from
@@ -616,7 +616,7 @@ public class ScoringServicePropertyTests
 
     /// <summary>
     /// P-FlagOrAccumulation
-    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
+    /// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
     /// the final <see cref="FinalCompetitorScore.Disqualified"/> equals the OR
     /// over every recorded entry- AND aggregate-scoped Disqualify effect for
     /// that competitor — a Disqualify at either scope flags, and none leaves

@@ -87,7 +87,7 @@ public static class ScoringService
     /// competitor (stringified CompetitorRef) — from
     /// <see cref="GetTaskRoundZeroPenalties"/>. Optional: null/empty is exactly
     /// the pre-WI-1 behaviour. Merged into the entry's own penalties at step 2c
-    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-1,
+    /// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-1,
     /// D-A1: an aggregate-scoped Zero* record zeroes the named task-round via
     /// the same raw-stage engine path an entry-scoped one takes, not a third
     /// apply function). The map is keyed by COMPETITOR, so lookup is by the
@@ -134,7 +134,7 @@ public static class ScoringService
             //     itself (D-B2) — flag-only, no score change — and Normalise's
             //     with-rebuilds preserve it, so the caller sees it in
             //     groupResult.Results and threads it to final assembly
-            //     (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
+            //     (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
             var entryPenalties = GetEntryPenalties(entry);
 
             // Subject-keyed merge: the map is per competitor, the entries dict

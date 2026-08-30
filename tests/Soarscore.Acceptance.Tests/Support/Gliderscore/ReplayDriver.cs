@@ -68,13 +68,15 @@
 //
 // Deliberately NOT widened here: /record-entry-penalty calls. The WI-3 brief
 // expected Scores.FlightScoreDeduction to replay as an entry-scoped DeductPoints
-// penalty definition, but PenaltyEngine.ApplyRawPenalties honours only zeroing
-// effects and GetAggregatePenalties filters to TaskRound/Competition scope, so
-// such a penalty would change no score anywhere — and GS subtracts FltPenalty
-// INSIDE RawScore pre-normalisation anyway, which an aggregate-stage deduction
-// could not reproduce. The deduction is therefore part of the fixture's class
-// definition (a −1 rate term over a captured deduction column) and reaches the
-// engine through the ordinary score pipeline. See Comparator.cs grain-1 notes.
+// penalty definition, but GS subtracts FltPenalty INSIDE RawScore
+// pre-normalisation, which the raw stage now reproduces faithfully —
+// ApplyRawPenalties acts on every declared effect of an entry-scoped record
+// (Zero* → NoResult, DeductPoints → subtract, Disqualify → flag), and
+// aggregate-scoped Zero* records route into the same raw path
+// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md,
+// D-A1). The deduction stays part of the fixture's class definition (a −1 rate
+// term over a captured deduction column) and reaches the engine through the
+// ordinary score pipeline. See Comparator.cs grain-1 notes.
 
 using System.Net.Http.Json;
 using Soarscore.Application.Commands.CompetitionClasses;

@@ -1,7 +1,7 @@
 // PenaltyEngine — kanban/completed/scoring-service-plan.md WI-6; stage routing
 // amended per D1: kanban/in-progress/entry-scoped-deduct-points-penalties-inert.md#wi-1;
 // raw-stage Disqualify flag per
-// kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2.
+// kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2.
 //
 // Applies penalties at both pipeline stages, with exclusion-group semantics and
 // accrual. The stage follows the RECORDED SCOPE of each penalty record (D1):
@@ -25,7 +25,7 @@ namespace Soarscore.Domain.Scoring;
 /// SCOPE (D1): Flight/Entry-scoped records are owned by the task-round stage
 /// (raw/pre-normalisation), TaskRound/Competition-scoped records by the final
 /// aggregate — and every declared effect acts within its owning stage
-/// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
+/// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
 /// </summary>
 public static class PenaltyEngine
 {
@@ -89,7 +89,7 @@ public static class PenaltyEngine
         // D-B3: the Disqualify accrual must be known BEFORE the Zero* scan so
         // the early-out below can carry the flag — a Zero* + Disqualify
         // definition then yields NoResult AND the flag, both declared effects
-        // acted (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
+        // acted (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2).
         var anyDisqualify = contributions.Values.Any(i => i.HasDisqualify);
 
         // Zero-dominance (D3), checked across ALL contributed definitions,

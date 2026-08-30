@@ -1743,7 +1743,7 @@ public sealed record Competition
     }
 
     // The single infraction-type lookup for the decide chain (WI-1:
-    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-1) —
+    // kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-1) —
     // extracted so ValidateInfractionType and the Zero*-anchoring check below
     // share it instead of each re-scanning AdoptedRules.Definition.Penalties.
     // First match wins, the same discipline PenaltyEngine.BuildDefinitionLookup

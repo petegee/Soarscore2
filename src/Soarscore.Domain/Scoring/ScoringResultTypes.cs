@@ -86,7 +86,7 @@ public sealed record TaskResult(
     /// entry-scoped does not either), and OR-accumulated through the
     /// ScoreCompetition walk into
     /// <see cref="FinalCompetitorScore.Disqualified"/>
-    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
+    /// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
     /// D-B2). RankingEngine excludes flagged competitors from placings.
     /// </summary>
     bool Disqualified = false
@@ -150,7 +150,7 @@ public sealed record PenaltyApplication(
 /// <summary>
 /// The task-round stage's outcome: the (possibly zeroed or deducted)
 /// TaskResult plus the Disqualify flag accrued from the same records
-/// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
+/// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
 /// D-B1). Every declared effect acts at the stage that owns the record —
 /// Zero* → NoResult, DeductPoints → subtract, Disqualify → the flag here,
 /// carried out of the walk to final assembly. Flag-only (D-B2): no score
