@@ -1,6 +1,6 @@
 # Story — Model tie-break policy as class data
 
-**Status:** Backlog · **Raised:** 2026-08-29 (board discussion alongside
+**Status:** In progress · **Raised:** 2026-08-29 (board discussion alongside
 `kanban/completed/ranking-secondary-rawscore-key.md`; the gap is already
 recorded in `docs/soaring-domain-class-diagram.md`, closing note "Tie-breaking
 is not yet modelled", and notation finding F15) · **Fleshed out:** 2026-08-30
