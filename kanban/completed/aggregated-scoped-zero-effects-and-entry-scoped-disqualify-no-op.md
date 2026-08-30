@@ -381,6 +381,11 @@ them stale, and `graphify update .`.
 
 ### WI-6 — (c) Permitted-scope hardening — GATED on user approval, do not start without it
 
+**Resolution 2026-08-30:** the gate argument was presented and APPROVED — as
+its own story, not an addendum here: `kanban/backlog/permitted-scopes-on-penalty-definitions.md`
+(the /docs approval is recorded there). Nothing below was implemented in this
+story.
+
 **Gate (housekeeping rule 4):** adding anything to `/docs` — here the glossary
 and the class diagram's `PenaltyDefinition` — requires explicit user approval
 first. Present the argument below; if declined, delete this WI from the story
