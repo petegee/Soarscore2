@@ -461,4 +461,110 @@ public class PenaltyEngineTests
         applied.RawScore.Should().Be(777m); // returned unchanged, not floored
         applied.Selection.Should().BeNull();
     }
+
+    // --------------------- Disqualify at the raw stage
+    //
+    // WI-3 pins the D-B1..D-B3 wiring landed by WI-2:
+    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3.
+    // Every declared effect now acts at the task-round stage: DeductPoints
+    // subtracts (parent D1, already pinned above), Disqualify sets the
+    // RawPenaltyApplication flag carried out of the walk (D-B1/D-B2), and the
+    // flag survives the Zero*-dominance early-out (D-B3).
+    //
+    // D-B4 pin (no engine change): every definition below is deliberately
+    // non-grouped. A Disqualify-carrying definition can never join an
+    // exclusion group — adoption check 16 admits only all-DeductPoints
+    // definitions (ClassDefinitionValidation.CheckExclusionGroupsAreDeductOnly,
+    // defect class-definition.check-16.exclusion-group-non-deduct-effect) — so
+    // ResolveExclusion's suppression can never hide the flag; these tests
+    // exercise the un-suppressible shape directly.
+
+    [Fact]
+    public void Pure_disqualify_at_raw_stage_flags_without_touching_the_score()
+    {
+        // D-B2: the flag is flag-only — state stays Valid and RawScore is
+        // untouched (aggregate-stage Disqualify changes no arithmetic, so
+        // entry-scoped does not either). Non-grouped definition, D-B4 above.
+        var penalties = new[] { new RecordedPenalty("grossMisconduct", 1) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition { InfractionType = "grossMisconduct",
+                Effects = new[] { new PenaltyEffectSpec(PenaltyEffect.Disqualify) }.ToImmutableArray() }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.Disqualified.Should().BeTrue();
+        applied.Result.State.Should().Be(TaskResultState.Valid);
+        applied.Result.RawScore.Should().Be(500m);
+        applied.Result.Selection.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void DeductPoints_and_Disqualify_in_one_definition_reduces_and_flags()
+    {
+        // Parent D1 + D-B1: every declared effect acts at the stage that owns
+        // the record — the deduction subtracts pre-normalisation AND the flag
+        // is carried out of the same call
+        // (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3).
+        // Non-grouped definition, D-B4 above.
+        var penalties = new[] { new RecordedPenalty("unsafeLaunch", 1) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition { InfractionType = "unsafeLaunch",
+                Effects = new[]
+                {
+                    new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 200),
+                    new PenaltyEffectSpec(PenaltyEffect.Disqualify),
+                }.ToImmutableArray() }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.Disqualified.Should().BeTrue();
+        applied.Result.State.Should().Be(TaskResultState.Valid);
+        applied.Result.RawScore.Should().Be(300m); // 500 − 200, flag on top
+        applied.Result.Selection.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Zero_effect_and_Disqualify_in_one_definition_zeroes_and_flags()
+    {
+        // D-B3: the Disqualify accrual is computed BEFORE the Zero*-dominance
+        // scan, so the early-out carries the flag — a ZeroFlight + Disqualify
+        // definition yields NoResult AND the flag: both declared effects
+        // acted. Non-grouped definition, D-B4 above.
+        var penalties = new[] { new RecordedPenalty("grossMisconduct", 1) }.ToImmutableArray();
+        var definitions = new[]
+        {
+            new PenaltyDefinition { InfractionType = "grossMisconduct",
+                Effects = new[]
+                {
+                    new PenaltyEffectSpec(PenaltyEffect.ZeroFlight),
+                    new PenaltyEffectSpec(PenaltyEffect.Disqualify),
+                }.ToImmutableArray() }
+        }.ToImmutableArray();
+
+        var result = new TaskResult(TaskResultState.Valid,
+            new SelectedFlights(ImmutableArray<InterpretedFlight>.Empty,
+                new Dictionary<int, decimal?>()),
+            RawScore: 500m);
+
+        var applied = PenaltyEngine.ApplyRawPenalties(result, penalties, definitions);
+
+        applied.Disqualified.Should().BeTrue();
+        applied.Result.State.Should().Be(TaskResultState.NoResult);
+        applied.Result.RawScore.Should().Be(0m);
+        applied.Result.Selection.Should().BeNull();
+    }
 }

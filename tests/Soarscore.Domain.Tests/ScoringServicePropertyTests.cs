@@ -394,4 +394,155 @@ public class ScoringServicePropertyTests
             }
         });
     }
+
+    // ============================================================ WI-3 properties
+    // P-ZeroRoutingEquivalence —
+    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3,
+    // invariant named at planning. The definition used below is deliberately
+    // non-grouped (D-B4): adoption check 16 admits only all-DeductPoints
+    // definitions into exclusion groups
+    // (ClassDefinitionValidation.CheckExclusionGroupsAreDeductOnly), so
+    // exclusion suppression can never hide a Disqualify flag and this
+    // property exercises the un-suppressible shape.
+    //
+    // P-FlagOrAccumulation (the story's other WI-3 property) is WITHHELD: the
+    // entry-scoped half of the OR fails against WI-2 as landed — ScoreGroup
+    // step 2c drops RawPenaltyApplication.Disqualified (it unpacks only
+    // applied.Result, and the engine's rebuilt TaskResults never assign the
+    // flag), so an entry-scoped Disqualify record reaches
+    // FinalCompetitorScore.Disqualified as false. Reported to the user
+    // 2026-08-30 with the minimal failing case; the property lands once the
+    // unpack threads the flag (story D-B1: "ScoreGroup step 2c unpacks it").
+
+    // ------------------------------------------------- P-ZeroRoutingEquivalence
+
+    // D-A4: a PURE-Zero definition — no DeductPoints co-effect. A DeductPoints
+    // half acts at the aggregate stage for aggregate-scoped records but at the
+    // raw stage for entry-scoped ones, so mixed definitions are NOT
+    // scope-equivalent by design; the equivalence property must not use one.
+    private static readonly ImmutableArray<PenaltyDefinition> PureZeroDefs =
+    [
+        new PenaltyDefinition
+        {
+            InfractionType = "motorRestart",
+            Effects = [new PenaltyEffectSpec(PenaltyEffect.ZeroFlight)],
+        },
+    ];
+
+    // Winner-finding only happens with normalisation configured
+    // (NormalisationEngine step 4) — the winner-finding-exclusion half of the
+    // property below needs a WinnerRef to read.
+    private static TaskDefinition MakeNormalisingTask() => MakeTask() with
+    {
+        Normalise = new Normalisation
+        {
+            Direction = NormalisationDirection.HigherIsBetter,
+            WinnerScore = 1000,
+        },
+    };
+
+    /// <summary>
+    /// P-ZeroRoutingEquivalence
+    /// (kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3):
+    /// a Zero* infraction recorded at TaskRound scope naming coordinate (0,1,1)
+    /// produces, for the subject, the same observable task-round outcome —
+    /// NoResult state, RawScore 0, Selection null, excluded from
+    /// winner-finding — as the identical infraction recorded entry-scoped on an
+    /// entry in that task-round: the two scopes are routes to ONE engine path
+    /// (D-A1), never two behaviours. The subject flies the better raw, so a
+    /// silent routing failure would flip the group winner to the subject, not
+    /// merely move a number.
+    /// </summary>
+    [Fact]
+    public void P_ZeroRoutingEquivalence_task_round_scoped_and_entry_scoped_zero_records_produce_one_task_round_outcome()
+    {
+        (from occurrences in Gen.Int[1, 3]
+         from subjectMultiplier in Gen.Int[2, 4]
+         select (occurrences, subjectMultiplier))
+        .Sample(t =>
+        {
+            var task = MakeNormalisingTask();
+            var classDef = MakeClassDefinition(task) with { Penalties = PureZeroDefs };
+            var coordinate = new TaskRoundCoordinate(0, 1, 1);
+            var groupRef = GroupId.New();
+            var subject = CompetitorId.New();
+            var other = CompetitorId.New();
+
+            // Route A: the record sits at TaskRound scope naming (0,1,1),
+            // routed by the production helper into ScoreGroup's map (D-A2).
+            var routed = ScoringService.GetTaskRoundZeroPenalties(
+                [.. Enumerable.Range(0, t.occurrences).Select(_ => new Penalty
+                {
+                    InfractionType = "motorRestart",
+                    Scope = PenaltyScope.TaskRound,
+                    CompetitorRef = subject,
+                    TaskRound = coordinate,
+                })],
+                classDef,
+                coordinate);
+            routed.IsSuccess.Should().BeTrue();
+
+            var cleanEntries = ImmutableDictionary<string, Entry>.Empty
+                .Add(subject.ToString(), CapturedEntryFor(subject, t.subjectMultiplier))
+                .Add(other.ToString(), CapturedEntryFor(other, 1));
+
+            var viaTaskRound = ScoringService.ScoreGroup(
+                groupRef.ToString(), task, classDef, cleanEntries, EmptyBindings, routed.Value);
+
+            // Route B: the identical infraction, occurrence for occurrence,
+            // recorded entry-scoped on the subject's Entry.
+            var penalisedSubject = CapturedEntryFor(subject, t.subjectMultiplier);
+            for (var i = 0; i < t.occurrences; i++)
+            {
+                var decided = penalisedSubject.RecordPenalty(
+                    new Penalty { InfractionType = "motorRestart", Scope = PenaltyScope.Entry },
+                    classDef.Penalties);
+                decided.IsSuccess.Should().BeTrue();
+                penalisedSubject = penalisedSubject.Apply(decided.Value);
+            }
+
+            var penalisedEntries = ImmutableDictionary<string, Entry>.Empty
+                .Add(subject.ToString(), penalisedSubject)
+                .Add(other.ToString(), CapturedEntryFor(other, 1));
+
+            var viaEntry = ScoringService.ScoreGroup(
+                groupRef.ToString(), task, classDef, penalisedEntries, EmptyBindings);
+
+            foreach (var (route, group) in new[] { ("taskRound", viaTaskRound), ("entry", viaEntry) })
+            {
+                var subjectRow = group.Results[subject.ToString()];
+                subjectRow.State.Should().Be(TaskResultState.NoResult, $"subject via {route}");
+                subjectRow.RawScore.Should().Be(0m, $"subject via {route}");
+                subjectRow.Selection.Should().BeNull($"subject via {route}");
+                subjectRow.Disqualified.Should().BeFalse($"subject via {route}");
+
+                // Excluded from winner-finding: the same non-subject winner
+                // both ways, despite the subject's higher raw.
+                group.WinnerRef.Should().Be(other.ToString(), $"winner via {route}");
+
+                var otherRow = group.Results[other.ToString()];
+                otherRow.State.Should().Be(TaskResultState.Valid, $"other via {route}");
+                otherRow.Disqualified.Should().BeFalse($"other via {route}");
+            }
+        });
+    }
+
+    private static Entry CapturedEntryFor(CompetitorId competitorRef, int multiplier)
+    {
+        var groupRef = GroupId.New();
+        var entry = Entry.Create(new EntryOpened(
+            EntryId.New(),
+            CompetitionId.New(), 0, 1, 1,
+            groupRef, competitorRef, ReflightRole.Original, Now)).Apply(new FlightOpened(1, Now));
+
+        foreach (var metric in MetricNames)
+        {
+            var value = (Array.IndexOf(MetricNames, metric) + 1) * 10m * multiplier;
+            var captured = entry.CaptureMeasurement(1, metric, MeasuredValue.Of(value), Now, MetricDefs);
+            captured.IsSuccess.Should().BeTrue();
+            entry = entry.Apply(captured.Value);
+        }
+
+        return entry;
+    }
 }

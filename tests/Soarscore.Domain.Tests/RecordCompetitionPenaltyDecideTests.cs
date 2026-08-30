@@ -62,6 +62,82 @@ public class RecordCompetitionPenaltyDecideTests
     private static Penalty CompetitionPenalty(CompetitorId competitorRef) =>
         new() { InfractionType = "safetyZone", Scope = PenaltyScope.Competition, CompetitorRef = competitorRef };
 
+    /// <summary>CompetitionCreated → CompetitorRegistered → PhaseDrawn, one competitor in one group,
+    /// adopting <paramref name="definition"/> instead of F5K.</summary>
+    private static (Competition Competition, CompetitorId Competitor) SeedCompetitionWith(ClassDefinition definition)
+    {
+        var competition = Competition.Create(new CompetitionCreated(
+            CompetitionId.New(), "Club Champs 2026", "Auckland",
+            new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13),
+            "1", SampleAdoptedRules(definition), Now));
+
+        var competitor = new Competitor
+        {
+            Id = CompetitorId.New(),
+            PersonRef = PersonId.New(),
+            CompetitorNumber = 1,
+            RegisteredAt = Now,
+        };
+        competition = competition.Apply(new CompetitorRegistered(competitor, Now));
+
+        var group = new Group { Id = GroupId.New(), Ordinal = 1, CompetitorRefs = [competitor.Id] };
+        var taskRound = new TaskRound { Ordinal = 1, State = TaskRoundState.Drawn, TaskRef = "A", Groups = [group] };
+        var round = new Round { Ordinal = 1, TaskRounds = [taskRound] };
+        competition = competition.Apply(new PhaseDrawn(
+            0, PhaseType.Preliminary, new Draw { CreatedAt = Now, Status = "drawn" }, [round], Now));
+
+        return (competition, competitor.Id);
+    }
+
+    private static AdoptedRules SampleAdoptedRules(ClassDefinition definition) =>
+        new()
+        {
+            Definition = definition,
+            SourceClassId = "content-hash-abc123",
+            SourceVersion = definition.Version,
+            AdoptedAt = Now,
+        };
+
+    // ------------------------------------------------- WI-3, D-A3 (write side)
+    // Zero*-anchoring: every zeroing clause in the rule corpus names its round
+    // (F3K.1.2, F3K.4.1, F3B.2.2 p), so a Zero*-carrying record without a
+    // task-round coordinate is incomplete data — refused at record time with
+    // recordPenalty.zeroEffectRequiresTaskRound, completing the payload rather
+    // than refusing the scope (D-A3:
+    // kanban/in-progress/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-3).
+    // nonConformingWinch (F3B.2.2 p, ZeroFlight + DeductPoints 1000) is the
+    // corpus's own Zero*-carrying definition.
+
+    [Fact]
+    public void RecordPenalty_with_a_zero_carrying_definition_and_no_task_round_fails_with_a_stable_code()
+    {
+        var (competition, competitorRef) = SeedCompetitionWith(SeedF3B.Definition);
+        var penalty = CompetitionPenalty(competitorRef) with { InfractionType = "nonConformingWinch", TaskRound = null };
+
+        var result = competition.RecordPenalty(penalty);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("recordPenalty.zeroEffectRequiresTaskRound");
+    }
+
+    [Fact]
+    public void RecordPenalty_with_a_zero_carrying_definition_and_a_task_round_succeeds()
+    {
+        var (competition, competitorRef) = SeedCompetitionWith(SeedF3B.Definition);
+        var coordinate = new TaskRoundCoordinate(0, 1, 1);
+        var penalty = CompetitionPenalty(competitorRef) with
+        {
+            InfractionType = "nonConformingWinch",
+            Scope = PenaltyScope.TaskRound,
+            TaskRound = coordinate,
+        };
+
+        var result = competition.RecordPenalty(penalty);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Penalty.TaskRound.Should().Be(coordinate);
+    }
+
     // ------------------------------------------------------------------- FAILURES
 
     [Fact]
