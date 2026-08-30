@@ -1,5 +1,6 @@
-// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-2. One negative
-// fixture per numbered check, each built from a minimal baseline that itself
+// kanban/completed/class-definition-adoption-steel-thread-plan.md WI-2 and
+// kanban/in-progress/tie-break-policy-in-class-definition.md WI-2 (checks 17–19).
+// One negative fixture per numbered check, each built from a minimal baseline that itself
 // validates clean, mutated to break exactly the one construct that check
 // guards. Plus the corpus-wide "all seed classes validate clean" assertion
 // LADR-0002 §1 asks for ("seed classes must enter through the same door as
@@ -271,6 +272,72 @@ public class ClassDefinitionValidationTests
         var defects = ClassDefinitionValidation.Validate(definition);
 
         defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-16.exclusion-group-non-deduct-effect");
+    }
+
+    [Fact]
+    public void Check17_qualifying_position_source_must_name_an_existing_earlier_phase()
+    {
+        // SourcePhaseOrdinal is a PhaseDefinition.Ordinal — the definition's
+        // own 1-based ordinal vocabulary. On the first phase (Ordinal 1) the
+        // rung is unwritable outright: source 0 names no phase of the
+        // definition at all, so the minimal single-phase baseline is the
+        // smallest violation.
+        var definition = Minimal();
+        var phase = definition.Phases[0] with
+        {
+            TieBreaks = [new QualifyingPosition { SourcePhaseOrdinal = 0 }],
+        };
+        definition = definition with { Phases = [phase] };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-17.qualifying-position-source-not-earlier");
+
+        // A source that names an existing phase but not a strictly lower one
+        // — self-reference — is the same defect.
+        var selfReferencing = Minimal();
+        var selfPhase = selfReferencing.Phases[0] with
+        {
+            Ordinal = 1,
+            TieBreaks = [new QualifyingPosition { SourcePhaseOrdinal = 1 }],
+        };
+        selfReferencing = selfReferencing with { Phases = [selfPhase] };
+
+        ClassDefinitionValidation.Validate(selfReferencing)
+            .Should().ContainSingle().Which.Code.Should().Be("class-definition.check-17.qualifying-position-source-not-earlier");
+    }
+
+    [Fact]
+    public void Check18_undefinedRequiresRuling_must_be_the_only_rung_in_a_ladder()
+    {
+        // A non-BestDroppedScore stated rung so check 19 does not also fire.
+        var definition = Minimal();
+        var phase = definition.Phases[0] with
+        {
+            TieBreaks = [new AdditionalFullRound(), new UndefinedRequiresRuling()],
+        };
+        definition = definition with { Phases = [phase] };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-18.undefined-requires-ruling-mixed-with-stated");
+    }
+
+    [Fact]
+    public void Check19_bestDroppedScore_requires_a_declared_drop_policy()
+    {
+        // Minimal()'s phase declares no Drops, so stating bestDroppedScore alone
+        // is the smallest violation.
+        var definition = Minimal();
+        var phase = definition.Phases[0] with
+        {
+            TieBreaks = [new BestDroppedScore()],
+        };
+        definition = definition with { Phases = [phase] };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-19.best-dropped-score-without-drop-policy");
     }
 
     [Fact]

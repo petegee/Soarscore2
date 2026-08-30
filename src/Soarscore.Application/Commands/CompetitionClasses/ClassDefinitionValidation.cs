@@ -1,4 +1,6 @@
-// Validate() — the sixteen adoption checks. kanban/completed/class-definition-adoption-steel-thread-plan.md
+// Validate() — the nineteen adoption checks (17–19: tie-break ladder,
+// kanban/in-progress/tie-break-policy-in-class-definition.md WI-2).
+// kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-2, LADR-0002 §4 ("deserialise -> Validate -> canonicalise+hash -> append"),
 // docs/high-level-architecture.md "Validated at adoption" (the numbered, canonical
 // inventory this file implements — cited by number here, not restated).
@@ -29,7 +31,7 @@
 //   and no class-scope group left to check by the time a ClassDefinition
 //   exists to call Validate() on. Kept as named, permanently-empty methods
 //   below (not omitted) so a reader grepping "check-5"/"check-6" finds the
-//   reasoning rather than a silent gap in the 1-16 sequence.
+//   reasoning rather than a silent gap in the 1-19 sequence.
 
 using System.Collections.Immutable;
 using Soarscore.Domain;
@@ -63,6 +65,9 @@ public static class ClassDefinitionValidation
         CheckNormalisedTermsRequireNormalisation(definition, defects);
         CheckNormalisationRequiresGroup(definition, defects);
         CheckExclusionGroupsAreDeductOnly(definition, defects);
+        CheckQualifyingPositionSourceIsEarlierPhase(definition, defects);
+        CheckUndefinedRequiresRulingStandsAlone(definition, defects);
+        CheckBestDroppedScoreRequiresDropPolicy(definition, defects);
 
         return defects;
     }
@@ -437,6 +442,84 @@ public static class ClassDefinitionValidation
                 defects.Add(new Defect("class-definition.check-16.exclusion-group-non-deduct-effect",
                     $"$.penalties[{i}].exclusionGroups[{g}]",
                     $"Exclusion group '{penalty.ExclusionGroups[g]}' includes penalty '{penalty.InfractionType}', which has a non-DeductPoints effect."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 17 — every QualifyingPosition tie-break rung names an existing
+    /// phase with a strictly lower ordinal (F3J.11.4): the figure is a
+    /// previous phase's placing. SourcePhaseOrdinal is a phase's
+    /// <see cref="PhaseDefinition.Ordinal"/> — the class definition's own
+    /// 1-based ordinal vocabulary, the value the corpus states (F3J's and
+    /// F5J's fly-offs write qualifyingPosition 1 for the preliminary) — so
+    /// the source must resolve to a phase of THIS definition by Ordinal and
+    /// sit strictly below the phase declaring the rung. Unwritable on phase 1
+    /// — nothing has a strictly lower ordinal — which is what makes the figure
+    /// unsupplyable in the single-phase world (story D9).
+    /// </summary>
+    private static void CheckQualifyingPositionSourceIsEarlierPhase(ClassDefinition definition, List<Defect> defects)
+    {
+        for (var p = 0; p < definition.Phases.Length; p++)
+        {
+            var phase = definition.Phases[p];
+            var tieBreaks = phase.TieBreaks;
+            for (var i = 0; i < tieBreaks.Length; i++)
+            {
+                if (tieBreaks[i] is QualifyingPosition { SourcePhaseOrdinal: var source }
+                    && (!definition.Phases.Any(ph => ph.Ordinal == source) || source >= phase.Ordinal))
+                {
+                    defects.Add(new Defect("class-definition.check-17.qualifying-position-source-not-earlier",
+                        $"$.phases[{p}].tieBreaks[{i}]",
+                        $"SourcePhaseOrdinal {source} must name an existing phase with a strictly lower ordinal than the phase declaring the rung."));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 18 — a phase's TieBreaks containing UndefinedRequiresRuling
+    /// contains only it: mixing "the rulebook is silent" with stated rungs is
+    /// a self-contradiction (the re-flight block's NotPermitted/Undefined
+    /// distinction applied to lists).
+    /// </summary>
+    private static void CheckUndefinedRequiresRulingStandsAlone(ClassDefinition definition, List<Defect> defects)
+    {
+        for (var p = 0; p < definition.Phases.Length; p++)
+        {
+            var tieBreaks = definition.Phases[p].TieBreaks;
+            if (tieBreaks.Length > 1 && tieBreaks.Any(t => t is UndefinedRequiresRuling))
+            {
+                defects.Add(new Defect("class-definition.check-18.undefined-requires-ruling-mixed-with-stated",
+                    $"$.phases[{p}].tieBreaks",
+                    "A tie-break ladder containing undefinedRequiresRuling must contain only it."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 19 — BestDroppedScore on a phase that declares no DropPolicy is
+    /// rejected (the check-13 precedent): no drop policy means no dropped cell
+    /// ever exists, so the rung is provably inert.
+    /// </summary>
+    private static void CheckBestDroppedScoreRequiresDropPolicy(ClassDefinition definition, List<Defect> defects)
+    {
+        for (var p = 0; p < definition.Phases.Length; p++)
+        {
+            var phase = definition.Phases[p];
+            if (phase.Drops.Length > 0)
+            {
+                continue;
+            }
+
+            for (var i = 0; i < phase.TieBreaks.Length; i++)
+            {
+                if (phase.TieBreaks[i] is BestDroppedScore)
+                {
+                    defects.Add(new Defect("class-definition.check-19.best-dropped-score-without-drop-policy",
+                        $"$.phases[{p}].tieBreaks[{i}]",
+                        "bestDroppedScore requires the phase to declare at least one drop policy."));
+                }
             }
         }
     }
