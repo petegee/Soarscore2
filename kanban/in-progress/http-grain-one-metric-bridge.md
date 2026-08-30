@@ -1,6 +1,6 @@
 # Story — Evaluate `scoreNormalised` terms against decoded slot metrics so option-2 fixtures also lose their in-process grain-1 dependency
 
-**Status:** Backlog · **Raised:** 2026-08-29 from
+**Status:** In progress · **Raised:** 2026-08-29 from
 `kanban/completed/pre-normalisation-score-view-field.md` WI-4 (house rule 6) ·
 **Fleshed out:** 2026-08-30
 
