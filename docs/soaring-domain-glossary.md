@@ -68,7 +68,7 @@ Measurements are the raw facts captured from a flight: flight times, launch heig
 
 ## Penalty
 
-A penalty is a recorded infraction of the rules — an over-height launch, a safety-line violation, a launch infraction. A penalty is attached to whatever it happened to: a particular flight, an entry, or the competition as a whole. The penalty itself only records what occurred; what it costs, and where the cost is applied, is defined by the class rules.
+A penalty is a recorded infraction of the rules — an over-height launch, a safety-line violation, a launch infraction. A penalty is attached to whatever it happened to: a particular flight, an entry, or the competition as a whole. The penalty itself only records what occurred; what it costs, and where the cost is applied, is defined by the class rules. A class states what each penalty it defines costs, and may also state the scope or scopes at which that infraction may be recorded — declaring it, say, a flight-level fact — and the system then refuses to record it anywhere else. A penalty the class does not restrict may be recorded at any scope.
 
 ## Score
 

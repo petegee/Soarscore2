@@ -511,12 +511,25 @@ classDiagram
         +string infractionType
         +string[] exclusionGroups
         +PenaltyAccrual accrual
+        +PenaltyScope[] permittedScopes
     }
     %% accrual defaults to OncePerAttempt, which is what F3K.4.3 and F3J.2.4 c
     %% require literally ("each flight attempt may only incur a single penalty")
     %% and what all six original classes assume. PerOccurrence multiplies the
     %% deduction by the number of recorded occurrences: F3F.1.10 penalises a
     %% safety-plane crossing "by 100 points each" (F23).
+    %% permittedScopes is optional and nullable: absent means the infraction
+    %% may be recorded at any scope the write side allows — every seed
+    %% definition omits it, and a null is omitted from the canonical JSON, so
+    %% seed content hashes are unchanged. Populated, it lists the only scopes a
+    %% record may carry; the write side refuses any other with
+    %% recordPenalty.scopeNotAllowed. An EMPTY list is rejected at adoption
+    %% (check 20): an infraction no scope permits can never be recorded — the
+    %% check-19 precedent. There is deliberately no effect×scope cross-check:
+    %% since D-A1/D-B1 of
+    %% kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md
+    %% every scope can host every effect, so refusing combinations would
+    %% re-invent the scope policy that story declined.
 
     class PenaltyEffectSpec {
         <<value object>>

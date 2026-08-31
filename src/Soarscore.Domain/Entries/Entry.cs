@@ -541,6 +541,21 @@ public sealed record Entry
                 $"'{penalty.InfractionType}' is not an infraction type declared by the adopted class definition.");
         }
 
+        // Scope gate (WI-1: kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-1):
+        // after the infraction-type block and before the By check (D-2) — a record
+        // whose scope the definition forbids is told that before payload
+        // completeness is quibbled about. First-match-wins lookup, the same
+        // discipline PenaltyEngine.BuildDefinitionLookup uses.
+        if (penaltyDefinitions.FirstOrDefault(d => d.InfractionType == penalty.InfractionType)
+            is { } definition && definition.PermittedScopes is { } permitted
+            && !permitted.Contains(penalty.Scope))
+        {
+            return Result<PenaltyRecorded>.Failure(
+                "recordPenalty.scopeNotAllowed",
+                $"'{penalty.InfractionType}' declares permitted scopes "
+                + $"[{string.Join(", ", permitted)}]; {penalty.Scope} is not one of them.");
+        }
+
         if (penalty.By is not null && string.IsNullOrWhiteSpace(penalty.By))
         {
             return Result<PenaltyRecorded>.Failure(

@@ -242,6 +242,10 @@ the combinations absence makes incoherent.
     notation §4, diagram §2. No drop policy means no dropped cell ever exists,
     so the rung is provably inert (the check-13 precedent: reject what the
     rules have already ruled out).
+20. A `PenaltyDefinition.permittedScopes` that is present but empty is
+    rejected — diagram §2. An infraction no scope permits can never be
+    recorded, so the declaration is provably inert (the check-19
+    precedent). Absent, the infraction is recordable at any scope.
 
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in

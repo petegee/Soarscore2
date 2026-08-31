@@ -1,5 +1,6 @@
-// Validate() — the nineteen adoption checks (17–19: tie-break ladder,
-// kanban/in-progress/tie-break-policy-in-class-definition.md WI-2).
+// Validate() — the twenty adoption checks (17–19: tie-break ladder,
+// kanban/in-progress/tie-break-policy-in-class-definition.md WI-2; 20:
+// kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-2).
 // kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-2, LADR-0002 §4 ("deserialise -> Validate -> canonicalise+hash -> append"),
 // docs/high-level-architecture.md "Validated at adoption" (the numbered, canonical
@@ -65,6 +66,7 @@ public static class ClassDefinitionValidation
         CheckNormalisedTermsRequireNormalisation(definition, defects);
         CheckNormalisationRequiresGroup(definition, defects);
         CheckExclusionGroupsAreDeductOnly(definition, defects);
+        CheckPermittedScopesNotEmpty(definition, defects);
         CheckQualifyingPositionSourceIsEarlierPhase(definition, defects);
         CheckUndefinedRequiresRulingStandsAlone(definition, defects);
         CheckBestDroppedScoreRequiresDropPolicy(definition, defects);
@@ -442,6 +444,26 @@ public static class ClassDefinitionValidation
                 defects.Add(new Defect("class-definition.check-16.exclusion-group-non-deduct-effect",
                     $"$.penalties[{i}].exclusionGroups[{g}]",
                     $"Exclusion group '{penalty.ExclusionGroups[g]}' includes penalty '{penalty.InfractionType}', which has a non-DeductPoints effect."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 20 — a PenaltyDefinition.permittedScopes that is present must not
+    /// be empty (diagram §2): an infraction no scope permits can never be
+    /// recorded, so the declaration is provably inert — the check-19 precedent.
+    /// Absent (null) is the unrestricted default and needs nothing.
+    /// kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-2.
+    /// </summary>
+    private static void CheckPermittedScopesNotEmpty(ClassDefinition definition, List<Defect> defects)
+    {
+        for (var i = 0; i < definition.Penalties.Length; i++)
+        {
+            if (definition.Penalties[i].PermittedScopes is { Length: 0 })
+            {
+                defects.Add(new Defect("class-definition.check-20.permitted-scopes-empty",
+                    $"$.penalties[{i}].permittedScopes",
+                    $"Penalty '{definition.Penalties[i].InfractionType}' permits no scope, so it could never be recorded."));
             }
         }
     }

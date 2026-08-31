@@ -31,6 +31,18 @@ public class RecordEntryPenaltyDecideTests
         new() { InfractionType = "hitPersonOtherThanTimer", Effects = [new(PenaltyEffect.ZeroRound)] },
     ];
 
+    // WI-1 (kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-1):
+    // one definition restricting the scopes its records may carry.
+    private static readonly ImmutableArray<PenaltyDefinition> FlightOnlyPermittedDefinitions =
+    [
+        new()
+        {
+            InfractionType = "motorRestartInFlight",
+            Effects = [new(PenaltyEffect.ZeroFlight)],
+            PermittedScopes = [PenaltyScope.Flight],
+        },
+    ];
+
     private static Entry SampleEntry() =>
         Entry.Create(new EntryOpened(
             SampleId, SampleCompetition, 1, 1, 1,
@@ -143,9 +155,82 @@ public class RecordEntryPenaltyDecideTests
         folded.Penalties[0].Should().Be(FlightPenalty());
     }
 
-    // ======================================================================= PROPERTY TESTS — P3
+    // =============================================== WI-1 scope gate (permitted-scopes-on-penalty-definitions.md#wi-1)
+    // A definition may declare PermittedScopes; a record outside them is refused
+    // with recordPenalty.scopeNotAllowed. The aggregate-pairing checks
+    // (annulled, wrongScope, subjectNotAllowed) stay first (D-2): a
+    // Competition-scoped record against an Entry still reports wrongScope.
 
-    // ------------------------------------------------------- P3
+    [Fact]
+    public void RecordPenalty_at_a_permitted_scope_succeeds()
+    {
+        var result = SampleEntry().RecordPenalty(FlightPenalty(), FlightOnlyPermittedDefinitions);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Penalty.Scope.Should().Be(PenaltyScope.Flight);
+    }
+
+    [Fact]
+    public void RecordPenalty_outside_the_permitted_scopes_fails_with_a_stable_code()
+    {
+        var penalty = FlightPenalty() with { Scope = PenaltyScope.Entry };
+
+        var result = SampleEntry().RecordPenalty(penalty, FlightOnlyPermittedDefinitions);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("recordPenalty.scopeNotAllowed");
+    }
+
+    [Fact]
+    public void A_competition_scoped_record_against_an_entry_still_reports_wrong_scope()
+    {
+        var penalty = FlightPenalty() with { Scope = PenaltyScope.Competition };
+
+        var result = SampleEntry().RecordPenalty(penalty, FlightOnlyPermittedDefinitions);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("recordPenalty.wrongScope");
+    }
+
+    // P-ScopeGate (Entry half): over scopes {Flight, Entry} × permitted sets
+    // {null, [Flight], [Entry], [Flight, Entry]}, a record succeeds IFF the
+    // definition's PermittedScopes is null or contains the recorded scope.
+    [Fact]
+    public void P_ScopeGate_success_iff_permitted_scopes_is_null_or_contains_the_recorded_scope()
+    {
+        var gen =
+            from scope in Gen.OneOfConst(PenaltyScope.Flight, PenaltyScope.Entry)
+            from permitted in Gen.OneOfConst<PenaltyScope[]?>(
+                null,
+                [PenaltyScope.Flight],
+                [PenaltyScope.Entry],
+                [PenaltyScope.Flight, PenaltyScope.Entry])
+            select (scope, permitted);
+
+        gen.Sample(tuple =>
+        {
+            var (scope, permitted) = tuple;
+            var definitions = ImmutableArray.Create(
+                new PenaltyDefinition
+                {
+                    InfractionType = "motorRestartInFlight",
+                    Effects = [new(PenaltyEffect.ZeroFlight)],
+                    PermittedScopes = permitted,
+                });
+
+            var result = SampleEntry().RecordPenalty(
+                new Penalty { InfractionType = "motorRestartInFlight", Scope = scope }, definitions);
+
+            var shouldSucceed = permitted is null || permitted.Contains(scope);
+            result.IsSuccess.Should().Be(shouldSucceed);
+            if (!shouldSucceed)
+            {
+                result.Code.Should().Be("recordPenalty.scopeNotAllowed");
+            }
+        });
+    }
+
+    // ======================================================================= PROPERTY TESTS — P3
     // Penalties are append-only: for any sequence of n successful RecordPenalty
     // calls, the folded Penalties.Length == n and every payload is present in
     // order. Holds the fold and the decide function in agreement.

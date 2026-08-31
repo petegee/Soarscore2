@@ -8,6 +8,7 @@
 
 using AwesomeAssertions;
 using Soarscore.Application.Commands.CompetitionClasses;
+using Soarscore.Domain;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
@@ -272,6 +273,74 @@ public class ClassDefinitionValidationTests
         var defects = ClassDefinitionValidation.Validate(definition);
 
         defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-16.exclusion-group-non-deduct-effect");
+    }
+
+    // Check 20 (kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-2):
+    // a populated permittedScopes is fine, an empty one is provably inert and
+    // rejected, an absent one is the unrestricted default needing nothing.
+
+    [Fact]
+    public void Check20_populated_permitted_scopes_produces_no_defects()
+    {
+        var definition = Minimal() with
+        {
+            Penalties =
+            [
+                new PenaltyDefinition
+                {
+                    InfractionType = "test",
+                    Effects = [new PenaltyEffectSpec(PenaltyEffect.ZeroFlight)],
+                    PermittedScopes = [PenaltyScope.Flight],
+                },
+            ],
+        };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().NotContain(d => d.Code.StartsWith("class-definition.check-20"));
+    }
+
+    [Fact]
+    public void Check20_empty_permitted_scopes_is_rejected()
+    {
+        var definition = Minimal() with
+        {
+            Penalties =
+            [
+                new PenaltyDefinition
+                {
+                    InfractionType = "test",
+                    Effects = [new PenaltyEffectSpec(PenaltyEffect.ZeroFlight)],
+                    PermittedScopes = [],
+                },
+            ],
+        };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-20.permitted-scopes-empty");
+        defect.Path.Should().Be("$.penalties[0].permittedScopes");
+    }
+
+    [Fact]
+    public void Check20_absent_permitted_scopes_produces_no_defects()
+    {
+        var definition = Minimal() with
+        {
+            Penalties =
+            [
+                new PenaltyDefinition
+                {
+                    InfractionType = "test",
+                    Effects = [new PenaltyEffectSpec(PenaltyEffect.ZeroFlight)],
+                },
+            ],
+        };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().NotContain(d => d.Code.StartsWith("class-definition.check-20"));
     }
 
     [Fact]

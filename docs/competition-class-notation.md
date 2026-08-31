@@ -214,6 +214,19 @@ two crossings contribute 200, and a person contact's 1000 still supersedes them
 `OncePerAttempt` the contribution *is* the points, which is why this refines
 F3K and F3J without changing a score either produces.
 
+**`recordableAt`** sets `PenaltyDefinition.permittedScopes` — the scopes at
+which the infraction may be recorded:
+
+```
+  penalty "launchInfraction" recordableAt "flight" deduct 100
+```
+
+The keyword takes one or more scope names (`"flight"`, `"entry"`,
+`"taskRound"`, `"competition"`). Absent — every definition in the corpus —
+the infraction may be recorded at any scope the write side allows. An empty
+list is rejected at adoption (check 20): an infraction nothing can record is
+a dead rule, and dead rules belong in the rulebook, not the data.
+
 Finding F11 removed five variants no class requires: `LastPhaseOnly`,
 `NormalisedRoundScore`, `ZeroScoreTerm` (with `zeroesTermRef`, which could never
 be populated — `ScoreTerm` has no id), `wholeFieldAsOneGroup` and `DuringRound`.

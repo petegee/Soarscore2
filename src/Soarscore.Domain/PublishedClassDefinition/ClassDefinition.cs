@@ -88,6 +88,17 @@ public sealed record PenaltyDefinition
 
     /// <summary>1..*: one infraction may act twice at two points in the pipeline (F20).</summary>
     public required ImmutableArray<PenaltyEffectSpec> Effects { get; init; }
+
+    /// <summary>
+    /// OPTIONAL: the scopes a record of this infraction may carry. Null (absent)
+    /// means any scope the write side allows — every definition that omits it is
+    /// unchanged. Populated, the write side (RecordPenalty on both aggregates)
+    /// refuses any scope not listed with recordPenalty.scopeNotAllowed; the
+    /// adoption pipeline rejects an empty list (check 20) because it could never
+    /// be recorded. Read generically, never branched per class (NFR-1).
+    /// kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-1.
+    /// </summary>
+    public PenaltyScope[]? PermittedScopes { get; init; }
 }
 
 public sealed record RoundComposition

@@ -1688,6 +1688,7 @@ public sealed record Competition
             ?? ValidateCompetitorExists(penalty.CompetitorRef!.Value)
             ?? ValidateTaskRoundCoordinate(penalty.TaskRound, "recordPenalty")
             ?? ValidateInfractionType(penalty.InfractionType)
+            ?? ValidatePermittedScopes(penalty)
             ?? ValidateZeroEffectHasTaskRound(penalty)
             ?? ValidateByNotBlank(penalty.By, "recordPenalty");
 
@@ -1756,6 +1757,19 @@ public sealed record Competition
             ? null
             : new Defect("recordPenalty.infractionTypeNotDeclared", "$.infractionType",
                 $"'{infractionType}' is not an infraction type declared by the adopted class definition.");
+
+    // Scope gate (WI-1: kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-1,
+    // D-2): sits immediately after ValidateInfractionType so it shares the
+    // FindPenaltyDefinition lookup, and precedes ValidateZeroEffectHasTaskRound
+    // so a mis-scoped Zero* record reports the scope, not the missing coordinate.
+    private Defect? ValidatePermittedScopes(Penalty penalty) =>
+        FindPenaltyDefinition(penalty.InfractionType) is { } def
+        && def.PermittedScopes is { } permitted
+        && !permitted.Contains(penalty.Scope)
+            ? new Defect("recordPenalty.scopeNotAllowed", "$.scope",
+                $"'{penalty.InfractionType}' declares permitted scopes "
+                + $"[{string.Join(", ", permitted)}]; {penalty.Scope} is not one of them.")
+            : null;
 
     // WI-1, D-A3 (write side): every zeroing clause in the rule corpus names its
     // round (F3K.1.2, F3K.4.1, F3B.2.2 p — story cross-references), so a

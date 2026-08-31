@@ -287,4 +287,134 @@ public class RecordCompetitionPenaltyDecideTests
             folded.Penalties.Should().Equal(penalties);
         });
     }
+
+    // =============================================== WI-1 scope gate (permitted-scopes-on-penalty-definitions.md#wi-1)
+    // A definition may declare PermittedScopes; a record outside them is refused
+    // with recordPenalty.scopeNotAllowed. Only the aggregate-legal scopes
+    // (TaskRound/Competition) are reachable here — a Flight/Entry-scoped record
+    // against a Competition reports recordPenalty.wrongScope first (D-2).
+
+    /// <summary>A minimal one-penalty definition (ReflightScoringTests' fixture shape)
+    /// carrying <paramref name="permittedScopes"/> and optional Zero effect.</summary>
+    private static ClassDefinition MakeDefinition(
+        PenaltyScope[]? permittedScopes, bool withZeroEffect = false) =>
+        new()
+        {
+            Name = "Synthetic",
+            Version = "1.0",
+            Reflight = new ReflightRule
+            {
+                EntitledScores = ReflightSelection.NotPermitted,
+                OthersScore = ReflightSelection.NotPermitted,
+            },
+            Penalties =
+            [
+                new PenaltyDefinition
+                {
+                    InfractionType = "testInfraction",
+                    Effects = withZeroEffect
+                        ? [new(PenaltyEffect.ZeroFlight)]
+                        : [new(PenaltyEffect.DeductPoints, 100)],
+                    PermittedScopes = permittedScopes,
+                },
+            ],
+            Phases =
+            [
+                new PhaseDefinition
+                {
+                    Ordinal = 1,
+                    Type = PhaseType.Preliminary,
+                    Validity = new ValidityRule { MinRounds = 1 },
+                    Tasks =
+                    [
+                        new TaskDefinition
+                        {
+                            Code = "T",
+                            Name = "Test task",
+                            Metrics = [new MetricDefinition { Name = "raw", Kind = MeasuredKind.Number }],
+                            Flights = new LastFlight(),
+                            Timing = new TaskTiming { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
+                            Group = new GroupConstraint { MinPerGroup = 2 },
+                            Score = [(ScoreTerm)new RateTerm { MetricRef = "raw", Rate = 1 }],
+                        },
+                    ],
+                },
+            ],
+        };
+
+    private static Penalty ScopedPenalty(CompetitorId competitorRef, PenaltyScope scope) =>
+        new() { InfractionType = "testInfraction", Scope = scope, CompetitorRef = competitorRef };
+
+    [Fact]
+    public void RecordPenalty_outside_the_permitted_scopes_fails_with_a_stable_code()
+    {
+        var (competition, competitorRef) = SeedCompetitionWith(MakeDefinition([PenaltyScope.TaskRound]));
+
+        var result = competition.RecordPenalty(ScopedPenalty(competitorRef, PenaltyScope.Competition));
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("recordPenalty.scopeNotAllowed");
+    }
+
+    [Fact]
+    public void RecordPenalty_at_a_permitted_scope_succeeds()
+    {
+        var (competition, competitorRef) = SeedCompetitionWith(MakeDefinition([PenaltyScope.Competition]));
+
+        var result = competition.RecordPenalty(ScopedPenalty(competitorRef, PenaltyScope.Competition));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Penalty.Scope.Should().Be(PenaltyScope.Competition);
+    }
+
+    // D-2 precedence pin: scope refusal outranks payload completeness — a
+    // mis-scoped Zero* record reports scopeNotAllowed, not zeroEffectRequiresTaskRound.
+    [Fact]
+    public void RecordPenalty_scope_refusal_outranks_the_zero_effect_coordinate_check()
+    {
+        var (competition, competitorRef) =
+            SeedCompetitionWith(MakeDefinition([PenaltyScope.TaskRound], withZeroEffect: true));
+
+        var result = competition.RecordPenalty(ScopedPenalty(competitorRef, PenaltyScope.Competition));
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("recordPenalty.scopeNotAllowed");
+    }
+
+    // P-ScopeGate (Competition half): over the two aggregate-legal scopes and
+    // permitted sets {null, [TaskRound], [Competition], [TaskRound, Competition]},
+    // a record succeeds IFF the definition's PermittedScopes is null or contains
+    // the recorded scope.
+    [Fact]
+    public void P_ScopeGate_success_iff_permitted_scopes_is_null_or_contains_the_recorded_scope()
+    {
+        var gen =
+            from scope in Gen.OneOfConst(PenaltyScope.TaskRound, PenaltyScope.Competition)
+            from permitted in Gen.OneOfConst<PenaltyScope[]?>(
+                null,
+                [PenaltyScope.TaskRound],
+                [PenaltyScope.Competition],
+                [PenaltyScope.TaskRound, PenaltyScope.Competition])
+            select (scope, permitted);
+
+        gen.Sample(tuple =>
+        {
+            var (scope, permitted) = tuple;
+            var definition = MakeDefinition(permitted);
+            var (candidate, competitorRef) = SeedCompetitionWith(definition);
+
+            var result = candidate.RecordPenalty(ScopedPenalty(competitorRef, scope));
+
+            var shouldSucceed = permitted is null || permitted.Contains(scope);
+            result.IsSuccess.Should().Be(shouldSucceed);
+            if (shouldSucceed)
+            {
+                result.Value.Penalty.Scope.Should().Be(scope);
+            }
+            else
+            {
+                result.Code.Should().Be("recordPenalty.scopeNotAllowed");
+            }
+        });
+    }
 }
