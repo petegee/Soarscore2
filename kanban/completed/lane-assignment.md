@@ -1,6 +1,6 @@
 # Story — Lane/spot assignment for drawn groups
 
-**Status:** Backlog · **Raised:** 2026-08-31 (split out of the teams
+**Status:** Completed 2026-09-01 · **Raised:** 2026-08-31 (split out of the teams
 direction discussion — see `teams-feature-options.md`. Independent of teams:
 under Option 2 the teams story stops at roster data and explicitly excludes
 physical lane/spot allocation, so if this is wanted it must stand alone.) ·
@@ -80,9 +80,10 @@ of scope here and would return to the teams thread if ever wanted.
 6. **`aggregate-roots.md` §3 sentence (F1 pattern).** `CompetitionEvents.cs`'s
    header states the event set mirrors §3's mutation list one-for-one
    (`:8-9`), so the sixteenth event makes §3's mutation sentence stale
-   (`docs/aggregate-roots.md:199-203`). Draft wording in WI-1; **ask the
-   owner fresh at implementation time** — a separate confirmation from this
-   planning conversation, exactly as `draw-acceptance-redraw.md` F1 required.
+    (`docs/aggregate-roots.md:199-203`). Draft wording in WI-1; **ask the
+    owner fresh at implementation time** — a separate confirmation from this
+    planning conversation, exactly as `draw-acceptance-redraw.md` F1 required.
+    **Confirmed 2026-09-01: owner approved the draft wording verbatim.**
 
 ## Rules check (fai-rules, 2026-08-31)
 

@@ -46,6 +46,10 @@ A round is one complete cycle of the competition: every competitor gets the chan
 
 A task-round is one task, flown once by the entire field, divided across groups. It is the everyday working unit of a contest — what people mean when they say "Round 2, Distance". In single-task classes a round contains exactly one task-round, so the two words are used interchangeably; in complex multi-task classes a round contains several. Task-rounds do not have to be flown in round order: organisers often sequence them for practical reasons, such as flying all of one task for the day before switching to the next, so pilots aren't repeatedly re-configuring their aircraft.
 
+## Spot
+
+A spot is a competitor's designated physical field position within a group for a task-round — a lane, launch spot, landing spot or winch line as the venue arranges them. Spots are explicit data, never implied by draw sequence; the field layout itself lives outside Soarscore.
+
 ## Draw
 
 The draw is the allocation of competitors into groups for the whole competition. It is pseudo-random, but with a purpose: to ensure every competitor faces every other competitor an equal number of times — or as close to equal as possible — so that no one's result depends on who they happened to be grouped with. A draw is produced at the start of the competition from the registered competitors, and can be accepted or rejected and redrawn. Once accepted, the competition can begin.

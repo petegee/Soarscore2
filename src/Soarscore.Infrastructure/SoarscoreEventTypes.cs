@@ -70,9 +70,14 @@ internal static class SoarscoreEventTypes
         (typeof(ReflightRulingRecorded), "reflightRulingRecorded"), // reflight-scoring-rulings.md WI-5 — missing this line fails at runtime on BOTH backends per LADR-0001 §4.8.
         // draw-acceptance-redraw.md WI-5 registered the draw-lifecycle pair;
         // as above, a missing line fails at runtime on both backends per
-        // LADR-0001 §4.8. RulesAmended remains the only registered-nothing sibling.
+        // LADR-0001 §4.8. RulesAmended remains the only registered-nothing
+        // sibling. lane-assignment.md WI-4 registers GroupSpotsAssigned —
+        // its alias is the [JsonDerivedType] discriminator the event contract
+        // already carries, registry tag == JsonDerivedType alias as for every
+        // line in this list.
         (typeof(DrawAccepted), "drawAccepted"),
         (typeof(DrawRejected), "drawRejected"),
+        (typeof(GroupSpotsAssigned), "groupSpotsAdded"), // lane-assignment.md WI-4 — a missing line fails at runtime on BOTH backends per LADR-0001 §4.8.
 
         // capture-a-score-steel-thread-plan.md WI-9 registered the narrow capture
         // slice: EntryOpened, FlightOpened, MeasurementCaptured.

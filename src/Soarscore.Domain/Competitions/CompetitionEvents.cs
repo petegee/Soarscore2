@@ -3,10 +3,11 @@
 // The setup and shape of one event: its field, its rulebook copy, and its
 // phase/round/task-round/group schedule. Created up front (CompetitionCreated
 // + PhaseDrawn) and only lightly mutated afterwards — register or withdraw a
-// competitor, accept or reject the draw, append a reflight group, complete /
-// annul / reopen a task-round, amend the rules, bind a parameter, finalise,
-// record a penalty, record a reflight ruling. Fifteen events total, mirroring
-// aggregate-roots.md §3's mutation list one-for-one.
+// competitor, accept or reject the draw, append a reflight group, assign a
+// group's field spots, complete / annul / reopen a task-round, amend the
+// rules, bind a parameter, finalise, record a penalty, record a reflight
+// ruling. Sixteen events total, mirroring aggregate-roots.md §3's mutation
+// list one-for-one.
 //
 // Event payloads reuse Domain's own value-object records (AdoptedRules,
 // RulesAmendment, ParameterBinding, Finalisation, Competitor, Group, Round,
@@ -36,6 +37,7 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(Finalised), "finalised")]
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
 [JsonDerivedType(typeof(ReflightRulingRecorded), "reflightRulingRecorded")]
+[JsonDerivedType(typeof(GroupSpotsAssigned), "groupSpotsAdded")]
 public abstract record CompetitionEvent : IDomainEvent
 {
     private protected CompetitionEvent() { }
@@ -172,3 +174,19 @@ public sealed record PenaltyRecorded(Penalty Penalty) : CompetitionEvent;
 /// the log keeps every decision, and last-logged wins at lookup time (RR3).
 /// </summary>
 public sealed record ReflightRulingRecorded(ReflightRuling Ruling) : CompetitionEvent;
+
+/// <summary>
+/// The CD (or a consuming setup UI) assigning one group's field spots for a
+/// task-round. Whole-replacement semantics: the payload is the complete
+/// mapping and replaces whatever was there (decision D3 — re-assignment is
+/// ordinary field operations; the audit trail is the stream). Assigned to
+/// the group by Id; spots are venue-interpreted labels (D1), validated
+/// against the group's live membership by the decide function.
+/// </summary>
+public sealed record GroupSpotsAssigned(
+    int PhaseOrdinal,
+    int RoundOrdinal,
+    int TaskRoundOrdinal,
+    GroupId GroupRef,
+    ImmutableArray<GroupSpot> Spots,
+    DateTimeOffset At) : CompetitionEvent;

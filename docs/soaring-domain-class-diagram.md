@@ -102,6 +102,12 @@ classDiagram
         +competitorId[] competitorRefs
     }
 
+    class GroupSpot {
+        <<value object>>
+        +CompetitorId competitorRef
+        +int spot
+    }
+
     class Entry {
         <<aggregate root>>
         +int phaseOrdinal
@@ -220,6 +226,7 @@ classDiagram
     Phase "1" *-- "1..*" Round : has
     Round "1" *-- "1..*" TaskRound : has
     TaskRound "1" *-- "1..*" Group : divided into
+    Group "1" *-- "0..*" GroupSpot : field spots
     Entry "1" *-- "1..*" Flight : contains
     Flight "1" *-- "1..*" Measurement : captures
     Measurement "1" *-- "1" MeasuredValue
@@ -240,6 +247,7 @@ classDiagram
     AdoptedRules ..> CompetitionClass : adopted from
 
     note for AdoptedRules "The whole rulebook, copied in at creation. Scoring reads this, never the library class."
+    note for GroupSpot "empty = unassigned; assignments die with the phase (draw rejection removes them)"
     note for Measurement "Raw and append-only; corrections recorded as Amendments"
     note for Entry "A reflight is a second Entry; role decides which one counts; an optional counts-for round moves the score's aggregate destination to an earlier round (a make-up flight) while normalisation stays with the hosting group"
     note for Entry "phaseOrdinal/roundOrdinal/taskRoundOrdinal duplicate the Group's ancestry so the write path never scans the Competition to find its task"

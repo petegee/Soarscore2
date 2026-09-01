@@ -23,6 +23,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Soarscore.Domain\Soarscore.Domain.csproj" />
+    <!-- lane-assignment.md WI-6 item (e): the P1 property test drives
+         RecordingCore (internal to Application) from this project. -->
+    <ProjectReference Include="..\..\src\Soarscore.Application\Soarscore.Application.csproj" />
     <ProjectReference Include="..\..\tools\Soarscore.SeedData\Soarscore.SeedData.csproj" />
   </ItemGroup>
 

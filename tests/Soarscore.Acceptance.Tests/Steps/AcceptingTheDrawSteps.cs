@@ -5,6 +5,13 @@
 // CapturingAScoreSteps cousins — Reqnroll bindings are global, and this
 // feature needs its own scenario-scoped state (a competition that stays
 // deliberately unaccepted in two scenarios, which no other feature does).
+//
+// lane-assignment.md WI-8 composes this feature's shared draw Givens verbatim
+// into Features/AssigningSpots.feature, so the competition and competitor list
+// they create are also published into DrawAcceptanceState (context injection —
+// see that file's header): the one scenario-scoped bridge that makes the
+// composition work across two Binding classes. The write below is the only
+// change to this class; its own scenarios neither read nor need it.
 
 using AwesomeAssertions;
 using Reqnroll;
@@ -35,6 +42,9 @@ public sealed class AcceptingTheDrawSteps
     private readonly List<CompetitorId> _competitors = [];
     private EntryId _entryId;
     private HttpResponseMessage? _rawResponse;
+    private readonly DrawAcceptanceState _state;
+
+    public AcceptingTheDrawSteps(DrawAcceptanceState state) => _state = state;
 
     // ---------------------------------------------------------------- Given
 
@@ -66,6 +76,11 @@ public sealed class AcceptingTheDrawSteps
                 Client, "/register-competitor", new RegisterCompetitor(_competitionId, personId));
             _competitors.Add(competitorId);
         }
+
+        // lane-assignment.md WI-8: the shared Givens publish their scenario
+        // state for the Binding classes composing them (see class header).
+        _state.CompetitionId = _competitionId;
+        _state.Competitors = _competitors;
     }
 
     [Given(@"^its preliminary phase has been drawn for review$")]

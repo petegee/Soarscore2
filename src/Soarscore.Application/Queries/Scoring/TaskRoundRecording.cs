@@ -9,6 +9,12 @@
 // recorded ("not recorded", "missing") and none states a verdict. Nothing here
 // may be phrased or later renamed as "complete".
 //
+// Field spots follow the same law (lane-assignment.md WI-5): the recorded
+// assignment is stated as recorded, spot-ordered; empty means *unassigned* —
+// a fact, never a gap — and a spot whose competitor has since withdrawn is
+// still listed, its vacancy the consumer's derivation against
+// ExpectedCompetitorRefs.
+//
 // Shape mirrors ScoreTaskRoundHandler: CompetitionLoader walk by ordinal ->
 // task definition by TaskRef -> slice entry_index at the full coordinate ->
 // fold each matched stream via EntryLoader -> bucket per group. The bucketing
@@ -38,6 +44,14 @@ public sealed record EntryGapsView(
     ImmutableArray<FlightGapsView> Flights);
 
 /// <summary>
+/// One recorded field-spot assignment — the spot label and the competitor it
+/// names, exactly as the <see cref="GroupSpotsAssigned"/> event recorded it
+/// (lane-assignment.md WI-5). The label's physical meaning is the venue's;
+/// the view only states the mapping.
+/// </summary>
+public sealed record GroupSpotView(int Spot, CompetitorId CompetitorRef);
+
+/// <summary>
 /// One group's recording status. The lists are the answer; counts ("20/20
 /// entries, no gaps") derive client-side from their lengths.
 ///
@@ -46,6 +60,13 @@ public sealed record EntryGapsView(
 /// launched and was never withdrawn reads as NotRecorded, which is the truth
 /// of the record: only the CD can say which it was, which is exactly why this
 /// view decides nothing.
+///
+/// Spots are the field-spot assignment as recorded, ordered by spot
+/// (lane-assignment.md WI-5, decisions D2/D4): empty means *unassigned* — a
+/// fact, not an error and not a default — and an entry whose competitor has
+/// since withdrawn is still listed, reading as vacant by the consumer's own
+/// join against <see cref="ExpectedCompetitorRefs"/>; the view states facts,
+/// never verdicts.
 /// </summary>
 public sealed record GroupRecordingView(
     GroupId GroupRef,
@@ -53,7 +74,8 @@ public sealed record GroupRecordingView(
     ImmutableArray<CompetitorId> ExpectedCompetitorRefs,
     ImmutableArray<CompetitorId> NotRecordedCompetitorRefs,
     ImmutableArray<CompetitorId> RecordedWithoutFlightCompetitorRefs,
-    ImmutableArray<EntryGapsView> MetricGaps);
+    ImmutableArray<EntryGapsView> MetricGaps,
+    ImmutableArray<GroupSpotView> Spots);
 
 /// <summary>One task-round's recording status — the GET /task-round-recording response shape.</summary>
 public sealed record TaskRoundRecordingView(
@@ -239,7 +261,18 @@ internal static class RecordingCore
                 .Where(gaps => !gaps.Flights.IsEmpty)
                 .ToImmutableArray();
 
-            views.Add(new GroupRecordingView(group.Id, group.Ordinal, expected, notRecorded, recordedWithoutFlight, metricGaps));
+            // The spot assignment as recorded, spot-ordered (lane-assignment.md
+            // WI-5): the fold stores it as given, the view sorts. Empty means
+            // unassigned — a fact, not an error and not a default (D2); a
+            // competitor withdrawn after assignment is still listed, reading
+            // as vacant by the consumer's join against Expected (D4).
+            var spots = group.Spots
+                .OrderBy(s => s.Spot)
+                .Select(s => new GroupSpotView(s.Spot, s.CompetitorRef))
+                .ToImmutableArray();
+
+            views.Add(new GroupRecordingView(
+                group.Id, group.Ordinal, expected, notRecorded, recordedWithoutFlight, metricGaps, spots));
         }
 
         return [.. views];

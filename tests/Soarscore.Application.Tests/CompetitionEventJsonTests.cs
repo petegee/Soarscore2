@@ -371,4 +371,85 @@ public class CompetitionEventJsonTests
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
         reemitted.Should().Be(json);
     }
+
+    // kanban/in-progress/lane-assignment.md WI-6 (Stage 1) — the spot-assignment
+    // event and the payload-compatibility pin. GroupSpotsAssigned carries a
+    // $kind discriminator like its task-round siblings, so both discriminator
+    // and payload are asserted; an unregistered or mistyped alias fails at
+    // runtime on both backends (LADR-0001 §4.8), which is what these tests
+    // exist to catch first.
+
+    private static GroupSpotsAssigned SampleGroupSpotsAssignedEvent()
+    {
+        var groupRef = GroupId.New();
+        return new GroupSpotsAssigned(
+            PhaseOrdinal: 0,
+            RoundOrdinal: 1,
+            TaskRoundOrdinal: 1,
+            GroupRef: groupRef,
+            Spots:
+            [
+                new GroupSpot(CompetitorId.New(), 3),
+                new GroupSpot(CompetitorId.New(), 1),
+                new GroupSpot(CompetitorId.New(), 2),
+            ],
+            At: DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
+    public void GroupSpotsAssigned_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        var assigned = SampleGroupSpotsAssignedEvent();
+        CompetitionEvent @event = assigned;
+
+        var json = JsonSerializer.Serialize(@event, SoarscoreEventJson.Options);
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"groupSpotsAdded\"");
+        reemitted.Should().Be(json);
+
+        // Field-by-field rather than record equality: the Spots payload is an
+        // ImmutableArray, whose equality is reference-based — the same reason
+        // PhaseDrawn's round trips assert fields.
+        var rereadAssigned = reread.Should().BeOfType<GroupSpotsAssigned>().Subject;
+        rereadAssigned.PhaseOrdinal.Should().Be(assigned.PhaseOrdinal);
+        rereadAssigned.RoundOrdinal.Should().Be(assigned.RoundOrdinal);
+        rereadAssigned.TaskRoundOrdinal.Should().Be(assigned.TaskRoundOrdinal);
+        rereadAssigned.GroupRef.Should().Be(assigned.GroupRef);
+        rereadAssigned.At.Should().Be(assigned.At);
+        rereadAssigned.Spots.ToArray().Should().Equal(assigned.Spots.ToArray());
+    }
+
+    // lane-assignment.md finding 5's compatibility claim, pinned: Group.Spots
+    // is deliberately not required (initializer = []), so any pre-existing
+    // PhaseDrawn payload — persisted before the property existed, carrying no
+    // spots at all — deserializes with empty spots: unassigned, a fact, not an
+    // error. The legacy byte shape is reproduced by stripping the spots
+    // property from a fresh serialisation.
+
+    [Fact]
+    public void Legacy_PhaseDrawn_payload_without_spots_deserialises_with_empty_spots()
+    {
+        CompetitionEvent drawn = SamplePhaseDrawnEvent();
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"spots\":[]");
+        var legacyJson = json.Replace(",\"spots\":[]", string.Empty);
+        legacyJson.Should().NotContain("spots");
+
+        var reread = (PhaseDrawn)JsonSerializer.Deserialize<CompetitionEvent>(legacyJson, SoarscoreEventJson.Options)!;
+
+        foreach (var round in reread.Rounds)
+        {
+            foreach (var taskRound in round.TaskRounds)
+            {
+                foreach (var group in taskRound.Groups)
+                {
+                    group.Spots.Should().BeEmpty();
+                }
+            }
+        }
+    }
 }

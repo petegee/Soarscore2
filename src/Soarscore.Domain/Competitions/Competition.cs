@@ -248,7 +248,31 @@ public sealed record Group
 
     /// <summary>2..* — the drawn allocation. See the type doc comment.</summary>
     public required ImmutableArray<CompetitorId> CompetitorRefs { get; init; }
+
+    /// <summary>
+    /// Explicit field-spot assignments (<see cref="GroupSpot"/>). Empty means
+    /// *unassigned* — a fact, never a gap (the TaskRoundRecording philosophy:
+    /// presence proves, absence never disproves); there is no per-competition
+    /// default and no auto-generated identity mapping, because the domain
+    /// never infers a spot from sequence position (decision D2,
+    /// kanban/in-progress/lane-assignment.md). Assignments are explicit data,
+    /// replaced whole by each <see cref="GroupSpotsAssigned"/>, and a
+    /// withdrawal after assignment leaves the entry recorded, reading as
+    /// vacant on the read side (D4).
+    /// </summary>
+    public ImmutableArray<GroupSpot> Spots { get; init; } = [];
 }
+
+/// <summary>
+/// One competitor's designated physical field position within a group for a
+/// task-round — a lane, launch spot, landing spot or winch line as the venue
+/// arranges them. The label's meaning is the venue's; Soarscore stores only
+/// the explicit mapping (rules refs: F5J 5.5.11.7 d/f, NZ.2.4.6, re-flight
+/// priority 1 "additional launch spots" — scoring consequences of a
+/// designated spot, enforced by consuming systems). Never implied by
+/// sequence position — teams-feature-options.md design principle 10.
+/// </summary>
+public sealed record GroupSpot(CompetitorId CompetitorRef, int Spot);
 
 /// <summary>
 /// References the class's TaskDefinition by its Code, not by a typed id —
@@ -493,6 +517,21 @@ public sealed record Competition
     public Competition Apply(ReflightRulingRecorded @event) =>
         this with { Rulings = Rulings.Add(@event.Ruling) };
 
+    // Whole-replacement semantics: the payload is the complete mapping and
+    // replaces whatever was there (decision D3,
+    // kanban/in-progress/lane-assignment.md) — a group not named by the event
+    // is untouched, and a rejection of the draw discards the whole phase with
+    // every assignment on it.
+    public Competition Apply(GroupSpotsAssigned @event) =>
+        ReplaceTaskRound(
+            @event.PhaseOrdinal, @event.RoundOrdinal, @event.TaskRoundOrdinal,
+            taskRound => taskRound with
+            {
+                Groups = taskRound.Groups
+                    .Select(g => g.Id == @event.GroupRef ? g with { Spots = @event.Spots } : g)
+                    .ToImmutableArray(),
+            });
+
     /// <summary>
     /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted,
     /// TaskRoundAnnulled and TaskRoundReopened: find the Phase/Round/TaskRound
@@ -561,6 +600,7 @@ public sealed record Competition
             Finalised e => Require(current, e).Apply(e),
             PenaltyRecorded e => Require(current, e).Apply(e),
             ReflightRulingRecorded e => Require(current, e).Apply(e),
+            GroupSpotsAssigned e => Require(current, e).Apply(e),
             _ => throw new ArgumentException($"Unknown CompetitionEvent subtype: {@event.GetType().Name}"),
         };
 
@@ -1513,6 +1553,127 @@ public sealed record Competition
 
         return Result<ReflightGroupAppended>.Success(
             new ReflightGroupAppended(phaseOrdinal, roundOrdinal, taskRoundOrdinal, group, reason, at));
+    }
+
+    // Instance decide function — WI-2 (kanban/in-progress/lane-assignment.md).
+    // Early-return style, like AppendReflightGroup beside it. Decisions D1–D4
+    // of that story: D1 — one generic spot label, a distinct positive integer
+    // per live member, not required contiguous (a broken lane skipped is the
+    // ordinary case); D2 — always explicit, per group: the command assigns or
+    // replaces the COMPLETE mapping, the domain never infers a spot from
+    // sequence position, and until assigned a group simply reads unassigned;
+    // D3 — live mutable, dies with the draw: no acceptance or task-round-state
+    // gate beyond annulment (spots are operational configuration, assignable
+    // from draw time onward, re-assignable while the round lives — last
+    // assignment wins, the audit trail is the stream), and a rejected draw
+    // removes the phase with every assignment on it; D4 — full coverage: one
+    // command assigns every live member of the group, and a competitor who
+    // withdraws after assignment leaves the entry recorded, reading as vacant
+    // on the read side.
+    //
+    // Live membership is re-derived here from the fold, never trusted from the
+    // caller: drawn ∧ exists in Competitors ∧ WithdrawnAt is null — the same
+    // definition RecordingCore uses for Expected (TaskRoundRecording.cs,
+    // ComputeGroupViews). Success emits the spots AS GIVEN — no reordering,
+    // no normalisation; the fold stores exactly what was commanded and the
+    // read view sorts.
+    //
+    // Rules check (fai-rules, 2026-08-31): no class rule varies the data
+    // shape of an assignment — F5J 5.5.11.7 d/f and NZ.2.4.6 make the
+    // designated spot a scoring consequence enforced by the consuming system;
+    // re-flight priority 1's "additional launch spots" makes appended
+    // reflight groups spot consumers too, which is why this works on any
+    // group of the task-round, drawn or appended. Nothing lands in the class
+    // definition (NFR-1/NFR-2 respected by absence).
+    public Result<GroupSpotsAssigned> AssignGroupSpots(
+        int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal,
+        GroupId groupRef,
+        IReadOnlyList<GroupSpot> spots,
+        DateTimeOffset at)
+    {
+        var taskRound = FindTaskRound(phaseOrdinal, roundOrdinal, taskRoundOrdinal);
+        if (taskRound is null)
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.taskRoundNotFound",
+                "No task-round at these phase/round/task-round ordinals.");
+        }
+
+        // Annulled refuses; Complete/Drawn/InProgress all allow — the
+        // AppendReflightGroup precedent: an annulment is a resolution, not a
+        // way-station, but an annulled task-round has resolved the flying
+        // these spots would arrange.
+        if (taskRound.State is TaskRoundState.Annulled)
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.taskRoundAnnulled",
+                "This task-round is annulled; reopen it before assigning field spots.");
+        }
+
+        var group = taskRound.Groups.FirstOrDefault(g => g.Id == groupRef);
+        if (group is null)
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.groupNotFound",
+                "No group with this id in this task-round.");
+        }
+
+        if (spots.Count == 0)
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.assignmentsEmpty",
+                "A spot assignment must cover every live member of the group; the list is empty.");
+        }
+
+        // D4's live-membership boundary, derived above from the fold — an
+        // unknown id and a withdrawn one are the same defect: neither is a
+        // live member the assignment may name.
+        var liveMembers = group.CompetitorRefs
+            .Where(drawn => Competitors.FirstOrDefault(c => c.Id == drawn) is { WithdrawnAt: null })
+            .ToImmutableArray();
+
+        if (spots.Any(s => !liveMembers.Contains(s.CompetitorRef)))
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.competitorNotInGroup",
+                "A spot is assigned to a competitor who is not a live member of this group — not drawn into it, or withdrawn.");
+        }
+
+        if (spots.Select(s => s.CompetitorRef).Distinct().Count() != spots.Count)
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.competitorRepeated",
+                "A spot assignment names the same competitor more than once.");
+        }
+
+        if (spots.Select(s => s.Spot).Distinct().Count() != spots.Count)
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.spotDuplicated",
+                "A spot assignment gives the same spot number more than once.");
+        }
+
+        if (spots.Any(s => s.Spot < 1))
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.spotInvalid",
+                "A spot number must be a positive integer.");
+        }
+
+        // Full coverage (D4): a live member with no assignment is an
+        // incomplete mapping, not a partially-applied one — the command
+        // replaces whole or not at all.
+        if (liveMembers.Any(member => !spots.Any(s => s.CompetitorRef == member)))
+        {
+            return Result<GroupSpotsAssigned>.Failure(
+                "assignSpots.memberMissing",
+                "A live member of this group has no spot — the assignment must cover every live member.");
+        }
+
+        // As given: no reordering, no normalisation — the fold stores exactly
+        // what was commanded; the read view sorts.
+        return Result<GroupSpotsAssigned>.Success(
+            new GroupSpotsAssigned(phaseOrdinal, roundOrdinal, taskRoundOrdinal, groupRef, [.. spots], at));
     }
 
     private TaskRound? FindTaskRound(int phaseOrdinal, int roundOrdinal, int taskRoundOrdinal) =>

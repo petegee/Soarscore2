@@ -17,6 +17,9 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Soarscore.Application.Tests" />
+    <!-- lane-assignment.md WI-6 item (e): the Domain.Tests P1 property test
+         drives RecordingCore (internal) from its own file. -->
+    <InternalsVisibleTo Include="Soarscore.Domain.Tests" />
   </ItemGroup>
 
 </Project>
