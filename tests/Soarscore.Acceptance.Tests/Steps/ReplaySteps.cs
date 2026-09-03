@@ -98,6 +98,23 @@ public sealed class ReplaySteps
             + $"{Environment.NewLine}{report.ConservationTable()}");
     }
 
+    [Then(@"^the derived team standings match the fixture's team semantics exactly$")]
+    public void ThenTheDerivedTeamStandingsMatchExactly()
+    {
+        // teams-mvp.md WI-9 — the team grain: where the fixture declared team
+        // scoring with the MVP's own method (NbrForTeamScore == 3), every
+        // standing must match the classification contract applied to the
+        // oracle-verified individual result (contributors, totals, tie-break
+        // evidence, member states, order, shared places). No ledger entry ever
+        // excuses this grain — where the fixture's method differs, the
+        // comparison does not run (T1), so a mismatch is a defect.
+        var report = Report();
+
+        report.TeamGrainMismatches.Should().BeEmpty(
+            $"the team grain must match exactly for all {report.TeamsCompared} standing(s) of {Fixture.Slug}."
+            + $"{Environment.NewLine}{report.DiffTable()}");
+    }
+
     [Then(@"^the fixture carries no ledgered divergences$")]
     public void ThenTheFixtureCarriesNoLedgeredDivergences()
     {
@@ -142,9 +159,22 @@ public sealed class ReplaySteps
         // planning sweep's "417/417 exact" was double-faithful; the harness
         // compares exact decimals, so the artefact cells are ledgered, not
         // tolerated. Same precedent: cite the token honestly, pin the count.
+        //
+        // `T1` joins them per teams-mvp.md WI-9 (owner decision 8, 2026-09-02):
+        // GS's NbrForTeamScore names how many members score per team, and the
+        // MVP's classification method is FIXED at three (bestThreeScoreSum) —
+        // a fixture declaring NbrForTeamScore ≠ 3 (f3k-sample-comp = 2,
+        // jerilderie-2010 = 4) declares a method the MVP does not have. The
+        // adapter never emulates it: memberships map per decision 8, the
+        // classification stays unconfigured, the team grain does not run, and
+        // one documentary T1 entry per fixture pins why. Ledgered only where
+        // team scoring is actually active (UseTeams=true) — an inert
+        // NbrForTeamScore under UseTeams=false (f3j-international-flyoff) is
+        // not a divergence. Individual grains are unaffected either way:
+        // team membership is not an input to any individual score.
         var unattributed = Fixture!.Divergences
             .Where(d => !System.Text.RegularExpressions.Regex.IsMatch(
-                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b|\bR1\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                d.Reason, @"\bD[1-6]\b|\btrap\s*3\b|\bR1\b|\bT1\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             .ToList();
 
         unattributed.Should().BeEmpty(

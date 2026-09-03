@@ -193,6 +193,20 @@ public sealed record Finalisation
 
     /// <summary>1..*.</summary>
     public required ImmutableArray<DeclaredResult> DeclaredResults { get; init; }
+
+    /// <summary>
+    /// The team classification as the CD declared it at finalisation — teams-mvp.md
+    /// owner decision 4: the full declaration (total, place, counting contributors,
+    /// placing sum, best individual placing), never a re-derivation. Default empty;
+    /// only competition-scope finalisation carries team results — phase-scope
+    /// finalisations (who was promoted) never do in the MVP, and the only decide
+    /// producing a <see cref="Finalisation"/> today sets this solely from the
+    /// handler-derived parameter. Corrections after finalisation are later events,
+    /// not edits here: the divergence between this frozen declaration and the
+    /// re-derived standings is read, never reconciled away (the TaskRoundReopened
+    /// stance for individual results).
+    /// </summary>
+    public ImmutableArray<DeclaredTeamResult> DeclaredTeamResults { get; init; } = [];
 }
 
 /// <summary>
@@ -209,6 +223,49 @@ public sealed record DeclaredResult
     public required int Placing { get; init; }
 
     public required bool Promoted { get; init; }
+}
+
+/// <summary>
+/// One team's declared result at competition finalisation (teams-mvp.md WI-7) —
+/// the frozen half of the declared-vs-derived read (WI-6's
+/// <c>ScoreTeamStandings</c> carries both). Field names deliberately mirror
+/// <see cref="TeamStanding"/> one-for-one, so the handler's mapping is a
+/// literal projection and a consumer can diff the two sections structurally;
+/// <see cref="TeamStanding.Members"/> is the one deliberate drop — the
+/// declaration records what was counted, not every member's contribution
+/// state. Like <see cref="DeclaredResult"/>, this answers "what was declared"
+/// and never recomputes.
+/// </summary>
+public sealed record DeclaredTeamResult
+{
+    public required ScoringTeamId TeamRef { get; init; }
+
+    public required string Name { get; init; }
+
+    /// <summary>Sum of contributor scores; 0 when the team declared no contributors.</summary>
+    public required decimal Total { get; init; }
+
+    /// <summary>The shared-place placing the classification assigned at finalisation.</summary>
+    public required int Placing { get; init; }
+
+    /// <summary>The counting members, best first — the tie-break evidence.</summary>
+    public required ImmutableArray<DeclaredTeamContributor> Contributors { get; init; }
+
+    /// <summary>Sum of contributor placings — the first tie-break rung; 0 when there are no contributors.</summary>
+    public required int PlacingSum { get; init; }
+
+    /// <summary>The best (lowest) contributor placing — the second tie-break rung; null when there are no contributors.</summary>
+    public required int? BestIndividualPlacing { get; init; }
+}
+
+/// <summary>One counting member of a declared team result — the individual aggregate and competition placing it contributed.</summary>
+public sealed record DeclaredTeamContributor
+{
+    public required CompetitorId CompetitorRef { get; init; }
+
+    public required decimal Score { get; init; }
+
+    public required int Placing { get; init; }
 }
 
 /// <summary>
@@ -403,6 +460,22 @@ public sealed record Competition
     /// </summary>
     public ImmutableArray<ReflightRuling> Rulings { get; init; } = [];
 
+    // Team state — teams-mvp.md WI-3. All inside the Competition aggregate:
+    // scoring teams and protection groups are competition-scoped, and the
+    // classification policy is competition-level configuration (owner
+    // decision 7). At most one ScoringTeamMembership per competitor; any
+    // number of ProtectionGroupMemberships per competitor.
+    public ImmutableArray<ScoringTeam> ScoringTeams { get; init; } = [];
+
+    public ImmutableArray<ProtectionGroup> ProtectionGroups { get; init; } = [];
+
+    public ImmutableArray<ScoringTeamMembership> ScoringTeamMemberships { get; init; } = [];
+
+    public ImmutableArray<ProtectionGroupMembership> ProtectionGroupMemberships { get; init; } = [];
+
+    /// <summary>Null until first configured; replaced whole by each TeamClassificationConfigured.</summary>
+    public TeamClassificationConfiguration? TeamClassification { get; init; }
+
     /// <summary>The creation event. Every stream begins with exactly one of these.</summary>
     public static Competition Create(CompetitionCreated @event) =>
         new()
@@ -421,6 +494,11 @@ public sealed record Competition
             Finalisations = [],
             Penalties = [],
             Rulings = [],
+            ScoringTeams = [],
+            ProtectionGroups = [],
+            ScoringTeamMemberships = [],
+            ProtectionGroupMemberships = [],
+            TeamClassification = null,
         };
 
     // One overload per non-creation event — both the domain's own fold-by-type
@@ -532,6 +610,49 @@ public sealed record Competition
                     .ToImmutableArray(),
             });
 
+    // Team folds — teams-mvp.md WI-3. ScoringTeamMembershipAssigned REPLACES
+    // any existing record for that competitor (at most one scoring-team
+    // membership per competitor; the decide function guarantees it names the
+    // same team); ScoringTeamMembershipCleared removes all records for the
+    // competitor; ProtectionGroupMemberAdded adds unconditionally (the decide
+    // function prevents duplicates); ProtectionGroupMemberRemoved filters the
+    // matching pair; TeamClassificationConfigured replaces last-wins — the log
+    // is the audit trail, the ParameterBindings precedent.
+
+    public Competition Apply(ScoringTeamDefined @event) =>
+        this with { ScoringTeams = ScoringTeams.Add(@event.Team) };
+
+    public Competition Apply(ScoringTeamMembershipAssigned @event) =>
+        this with
+        {
+            ScoringTeamMemberships = ScoringTeamMemberships
+                .RemoveAll(m => m.CompetitorRef == @event.Membership.CompetitorRef)
+                .Add(@event.Membership),
+        };
+
+    public Competition Apply(ScoringTeamMembershipCleared @event) =>
+        this with
+        {
+            ScoringTeamMemberships = ScoringTeamMemberships
+                .RemoveAll(m => m.CompetitorRef == @event.CompetitorRef),
+        };
+
+    public Competition Apply(ProtectionGroupDefined @event) =>
+        this with { ProtectionGroups = ProtectionGroups.Add(@event.Group) };
+
+    public Competition Apply(ProtectionGroupMemberAdded @event) =>
+        this with { ProtectionGroupMemberships = ProtectionGroupMemberships.Add(@event.Membership) };
+
+    public Competition Apply(ProtectionGroupMemberRemoved @event) =>
+        this with
+        {
+            ProtectionGroupMemberships = ProtectionGroupMemberships
+                .RemoveAll(m => m.CompetitorRef == @event.CompetitorRef && m.GroupRef == @event.GroupRef),
+        };
+
+    public Competition Apply(TeamClassificationConfigured @event) =>
+        this with { TeamClassification = @event.Configuration };
+
     /// <summary>
     /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted,
     /// TaskRoundAnnulled and TaskRoundReopened: find the Phase/Round/TaskRound
@@ -601,6 +722,13 @@ public sealed record Competition
             PenaltyRecorded e => Require(current, e).Apply(e),
             ReflightRulingRecorded e => Require(current, e).Apply(e),
             GroupSpotsAssigned e => Require(current, e).Apply(e),
+            ScoringTeamDefined e => Require(current, e).Apply(e),
+            ScoringTeamMembershipAssigned e => Require(current, e).Apply(e),
+            ScoringTeamMembershipCleared e => Require(current, e).Apply(e),
+            ProtectionGroupDefined e => Require(current, e).Apply(e),
+            ProtectionGroupMemberAdded e => Require(current, e).Apply(e),
+            ProtectionGroupMemberRemoved e => Require(current, e).Apply(e),
+            TeamClassificationConfigured e => Require(current, e).Apply(e),
             _ => throw new ArgumentException($"Unknown CompetitionEvent subtype: {@event.GetType().Name}"),
         };
 
@@ -805,7 +933,7 @@ public sealed record Competition
 
         var (phaseDefinition, resolvedTaskRefs, field, minPerGroupByRound) = resolved.Value;
 
-        var groupedRounds = PhaseDraw.BuildGroups(field, minPerGroupByRound);
+        var groupedRounds = PhaseDraw.BuildGroups(field, minPerGroupByRound, DeriveProtectedPairs(field));
 
         var rows = groupedRounds
             .Select((groups, roundIndex) => new Round
@@ -839,6 +967,41 @@ public sealed record Competition
             At: at);
 
         return Result<PhaseDrawn>.Success(@event);
+    }
+
+    /// <summary>
+    /// The protected-pair set <see cref="DrawPhase"/> hands the builder
+    /// (teams-mvp.md §Draw wiring): for each <see cref="ProtectionGroup"/>,
+    /// every unordered pair of its LIVE members — registered and not
+    /// withdrawn, which is exactly the eligible <paramref name="field"/>
+    /// ResolveSchedule resolved, so withdrawn members drop out because the
+    /// draw field excludes them — unioned across groups and deduped by
+    /// canonical key (<see cref="ProtectedPair"/>'s constructor canonicalises,
+    /// so plain set equality dedups whatever the group shapes overlap on).
+    /// The builder sees pairs only; nothing here or in PhaseDraw branches on
+    /// a class or a team. <see cref="PrescribeDraw"/> is deliberately not
+    /// wired to this: prescribed imports stay diagnostic-only, never a
+    /// rejection path (teams-mvp.md, owner decision 5).
+    /// </summary>
+    private ImmutableArray<ProtectedPair> DeriveProtectedPairs(ImmutableArray<CompetitorId> field)
+    {
+        var eligible = new HashSet<CompetitorId>(field);
+        var pairs = new HashSet<ProtectedPair>();
+
+        foreach (var members in ProtectionGroupMemberships
+            .GroupBy(m => m.GroupRef)
+            .Select(g => g.Select(m => m.CompetitorRef).Where(eligible.Contains).ToArray()))
+        {
+            for (var i = 0; i < members.Length; i++)
+            {
+                for (var j = i + 1; j < members.Length; j++)
+                {
+                    pairs.Add(new ProtectedPair(members[i], members[j]));
+                }
+            }
+        }
+
+        return [.. pairs];
     }
 
     /// <summary>
@@ -1726,10 +1889,25 @@ public sealed record Competition
     // 1 task", F5K a CD parameter) is a field of the class model, never a
     // branch here (CLAUDE.md's core architectural law).
     //
-    // DeclaredResults arrives already computed: the handler scores the
-    // competition and maps the result, exactly as this aggregate receives an
-    // already-resolved AdoptedRules rather than reaching out for one.
-    public Result<Finalised> Finalise(ImmutableArray<DeclaredResult> declaredResults, string by, DateTimeOffset at)
+    // DeclaredResults and declaredTeamResults arrive already computed: the
+    // handler scores the competition AND the team classification and maps
+    // both, exactly as this aggregate receives an already-resolved
+    // AdoptedRules rather than reaching out for one (teams-mvp.md WI-7).
+    //
+    // The two team checks beside noResults are the payload-shape pair of the
+    // same shape the individual results have: a finalisation of a competition
+    // whose team classification is enabled with teams defined MUST declare
+    // team results (the handler derives them for every defined team, so an
+    // empty set can only be caller error), and a competition without a
+    // running team classification MUST NOT carry any. An enabled
+    // classification with no teams defined permits empty — there is nothing
+    // to declare, a state rather than an error, matching the engine's own
+    // empty-standings stance.
+    public Result<Finalised> Finalise(
+        ImmutableArray<DeclaredResult> declaredResults,
+        ImmutableArray<DeclaredTeamResult> declaredTeamResults,
+        string by,
+        DateTimeOffset at)
     {
         if (string.IsNullOrWhiteSpace(by))
         {
@@ -1742,6 +1920,22 @@ public sealed record Competition
         {
             return Result<Finalised>.Failure(
                 "finalise.noResults", "A finalisation must declare at least one result.");
+        }
+
+        var teamClassificationRunning = TeamClassification is { Enabled: true };
+
+        if (!teamClassificationRunning && !declaredTeamResults.IsEmpty)
+        {
+            return Result<Finalised>.Failure(
+                "finalise.teamResultsNotPermitted",
+                "Team classification is disabled or never configured, so there is no team result to declare.");
+        }
+
+        if (teamClassificationRunning && !ScoringTeams.IsEmpty && declaredTeamResults.IsEmpty)
+        {
+            return Result<Finalised>.Failure(
+                "finalise.teamResultsMissing",
+                "Team classification is enabled and scoring teams are defined, so the finalisation must declare team results.");
         }
 
         if (Finalisations.Any(f => f.Scope == FinalisationScope.Competition))
@@ -1826,6 +2020,7 @@ public sealed record Competition
             By = by,
             At = at,
             DeclaredResults = declaredResults,
+            DeclaredTeamResults = declaredTeamResults,
         };
 
         return Result<Finalised>.Success(new Finalised(finalisation));
@@ -2178,4 +2373,214 @@ public sealed record Competition
 
         return null;
     }
+
+    // Team decide functions — WI-3 (kanban/in-progress/teams-mvp.md).
+    // Defect-chain style, like WithdrawCompetitor/RecordPenalty: no later check
+    // needs a value an earlier one computed. Two standing rules, both settled
+    // with the owner (decision 6):
+    //   - Scoring-team commands have NO draw gate ever — the draw never sees
+    //     scoring teams — and no finalisation gate either: there is no
+    //     reopen/refinalise path today, so post-finalisation corrections are
+    //     explicit, auditable events whose divergence from the declared team
+    //     results is the declared-vs-derived read's business (WI-7), not a
+    //     mutation of the declaration.
+    //   - Protection-membership commands are refused while ANY live phase
+    //     exists — one gate covers drawn-not-accepted (the CD rejects — free
+    //     pre-acceptance — then edits, then redraws) and accepted (frozen with
+    //     acceptance). A rejected draw removes the phase (D2,
+    //     draw-acceptance-redraw.md) and reopens editing.
+    //
+    // Name uniqueness is enforced within a kind only: a scoring team and a
+    // protection group may share a name — they are unrelated vocabularies
+    // (the roster view keeps the two sections visibly structural, WI-6).
+
+    /// <summary>
+    /// Defines one scoring team. Re-define/rename are not modelled (no
+    /// team-removal or rename events — teams-mvp.md's standing exclusions); a
+    /// duplicate name is refused case-insensitively.
+    /// </summary>
+    public Result<ScoringTeamDefined> DefineScoringTeam(ScoringTeamId id, string name, DateTimeOffset at)
+    {
+        var defect = NameNotBlank(name, "defineScoringTeam")
+            ?? (ScoringTeams.Any(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase))
+                ? new Defect("defineScoringTeam.nameTaken", "$.name", "A scoring team with this name already exists.")
+                : null);
+
+        return defect is not null
+            ? Result<ScoringTeamDefined>.Failure(defect.Code, defect.Message)
+            : Result<ScoringTeamDefined>.Success(
+                new ScoringTeamDefined(new ScoringTeam { Id = id, Name = name }, at));
+    }
+
+    /// <summary>Same shape as <see cref="DefineScoringTeam"/>; names may coincide across kinds.</summary>
+    public Result<ProtectionGroupDefined> DefineProtectionGroup(ProtectionGroupId id, string name, DateTimeOffset at)
+    {
+        var defect = NameNotBlank(name, "defineProtectionGroup")
+            ?? (ProtectionGroups.Any(g => string.Equals(g.Name, name, StringComparison.OrdinalIgnoreCase))
+                ? new Defect("defineProtectionGroup.nameTaken", "$.name", "A protection group with this name already exists.")
+                : null);
+
+        return defect is not null
+            ? Result<ProtectionGroupDefined>.Failure(defect.Code, defect.Message)
+            : Result<ProtectionGroupDefined>.Success(
+                new ProtectionGroupDefined(new ProtectionGroup { Id = id, Name = name }, at));
+    }
+
+    /// <summary>
+    /// Assigns a competitor to a scoring team, or — naming the SAME team —
+    /// corrects their contribution eligibility (the flip of
+    /// <see cref="ScoringTeamMembership.Contributes"/>; the fold replaces the
+    /// record). An assignment naming a DIFFERENT team while a membership exists
+    /// is refused: clear the membership first.
+    /// </summary>
+    public Result<ScoringTeamMembershipAssigned> AssignScoringTeamMembership(
+        CompetitorId competitorRef, ScoringTeamId teamRef, bool contributes, DateTimeOffset at)
+    {
+        var defect = ScoringTeamFound(teamRef)
+            ?? CompetitorFound(competitorRef, "assignTeamMembership")
+            ?? CompetitorNotWithdrawn(competitorRef, "assignTeamMembership")
+            ?? (ScoringTeamMemberships.FirstOrDefault(m => m.CompetitorRef == competitorRef) is { } existing
+                && existing.TeamRef != teamRef
+                ? new Defect(
+                    "assignTeamMembership.competitorAlreadyAssigned", "$.competitorRef",
+                    "This competitor is already assigned to a different scoring team; clear the membership first.")
+                : null);
+
+        return defect is not null
+            ? Result<ScoringTeamMembershipAssigned>.Failure(defect.Code, defect.Message)
+            : Result<ScoringTeamMembershipAssigned>.Success(
+                new ScoringTeamMembershipAssigned(
+                    new ScoringTeamMembership
+                    {
+                        CompetitorRef = competitorRef,
+                        TeamRef = teamRef,
+                        Contributes = contributes,
+                    },
+                    at));
+    }
+
+    /// <summary>Removes the competitor's scoring-team membership, whatever team it named.</summary>
+    public Result<ScoringTeamMembershipCleared> ClearScoringTeamMembership(
+        CompetitorId competitorRef, DateTimeOffset at)
+    {
+        var defect = ScoringTeamMemberships.Any(m => m.CompetitorRef == competitorRef)
+            ? null
+            : new Defect(
+                "clearTeamMembership.membershipNotFound", "$.competitorRef",
+                "This competitor holds no scoring-team membership to clear.");
+
+        return defect is not null
+            ? Result<ScoringTeamMembershipCleared>.Failure(defect.Code, defect.Message)
+            : Result<ScoringTeamMembershipCleared>.Success(new ScoringTeamMembershipCleared(competitorRef, at));
+    }
+
+    /// <summary>
+    /// Adds a competitor to a protection group. Multi-group membership is
+    /// allowed and expected (owner decision 3); a duplicate of THIS group is
+    /// the duplicateMembership defect.
+    /// </summary>
+    public Result<ProtectionGroupMemberAdded> AddProtectionGroupMember(
+        CompetitorId competitorRef, ProtectionGroupId groupRef, DateTimeOffset at)
+    {
+        var defect = ProtectionNotFrozen("addProtectionMember")
+            ?? ProtectionGroupFound(groupRef)
+            ?? CompetitorFound(competitorRef, "addProtectionMember")
+            ?? CompetitorNotWithdrawn(competitorRef, "addProtectionMember")
+            ?? (ProtectionGroupMemberships.Any(m => m.CompetitorRef == competitorRef && m.GroupRef == groupRef)
+                ? new Defect(
+                    "addProtectionMember.duplicateMembership", "$.competitorRef",
+                    "This competitor is already a member of this protection group.")
+                : null);
+
+        return defect is not null
+            ? Result<ProtectionGroupMemberAdded>.Failure(defect.Code, defect.Message)
+            : Result<ProtectionGroupMemberAdded>.Success(
+                new ProtectionGroupMemberAdded(
+                    new ProtectionGroupMembership { CompetitorRef = competitorRef, GroupRef = groupRef },
+                    at));
+    }
+
+    /// <summary>Removes one (competitor, group) membership pair.</summary>
+    public Result<ProtectionGroupMemberRemoved> RemoveProtectionGroupMember(
+        CompetitorId competitorRef, ProtectionGroupId groupRef, DateTimeOffset at)
+    {
+        var defect = ProtectionNotFrozen("removeProtectionMember")
+            ?? (ProtectionGroupMemberships.Any(m => m.CompetitorRef == competitorRef && m.GroupRef == groupRef)
+                ? null
+                : new Defect(
+                    "removeProtectionMember.membershipNotFound", "$.competitorRef",
+                    "This competitor is not a member of this protection group."));
+
+        return defect is not null
+            ? Result<ProtectionGroupMemberRemoved>.Failure(defect.Code, defect.Message)
+            : Result<ProtectionGroupMemberRemoved>.Success(
+                new ProtectionGroupMemberRemoved(competitorRef, groupRef, at));
+    }
+
+    /// <summary>
+    /// Declares (or re-declares — last-wins) the competition's team
+    /// classification policy. The MVP's closed vocabulary has exactly one
+    /// member (owner decision 7), so the decide emits it literally; an
+    /// unknown token reaching the classification engine later is
+    /// teamClassification.unknownMethod, the forward-compat guard. No gates:
+    /// classification-only metadata (paper design principle 3).
+    /// </summary>
+    public Result<TeamClassificationConfigured> ConfigureTeamClassification(bool enabled, string by, DateTimeOffset at)
+    {
+        var defect = ByNotBlank(by);
+
+        return defect is not null
+            ? Result<TeamClassificationConfigured>.Failure(defect.Code, defect.Message)
+            : Result<TeamClassificationConfigured>.Success(
+                new TeamClassificationConfigured(
+                    new TeamClassificationConfiguration { Enabled = enabled, Method = "bestThreeScoreSum" },
+                    at));
+    }
+
+    // One code per command rather than one shared code, so a caller can tell
+    // which command rejected without reading the message — TaskRoundFound's
+    // rule. The prefix parameters below exist for the same reason.
+
+    private static Defect? NameNotBlank(string name, string command) =>
+        string.IsNullOrWhiteSpace(name)
+            ? new Defect($"{command}.nameBlank", "$.name", "Name must not be blank.")
+            : null;
+
+    private static Defect? ByNotBlank(string by) =>
+        string.IsNullOrWhiteSpace(by)
+            ? new Defect("configureTeamClassification.byBlank", "$.by",
+                "By must not be blank — the configuration records who declared the policy.")
+            : null;
+
+    private Defect? ScoringTeamFound(ScoringTeamId teamRef) =>
+        ScoringTeams.Any(t => t.Id == teamRef)
+            ? null
+            : new Defect("assignTeamMembership.teamNotFound", "$.teamRef", "No scoring team with this id in this competition.");
+
+    private Defect? ProtectionGroupFound(ProtectionGroupId groupRef) =>
+        ProtectionGroups.Any(g => g.Id == groupRef)
+            ? null
+            : new Defect("addProtectionMember.groupNotFound", "$.groupRef", "No protection group with this id in this competition.");
+
+    private Defect? CompetitorFound(CompetitorId competitorRef, string command) =>
+        Competitors.Any(c => c.Id == competitorRef)
+            ? null
+            : new Defect($"{command}.competitorNotFound", "$.competitorRef", "No such competitor in this competition.");
+
+    private Defect? CompetitorNotWithdrawn(CompetitorId competitorRef, string command) =>
+        Competitors.Single(c => c.Id == competitorRef).WithdrawnAt is not null
+            ? new Defect($"{command}.competitorWithdrawn", "$.competitorRef", "This competitor has withdrawn.")
+            : null;
+
+    // The protection-membership phase gate, shared by add and remove so the
+    // two cannot drift (HasAnAcceptedDraw's precedent for shared gates).
+    // Refusing on Phases.IsEmpty NOT holding — i.e. any live phase, drawn or
+    // accepted — is the owner-settled lifecycle rule: D2's phase removal is
+    // what reopens editing after a rejection.
+    private Defect? ProtectionNotFrozen(string command) =>
+        Phases.IsEmpty
+            ? null
+            : new Defect(
+                $"{command}.drawExists", "$.competitionId",
+                "Protection membership is frozen once a phase has been drawn; reject the draw first.");
 }

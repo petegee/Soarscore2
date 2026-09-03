@@ -79,6 +79,18 @@ internal static class SoarscoreEventTypes
         (typeof(DrawRejected), "drawRejected"),
         (typeof(GroupSpotsAssigned), "groupSpotsAdded"), // lane-assignment.md WI-4 — a missing line fails at runtime on BOTH backends per LADR-0001 §4.8.
 
+        // teams-mvp.md WI-3 registered the seven team events; as above, a
+        // missing line fails at runtime on BOTH backends per LADR-0001 §4.8.
+        // Aliases are the [JsonDerivedType] discriminators the event contracts
+        // carry — registry tag == JsonDerivedType alias as for every line here.
+        (typeof(ScoringTeamDefined), "scoringTeamDefined"),
+        (typeof(ScoringTeamMembershipAssigned), "scoringTeamMembershipAssigned"),
+        (typeof(ScoringTeamMembershipCleared), "scoringTeamMembershipCleared"),
+        (typeof(ProtectionGroupDefined), "protectionGroupDefined"),
+        (typeof(ProtectionGroupMemberAdded), "protectionGroupMemberAdded"),
+        (typeof(ProtectionGroupMemberRemoved), "protectionGroupMemberRemoved"),
+        (typeof(TeamClassificationConfigured), "teamClassificationConfigured"),
+
         // capture-a-score-steel-thread-plan.md WI-9 registered the narrow capture
         // slice: EntryOpened, FlightOpened, MeasurementCaptured.
         // amend-a-measurement.md WI-5 registered MeasurementAmended (the event a

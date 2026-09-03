@@ -1,6 +1,6 @@
 # Story — Teams: scoring teams, protection groups and team classification (Option 2 MVP)
 
-**Status:** Backlog — refined 2026-09-02, ready to take · **Raised:** 2026-08-31 ·
+**Status:** Completed 2026-09-02 · **Raised:** 2026-08-31 ·
 **Direction:** owner-assumed **Option 2 — "rule-spirit MVP"** from
 `teams-feature-options.md` (repo root; research and options, not an approval —
 the approvals it lists are now settled, see *Decisions settled* below). The
@@ -343,6 +343,8 @@ automatically.
 **WI-2 — Glossary + class diagram (GATE: owner sign-off).**
 - Present §Glossary candidates below to the owner verbatim. **Do not edit
   `/docs` until approved** (decision 2). Record the approval in this story.
+  **Gate cleared 2026-09-02** — the §Glossary candidates were shown to the
+  owner verbatim and approved as written on 2026-09-02.
 - Then: add the three concepts to `docs/soaring-domain-glossary.md`;
   extend `docs/soaring-domain-class-diagram.md` (entities within the
   Competition aggregate; membership associations from Competitor;
@@ -422,6 +424,25 @@ automatically.
   captures declared team results equal to the derived standings at that
   moment.
 - Runs under `SOARSCORE_TEST_STORE=postgres` and `=sqlite`.
+- **Landed 2026-09-02 (WI-8):** `Features/ScoringTeams.feature` +
+  `Steps/ScoringTeamsSteps.cs` — one scenario, *"Team standings stay correct
+  while scores trickle in out of order across rounds"*. Memberships via a
+  Gherkin table (Falcons 3-4-5 contributing; Harriers 1 **no** — the
+  defending champion, fastest in the fixture — 2 and 6), classification
+  enabled, protection pair (2, 5) set up pre-draw, F5J 4 rounds drawn and
+  accepted; `/draw-diagnostics` then names the pair in all 4 rounds
+  (MinPerGroup 6 → one group — infeasible protection, least-bad draw +
+  diagnostics + accept, owner decision 5). 24 captures scripted out of order
+  across all rounds (round 2 before round 1; rounds complete 2-1-3-4), each
+  recording a standings+leaderboard snapshot; the derived section is verified
+  against an independent oracle (classification rules re-derived from
+  `/competition-result`, never normalisation arithmetic) after every capture
+  and live at two partial checkpoints; the finished standings are pinned
+  literally (Falcons 8400 1st / Harriers 5600 2nd, placing sums 12/8, best
+  placings 3/2, contributors with scores and placings, the champion
+  Ineligible); finalisation's declared section is asserted field-for-field
+  equal to the derived standings, which re-derive unchanged. Suite 72/72 on
+  SQLite and PostgreSQL; build 0 warnings.
 
 **WI-9 — GliderScore adapter + team-bearing fixtures.**
 - Extend the replay DTOs with `Team`, `OmitFromTeamScore`, `UseTeams`,
@@ -436,6 +457,28 @@ automatically.
   stores; compare team contributors, totals and ranks where semantics
   overlap; ledger every semantic deviation in the fixture's
   `divergences.json` per existing practice.
+- **Landed 2026-09-02 (WI-9):** DTOs widened
+  (`CompPilotRow.Team`/`OmitFromTeamScore`, new `TriageTable` with the three
+  switches); `ReplayDriver.MapGliderscoreTeamsAsync` implements decision 8
+  verbatim (protection mappings precede `/prescribe-draw` — the
+  `addProtectionMember.drawExists` gate; classification configured enabled
+  only when the fixture's declared method IS the MVP's, `NbrForTeamScore ==
+  3`); Comparator gains the team grain — run only where semantics overlap
+  (f3j-international), asserting the MVP contract over the oracle-verified
+  individual result (contributors, totals, placing sum, best placing, member
+  states, order, shared places). Ledgered: one `T1` entry each for
+  f3k-sample-comp (Nbr=2) and jerilderie-2010 (Nbr=4); the token is defined
+  in deferred-decisions.md. Corpus facts: NO fixture anywhere in the corpus
+  or its source extraction witnesses `OmitFromTeamScore=true` (protection-only
+  arm implemented, unexercised by replay); no fixture carries GS
+  team-standings output (the transcripts' Team column is display-only), so
+  the overlap comparison pins the contract rather than GS's own team ladder;
+  an inert `NbrForTeamScore=2` under `UseTeams=false`
+  (f3j-international-flyoff) is not ledgered — GS computes no team scores
+  there. Curated set: f3j-international (full mapping + comparison, 8 teams),
+  f3k-sample-comp (Nbr≠3 + T1), jerilderie-2010 (Nbr≠3 + T1, 14 teams),
+  ales-sample-comp (populated teams under `UseTeams=false` ⇒ nothing maps).
+  Acceptance suite 71/71 on SQLite and PostgreSQL; build 0 warnings.
 
 Sequencing: WI-1 anytime; WI-2 gates WI-3; WI-4 and WI-5 need WI-3; WI-6
 needs WI-3/4/5; WI-7 needs WI-5/6; WI-8 needs WI-6/7; WI-9 needs WI-6. Take

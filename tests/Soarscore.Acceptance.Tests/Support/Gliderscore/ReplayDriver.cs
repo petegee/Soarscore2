@@ -77,6 +77,16 @@
 // D-A1). The deduction stays part of the fixture's class definition (a −1 rate
 // term over a captured deduction column) and reaches the engine through the
 // ordinary score pipeline. See Comparator.cs grain-1 notes.
+//
+// teams-mvp.md WI-9 widens one place, cited where it happens below: the
+// decision-8 team mapping — a GS comp's team fields (CompPilots.Team,
+// OmitFromTeamScore; the triage block's UseTeams / UseTeamProtection /
+// NbrForTeamScore) replay as scoring-team memberships, protection-group
+// memberships and the classification configuration. The mapping is a
+// COMPATIBILITY BOUNDARY ONLY (owner decision 8): GS's single team number is
+// split into the two independent concepts Soarscore models, and whatever the
+// MVP cannot represent is ledgered as a semantic divergence, never emulated
+// (R1 discipline) — see MapGliderscoreTeamsAsync.
 
 using System.Net.Http.Json;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -232,6 +242,15 @@ public sealed class ReplayDriver(HttpClient client)
             competitorByPilotNo[row.PilotNo] = await PostAsync<CompetitorId>(
                 "/register-competitor", new RegisterCompetitor(competitionId, personId));
         }
+
+        // ------------------------------------------------- WI-9 team mapping
+        // Decision 8's mapping runs here — after registration (memberships
+        // need competitors) and BEFORE the draw (AddProtectionGroupMember is
+        // refused once any live phase exists, owner decision 6; GS itself
+        // assigns teams at registration, and protection is a draw input).
+        // Scoring-team commands carry no draw gate, but the protection ones
+        // do, so the whole block precedes /prescribe-draw.
+        await MapGliderscoreTeamsAsync(fixture, competitionId, competitorByPilotNo);
 
         // -------------------------------------------------------------- draw
         var (keptRows, reflightRows) = DeriveDrawRows(fixture);
@@ -479,6 +498,110 @@ public sealed class ReplayDriver(HttpClient client)
             EntryIdBySlot: entryIdBySlot,
             CompetitorByPilotNo: competitorByPilotNo,
             CommandsIssued: _commandsIssued);
+    }
+
+    // ------------------------------------------------- WI-9 decision-8 mapping
+
+    /// <summary>
+    /// teams-mvp.md WI-9 — decision 8's GliderScore adapter mapping,
+    /// compatibility boundary only. GS's one integer Team field is split into
+    /// the two independent concepts Soarscore models, exactly as the owner
+    /// settled it:
+    ///
+    ///   UseTeams=true  ⇒ each competitor's team number n maps to a
+    ///                    scoring-team membership in a team named "Team {n}"
+    ///                    with Contributes = !OmitFromTeamScore;
+    ///   UseTeamProtection=true ⇒ the SAME number also maps to a protection
+    ///                    group "Protection {n}" with that competitor as
+    ///                    member — so an OmitFromTeamScore member is
+    ///                    protection-only (no contribution) and
+    ///                    UseTeamProtection=false leaves it scoring-only;
+    ///   UseTeams=false ⇒ NEITHER membership (the switch is the master: a
+    ///                    populated Team column alone maps to nothing).
+    ///
+    /// Team 0 is GS's own unassigned sentinel and maps to nothing. The team-
+    /// classification configuration is only switched on when the fixture's
+    /// declared method IS the MVP's — NbrForTeamScore == 3 — because
+    /// NbrForTeamScore ≠ 3 is a different classification method, and a
+    /// different method is NEVER emulated by configuring the MVP's fixed
+    /// three-contributor policy as if it were the fixture's (R1 discipline):
+    /// such fixtures keep memberships but leave the classification
+    /// unconfigured, and the incomparability is pinned by a T1 ledger entry in
+    /// the fixture's divergences.json. A NbrForTeamScore under UseTeams=false
+    /// is an inert knob — GS computes no team scores at all — so it is not a
+    /// divergence (f3j-international-flyoff witnesses exactly that shape).
+    ///
+    /// All names are minted fresh per replay ("Team {n}"), GS's numbering is
+    /// preserved in the name so the rosters stay readable against the fixture,
+    /// and every command is a pure function of the fixture data — the WI-5
+    /// determinism check (identical command counts across replays) holds.
+    /// </summary>
+    private async Task MapGliderscoreTeamsAsync(
+        GliderscoreFixture fixture,
+        CompetitionId competitionId,
+        IReadOnlyDictionary<long, CompetitorId> competitorByPilotNo)
+    {
+        var triage = fixture.Competition.Triage;
+
+        // The master switch (decision 8): UseTeams=false ⇒ neither membership.
+        if (triage?.UseTeams != true)
+        {
+            return;
+        }
+
+        // Decision 8: UseTeamProtection=true ⇒ the same number ALSO maps to a
+        // protection group; with UseTeams=false there is no "same number" to
+        // map, so protection can never fire alone.
+        var useProtection = triage.UseTeamProtection == true;
+
+        var teamBearing = fixture.Entries.CompPilots.Rows
+            .Where(r => (r.Team ?? 0) > 0)
+            .OrderBy(r => r.PilotNo)
+            .ToList();
+
+        var teamIds = new Dictionary<int, ScoringTeamId>();
+        var protectionGroupIds = new Dictionary<int, ProtectionGroupId>();
+
+        foreach (var teamNo in teamBearing.Select(r => r.Team!.Value).Distinct().OrderBy(n => n))
+        {
+            teamIds[teamNo] = await PostAsync<ScoringTeamId>(
+                "/define-scoring-team", new DefineScoringTeam(competitionId, $"Team {teamNo}"));
+
+            if (useProtection)
+            {
+                protectionGroupIds[teamNo] = await PostAsync<ProtectionGroupId>(
+                    "/define-protection-group", new DefineProtectionGroup(competitionId, $"Protection {teamNo}"));
+            }
+        }
+
+        foreach (var row in teamBearing)
+        {
+            // OmitFromTeamScore=true is the defending-champion case: drawn
+            // alongside countrymen, never contributing to their team score.
+            await PostAsync<CompetitionId>(
+                "/assign-scoring-team-membership",
+                new AssignScoringTeamMembership(
+                    competitionId, competitorByPilotNo[row.PilotNo], teamIds[row.Team!.Value],
+                    Contributes: !(row.OmitFromTeamScore ?? false)));
+
+            if (useProtection)
+            {
+                await PostAsync<CompetitionId>(
+                    "/add-protection-group-member",
+                    new AddProtectionGroupMember(
+                        competitionId, competitorByPilotNo[row.PilotNo], protectionGroupIds[row.Team!.Value]));
+            }
+        }
+
+        // Only the MVP's own method may be configured as the fixture's policy
+        // (see the doc comment): NbrForTeamScore == 3 IS bestThreeScoreSum,
+        // anything else stays unconfigured and T1-ledgered.
+        if (teamIds.Count > 0 && triage.NbrForTeamScore == 3)
+        {
+            await PostAsync<CompetitionId>(
+                "/configure-team-classification",
+                new ConfigureTeamClassification(competitionId, Enabled: true, By: CdName));
+        }
     }
 
     // ------------------------------------------------------------- D5 draw

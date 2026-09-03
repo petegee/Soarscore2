@@ -140,18 +140,35 @@ public sealed record ConservationBreak(
         }) + $"; Σ cells {CellSum} − dropped {DroppedSum} = aggregate {AggregateAfterDrops}.";
 }
 
+/// <summary>
+/// teams-mvp.md WI-9 — one team-grain deviation: a standing that does not
+/// match the MVP classification contract applied to the oracle-verified
+/// individual result (contributors, totals, tie-break evidence, member
+/// states, order or shared places). Unlike the score grains there is no
+/// GliderScore team-standings oracle in the corpus, and no ledger entry ever
+/// excuses this grain: where the fixture's declared team method is not the
+/// MVP's, the comparison does not run at all (T1), so a mismatch here is
+/// always a defect, never a triaged divergence.
+/// </summary>
+public sealed record TeamMismatch(string Team, string Detail);
+
 public sealed record ComparisonReport(
     IReadOnlyList<GrainMismatch> RawMismatches,
     IReadOnlyList<GrainMismatch> NormalisedMismatches,
     IReadOnlyList<GrainMismatch> RankingMismatches,
+    IReadOnlyList<TeamMismatch> TeamGrainMismatches,
     IReadOnlyList<ConservationBreak> ConservationBreaks,
     int RawCellsCompared,
     int NormalisedCellsCompared,
     int RankingPilotsCompared,
-    int OracleCells)
+    int OracleCells,
+    int TeamsCompared = 0)
 {
     public bool AllGrainsExact =>
-        RawMismatches.Count == 0 && NormalisedMismatches.Count == 0 && RankingMismatches.Count == 0;
+        RawMismatches.Count == 0
+        && NormalisedMismatches.Count == 0
+        && RankingMismatches.Count == 0
+        && TeamGrainMismatches.Count == 0;
 
     /// <summary>WI-5 — the conservation self-check held for every competitor.</summary>
     public bool Conserves => ConservationBreaks.Count == 0;
@@ -177,6 +194,19 @@ public sealed record ComparisonReport(
                 m.Ours?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "(none)",
                 m.Expected?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "(none)",
                 m.Delta)));
+
+        // WI-9 — the team grain's deviations are prose-shaped (a contributor
+        // set, a tie-break value), so they ride the same report under the
+        // score-grain table rather than being forced into its numeric columns.
+        if (TeamGrainMismatches.Count > 0)
+        {
+            lines.Add("");
+            lines.Add($"team grain — {TeamGrainMismatches.Count} unledgered mismatch(es) over {TeamsCompared} standing(s):");
+            lines.AddRange(TeamGrainMismatches
+                .OrderBy(m => m.Team, StringComparer.Ordinal)
+                .ThenBy(m => m.Detail, StringComparer.Ordinal)
+                .Select(m => $"  team {m.Team}: {m.Detail}"));
+        }
 
         return string.Join(Environment.NewLine, lines);
     }
@@ -252,6 +282,11 @@ public static class Comparator
             client, $"/competition-result?competitionRef={outcome.CompetitionId.Value}");
         CompareRankingGrain(fixture, outcome, finalScores, rankingMismatches);
 
+        // teams-mvp.md WI-9 — the team grain, only where semantics overlap
+        // (the fixture declared team scoring with the MVP's own method).
+        var (teamMismatches, derivedStandings) =
+            await CompareTeamGrainAsync(fixture, outcome, competition, finalScores, client);
+
         // Ledgered divergences are SUBTRACTED (D6); the remainder must be empty.
         // Coverage is enforced symmetrically: an oracle cell we never compared,
         // or an our-cell with no oracle counterpart, is itself a mismatch.
@@ -268,11 +303,13 @@ public static class Comparator
             rawMismatches,
             normalisedMismatches,
             rankingMismatches,
+            teamMismatches,
             conservationBreaks,
             comparedRaw.Count,
             comparedNormalised.Count,
             fixture.ExpectedResult.Ranks.Length,
-            fixture.ExpectedScores.Scores.Count);
+            fixture.ExpectedScores.Scores.Count,
+            teamMismatches.Count == 0 && derivedStandings is { } standings ? standings.Standings.Length : 0);
     }
 
     /// <summary>
@@ -287,11 +324,13 @@ public static class Comparator
         IReadOnlyList<GrainMismatch> rawMismatches,
         IReadOnlyList<GrainMismatch> normalisedMismatches,
         IReadOnlyList<GrainMismatch> rankingMismatches,
+        IReadOnlyList<TeamMismatch> teamMismatches,
         IReadOnlyList<ConservationBreak> conservationBreaks,
         int rawCellsCompared,
         int normalisedCellsCompared,
         int rankingPilotsCompared,
-        int oracleCells)
+        int oracleCells,
+        int teamsCompared = 0)
     {
         var rawRemainder = SubtractLedger(fixture, rawMismatches).ToList();
         var normalisedRemainder = SubtractLedger(fixture, normalisedMismatches).ToList();
@@ -301,11 +340,13 @@ public static class Comparator
             RawMismatches: rawRemainder,
             NormalisedMismatches: normalisedRemainder,
             RankingMismatches: rankingRemainder,
+            TeamGrainMismatches: teamMismatches,
             ConservationBreaks: conservationBreaks,
             RawCellsCompared: rawCellsCompared,
             NormalisedCellsCompared: normalisedCellsCompared,
             RankingPilotsCompared: rankingPilotsCompared,
-            OracleCells: oracleCells);
+            OracleCells: oracleCells,
+            TeamsCompared: teamsCompared);
     }
 
     // ------------------------------------------------------------- grain 1
@@ -791,6 +832,283 @@ public static class Comparator
 
         return breaks;
     }
+
+    // ------------------------------------------------------------- team grain
+
+    /// <summary>
+    /// teams-mvp.md WI-9 — the team grain. Runs ONLY where semantics overlap:
+    /// the fixture declared team scoring active (UseTeams=true, populated team
+    /// numbers) with NbrForTeamScore == 3, which IS the MVP's fixed
+    /// three-contributor method (decision 8). A different NbrForTeamScore is a
+    /// different method — T1-ledgered, never emulated — and for those fixtures
+    /// this grain does not run at all; a UseTeams=false fixture computes no
+    /// team scores in GS either, so nothing overlaps there.
+    ///
+    /// The corpus carries no GliderScore team-standings output (the transcripts'
+    /// Team column is display-only), so the oracle here is the MVP
+    /// classification contract itself (teams-mvp.md WI-5) applied to the
+    /// individual result the three score grains already proved against GS:
+    /// contributor selection (score DESC → placing ASC → competitor id), the
+    /// totals and tie-break evidence derived from those contributors, every
+    /// member's contribution state, and the declared order with shared places.
+    /// Team membership is not an input to any individual score (WI-9 property
+    /// 1), so this grain can never disturb the three above it.
+    /// </summary>
+    /// <returns>The mismatches, plus the derived standings when a comparison
+    /// ran (null when the grain was skipped) — the report's TeamsCompared.</returns>
+    private static async Task<(IReadOnlyList<TeamMismatch> Mismatches, TeamClassificationResult? Standings)>
+        CompareTeamGrainAsync(
+            GliderscoreFixture fixture,
+            ReplayOutcome outcome,
+            Competition competition,
+            CompetitionScoreView finalScores,
+            HttpClient client)
+    {
+        var triage = fixture.Competition.Triage;
+
+        var overlap = triage?.UseTeams == true
+            && triage?.NbrForTeamScore == 3
+            && fixture.Entries.CompPilots.Rows.Any(r => (r.Team ?? 0) > 0);
+
+        if (!overlap)
+        {
+            return ([], null);
+        }
+
+        var mismatches = new List<TeamMismatch>();
+        var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+        string NameOf(CompetitorId competitor) =>
+            pilotByCompetitor.TryGetValue(competitor, out var pilotNo)
+                ? $"pilot {pilotNo}"
+                : competitor.ToString();
+
+        var derived = (await GetAsync<TeamStandingsView>(
+                client, $"/competition-team-result?competitionRef={outcome.CompetitionId.Value}"))
+            .Derived;
+
+        if (derived is null)
+        {
+            mismatches.Add(new TeamMismatch("(none)",
+                "the derived team standings are null although the fixture declared team scoring with the MVP's own "
+                + "method (NbrForTeamScore == 3) and the replay mapped its teams."));
+            return (mismatches, null);
+        }
+
+        if (derived.Method != TeamClassificationEngine.MethodBestThreeScoreSum)
+        {
+            mismatches.Add(new TeamMismatch("(metadata)",
+                $"method '{derived.Method}' is not the MVP's '{TeamClassificationEngine.MethodBestThreeScoreSum}'."));
+        }
+
+        if (derived.SourceClassification != TeamClassificationEngine.SourceCompetitionFinalAggregate)
+        {
+            mismatches.Add(new TeamMismatch("(metadata)",
+                $"source classification '{derived.SourceClassification}' is not "
+                + $"'{TeamClassificationEngine.SourceCompetitionFinalAggregate}'."));
+        }
+
+        if (derived.Standings.Length != competition.ScoringTeams.Length)
+        {
+            mismatches.Add(new TeamMismatch("(universe)",
+                $"{derived.Standings.Length} standings for {competition.ScoringTeams.Length} defined teams."));
+        }
+
+        var finalByCompetitor = finalScores.Scores.ToDictionary(s => s.CompetitorRef);
+        var membershipsByTeam = competition.ScoringTeamMemberships
+            .GroupBy(m => m.TeamRef)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        foreach (var team in competition.ScoringTeams)
+        {
+            var standing = derived.Standings.FirstOrDefault(s => s.TeamRef == team.Id);
+            if (standing is null)
+            {
+                mismatches.Add(new TeamMismatch(team.Name, "no standing for a defined team."));
+                continue;
+            }
+
+            if (standing.Name != team.Name)
+            {
+                mismatches.Add(new TeamMismatch(team.Name, $"standing carries name '{standing.Name}'."));
+            }
+
+            var memberships = membershipsByTeam.GetValueOrDefault(team.Id, []);
+
+            // Membership set — exactly the aggregate's records for this team.
+            // CompetitorId carries no IComparable, so ordering goes by .Value
+            // (the same key GetTeamRosters uses for its deterministic order).
+            var expectedMemberRefs = memberships.Select(m => m.CompetitorRef).OrderBy(c => c.Value).ToList();
+            var actualMemberRefs = standing.Members.Select(m => m.CompetitorRef).OrderBy(c => c.Value).ToList();
+
+            if (!expectedMemberRefs.SequenceEqual(actualMemberRefs))
+            {
+                mismatches.Add(new TeamMismatch(team.Name,
+                    $"members [{string.Join(", ", actualMemberRefs.Select(NameOf))}] but the aggregate holds "
+                    + $"[{string.Join(", ", expectedMemberRefs.Select(NameOf))}]."));
+            }
+
+            // The MVP contributor contract (WI-5): the three highest individual
+            // aggregate scores among eligible members holding a competition
+            // placing, score DESC → placing ASC → competitor id ASC.
+            var expectedContributors = memberships
+                .Where(m => m.Contributes)
+                .Select(m => (Ref: m.CompetitorRef, Final: finalByCompetitor.GetValueOrDefault(m.CompetitorRef)))
+                .Where(x => x.Final is { } final && !final.Disqualified && final.Placing.HasValue)
+                .OrderByDescending(x => x.Final!.Score)
+                .ThenBy(x => x.Final!.Placing!.Value)
+                .ThenBy(x => x.Ref.Value)
+                .Take(3)
+                .Select(x => (x.Ref, Score: x.Final!.Score, Placing: x.Final!.Placing!.Value))
+                .ToList();
+
+            var actualContributors = standing.Contributors
+                .Select(c => (Ref: c.CompetitorRef, Score: c.Score, Placing: c.Placing))
+                .ToList();
+
+            if (!actualContributors.SequenceEqual(expectedContributors))
+            {
+                mismatches.Add(new TeamMismatch(team.Name,
+                    $"contributors [{DescribeContributors(actualContributors, NameOf)}] but the contract selects "
+                    + $"[{DescribeContributors(expectedContributors, NameOf)}]."));
+            }
+
+            var chosenRefs = expectedContributors.Select(c => c.Ref).ToHashSet();
+
+            // Totals and tie-break evidence are functions of the contributors.
+            if (standing.Total != expectedContributors.Sum(c => c.Score))
+            {
+                mismatches.Add(new TeamMismatch(team.Name,
+                    $"total {standing.Total} but the contributors sum to {expectedContributors.Sum(c => c.Score)}."));
+            }
+
+            if (standing.PlacingSum != expectedContributors.Sum(c => c.Placing))
+            {
+                mismatches.Add(new TeamMismatch(team.Name,
+                    $"placing sum {standing.PlacingSum} but the contributors' placings sum to "
+                    + $"{expectedContributors.Sum(c => c.Placing)}."));
+            }
+
+            var expectedBest = expectedContributors.Count == 0
+                ? (int?)null
+                : expectedContributors.Min(c => c.Placing);
+
+            if (standing.BestIndividualPlacing != expectedBest)
+            {
+                mismatches.Add(new TeamMismatch(team.Name,
+                    $"best individual placing {standing.BestIndividualPlacing?.ToString() ?? "(none)"} but the "
+                    + $"contributors' best is {expectedBest?.ToString() ?? "(none)"}."));
+            }
+
+            // Every member's contribution state, mirrored from the contract's
+            // own rules (score survives withdrawal; disqualified holds no
+            // placing; Contributes=false is the defending-champion case).
+            foreach (var member in memberships)
+            {
+                var actual = standing.Members.FirstOrDefault(m => m.CompetitorRef == member.CompetitorRef);
+                if (actual is null)
+                {
+                    continue; // already mismatched as a membership-set difference
+                }
+
+                var expectedState = ExpectedMemberState(
+                    finalByCompetitor.GetValueOrDefault(member.CompetitorRef), member.Contributes, chosenRefs);
+
+                if (actual.State != expectedState)
+                {
+                    mismatches.Add(new TeamMismatch(team.Name,
+                        $"{NameOf(member.CompetitorRef)} holds state {actual.State} but the contract says {expectedState}."));
+                }
+            }
+        }
+
+        // Declared order: Total DESC → placing sum ASC → best individual
+        // placing ASC (nulls last) → team name, and places follow the
+        // shared-place convention over teams equal on the three rungs.
+        for (var i = 1; i < derived.Standings.Length; i++)
+        {
+            if (CompareRungs(derived.Standings[i - 1], derived.Standings[i]) > 0)
+            {
+                mismatches.Add(new TeamMismatch(derived.Standings[i].Name,
+                    $"stands after '{derived.Standings[i - 1].Name}' but sorts before it on the declared rungs."));
+            }
+        }
+
+        var place = 1;
+        var index = 0;
+
+        while (index < derived.Standings.Length)
+        {
+            var end = index + 1;
+
+            while (end < derived.Standings.Length && SameRungs(derived.Standings[index], derived.Standings[end]))
+            {
+                end++;
+            }
+
+            for (var k = index; k < end; k++)
+            {
+                if (derived.Standings[k].Placing != place)
+                {
+                    mismatches.Add(new TeamMismatch(derived.Standings[k].Name,
+                        $"holds place {derived.Standings[k].Placing} but the shared-place convention gives {place}."));
+                }
+            }
+
+            place += end - index;
+            index = end;
+        }
+
+        return (mismatches, derived);
+    }
+
+    private static string DescribeContributors(
+        IReadOnlyList<(CompetitorId Ref, decimal Score, int Placing)> contributors,
+        Func<CompetitorId, string> nameOf) =>
+        string.Join(", ", contributors.Select(c => $"{nameOf(c.Ref)}={c.Score}@{c.Placing}"));
+
+    /// <summary>The harness-side mirror of the engine's member-state rules.</summary>
+    private static TeamContributionState ExpectedMemberState(
+        CompetitorFinalScoreView? final, bool eligible, HashSet<CompetitorId> chosen) =>
+        final is null ? TeamContributionState.NoScoreYet
+        : final.Disqualified ? TeamContributionState.Disqualified
+        : !eligible ? TeamContributionState.Ineligible
+        : chosen.Contains(final.CompetitorRef) ? TeamContributionState.Contributor
+        : TeamContributionState.EligibleNotCounting;
+
+    private static int CompareRungs(TeamStanding a, TeamStanding b)
+    {
+        var c = b.Total.CompareTo(a.Total);
+        if (c != 0)
+        {
+            return c;
+        }
+
+        c = a.PlacingSum.CompareTo(b.PlacingSum);
+        if (c != 0)
+        {
+            return c;
+        }
+
+        c = (a.BestIndividualPlacing.HasValue, b.BestIndividualPlacing.HasValue) switch
+        {
+            (true, true) => a.BestIndividualPlacing!.Value.CompareTo(b.BestIndividualPlacing!.Value),
+            (true, false) => -1,
+            (false, true) => 1,
+            _ => 0,
+        };
+        if (c != 0)
+        {
+            return c;
+        }
+
+        return string.CompareOrdinal(a.Name, b.Name);
+    }
+
+    private static bool SameRungs(TeamStanding a, TeamStanding b) =>
+        a.Total == b.Total
+        && a.PlacingSum == b.PlacingSum
+        && a.BestIndividualPlacing.Equals(b.BestIndividualPlacing);
 
     // -------------------------------------------------------------- ledger
 

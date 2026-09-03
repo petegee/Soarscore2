@@ -118,3 +118,23 @@ effect of anything the system does on its own, and it is reversible: a score
 arriving late reopens the task-round rather than being refused. See
 [aggregate-roots.md §3](aggregate-roots.md#3-competition--the-event-structure-field-and-schedule).
 
+---
+
+## Scope amendment (2026-09-02, owner-approved) — teams in MVP software scope
+
+**Team separation** and **team classification** are in **MVP software scope**,
+as specified by the Option 2 plan in `kanban/in-progress/teams-mvp.md`. Team
+separation is competition-scoped **scoring teams** — with per-member
+contribution eligibility — and independent **protection groups**
+(many-to-many membership) that drive same-group separation in generated
+draws. Team classification is one policy declared as competition-level
+configuration: sum each team's best three eligible individual scores,
+tie-break by the placing sum of the contributors, then the best individual
+placing.
+
+**NFR-1 and NFR-2's class-variation law is untouched by this amendment.** The
+feature adds no class-specific behaviour: the classification configuration is
+competition-level data, and protection is a generic draw input — nothing
+branches on a competition class, and no class's model, definition or scoring
+changes.
+

@@ -27,7 +27,18 @@ public sealed record CompetitionFile(
     CompetitionIdentity Identity,
     CompetitionScoring Scoring,
     FamilyRowsTable FamilyRows,
-    ScheduleTablesTable? ScheduleTables = null);
+    ScheduleTablesTable? ScheduleTables = null,
+    TriageTable? Triage = null);
+
+/// <summary>
+/// teams-mvp.md WI-9 — the triage block's team switches, the extraction's
+/// verbatim record of the GS Comps row's UseTeams / UseTeamProtection /
+/// NbrForTeamScore. Only these three are read (decision 8's mapping inputs);
+/// the series/prelim/justification siblings carry nothing the replay needs.
+/// Nullable as ever: an absent switch never fired, and deserialisation must
+/// not falsify committed provenance to load (CompetitionScoring precedent).
+/// </summary>
+public sealed record TriageTable(bool? UseTeams, bool? UseTeamProtection, int? NbrForTeamScore);
 
 public sealed record FamilyRowsTable(DurFamilyRow? Dur = null, F3KFamilyRow? F3K = null);
 
@@ -79,8 +90,15 @@ public sealed record EntriesFile(CompPilotsTable CompPilots, PilotsTable Pilots)
 
 public sealed record CompPilotsTable(CompPilotRow[] Rows);
 
-/// <summary>Only PilotNo matters: names come from the pilots table by join.</summary>
-public sealed record CompPilotRow(int PilotNo);
+/// <summary>
+/// Only PilotNo mattered until teams-mvp.md WI-9: names come from the pilots
+/// table by join, and the row's two team columns — the GS team number (0 is
+/// GS's own unassigned sentinel) and the per-member OmitFromTeamScore switch —
+/// were deliberately ignored. Decision 8's mapping reads both now. Nullable
+/// per the CompetitionScoring precedent: a missing column deserialises to
+/// null rather than a silently-invented default.
+/// </summary>
+public sealed record CompPilotRow(int PilotNo, int? Team, bool? OmitFromTeamScore);
 
 public sealed record PilotsTable(PilotRow[] Rows);
 

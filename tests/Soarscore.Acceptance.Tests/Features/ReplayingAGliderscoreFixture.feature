@@ -37,6 +37,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the derived team standings match the fixture's team semantics exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 2 accepted divergences
@@ -48,7 +49,8 @@ Feature: Replaying a GliderScore fixture
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
-    And the fixture carries no ledgered divergences
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 1 accepted divergences
 
   Scenario: The jerilderie-2010 fixture reproduces GliderScore exactly at all three grains
     Given the fixture corpus manifest
@@ -57,7 +59,8 @@ Feature: Replaying a GliderScore fixture
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
-    And the fixture carries no ledgered divergences
+    And every ledgered divergence cites an arithmetic-story divergence ID
+    And the fixture ledger records exactly 1 accepted divergences
 
   Scenario: The f3k-june-2020 fixture reproduces GliderScore exactly at all three grains modulo its ledgered cancelled re-draw cells
     Given the fixture corpus manifest

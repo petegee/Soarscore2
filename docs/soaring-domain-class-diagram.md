@@ -61,6 +61,48 @@ classDiagram
         +bool promoted
     }
 
+    class DeclaredTeamResult {
+        +scoringTeamId teamRef
+        +string name
+        +decimal total
+        +int placing
+        +int placingSum
+        +int? bestIndividualPlacing
+    }
+
+    class DeclaredTeamContributor {
+        +competitorId competitorRef
+        +decimal score
+        +int placing
+    }
+
+    class ScoringTeam {
+        +scoringTeamId id
+        +string name
+    }
+
+    class ProtectionGroup {
+        +protectionGroupId id
+        +string name
+    }
+
+    class ScoringTeamMembership {
+        +competitorId competitorRef
+        +scoringTeamId teamRef
+        +bool contributes
+    }
+
+    class ProtectionGroupMembership {
+        +competitorId competitorRef
+        +protectionGroupId groupRef
+    }
+
+    class TeamClassificationConfiguration {
+        <<value object>>
+        +bool enabled
+        +string method
+    }
+
     class Person {
         <<aggregate root>>
         +id id
@@ -219,6 +261,13 @@ classDiagram
     Competition "1" *-- "0..*" ParameterBinding : choices made
     Competition "1" *-- "0..*" Finalisation : declared results
     Finalisation "1" *-- "1..*" DeclaredResult
+    Finalisation "1" *-- "0..*" DeclaredTeamResult : team results
+    DeclaredTeamResult "1" *-- "0..*" DeclaredTeamContributor : contributors
+    Competition "1" *-- "0..*" ScoringTeam : scoring teams
+    Competition "1" *-- "0..*" ProtectionGroup : protection groups
+    Competition "1" *-- "0..*" ScoringTeamMembership : team memberships
+    Competition "1" *-- "0..*" ProtectionGroupMembership : protection memberships
+    Competition "1" *-- "0..1" TeamClassificationConfiguration : team classification
     Competition "1" *-- "0..*" Competitor : field
     Competition "1" *-- "1..*" Phase : has
     Competition "1" *-- "0..*" Penalty : records
@@ -236,6 +285,10 @@ classDiagram
 
     Competitor "*" --> "1" Person : registration of
     Person "1" *-- "0..1" ClubAffiliation : club
+    Competitor "1" --> "0..1" ScoringTeamMembership : scoring-team membership
+    Competitor "1" --> "0..*" ProtectionGroupMembership : protection-group memberships
+    ScoringTeamMembership "*" --> "1" ScoringTeam : of
+    ProtectionGroupMembership "*" --> "1" ProtectionGroup : of
     Phase "1" *-- "1" Draw : organised by
     Draw "1" --> "2..*" Competitor : allocates
     Draw ..> Group : produces initial (drawn allocation, not "who flew")
@@ -252,6 +305,10 @@ classDiagram
     note for Entry "A reflight is a second Entry; role decides which one counts; an optional counts-for round moves the score's aggregate destination to an earlier round (a make-up flight) while normalisation stays with the hosting group"
     note for Entry "phaseOrdinal/roundOrdinal/taskRoundOrdinal duplicate the Group's ancestry so the write path never scans the Competition to find its task"
     note for Finalisation "Captures what was declared; the raw record stays authoritative"
+    note for ScoringTeam "Competition-scoped: never inferred from a person's club, nationality, or any other person-level fact"
+    note for ProtectionGroup "Draw-only meaning: it never affects scores, normalisation, or classification"
+    note for ScoringTeamMembership "contributes is the contribution eligibility — false for a member who competes alongside their team without contributing to it"
+    note for TeamClassificationConfiguration "Competition-level configuration; method is a token from a closed vocabulary — the MVP member is bestThreeScoreSum"
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     classDef external fill:#EEEEEE,stroke:#BDBDBD,stroke-width:1px,color:#555

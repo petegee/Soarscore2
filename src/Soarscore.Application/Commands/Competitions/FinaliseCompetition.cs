@@ -6,6 +6,13 @@
 // CompetitionLoader -> EntryCollector -> ScoringService — and maps the result
 // into DeclaredResults before the decide function ever runs.
 //
+// teams-mvp.md WI-7 extends the same shape to the team classification: after
+// scoring the individuals the handler runs TeamClassificationEngine.Classify
+// (the same pure engine the standings query uses, on the same scored result)
+// and maps the standings into DeclaredTeamResults, so the declaration freezes
+// the full team classification — total, place, contributors, tie-break
+// evidence — rather than re-deriving it on read.
+//
 // Cross-aggregate reads in a command handler are precedented:
 // CreateCompetitionHandler reads a PublishedClassDefinition, OpenEntryHandler
 // reads the Competition to decide an Entry event.
@@ -58,7 +65,32 @@ public sealed class FinaliseCompetitionHandler(IEventStore eventStore, IEntryQue
             return Result<CompetitionId>.Failure(scored.Code!, scored.Message!, scored.Defects);
         }
 
-        var decision = competition.Finalise(DeclaredResultsOf(scored.Value), command.By, clock.UtcNow);
+        // Team standings at the moment of declaration — the same pure engine
+        // ScoreTeamStandingsHandler runs, fed the same already-scored
+        // individual result, then mapped into the declared shape exactly as
+        // DeclaredResultsOf maps the individual result (teams-mvp.md decision
+        // 4: capture the full declaration). Skipped when the classification is
+        // disabled or never configured: the decide refuses any team result in
+        // that state, and an empty declaration is the truth.
+        var declaredTeamResults = ImmutableArray<DeclaredTeamResult>.Empty;
+
+        if (competition.TeamClassification is { Enabled: true })
+        {
+            var classified = TeamClassificationEngine.Classify(
+                scored.Value,
+                competition.ScoringTeams,
+                competition.ScoringTeamMemberships,
+                competition.TeamClassification);
+            if (classified.IsFailure)
+            {
+                return Result<CompetitionId>.Failure(classified.Code!, classified.Message!, classified.Defects);
+            }
+
+            declaredTeamResults = DeclaredTeamResultsOf(classified.Value);
+        }
+
+        var decision = competition.Finalise(
+            DeclaredResultsOf(scored.Value), declaredTeamResults, command.By, clock.UtcNow);
         if (decision.IsFailure)
         {
             return Result<CompetitionId>.Failure(decision.Code!, decision.Message!, decision.Defects);
@@ -95,6 +127,34 @@ public sealed class FinaliseCompetitionHandler(IEventStore eventStore, IEntryQue
                 // Always false, per decision 2: promotion is phase-scope
                 // finalisation's job, and no second phase can be drawn yet.
                 Promoted = false,
+            })
+            .ToImmutableArray();
+
+    /// <summary>
+    /// Maps the engine's standings into DeclaredTeamResult — the 1:1 mapping
+    /// the two shapes were field-named for (teams-mvp.md WI-7), so the
+    /// declared-vs-derived read can diff the sections structurally.
+    /// <see cref="TeamStanding.Members"/> is the one deliberate drop: the
+    /// declaration records what was counted, not every member's contribution
+    /// state. Together with DeclaredResultsOf this is what makes the plan's
+    /// invariant B hold for teams by construction rather than by hope.
+    /// </summary>
+    private static ImmutableArray<DeclaredTeamResult> DeclaredTeamResultsOf(TeamClassificationResult classification) =>
+        classification.Standings
+            .Select(s => new DeclaredTeamResult
+            {
+                TeamRef = s.TeamRef,
+                Name = s.Name,
+                Total = s.Total,
+                Placing = s.Placing,
+                Contributors = [.. s.Contributors.Select(c => new DeclaredTeamContributor
+                {
+                    CompetitorRef = c.CompetitorRef,
+                    Score = c.Score,
+                    Placing = c.Placing,
+                })],
+                PlacingSum = s.PlacingSum,
+                BestIndividualPlacing = s.BestIndividualPlacing,
             })
             .ToImmutableArray();
 }

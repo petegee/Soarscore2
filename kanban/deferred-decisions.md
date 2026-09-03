@@ -189,6 +189,23 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   ledgered raw-grain divergences with the count pinned in the scenario. Anyone tempted
   to "fix" the remaining 3-cell mismatch on f3k-june-2020 is looking at this decision.
 
+- **`NbrForTeamScore ≠ 3` is a ledgered semantic divergence (citation token `T1`),
+  never emulated.** **Decided 2026-09-02** (teams-mvp.md WI-9, owner decision 8).
+  GS's `NbrForTeamScore` knob names how many members score per team; the MVP
+  classification method is fixed at three (`bestThreeScoreSum`). A fixture
+  declaring a different count (witnessed: f3k-sample-comp = 2, jerilderie-2010
+  = 4) declares a method the MVP does not have. The adapter maps what is
+  representable — team-number → scoring-team membership (decision 8) and →
+  protection-group membership — but never bends the MVP to the knob: the
+  team-classification configuration stays unset, the harness's team grain does
+  not run for such fixtures, and one documentary `T1` entry per fixture's
+  `divergences.json` pins why. Ledgered only where team scoring is actually
+  active (`UseTeams=true`); an inert `NbrForTeamScore` under `UseTeams=false`
+  (f3j-international-flyoff) is not a divergence. The corpus-wide extraction
+  carries zero `OmitFromTeamScore=true` rows, so decision 8's
+  protection-only mapping arm is implemented (Contributes = !OmitFromTeamScore)
+  but unexercised by any replay fixture — a coverage fact, not a deferral.
+
 - **Pass-through (a task with no `Normalise`) stays an identity on raws,
   including negative ones — GS's option-0 floor is not replicated.** **Decided
   2026-08-28** (`kanban/completed/normalisation-lower-clamp.md`, decision D4).
@@ -201,6 +218,22 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   clamp (every task whose `Normalise` is non-null, both directions). If a
   future fixture ever witnesses a negative pass-through raw, that is a new
   triaged divergence, not a reason to floor here.
+
+## Teams
+
+- **The teams-MVP standing exclusions stay out — each is an Option-3 upgrade
+  path, not an omission.** **Decided 2026-09-02**
+  (`kanban/completed/teams-mvp.md`, §Standing exclusions). No
+  officials/team managers, no delegation/eligibility validation, no roster
+  sizes or substitutions, no event-type mandatory/prohibited protection
+  policy, no adjacent-group preference, no placing-sum classification method
+  (the vocabulary's one MVP member is `bestThreeScoreSum`), no fly-off
+  protection (subsumed by the fly-off draw deferral above), no team rename or
+  team-removal events, no reopen/refinalise command (the existing §Task-round
+  lifecycle stub). Post-finalisation scoring-team corrections are allowed and
+  surface as declared-vs-derived divergence through
+  `GET /competition-team-result` — never a retroactive mutation of the
+  declaration.
 
 ## Score capture and corrections
 

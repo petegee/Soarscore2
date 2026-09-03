@@ -1,0 +1,9 @@
+[
+  {
+    "grain": "team",
+    "round": null,
+    "group": null,
+    "pilotNo": null,
+    "reason": "T1: teams-mvp.md WI-9 (owner decision 8) — this comp declares NbrForTeamScore=2: GS sums each team's best TWO scores. The MVP classification method is fixed at three (bestThreeScoreSum) and is NEVER emulated, so the replay maps the team fields that are representable (scoring-team memberships with Contributes=!OmitFromTeamScore, protection groups, per decision 8) but leaves the team-classification configuration unset — Soarscore's derived standings would carry the wrong method's answer for this comp. The team grain therefore does not run; GS's expected team ladder is neither carried by the fixture nor comparable. Individual grains are unaffected: team membership is not an input to any individual score."
+  }
+]

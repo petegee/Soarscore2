@@ -38,6 +38,14 @@ public static class Commands
         app.MapCommand<AssignGroupSpots, GroupId>("/assign-group-spots");
         app.MapCommand<RecordReflightRuling, CompetitionId>("/record-reflight-ruling");
 
+        app.MapCommand<DefineScoringTeam, ScoringTeamId>("/define-scoring-team");
+        app.MapCommand<DefineProtectionGroup, ProtectionGroupId>("/define-protection-group");
+        app.MapCommand<AssignScoringTeamMembership, CompetitionId>("/assign-scoring-team-membership");
+        app.MapCommand<ClearScoringTeamMembership, CompetitionId>("/clear-scoring-team-membership");
+        app.MapCommand<AddProtectionGroupMember, CompetitionId>("/add-protection-group-member");
+        app.MapCommand<RemoveProtectionGroupMember, CompetitionId>("/remove-protection-group-member");
+        app.MapCommand<ConfigureTeamClassification, CompetitionId>("/configure-team-classification");
+
         app.MapCommand<OpenEntry, EntryId>("/open-entry");
         app.MapCommand<OpenFlight, EntryId>("/open-flight");
         app.MapCommand<CaptureMeasurement, EntryId>("/capture-measurement");

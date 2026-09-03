@@ -77,7 +77,7 @@ public class FinaliseValidityPropertyTests
             var enoughRounds = flownCount >= t.minRounds;
             var enoughTasks = t.minTasks is not { } minTasks || distinctTasks >= minTasks;
 
-            var result = competition.Finalise([SampleDeclaredResult()], "CD", Now);
+            var result = competition.Finalise([SampleDeclaredResult()], [], "CD", Now);
 
             result.IsSuccess.Should().Be(enoughRounds && enoughTasks);
 
@@ -115,11 +115,11 @@ public class FinaliseValidityPropertyTests
             var allComplete = Enumerable.Range(1, t.rounds)
                 .Aggregate(drawn, (c, r) => c.Apply(new TaskRoundCompleted(0, r, 1, Now)));
 
-            allComplete.Finalise([SampleDeclaredResult()], "CD", Now).IsSuccess.Should().BeTrue();
+            allComplete.Finalise([SampleDeclaredResult()], [], "CD", Now).IsSuccess.Should().BeTrue();
 
             var oneAnnulled = allComplete.Apply(new TaskRoundAnnulled(0, t.annulled, 1, "test", Now));
 
-            var result = oneAnnulled.Finalise([SampleDeclaredResult()], "CD", Now);
+            var result = oneAnnulled.Finalise([SampleDeclaredResult()], [], "CD", Now);
             result.IsFailure.Should().BeTrue();
             result.Code.Should().Be("finalise.notEnoughRounds");
         });

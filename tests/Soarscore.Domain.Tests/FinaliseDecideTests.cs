@@ -119,7 +119,7 @@ public class FinaliseDecideTests
     {
         var competition = DrawnF3J(rounds: 4, complete: 4);
 
-        var result = competition.Finalise(OneResult, by, At);
+        var result = competition.Finalise(OneResult, [], by, At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.byRequired");
@@ -131,7 +131,7 @@ public class FinaliseDecideTests
         // Finalisation.DeclaredResults is 1..*.
         var competition = DrawnF3J(rounds: 4, complete: 4);
 
-        var result = competition.Finalise([], "CD Jane", At);
+        var result = competition.Finalise([], [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.noResults");
@@ -141,11 +141,11 @@ public class FinaliseDecideTests
     public void Finalise_against_an_already_finalised_competition_fails_with_a_stable_code()
     {
         var competition = DrawnF3J(rounds: 4, complete: 4);
-        var first = competition.Finalise(OneResult, "CD Jane", At);
+        var first = competition.Finalise(OneResult, [], "CD Jane", At);
         first.IsSuccess.Should().BeTrue();
         competition = competition.Apply(first.Value);
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.alreadyFinalised");
@@ -159,7 +159,7 @@ public class FinaliseDecideTests
         var competition = CompetitionAdopting(SeedF5K.Definition, 10);
         competition = WithOneFlownRound(competition, "A");
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.parameterUnbound");
@@ -178,7 +178,7 @@ public class FinaliseDecideTests
         competition = competition.Apply(bound.Value);
         competition = WithOneFlownRound(competition, "A");
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -189,7 +189,7 @@ public class FinaliseDecideTests
         // F3J.3.1 a: MinRounds = 4.
         var competition = DrawnF3J(rounds: 4, complete: 3);
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.notEnoughRounds");
@@ -203,7 +203,7 @@ public class FinaliseDecideTests
         var competition = DrawnF3J(rounds: 4, complete: 3);
         competition = competition.Apply(new TaskRoundAnnulled(0, 4, 1, "Winch failure", At));
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.notEnoughRounds");
@@ -214,7 +214,7 @@ public class FinaliseDecideTests
     {
         var competition = CompetitionAdopting(SeedF3J.Definition, 12);
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         // The plan (WI-3) argued this needed no Phases.IsEmpty check of its
         // own, because "an undrawn competition has zero complete rounds and
@@ -235,7 +235,7 @@ public class FinaliseDecideTests
         var competition = CompetitionAdopting(WithMinTasks(SeedF3B.Definition, 3), 12);
         competition = WithOneFlownRound(competition, "A");
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.notEnoughTasks");
@@ -248,7 +248,7 @@ public class FinaliseDecideTests
         var competition = CompetitionAdopting(WithMinTasks(SeedF3B.Definition, 3), 12);
         competition = WithOneFlownRound(competition, "A", "B", "C");
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -264,7 +264,7 @@ public class FinaliseDecideTests
         competition = competition.Apply(bound.Value);
         competition = WithOneFlownRound(competition, "A");
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("finalise.notEnoughRounds");
@@ -278,7 +278,7 @@ public class FinaliseDecideTests
             new DeclaredResult { CompetitorRef = competition.Competitors[0].Id, Aggregate = 1000m, Placing = 1, Promoted = false },
             new DeclaredResult { CompetitorRef = competition.Competitors[1].Id, Aggregate = 987.5m, Placing = 2, Promoted = false });
 
-        var result = competition.Finalise(declared, "CD Jane", At);
+        var result = competition.Finalise(declared, [], "CD Jane", At);
 
         result.IsSuccess.Should().BeTrue();
         var finalisation = result.Value.Finalisation;
@@ -302,8 +302,162 @@ public class FinaliseDecideTests
         // MinRounds is a floor, never a target: 5 drawn, 4 complete, F3J's 4 met.
         var competition = DrawnF3J(rounds: 5, complete: 4);
 
-        var result = competition.Finalise(OneResult, "CD Jane", At);
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
 
         result.IsSuccess.Should().BeTrue();
+    }
+
+    // ---------------------------------------------- team results (teams-mvp.md WI-7)
+
+    /// <summary>One full declared team standing, shaped exactly as
+    /// FinaliseCompetitionHandler maps a TeamStanding (teams-mvp.md decision 4:
+    /// total, place, contributors, placing sum, best individual placing).</summary>
+    private static ImmutableArray<DeclaredTeamResult> OneTeamResult =>
+    [
+        new DeclaredTeamResult
+        {
+            TeamRef = ScoringTeamId.New(),
+            Name = "Eagles",
+            Total = 1500m,
+            Placing = 1,
+            Contributors =
+            [
+                new DeclaredTeamContributor { CompetitorRef = CompetitorId.New(), Score = 600m, Placing = 1 },
+                new DeclaredTeamContributor { CompetitorRef = CompetitorId.New(), Score = 500m, Placing = 2 },
+            ],
+            PlacingSum = 3,
+            BestIndividualPlacing = 1,
+        },
+    ];
+
+    private static Competition WithTeamClassification(Competition competition, bool enabled)
+    {
+        var configured = competition.ConfigureTeamClassification(enabled, "CD Jane", At);
+        configured.IsSuccess.Should().BeTrue(configured.Code ?? "classification configured");
+        return competition.Apply(configured.Value);
+    }
+
+    private static Competition WithScoringTeam(Competition competition)
+    {
+        var defined = competition.DefineScoringTeam(ScoringTeamId.New(), "Eagles", At);
+        defined.IsSuccess.Should().BeTrue(defined.Code ?? "scoring team defined");
+        return competition.Apply(defined.Value);
+    }
+
+    [Fact]
+    public void Finalise_with_team_results_while_classification_is_absent_fails_with_teamResultsNotPermitted()
+    {
+        // Never configured: the classification has never been switched on, so
+        // there is nothing for a declared team result to answer to.
+        var competition = DrawnF3J(rounds: 4, complete: 4);
+
+        var result = competition.Finalise(OneResult, OneTeamResult, "CD Jane", At);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("finalise.teamResultsNotPermitted");
+    }
+
+    [Fact]
+    public void Finalise_with_team_results_while_classification_is_disabled_fails_with_teamResultsNotPermitted()
+    {
+        // Explicitly disabled: same refusal, a different way of getting there —
+        // both halves of "disabled/absent" are the same state to the decide.
+        var competition = WithTeamClassification(DrawnF3J(rounds: 4, complete: 4), enabled: false);
+
+        var result = competition.Finalise(OneResult, OneTeamResult, "CD Jane", At);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("finalise.teamResultsNotPermitted");
+    }
+
+    [Fact]
+    public void Finalise_with_classification_enabled_and_teams_defined_but_no_team_results_fails_with_teamResultsMissing()
+    {
+        // The handler derives standings for EVERY defined team, so an empty
+        // declaration beside a running classification with teams can only be
+        // caller error — the decide refuses it rather than silently finalising
+        // without the team half of the declaration.
+        var competition = WithScoringTeam(WithTeamClassification(DrawnF3J(rounds: 4, complete: 4), enabled: true));
+
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("finalise.teamResultsMissing");
+    }
+
+    [Fact]
+    public void Finalise_with_classification_enabled_but_no_teams_defined_permits_empty_team_results()
+    {
+        // No teams defined means there is nothing to declare — a state, not an
+        // error, matching the engine's own empty-standings stance. The missing
+        // check above is armed only when teams exist.
+        var competition = WithTeamClassification(DrawnF3J(rounds: 4, complete: 4), enabled: true);
+
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Finalisation.DeclaredTeamResults.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Finalise_with_classification_disabled_permits_empty_team_results()
+    {
+        var competition = WithTeamClassification(DrawnF3J(rounds: 4, complete: 4), enabled: false);
+
+        var result = competition.Finalise(OneResult, [], "CD Jane", At);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Finalisation.DeclaredTeamResults.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Finalise_carries_the_declared_team_results_through_to_the_finalisation()
+    {
+        var competition = WithScoringTeam(WithTeamClassification(DrawnF3J(rounds: 4, complete: 4), enabled: true));
+
+        // Hoisted once: OneTeamResult mints fresh ids per access, and the
+        // comparison below is against the very instances that were declared.
+        var teamResults = OneTeamResult;
+
+        var result = competition.Finalise(OneResult, teamResults, "CD Jane", At);
+
+        result.IsSuccess.Should().BeTrue();
+        var finalisation = result.Value.Finalisation;
+
+        // Field-by-field, not record equality: DeclaredTeamResult nests an
+        // ImmutableArray, whose equality is reference-based — the contributors
+        // are compared separately below.
+        finalisation.DeclaredTeamResults.Should().HaveCount(1);
+        var declaredTeam = finalisation.DeclaredTeamResults[0];
+        declaredTeam.TeamRef.Should().Be(teamResults[0].TeamRef);
+        declaredTeam.Name.Should().Be("Eagles");
+        declaredTeam.Total.Should().Be(1500m);
+        declaredTeam.Placing.Should().Be(1);
+        declaredTeam.PlacingSum.Should().Be(3);
+        declaredTeam.BestIndividualPlacing.Should().Be(1);
+        declaredTeam.Contributors.Should().Equal(teamResults[0].Contributors);
+
+        competition = competition.Apply(result.Value);
+        competition.Finalisations.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Phase_scope_finalisations_carry_no_team_results()
+    {
+        // Phase-scope finalisation names who was PROMOTED, and never carries
+        // team results in the MVP (teams-mvp.md §Finalisation). No decide emits
+        // one today; the pin is the record's own default — a phase-scoped
+        // Finalisation without the field set carries an empty array, never a
+        // leftover from some competition-scope sibling.
+        var phaseScope = new Finalisation
+        {
+            Scope = FinalisationScope.Phase,
+            Revision = 1,
+            By = "CD Jane",
+            At = At,
+            DeclaredResults = OneResult,
+        };
+
+        phaseScope.DeclaredTeamResults.Should().BeEmpty();
     }
 }

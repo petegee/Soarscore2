@@ -114,9 +114,15 @@ the three per-task partial scores** (Duration + Distance + Speed).
   round they occurred in is dropped**.
 - **Fly-off:** where flown, final placing among qualifiers is determined by fly-off
   aggregate alone; qualifying scores break fly-off ties.
-- **Team classification** (`C.15.6.2`): add the final scores of the three best team
-  members. Tie → team with the lower sum of place numbers (three best, from the top);
-  if still equal, the best individual placing decides.
+- **Team classification** (`C.15.6.2`): established after the contest by **one of
+  two methods only** — **i) placing-sum:** add together the numerical final
+  placings of the three best *placed* team members, using the full list of
+  competitors; teams rank from the lowest numerical places to the highest, with
+  complete three-member teams ahead of two-member teams, then one-member teams;
+  tie → the best individual placing decides; or **ii) score-sum:** add the final
+  scores of the three best *scoring* team members together; tie → the team with
+  the lower sum of place numbers, taking the three best scoring members, given in
+  order from the top, wins; if still equal, the best individual placing decides.
 - **Results output** must be presented in final-classification order, winner first
   (`C.13.7 h`), and each round's results displayed as the contest proceeds
   (`C.16.1 g`).

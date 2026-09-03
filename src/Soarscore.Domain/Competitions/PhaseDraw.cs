@@ -42,22 +42,71 @@ public static class PhaseDraw
     /// between rounds regardless — that is the property this overload protects.
     /// </summary>
     public static ImmutableArray<ImmutableArray<ImmutableArray<CompetitorId>>> BuildGroups(
-        ImmutableArray<CompetitorId> field, ImmutableArray<int> minPerGroupByRound)
+        ImmutableArray<CompetitorId> field, ImmutableArray<int> minPerGroupByRound) =>
+        BuildGroups(field, minPerGroupByRound, []);
+
+    /// <summary>
+    /// The two-input overload plus <paramref name="protectedPairs"/> — unordered
+    /// pairs of competitors the draw must try to keep apart (teams-mvp.md WI-4).
+    /// The draw engine's entire view of protection is this flat pair set: it
+    /// knows nothing about protection groups or scoring teams, and nothing here
+    /// branches on a class or a team (draw-engine discipline).
+    /// <para>
+    /// The least-bad objective (owner decision 5): protection-budget deepening
+    /// OUTER, repeat-ceiling escalation INNER, per round. The first per-round
+    /// budget v = 0, 1, 2, … for which every round admits a partition with at
+    /// most v protected co-occurrences wins, so the returned draw has the
+    /// minimum achievable violation count per round — infeasible protection (a
+    /// protection group larger than the group count) returns that
+    /// minimum-violation partition rather than failing. Among partitions with
+    /// the same violation count the repeat objective decides exactly as before,
+    /// so determinism and the fairness-priority invariant hold by construction.
+    /// </para>
+    /// <para>
+    /// A violation is a protected pair co-grouped in ONE round; the budget is
+    /// per-round. The cross-round repeat state (<c>pairCount</c>) is untouched.
+    /// Guaranteed to terminate: each protected pair can co-occur at most once
+    /// per round, so at v = <paramref name="protectedPairs"/>.Length every
+    /// candidate is admissible and the plain, always-feasible unconstrained
+    /// build is found no later.
+    /// </para>
+    /// </summary>
+    public static ImmutableArray<ImmutableArray<ImmutableArray<CompetitorId>>> BuildGroups(
+        ImmutableArray<CompetitorId> field,
+        ImmutableArray<int> minPerGroupByRound,
+        ImmutableArray<ProtectedPair> protectedPairs)
     {
-        var pairCount = new Dictionary<(CompetitorId, CompetitorId), int>();
-        var rounds = ImmutableArray.CreateBuilder<ImmutableArray<ImmutableArray<CompetitorId>>>(minPerGroupByRound.Length);
+        var protectedSet = protectedPairs
+            .Select(pair => PairKey(pair.A, pair.B))
+            .ToHashSet();
 
-        foreach (var minPerGroup in minPerGroupByRound)
+        for (var violationBudget = 0; ; violationBudget++)
         {
-            var groupCount = Math.Max(1, field.Length / minPerGroup);
-            var sizes = GroupSizes(field.Length, groupCount);
+            var pairCount = new Dictionary<(CompetitorId, CompetitorId), int>();
+            var rounds = ImmutableArray.CreateBuilder<ImmutableArray<ImmutableArray<CompetitorId>>>(minPerGroupByRound.Length);
+            var feasible = true;
 
-            var groups = BuildOneRound(field, sizes, pairCount);
-            rounds.Add(groups);
-            RecordPairings(groups, pairCount);
+            foreach (var minPerGroup in minPerGroupByRound)
+            {
+                var groupCount = Math.Max(1, field.Length / minPerGroup);
+                var sizes = GroupSizes(field.Length, groupCount);
+
+                var groups = BuildOneRound(field, sizes, pairCount, protectedSet, violationBudget);
+                if (groups is null)
+                {
+                    feasible = false;
+                    break;
+                }
+
+                rounds.Add(groups.Value);
+                RecordPairings(groups.Value, pairCount);
+            }
+
+            if (feasible)
+            {
+                return rounds.MoveToImmutable();
+            }
         }
-
-        return rounds.MoveToImmutable();
     }
 
     /// <summary>
@@ -83,27 +132,42 @@ public static class PhaseDraw
     /// <summary>
     /// Finds the lowest ceiling C such that the field can be split into
     /// <paramref name="sizes"/>-shaped groups with no pair's resultant count
-    /// (existing + 1, for any pair newly co-grouped this round) exceeding C —
-    /// iterative deepening over C, backtracking (<see cref="TryBuildRound"/>)
-    /// within each attempt. A single-pass fill can commit an early group to a
-    /// choice that forces the last group into an avoidable repeat; escalating
-    /// C and backtracking is what finds the partition a plain greedy misses.
+    /// (existing + 1, for any pair newly co-grouped this round) exceeding C and
+    /// no more than <paramref name="violationBudget"/> protected pairs
+    /// co-grouped — iterative deepening over C, backtracking
+    /// (<see cref="TryBuildRound"/>) within each attempt. A single-pass fill can
+    /// commit an early group to a choice that forces the last group into an
+    /// avoidable repeat; escalating C and backtracking is what finds the
+    /// partition a plain greedy misses.
+    /// <para>
+    /// Returns null when no ceiling can help: every candidate's worst resultant
+    /// pairing is at most the largest count already recorded plus one (each
+    /// competitor is placed once per round, so no pair is newly co-grouped
+    /// twice), which makes the repeat constraint VACUOUS at that ceiling — a
+    /// failure there is the violation budget's, and no higher C can succeed.
+    /// Bounding the escalation is what lets a budget-infeasible round report
+    /// failure to the deepening loop above instead of searching forever.
+    /// </para>
     /// </summary>
-    private static ImmutableArray<ImmutableArray<CompetitorId>> BuildOneRound(
+    private static ImmutableArray<ImmutableArray<CompetitorId>>? BuildOneRound(
         ImmutableArray<CompetitorId> field,
         ImmutableArray<int> sizes,
-        Dictionary<(CompetitorId, CompetitorId), int> pairCount)
+        Dictionary<(CompetitorId, CompetitorId), int> pairCount,
+        HashSet<(CompetitorId, CompetitorId)> protectedPairs,
+        int violationBudget)
     {
         var currentMax = pairCount.Count == 0 ? 0 : pairCount.Values.Max();
 
-        for (var ceiling = Math.Max(1, currentMax); ; ceiling++)
+        for (var ceiling = Math.Max(1, currentMax); ceiling <= currentMax + 1; ceiling++)
         {
-            var attempt = TryBuildRound(sizes, 0, field, pairCount, ceiling);
+            var attempt = TryBuildRound(sizes, 0, field, pairCount, ceiling, protectedPairs, violationBudget);
             if (attempt is not null)
             {
-                return attempt.Value;
+                return attempt;
             }
         }
+
+        return null;
     }
 
     private static ImmutableArray<ImmutableArray<CompetitorId>>? TryBuildRound(
@@ -111,16 +175,20 @@ public static class PhaseDraw
         int groupIndex,
         ImmutableArray<CompetitorId> unplaced,
         Dictionary<(CompetitorId, CompetitorId), int> pairCount,
-        int ceiling)
+        int ceiling,
+        HashSet<(CompetitorId, CompetitorId)> protectedPairs,
+        int remainingBudget)
     {
         if (groupIndex == sizes.Length)
         {
             return ImmutableArray<ImmutableArray<CompetitorId>>.Empty;
         }
 
-        foreach (var (group, rest) in CandidateGroups(unplaced, sizes[groupIndex], pairCount, ceiling))
+        foreach (var (group, rest, violations) in CandidateGroups(
+            unplaced, sizes[groupIndex], pairCount, ceiling, protectedPairs, remainingBudget))
         {
-            var tail = TryBuildRound(sizes, groupIndex + 1, rest, pairCount, ceiling);
+            var tail = TryBuildRound(
+                sizes, groupIndex + 1, rest, pairCount, ceiling, protectedPairs, remainingBudget - violations);
             if (tail is not null)
             {
                 return tail.Value.Insert(0, group);
@@ -131,36 +199,43 @@ public static class PhaseDraw
     }
 
     /// <summary>
-    /// Every <paramref name="size"/>-subset of <paramref name="unplaced"/>
-    /// whose internal pairs all resolve to <paramref name="ceiling"/> or
-    /// below, best-first: ranked by the worst single resultant pairing, then
-    /// the sum of resultant pairings, then field order — the same ranking
-    /// the original single-pass greedy used, so the common case (no
-    /// backtracking needed) still picks exactly what it used to pick, on the
-    /// first candidate tried.
+    /// Every <paramref name="size"/>-subset of <paramref name="unplaced"/> whose
+    /// internal pairs all resolve to <paramref name="ceiling"/> or below and
+    /// whose internal protected-pair count is at most
+    /// <paramref name="remainingBudget"/>, best-first: ranked by the worst
+    /// single resultant pairing, then the sum of resultant pairings, then field
+    /// order — the same ranking the original single-pass greedy used, so the
+    /// common case (no backtracking needed) still picks exactly what it used to
+    /// pick, on the first candidate tried. The violation count rides along so
+    /// <see cref="TryBuildRound"/> can hand the remainder of the budget to the
+    /// groups still to be placed.
     /// </summary>
-    private static IEnumerable<(ImmutableArray<CompetitorId> Group, ImmutableArray<CompetitorId> Remaining)> CandidateGroups(
+    private static IEnumerable<(ImmutableArray<CompetitorId> Group, ImmutableArray<CompetitorId> Remaining, int Violations)> CandidateGroups(
         ImmutableArray<CompetitorId> unplaced,
         int size,
         Dictionary<(CompetitorId, CompetitorId), int> pairCount,
-        int ceiling)
+        int ceiling,
+        HashSet<(CompetitorId, CompetitorId)> protectedPairs,
+        int remainingBudget)
     {
-        var candidates = new List<(ImmutableArray<CompetitorId> Group, int WorstPairing, int Sum)>();
+        var candidates = new List<(ImmutableArray<CompetitorId> Group, int WorstPairing, int Sum, int Violations)>();
 
         foreach (var combo in Combinations(unplaced, size))
         {
             var worst = 0;
             var sum = 0;
-            var withinCeiling = true;
+            var violations = 0;
+            var admissible = true;
 
-            for (var i = 0; i < combo.Length && withinCeiling; i++)
+            for (var i = 0; i < combo.Length && admissible; i++)
             {
                 for (var j = i + 1; j < combo.Length; j++)
                 {
-                    var resultant = pairCount.GetValueOrDefault(PairKey(combo[i], combo[j])) + 1;
+                    var key = PairKey(combo[i], combo[j]);
+                    var resultant = pairCount.GetValueOrDefault(key) + 1;
                     if (resultant > ceiling)
                     {
-                        withinCeiling = false;
+                        admissible = false;
                         break;
                     }
 
@@ -169,12 +244,18 @@ public static class PhaseDraw
                     {
                         worst = resultant;
                     }
+
+                    if (protectedPairs.Contains(key) && ++violations > remainingBudget)
+                    {
+                        admissible = false;
+                        break;
+                    }
                 }
             }
 
-            if (withinCeiling)
+            if (admissible)
             {
-                candidates.Add((combo, worst, sum));
+                candidates.Add((combo, worst, sum, violations));
             }
         }
 
@@ -183,10 +264,10 @@ public static class PhaseDraw
         // "ties broken by field order" determinism this algorithm promises.
         var ordered = candidates.OrderBy(c => c.WorstPairing).ThenBy(c => c.Sum);
 
-        foreach (var (group, _, _) in ordered)
+        foreach (var (group, _, _, violations) in ordered)
         {
             var rest = unplaced.Where(c => !group.Contains(c)).ToImmutableArray();
-            yield return (group, rest);
+            yield return (group, rest, violations);
         }
     }
 

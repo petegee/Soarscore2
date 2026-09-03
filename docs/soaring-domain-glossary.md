@@ -30,6 +30,18 @@ A person is anyone registered in the system, with a name, contact details — em
 
 A competitor is one person's participation in one competition. It is created when the organiser registers a person into the competition, and carries what that participation needs: a competitor number and a record of when they registered — and, if it comes to that, when they withdrew. The field is frozen when the draw is accepted: a competitor who pulls out before then is simply removed, while one who withdraws afterwards stays in the draw and simply doesn't fly — and adding anyone after acceptance means redrawing. Competitors do double duty: when they are not flying, they help run the contest — timing the pilots who are in the air, collecting flight results, retrieving winch lines. A contest can only run if enough competitors are free of flying duties at any moment to do this official work, and that fact shapes how the field is divided up.
 
+## Scoring Team
+
+A competition-scoped named team, defined for one competition, whose members' individual results may contribute to that competition's team classification. Never inferred from a person's club, nationality, or any other person-level fact.
+
+## Protection Group
+
+A competition-scoped named set of competitors kept apart — no two in the same group — by a generated draw. Draw-only meaning: it never affects scores, normalisation, or classification. A competitor may belong to any number of protection groups. A two-member protection group is the MVP representation of a protected pair (e.g. an F5J junior and the helper nominated at registration).
+
+## Contribution Eligibility
+
+The per-member property of a scoring-team membership that decides whether that member's individual result may count toward the team classification. False for a member who competes alongside their team without contributing to it (the defending-champion case).
+
 ## Phase
 
 A phase is a stage of a competition with its own field of competitors. Every competition has a preliminary phase in which everyone flies. Some classes then run a flyoff: a short additional phase for the top-placed pilots, with its own draw and its own scoring, which decides the final podium.

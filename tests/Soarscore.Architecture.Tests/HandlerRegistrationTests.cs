@@ -66,12 +66,12 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Twenty-seven commands + ten queries
-        // are mapped as of lane-assignment.md WI-3 (AssignGroupSpots — the
-        // count comment here previously said twenty-six commands + ten
-        // queries as of prescribed-draw-import.md WI-4; corrected while
-        // bumping).
-        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(28);
+        // test below would vacuously pass. Thirty-four commands + thirteen
+        // queries are mapped as of teams-mvp.md WI-6 (the seven team commands
+        // and three team queries — the count comment here previously said
+        // twenty-seven commands + ten queries as of lane-assignment.md WI-3;
+        // corrected while bumping, the smaller-items.md precedent).
+        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(38);
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;

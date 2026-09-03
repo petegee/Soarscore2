@@ -31,6 +31,10 @@ public static class Queries
         app.MapQuery<ScoreTaskRound, IReadOnlyList<GroupScoreView>>("/task-round-result");
         app.MapQuery<ScoreCompetition, CompetitionScoreView>("/competition-result");
 
+        app.MapQuery<GetTeamRosters, TeamRostersView>("/competition-teams");
+        app.MapQuery<ScoreTeamStandings, TeamStandingsView>("/competition-team-result");
+        app.MapQuery<GetDrawProtectionDiagnostics, DrawProtectionDiagnosticsView>("/draw-diagnostics");
+
         return app;
     }
 }

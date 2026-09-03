@@ -6,8 +6,9 @@
 // competitor, accept or reject the draw, append a reflight group, assign a
 // group's field spots, complete / annul / reopen a task-round, amend the
 // rules, bind a parameter, finalise, record a penalty, record a reflight
-// ruling. Sixteen events total, mirroring aggregate-roots.md §3's mutation
-// list one-for-one.
+// ruling, define scoring teams and protection groups with their memberships,
+// configure team classification. Twenty-three events total, mirroring
+// aggregate-roots.md §3's mutation list one-for-one plus teams-mvp.md's seven.
 //
 // Event payloads reuse Domain's own value-object records (AdoptedRules,
 // RulesAmendment, ParameterBinding, Finalisation, Competitor, Group, Round,
@@ -38,6 +39,13 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
 [JsonDerivedType(typeof(ReflightRulingRecorded), "reflightRulingRecorded")]
 [JsonDerivedType(typeof(GroupSpotsAssigned), "groupSpotsAdded")]
+[JsonDerivedType(typeof(ScoringTeamDefined), "scoringTeamDefined")]
+[JsonDerivedType(typeof(ScoringTeamMembershipAssigned), "scoringTeamMembershipAssigned")]
+[JsonDerivedType(typeof(ScoringTeamMembershipCleared), "scoringTeamMembershipCleared")]
+[JsonDerivedType(typeof(ProtectionGroupDefined), "protectionGroupDefined")]
+[JsonDerivedType(typeof(ProtectionGroupMemberAdded), "protectionGroupMemberAdded")]
+[JsonDerivedType(typeof(ProtectionGroupMemberRemoved), "protectionGroupMemberRemoved")]
+[JsonDerivedType(typeof(TeamClassificationConfigured), "teamClassificationConfigured")]
 public abstract record CompetitionEvent : IDomainEvent
 {
     private protected CompetitionEvent() { }
@@ -189,4 +197,59 @@ public sealed record GroupSpotsAssigned(
     int TaskRoundOrdinal,
     GroupId GroupRef,
     ImmutableArray<GroupSpot> Spots,
+    DateTimeOffset At) : CompetitionEvent;
+
+// Team events — teams-mvp.md WI-3. Scoring-team commands and protection-group
+// commands are deliberately separate event kinds: the two memberships are
+// independent (one scoring team per competitor, many protection groups), and
+// the draw never sees scoring teams.
+
+/// <summary>
+/// One scoring team defined for this competition. No draw gate ever — the
+/// draw never sees scoring teams (owner decision 6).
+/// </summary>
+public sealed record ScoringTeamDefined(
+    ScoringTeam Team,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// A competitor's scoring-team membership, with its contribution eligibility.
+/// Whole-replacement fold semantics for the named competitor: the decide
+/// function guarantees a different-team assignment is refused, so the only
+/// re-assignment is the eligibility correction on the SAME team.
+/// </summary>
+public sealed record ScoringTeamMembershipAssigned(
+    ScoringTeamMembership Membership,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>Removes every scoring-team membership record for the competitor.</summary>
+public sealed record ScoringTeamMembershipCleared(
+    CompetitorId CompetitorRef,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>One protection group defined for this competition.</summary>
+public sealed record ProtectionGroupDefined(
+    ProtectionGroup Group,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// One competitor added to one protection group — decide prevents duplicates,
+/// so the fold adds unconditionally.
+/// </summary>
+public sealed record ProtectionGroupMemberAdded(
+    ProtectionGroupMembership Membership,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>Filters the matching (competitor, group) membership pair.</summary>
+public sealed record ProtectionGroupMemberRemoved(
+    CompetitorId CompetitorRef,
+    ProtectionGroupId GroupRef,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// The classification policy, replaced whole — last-wins, the log is the
+/// audit trail (ParameterBindings precedent).
+/// </summary>
+public sealed record TeamClassificationConfigured(
+    TeamClassificationConfiguration Configuration,
     DateTimeOffset At) : CompetitionEvent;

@@ -103,6 +103,17 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
 
+        builder.Services.AddScoped<ICommandHandler<DefineScoringTeam, ScoringTeamId>, DefineScoringTeamHandler>();
+        builder.Services.AddScoped<ICommandHandler<DefineProtectionGroup, ProtectionGroupId>, DefineProtectionGroupHandler>();
+        builder.Services.AddScoped<ICommandHandler<AssignScoringTeamMembership, CompetitionId>, AssignScoringTeamMembershipHandler>();
+        builder.Services.AddScoped<ICommandHandler<ClearScoringTeamMembership, CompetitionId>, ClearScoringTeamMembershipHandler>();
+        builder.Services.AddScoped<ICommandHandler<AddProtectionGroupMember, CompetitionId>, AddProtectionGroupMemberHandler>();
+        builder.Services.AddScoped<ICommandHandler<RemoveProtectionGroupMember, CompetitionId>, RemoveProtectionGroupMemberHandler>();
+        builder.Services.AddScoped<ICommandHandler<ConfigureTeamClassification, CompetitionId>, ConfigureTeamClassificationHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetTeamRosters, TeamRostersView>, GetTeamRostersHandler>();
+        builder.Services.AddScoped<IQueryHandler<ScoreTeamStandings, TeamStandingsView>, ScoreTeamStandingsHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetDrawProtectionDiagnostics, DrawProtectionDiagnosticsView>, GetDrawProtectionDiagnosticsHandler>();
+
         builder.Services.AddScoped<ICommandHandler<OpenEntry, EntryId>, OpenEntryHandler>();
         builder.Services.AddScoped<ICommandHandler<OpenFlight, EntryId>, OpenFlightHandler>();
         builder.Services.AddScoped<ICommandHandler<CaptureMeasurement, EntryId>, CaptureMeasurementHandler>();

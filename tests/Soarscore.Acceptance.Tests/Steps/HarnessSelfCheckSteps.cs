@@ -142,6 +142,7 @@ public sealed class HarnessSelfCheckSteps
             [_seededMismatch],
             [],
             [],
+            [],
             rawCellsCompared: 1,
             normalisedCellsCompared: 1,
             rankingPilotsCompared: 0,
