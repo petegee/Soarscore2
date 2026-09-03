@@ -38,6 +38,16 @@ Feature: Replaying a GliderScore fixture
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
     And the derived team standings match the fixture's team semantics exactly
+    And the GS team ladder is reproduced exactly
+      | team | rank | teamScore | countedPilots |
+      | 5    | 1    | 44471.7   | 62, 56, 21    |
+      | 4    | 2    | 43413.6   | 47, 22, 11    |
+      | 3    | 3    | 43229.1   | 26, 12, 28    |
+      | 7    | 4    | 42670.6   | 49, 54, 46    |
+      | 1    | 5    | 41194.4   | 30, 29, 42    |
+      | 8    | 6    | 41127.6   | 13, 3, 2      |
+      | 2    | 7    | 38068.6   | 32, 52, 44    |
+      | 6    | 8    | 37094.3   | 43, 39, 7     |
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 2 accepted divergences

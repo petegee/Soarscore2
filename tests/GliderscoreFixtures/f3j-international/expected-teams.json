@@ -1,0 +1,26 @@
+{
+  "source": "reconstructed-gs-team-ladder",
+  "verifiedAgainst": "team-results-transcript.csv",
+  "keyFormat": "teamNumber",
+  "notes": [
+    "Transcribed verbatim from GetTeamScores (Rpt_Results_TeamResults_MOD.vb:303-468) and Resolve_Team_Rank_If_Same_Scores (Reports_MOD.vb:157-244); inputs are the oracle-verified individual final scores/placings.",
+    "Individual inputs of record: final aggregate Score read verbatim from the committed overall-results-transcript.csv (GliderScore's own Overall Results report, the report expected-result.json was transcribed from; its Score/Raw Score columns are not carried in either JSON); individual Rank from expected-result.json; Team from entries.json CompPilots (cross-checked: the overall transcript's Team column agrees for all 30 pilots). expected-scores.json holds per-round cells only, so no individual Score was recomputed from raw data. No pilot has OmitFromTeamScore=true (all 30 false in entries.json) so the omit filter never fires; teams 1-8 carry sizes 4,3,4,4,4,3,4,4 and NbrForTeamScore=3 (competition.json triage).",
+    "Checkpoint 1 (boundary member-tie): none existed at any cut. Teams 2 and 6 carry exactly 3 members (nothing to trim); on the other six the 3rd/4th Scores are distinct (T1 13200.5 vs 6219.4; T3 14278.6 vs 13578.7; T4 14257.4 vs 13438.9; T5 14736.9 vs 14453.7; T7 13071.7 vs 12933.3; T8 12910.3 vs 12365.7), so GS's row-order-dependent tie branch was never exercised. The recomputed retained set and trim order match the transcript's 3 member rows for all 8 teams, and every trimmed member (T5 p17 ZZStrautins, T4 p50 ZZAbraham, T3 p25 ZZCarter, T7 p64 ZZGleeson, T1 p63 ZZBowden, T8 p55 ZZAnthony) appears nowhere in the transcript.",
+    "Checkpoint 2 (team-0 sentinel): none - all 30 pilots are in teams 1-8; no Team=0 row exists in entries.json and none is fabricated.",
+    "Checkpoint 3 ('='-sharing): no tie fired - all 8 teamScores are distinct, so ranks display '1'..'8' with no '=n' and GS's equal-previous-team branch never ran.",
+    "Checkpoint 4 (fourth key): TeamRawScore is display-order-only inside a shared place (Resolve_Team_Rank_If_Same_Scores sorts TeamScore DESC, SumOfIndividualRankings ASC, HighestTeamPilotPlacing ASC, TeamRawScore DESC and shares '=n' only when the first THREE keys tie); no tie fired here (TeamScore alone separates all 8 teams), so it is unobservable in this fixture. Overlay keys computed for the record - SumOfIndividualRankings: T5=8, T4=29, T3=31, T7=30, T1=47, T8=47, T2=70, T6=79; HighestTeamPilotPlacing: T5=1, T4=5, T3=7, T7=2, T1=12, T8=8, T2=20, T6=25; T1 and T8 tie on SumOfIndividualRankings (47) but differ on TeamScore, so the three-key condition never holds.",
+    "Checkpoint 5 (decimals): teamScore summed exact-decimal (Python decimal, never floats); every teamScore compares against the transcript's TeamScore cell by exact-decimal string comparison (e.g. '44471.7').",
+    "Verification: (a) independent hand-ladder spot-check on the tallest, a middle and the lowest team - T5 14992.8+14742+14736.9=44471.7; T1 14351.5+13642.4+13200.5=41194.4; T6 12736.4+12550.8+11807.1=37094.3; (b) all 8 (team, rank, teamScore) triples agree with team-results-transcript.csv on exact-decimal string comparison (8/8), each team's countedPilots matches the transcript's member names via the entries.json PilotNo mapping in both set and Score-DESC order, and the trimmed members above are absent from the transcript; (c) rank strings reproduce the transcript's Rank column verbatim ('1'..'8', no '=n').",
+    "IndividualRank provenance: SumOfIndividualRankings and HighestTeamPilotPlacing use the expected-result.json final ranks (all 30 display 1..30 with no '=' prefix, so stripping any '=' is a no-op; IndividualRank = rank with '=' stripped per Rpt_Results_TeamResults_MOD.vb:319-327)."
+  ],
+  "standings": [
+    { "team": 5, "rank": "1", "teamScore": 44471.7, "countedPilots": [62, 56, 21] },
+    { "team": 4, "rank": "2", "teamScore": 43413.6, "countedPilots": [47, 22, 11] },
+    { "team": 3, "rank": "3", "teamScore": 43229.1, "countedPilots": [26, 12, 28] },
+    { "team": 7, "rank": "4", "teamScore": 42670.6, "countedPilots": [49, 54, 46] },
+    { "team": 1, "rank": "5", "teamScore": 41194.4, "countedPilots": [30, 29, 42] },
+    { "team": 8, "rank": "6", "teamScore": 41127.6, "countedPilots": [13, 3, 2] },
+    { "team": 2, "rank": "7", "teamScore": 38068.6, "countedPilots": [32, 52, 44] },
+    { "team": 6, "rank": "8", "teamScore": 37094.3, "countedPilots": [43, 39, 7] }
+  ]
+}

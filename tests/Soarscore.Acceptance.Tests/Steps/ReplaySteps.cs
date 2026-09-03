@@ -115,6 +115,69 @@ public sealed class ReplaySteps
             + $"{Environment.NewLine}{report.DiffTable()}");
     }
 
+    [Then(@"^the GS team ladder is reproduced exactly$")]
+    public void ThenTheGSTeamLadderIsReproducedExactly(Table expectedLadder)
+    {
+        // grow-corpus-team-parity-fixtures.md WI-1E — the f3j-international
+        // scenario pins the GS team-ladder oracle verbatim (GS team number,
+        // rank string, exact-decimal teamScore, counted pilots) so
+        // expected-teams.json cannot drift silently: the enumeration must
+        // equal the committed oracle, the WI-1D ladder grain must have
+        // compared exactly that many standings (count-pinned like the ledger
+        // step), and its remainder must be empty. Counted pilots compare as a
+        // set, never GS's trim order — the grain's own semantics.
+        var report = Report();
+
+        var pinned = expectedLadder.Rows
+            .Select(row => (
+                Team: int.Parse(row["team"], System.Globalization.CultureInfo.InvariantCulture),
+                Rank: row["rank"],
+                TeamScore: decimal.Parse(row["teamScore"], System.Globalization.CultureInfo.InvariantCulture),
+                CountedPilots: row["countedPilots"]
+                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => long.Parse(p, System.Globalization.CultureInfo.InvariantCulture))
+                    .ToList()))
+            .ToList();
+
+        Fixture!.ExpectedTeams.Should().NotBeNull(
+            $"{Fixture.Slug}'s scenario pins the GS team ladder, so the fixture must carry expected-teams.json.");
+
+        var oracle = Fixture.ExpectedTeams!;
+
+        oracle.Standings.Should().HaveCount(pinned.Count,
+            $"{Fixture.Slug}'s expected-teams.json must hold exactly the {pinned.Count} standing(s) the scenario pins.");
+
+        oracle.Standings.Select(s => s.Team).Should().OnlyHaveUniqueItems(
+            $"{Fixture.Slug}'s expected-teams.json keys standings by GS team number (keyFormat).");
+
+        var oracleByTeam = oracle.Standings.ToDictionary(s => s.Team);
+
+        foreach (var standing in pinned)
+        {
+            oracleByTeam.TryGetValue(standing.Team, out var oracleStanding);
+
+            oracleStanding.Should().NotBeNull(
+                $"{Fixture.Slug}'s GS ladder names no standing for team {standing.Team}.");
+
+            oracleStanding!.Rank.Should().Be(standing.Rank,
+                $"team {standing.Team}'s GS rank must match the scenario's pin exactly.");
+
+            oracleStanding.TeamScore.Should().Be(standing.TeamScore,
+                $"team {standing.Team}'s GS team score must match the scenario's pin exact-decimal.");
+
+            oracleStanding.CountedPilots.Should().BeEquivalentTo(standing.CountedPilots,
+                $"team {standing.Team}'s counted pilots must match the scenario's pin (a set, never GS's trim order).");
+        }
+
+        report.LadderStandingsCompared.Should().Be(pinned.Count,
+            $"the WI-1D GS team-ladder grain must compare exactly the {pinned.Count} standing(s) the scenario pins "
+            + $"for {Fixture.Slug}." + $"{Environment.NewLine}{report.DiffTable()}");
+
+        report.TeamGrainMismatches.Should().BeEmpty(
+            $"the GS team ladder must be reproduced exactly for {Fixture.Slug}."
+            + $"{Environment.NewLine}{report.DiffTable()}");
+    }
+
     [Then(@"^the fixture carries no ledgered divergences$")]
     public void ThenTheFixtureCarriesNoLedgeredDivergences()
     {

@@ -139,6 +139,31 @@ public sealed record ExpectedResultFile(ExpectedRank[] Ranks);
 public sealed record ExpectedRank(long PilotNo, string Rank);
 
 /// <summary>
+/// grow-corpus-team-parity-fixtures.md WI-1C/WI-1D — the GS team-ladder
+/// oracle (expected-teams.json): the reconstructed GliderScore team standings
+/// transcribed over the oracle-verified individual result. OPTIONAL as a
+/// fixture file — only team-bearing overlap fixtures carry one; whether an
+/// overlap fixture HAS its oracle is the comparator's guard, never the
+/// loader's business. Ranks are GS's display strings ("n" or "=n");
+/// TeamScore is exact-decimal; CountedPilots are the retained member PilotNos
+/// in GS trim order (the ladder grain compares them as a set, never as an
+/// order — the trim order is an artefact of GS's Team, Score DESC view).
+/// </summary>
+public sealed record ExpectedTeamsFile(
+    string Source,
+    string? VerifiedAgainst,
+    string KeyFormat,
+    IReadOnlyList<string> Notes,
+    IReadOnlyList<TeamStandingOracle> Standings);
+
+/// <summary>One GS team-ladder standing, keyed by GS team number (keyFormat).</summary>
+public sealed record TeamStandingOracle(
+    int Team,
+    string Rank,
+    decimal TeamScore,
+    IReadOnlyList<long> CountedPilots);
+
+/// <summary>
 /// One accepted divergence. The ledger starts EMPTY and an entry lands only
 /// after human triage (D6); pilotNo-or-"*" arrives as either a number or a
 /// string, hence the raw element. Round/group are null for the ranking grain.
@@ -166,4 +191,7 @@ public sealed record GliderscoreFixture(
     ExpectedScoresFile ExpectedScores,
     ExpectedResultFile ExpectedResult,
     IReadOnlyList<DivergenceEntry> Divergences,
-    ClassDefinition Definition);
+    ClassDefinition Definition,
+    // grow-corpus-team-parity-fixtures.md WI-1D — the optional GS team-ladder
+    // oracle; null when the fixture carries no expected-teams.json.
+    ExpectedTeamsFile? ExpectedTeams = null);

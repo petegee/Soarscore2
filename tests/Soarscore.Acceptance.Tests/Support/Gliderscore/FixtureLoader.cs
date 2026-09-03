@@ -58,6 +58,17 @@ public static class FixtureLoader
                 File.ReadAllText(divergencesPath), FixtureJson)!.AsReadOnly()
             : [];
 
+        // Absent ⇒ null oracle (grow-corpus-team-parity-fixtures.md WI-1D):
+        // only team-bearing overlap fixtures carry the GS team ladder, and
+        // team-less fixtures must load exactly as before. Whether an overlap
+        // fixture HAS its oracle is the comparator's guard, never the
+        // loader's business — no content validation happens here.
+        var expectedTeamsPath = Path.Combine(directory, "expected-teams.json");
+        var expectedTeams = File.Exists(expectedTeamsPath)
+            ? JsonSerializer.Deserialize<ExpectedTeamsFile>(
+                File.ReadAllText(expectedTeamsPath), FixtureJson)
+            : null;
+
         // The one file deserialised with the Api's own ingestion options —
         // posting the result to /publish-class-definition must round-trip
         // through exactly the binding path a human POST would take.
@@ -75,7 +86,8 @@ public static class FixtureLoader
             ExpectedScores: expectedScores,
             ExpectedResult: expectedResult,
             Divergences: divergences,
-            Definition: definition);
+            Definition: definition,
+            ExpectedTeams: expectedTeams);
     }
 
     /// <summary>

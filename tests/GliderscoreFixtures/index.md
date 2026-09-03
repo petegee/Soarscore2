@@ -21,7 +21,11 @@ line starts with the slug token and contains "skipped".
   worst-score drop per pilot, landing wherever the worst sits, R1–R16);
   late-landing deductions live (`durFlightPenalty=1`, 11 rows at −30);
   gs-report-transcript oracle verified against an independently recomputed
-  ladder (30/30 ranks, 30/30 dropped-round picks); GroupScoreDecimals=1 yet no
+  ladder (30/30 ranks, 30/30 dropped-round picks); team-standings witness — a
+  reconstructed GS team ladder (`expected-teams.json`) transcript-verified 8/8
+  against `team-results-transcript.csv`, asserted per-team by the harness's
+  ladder grain (count, exact-decimal total, place identity + `=n` group
+  membership, contributor set); GroupScoreDecimals=1 yet no
   binary32 widening visible anywhere — the float32 persist-cast witness remains
   open; no re-flights (the export's single re-flight row belongs to another
   comp).
@@ -146,8 +150,9 @@ A competition matching either of these is indexed as `- <slug> — skipped —
 
 ## Diversity wanted
 
-Status after the 2026-08-26 five-fixture growth and the 2026-08-27 NZ-master
-growth (five fixtures): most original targets are now witnessed corpus-wide
+Status after the 2026-08-26 five-fixture growth, the 2026-08-27 NZ-master
+growth (five fixtures) and the 2026-09-03 team-parity story: most original
+targets are now witnessed corpus-wide
 (per-fixture detail lives in the Competitions lines above); pick the next
 gap-hunt target from **Still open**.
 
@@ -201,7 +206,13 @@ Witnessed:
   Penalty=100 rows subtracted post-sum);
 - Perfect maximum final score — jerilderie-2010 leader 12000 = 12 kept × 1000;
 - Fly-off-shaped standalone comp — f3j-international-flyoff (small
-  single-group shape; not fly-off mechanics).
+  single-group shape; not fly-off mechanics);
+- GS team-standings ladder (the Nbr=3 overlap grain) — f3j-international: a
+  reconstructed GS team ladder (`expected-teams.json`, 8 teams) transcript-
+  verified 8/8 against `team-results-transcript.csv` and asserted per-team by
+  the harness's ladder grain (standings count, exact-decimal total, place
+  identity + `=n` group membership, contributor set) — the corpus's first
+  true GliderScore team-standings parity witness.
 
 Still open:
 
@@ -215,4 +226,18 @@ Still open:
   carried by the corpus sets durNumberOfTimekeepers=1;
 - F5L/F5B families — still absent entirely (the NZ growth added F5J/F3K only);
 - Merged/prelim comp (fly-off selected within one comp) — PrelimCompNo=-1 and
-  MergedComps empty throughout, NZ fixtures included.
+  MergedComps empty throughout, NZ fixtures included;
+- Second Nbr=3 team-standings witness — a second ACTIVE comp meeting the
+  ladder grain's overlap condition (UseTeams=true, NbrForTeamScore=3, AND
+  populated teams — met today by f3j-international alone; f3b-international
+  meets all three but sits behind its multi-task-round skip); hunt recorded,
+  acquisition pending — webmine permission gate unticked, nothing actionable
+  offline (NZ master Team='0' on all 168 comps);
+- `OmitFromTeamScore=true` witness — a protection-only member excluded from
+  its team's score; implemented but unexercised: zero sightings in every
+  committed CompPilots.json, entries.json and source extraction; hunt
+  recorded, stub kanban/backlog/omit-from-teamscore-witness.md;
+- Team classification for `NbrForTeamScore ≠ 3` — jerilderie-2010 (Nbr=4, 14
+  populated teams) and f3k-sample-comp (Nbr=2, 4 populated teams) carry real
+  team assignments but their team grain is T1-ledgered; unlocks only via a
+  future classification-policy story.

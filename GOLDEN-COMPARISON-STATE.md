@@ -48,6 +48,21 @@ identity is invisible while landing points are integers), and term kinds
 beyond Constant/Lookup in `scoreNormalised` (the mirror refuses loudly — the
 guards, not the data, are what's narrow).
 
+**Team standings witnessed (2026-09-03):** team results on f3j-international
+now carry a GS-derived oracle witness — `expected-teams.json`, a reconstructed
+GS team ladder (a verbatim transcription of `GetTeamScores` +
+`Resolve_Team_Rank_If_Same_Scores` over the fixture's oracle-verified
+individual scores), itself verified 8/8 against GS's own Team Results
+transcript (`team-results-transcript.csv`). The harness's ladder grain asserts
+our derived standings against it per team — count, exact-decimal total, place
+identity with `=n` group membership, contributor set — and throws if a
+team-bearing overlap fixture lacks its oracle. The claim's scope is exactly
+what the corpus holds: one fixture, one ladder oracle. No second Nbr=3
+team-bearing fixture exists yet, and the protection-only arm
+(`OmitFromTeamScore=true` — a drawn team member who never contributes) remains
+**unwitnessed** anywhere; the WI-2D hunt targets it. The **High** claim above
+predates this block and remains individual-results-only.
+
 ## What could improve
 
 1. **Hunt the still-open witnesses** — an active Speed/Distance fixture, a D6
