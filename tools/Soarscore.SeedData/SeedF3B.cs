@@ -206,7 +206,7 @@ public static class SeedF3B
                 // Tie-breaks: F3B.2.8 — a tie is broken by flying one additional
                 // full round (all the class's tasks).
                 TieBreaks = [new AdditionalFullRound()],                        // F3B.2.8
-                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskA, TaskB, TaskC],
             },
         ],

@@ -25,8 +25,8 @@ namespace Soarscore.Domain.Tests;
 /// each class's own Rounds.TasksPerRound — not a hard-coded file list — so a
 /// corpus change is picked up automatically; the same "scan, don't hard-code"
 /// discipline BindParameterPropertyTests property 5 and
-/// CatalogueDrawPropertyTests property 6 already apply. That leaves 11 of the
-/// 12 corpus classes.
+/// CatalogueDrawPropertyTests property 6 already apply. That leaves 15 of the
+/// 16 corpus classes.
 ///
 /// Drives the Domain decide functions directly — Soarscore.Domain.Tests
 /// cannot reference Soarscore.Application, so there is no handler/dispatcher
@@ -50,9 +50,9 @@ public class ScoringCorpusPropertyTests
 
     /// <summary>
     /// FileName -> the parameter bindings that class's first phase/tasks need
-    /// resolved before it can be drawn/opened. Only F5L, NZ-M-ALES200 and F5K
-    /// parameterise Group.MinPerGroup (BindParameterPropertyTests' property 5
-    /// discovers the same three); only NZ-N-ALES123 and NZ-P-Radian
+    /// resolved before it can be drawn/opened. Only F5L, NZ-M-ALES200, F5K and
+    /// NZ-F5K-NDC parameterise Group.MinPerGroup (BindParameterPropertyTests'
+    /// property 5 discovers the same four); only NZ-N-ALES123 and NZ-P-Radian
     /// parameterise a Fixed task's WorkingTime with no declared default
     /// (OpenEntryDecideTests.OpenEntry_against_an_unbound_undefaulted_parameterised_WorkingTime_fails_with_a_stable_code
     /// is the same NZ-N shape). F3K needs nothing — its MinPerGroup is the
@@ -67,6 +67,7 @@ public class ScoringCorpusPropertyTests
             ["83-nz-n-ales123"] = [("roundDuration", MeasuredValue.Of(360m))],
             ["85-nz-p-radian"] = [("roundDuration", MeasuredValue.Of(420m))],
             ["40-f5k"] = [("minPerGroup", MeasuredValue.Of(5m))],
+            ["85d-nz-f5k-ndc"] = [("minPerGroup", MeasuredValue.Of(5m))],
         }.ToImmutableDictionary();
 
     [Fact]
@@ -78,10 +79,10 @@ public class ScoringCorpusPropertyTests
         // the only remaining refusal, F3B's multi-task rounds).
         var drawable = Corpus.All.Where(c => c.Definition.Phases[0].Rounds.TasksPerRound == 1).ToImmutableArray();
 
-        // Guards the premise: exactly 12 of the 13 corpus classes (everything
+        // Guards the premise: exactly 15 of the 16 corpus classes (everything
         // but F3B). A corpus change that alters this set should fail here
         // loudly, rather than silently under- or over-testing.
-        drawable.Length.Should().Be(12);
+        drawable.Length.Should().Be(15);
 
         foreach (var seedClass in drawable)
         {

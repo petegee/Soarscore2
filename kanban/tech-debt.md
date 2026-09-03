@@ -133,3 +133,19 @@ See CLAUDE.md house-keeping rule 5.
   on the NZ master, so stored config cannot prove scoring-time behaviour).
   Unify to the structured shape if any consumer ever needs machine-readable
   effective knobs corpus-wide.
+- [ ] `FlightInterpreter.EvaluatePiecewise` scores below-origin bonus bands as
+  deductions. The walk integrates each band's rate over the UNSIGNED width of its
+  overlap with `[0, metric − origin]`, so a bonus on the below-origin side needs a
+  POSITIVE rate under the current engine. `SeedF5K.cs`'s `LaunchBands` therefore
+  mis-scores the FAI F5K launch bonus (`5.5.10.4`: "+0.5 points per meter bonus"
+  below the NLH) as a −0.5/m deduction: `Below(0, -0.5m)` at 10 m below the NLH
+  yields −5, and no test covers a below-origin launch (`FlightInterpreterTests`
+  exercises +15 m and exactly-at-NLH only). Found 2026-09-04 during the NZ NDC
+  seed work (`kanban/completed/nz-ndc-seed-classes.md`), which encodes
+  `SeedF5kNdc`'s symmetric NZ.3.16.29 bands with positive below-origin rates —
+  correct under the evaluator as it is — and locks them in
+  `NzNdcSeedArithmeticTests`. Two fixes are possible: signed-width integration in
+  the engine (then `SeedF5K` is correct as written and `SeedF5kNdc`'s below bands
+  must flip sign) or flipping `SeedF5K`'s rate sign. Either way, write the failing
+  test first; the NZ arithmetic tests are the tripwire that catches whichever
+  convention moves.

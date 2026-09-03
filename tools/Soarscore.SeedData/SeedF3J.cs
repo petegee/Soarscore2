@@ -186,7 +186,7 @@ public static class SeedF3J
                 //   of the qualifying rounds. SourcePhaseOrdinal 1 is the
                 //   preliminary's PhaseDefinition.Ordinal (check 17).
                 TieBreaks = [new QualifyingPosition { SourcePhaseOrdinal = 1 }],  // F3J.11.4
-                                                                                  //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                                  //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [FlyoffTaskD],
             },
         ],

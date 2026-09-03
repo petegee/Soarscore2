@@ -108,7 +108,7 @@ public static class SeedNzNAles123
                 // no tie-breaks: the NZ rules state none anywhere
                 //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
                 TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
-                                                                               //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                               //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },
         ],

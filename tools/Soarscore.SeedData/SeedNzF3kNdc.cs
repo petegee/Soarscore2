@@ -187,7 +187,7 @@ public static class SeedNzF3kNdc
                 // no tie-breaks: the NZ rules state none anywhere
                 //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
                 TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
-                                                                               //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                               //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskB, TaskD, TaskG, TaskH],                          // NZ.0.2.1 a catalogue B/D/G/H only
             },
         ],

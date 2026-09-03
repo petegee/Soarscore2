@@ -312,7 +312,7 @@ public class BindParameterPropertyTests
             .Where(c => c.Definition.Phases.Any(phase => phase.Tasks.Any(task => task.Group?.MinPerGroup is NumberOrParam.Ref)))
             .ToImmutableArray();
 
-        discovered.Select(c => c.FileName).Should().BeEquivalentTo(["40-f5k", "60-f5l", "80-nz-m-ales200"]);
+        discovered.Select(c => c.FileName).Should().BeEquivalentTo(["40-f5k", "60-f5l", "80-nz-m-ales200", "85d-nz-f5k-ndc"]);
 
         foreach (var seedClass in discovered)
         {

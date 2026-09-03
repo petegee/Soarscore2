@@ -141,7 +141,7 @@ public static class SeedF5L
                 // Tie-breaks: 5.5.12.12 states classification and stops — silence
                 //   (UndefinedRequiresRuling), both phases.
                 TieBreaks = [new UndefinedRequiresRuling()],                    // 5.5.12.12
-                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },
 
@@ -164,7 +164,7 @@ public static class SeedF5L
                 // no tie-breaks: 5.5.12.12 states classification and stops —
                 //   silence (UndefinedRequiresRuling), both phases
                 TieBreaks = [new UndefinedRequiresRuling()],                    // 5.5.12.12
-                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [FlyoffTaskD],
             },
         ],

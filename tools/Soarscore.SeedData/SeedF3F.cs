@@ -166,7 +166,7 @@ public static class SeedF3F
                 // scoping is deliberately unmodelled — readmitted as a scope field
                 // the day a second class needs one.
                 TieBreaks = [new ClassificationRounds(), new BestDroppedScore()],  // F3F.1.13
-                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskS],
             },
         ],

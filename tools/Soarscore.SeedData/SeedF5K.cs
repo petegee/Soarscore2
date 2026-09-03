@@ -370,7 +370,7 @@ public static class SeedF5K
                 // back to the display ladder (where PreDropScore ≡ Score since the
                 // fly-off declares no drops, so ties share).
                 TieBreaks = [new BestDroppedScore(), new TieBreakFlyoff()],      // 5.5.10.17
-                                                                                //   encoding: kanban/in-progress/tie-break-policy-in-class-definition.md
+                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = Catalogue,
             },
 
