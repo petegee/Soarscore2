@@ -1,0 +1,328 @@
+{
+  "identity": {
+    "CompNo": 0,
+    "CompName": "F5K NI Round 2",
+    "GSCompClass": "F5K2024",
+    "CompDate": "2026-05-29",
+    "CompID": "237BA891f9949",
+    "CompVenue": "Haumoana New Zealand"
+  },
+  "scoring": {
+    "CompType": "F5K2024",
+    "GroupScoreOption": 1,
+    "GroupScoreDecimals": 1,
+    "RoundOrTruncate": 0,
+    "DropScoreOption": 0,
+    "Drop1At": 5,
+    "Drop2At": 99,
+    "Drop3At": 99,
+    "Drop4At": 99,
+    "Drop5At": 99,
+    "TimingDecimalPlaces": 0,
+    "UseTeams": false,
+    "NoForTeamScore": 3
+  },
+  "configProvenance": {
+    "note": "Server-path curation: every scoring knob above is a STORED value from the server CompData row (extracted 2026-09-04) — unlike the NZ Jet master, whose Comps row left several knobs Jet-null. Nothing is reconstructed; where a knob bites the oracle it was additionally arithmetic-corroborated (see provenance.json). Names are the GS-server schema's (Drop1At, NoForTeamScore, CompType), not the Jet Comps names (Drop1AtRound, NbrForTeamScore, GSCompClass); the server schema carries no F3QDrop6to10 column. identity.GSCompClass carries the server CompType verbatim.",
+    "knobs": {
+      "GroupScoreOption": {
+        "stored": 1,
+        "basis": "stored; corroborated: all 30 scored cells normalise on points basis (per-group best maps to 1000.000 exactly)"
+      },
+      "GroupScoreDecimals": {
+        "stored": 1,
+        "basis": "stored; corroborated: every persisted NormalisedScore equals half-up 1000*Raw/group-best at exactly 1 dp"
+      },
+      "RoundOrTruncate": {
+        "stored": 0,
+        "basis": "stored (0 = rounded); consistent with the half-up corroboration"
+      },
+      "DropScoreOption": {
+        "stored": 0,
+        "basis": "stored (0 = drop worst task scores, over individual normalised task scores); corroborated by the ProgressiveTotal drop arithmetic"
+      },
+      "Drop1At": {
+        "stored": 5,
+        "basis": "stored; drop 1 demonstrably fires at rounds 5 and 6 (ProgressiveTotal = sum − worst from R5 on)"
+      },
+      "Drop2At": {
+        "stored": 99,
+        "basis": "stored; 99 = never"
+      },
+      "Drop3At": {
+        "stored": 99,
+        "basis": "stored; 99 = never"
+      },
+      "Drop4At": {
+        "stored": 99,
+        "basis": "stored; 99 = never"
+      },
+      "Drop5At": {
+        "stored": 99,
+        "basis": "stored; 99 = never"
+      },
+      "TimingDecimalPlaces": {
+        "stored": 0,
+        "basis": "stored; flight times are whole seconds (packed mmss in Flight1..4)"
+      },
+      "UseTeams": {
+        "stored": false,
+        "basis": "stored false; the NoForTeamScore=3 knob is inert (GS computes no team scores at all)"
+      }
+    }
+  },
+  "familyRows": {},
+  "scheduleTables": {
+    "F5KTaskandRefHeightByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "Task": "Text",
+        "RefHeight": "Long"
+      },
+      "rows": [
+        {
+          "CompNo": 0,
+          "RoundNo": 1,
+          "Task": "A",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 2,
+          "Task": "B",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 3,
+          "Task": "C",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 4,
+          "Task": "D",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 5,
+          "Task": "A",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 6,
+          "Task": "B",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 7,
+          "Task": "C",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 8,
+          "Task": "D",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 9,
+          "Task": "B",
+          "RefHeight": 60
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 10,
+          "Task": "D",
+          "RefHeight": 60
+        }
+      ]
+    },
+    "F5KDataByRound": {
+      "schema": {
+        "CompNo": "Long",
+        "RoundNo": "Long",
+        "F5KTask": "Text",
+        "F5KRefHeight": "Integer",
+        "F5KTaskAbbreviation": "Text",
+        "F5KTaskDescription": "Text",
+        "F5KMaxScores": "Integer",
+        "F5KMaxFlights": "Integer",
+        "F5KMaxFlightTime": "Integer",
+        "F5KMaxTotalTime": "Integer",
+        "f5kMinTimeForHeightBonus": "Integer"
+      },
+      "rows": [
+        {
+          "CompNo": 0,
+          "RoundNo": 1,
+          "F5KTask": "A",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "1, 2, 3, 4",
+          "F5KTaskDescription": "Task A - 1, 2, 3, 4 minutes in 10 minutes (any order)",
+          "F5KMaxScores": 4,
+          "F5KMaxFlights": 4,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 599,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 2,
+          "F5KTask": "B",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "L1 5max in 7m",
+          "F5KTaskDescription": "Task B - Last flight counts; 5 min max; Max 3 flights in 7 mins",
+          "F5KMaxScores": 1,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 300,
+          "F5KMaxTotalTime": 300,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 3,
+          "F5KTask": "C",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "AllUp 4:00*3",
+          "F5KTaskDescription": "Task C - All up; 4 min max; 3 flights per round",
+          "F5KMaxScores": 3,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 720,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 4,
+          "F5KTask": "D",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "3, 3, 4",
+          "F5KTaskDescription": "Task D - 3, 3, 4 minute flights (any order); Max 3 flights in 10 mins",
+          "F5KMaxScores": 3,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 599,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 5,
+          "F5KTask": "A",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "1, 2, 3, 4",
+          "F5KTaskDescription": "Task A - 1, 2, 3, 4 minutes in 10 minutes (any order)",
+          "F5KMaxScores": 4,
+          "F5KMaxFlights": 4,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 599,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 6,
+          "F5KTask": "B",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "L1 5max in 7m",
+          "F5KTaskDescription": "Task B - Last flight counts; 5 min max; Max 3 flights in 7 mins",
+          "F5KMaxScores": 1,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 300,
+          "F5KMaxTotalTime": 300,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 7,
+          "F5KTask": "C",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "AllUp 4:00*3",
+          "F5KTaskDescription": "Task C - All up; 4 min max; 3 flights per round",
+          "F5KMaxScores": 3,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 720,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 8,
+          "F5KTask": "D",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "3, 3, 4",
+          "F5KTaskDescription": "Task D - 3, 3, 4 minute flights (any order); Max 3 flights in 10 mins",
+          "F5KMaxScores": 3,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 599,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 9,
+          "F5KTask": "B",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "L1 5max in 7m",
+          "F5KTaskDescription": "Task B - Last flight counts; 5 min max; Max 3 flights in 7 mins",
+          "F5KMaxScores": 1,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 300,
+          "F5KMaxTotalTime": 300,
+          "f5kMinTimeForHeightBonus": 0
+        },
+        {
+          "CompNo": 0,
+          "RoundNo": 10,
+          "F5KTask": "D",
+          "F5KRefHeight": 60,
+          "F5KTaskAbbreviation": "3, 3, 4",
+          "F5KTaskDescription": "Task D - 3, 3, 4 minute flights (any order); Max 3 flights in 10 mins",
+          "F5KMaxScores": 3,
+          "F5KMaxFlights": 3,
+          "F5KMaxFlightTime": 240,
+          "F5KMaxTotalTime": 599,
+          "f5kMinTimeForHeightBonus": 0
+        }
+      ]
+    }
+  },
+  "lookups": {
+    "landingSchemes": [],
+    "f5kBonusSchemes": [
+      {
+        "CompNo": 0,
+        "Name": "Server F5KBonusData launch-bonus ladder (Metres over-NLH band key -> BonusPointsPerMetre rate)",
+        "rows": [
+          {
+            "Metres": -1,
+            "BonusPointsPerMetre": 0.5
+          },
+          {
+            "Metres": 0,
+            "BonusPointsPerMetre": 0.0
+          },
+          {
+            "Metres": 1,
+            "BonusPointsPerMetre": 1.0
+          },
+          {
+            "Metres": 11,
+            "BonusPointsPerMetre": 3.0
+          }
+        ]
+      }
+    ]
+  },
+  "triage": {
+    "UseTeams": false,
+    "NoForTeamScore": 3,
+    "UseModels": false,
+    "AssignHelpers": false,
+    "serverNote": "Verbatim server switches where the concept exists; the server schema carries no UseTeamProtection / CompSeriesNo / PrelimCompNo / MergedComps columns, so nothing is recorded for them. UseTeams=false makes NoForTeamScore inert."
+  }
+}

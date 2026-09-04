@@ -1,0 +1,117 @@
+{
+  "slug": "f5k-ni-round-2",
+  "sourceKind": "server-db-slice",
+  "source": {
+    "originalFilename": "DB_12582_gliderscore_backup.bak",
+    "path": "gliderscore/DB_12582_gliderscore_backup.bak (working copy only — gitignored, never committed)",
+    "sha256": "c0c92337f332fff05ea1972c94fc8cc465328f8a37fd62e15738d93d10d4dea7",
+    "server": "gliderscore.com server database export, SQL Server backup",
+    "container": {
+      "name": "mssql-gliderscore",
+      "database": "gliderscore",
+      "note": "throwaway Docker container restored from the .bak; disposable — the .bak is the byte-pinned source of record"
+    },
+    "slice": "single competition CompID='237BA891f9949' cut from the restored DB at curation (comp-scoped tables only; CompIDs are case-sensitive hex)",
+    "comp": {
+      "CompID": "237BA891f9949",
+      "CompName": "F5K NI Round 2",
+      "CompVenue": "Haumoana New Zealand",
+      "CompDate": "2026-05-29T00:00:00",
+      "CompType": "F5K2024",
+      "DateCreated": 3804,
+      "note": "'F5K NI Round 2', latest NZ F5K comp by CompDate and upload at slicing (DateCreated 3804 vs 3802 for same-day 'F5K NI 2', comp 233DDc0ae8889 — story facts, queried 2026-09-04)"
+    }
+  },
+  "identityDecision": {
+    "CompNo": 0,
+    "because": "The server identifies competitions by CompID (case-sensitive hex), not the Jet Comps.CompNo the pipeline's rule 4 expects. A curation surrogate value 0 stands in for the single-comp consistency check across competition.json identity, entries and scores-raw; the real server key rides identity.CompID and this provenance block verbatim. 0 carries no GS semantics anywhere in the loader."
+  },
+  "producer": {
+    "product": "GliderScore (server)",
+    "note": "no DBParams table exists in the server slice (comp-scoped tables only), so no product version is available; the Jet corpus pins 6.78"
+  },
+  "extraction": {
+    "tool": "tests/GliderscoreFixtures/extract/extract-mssql.py (WI-1, redaction on)",
+    "command": "python3 extract-mssql.py 237BA891f9949 --out tests/GliderscoreFixtures/f5k-ni-round-2",
+    "python": "3.10.12",
+    "extracted": "2026-09-04",
+    "extractionOfRecord": "tests/GliderscoreFixtures/f5k-ni-round-2/extract/ (committed by this task)",
+    "shape": "extract.py shape contract reused verbatim: {'schema': {...}, 'rows': [...]}, 2-space indent, ensure_ascii=False, trailing newline, sorted tables, deterministic row order; hex UTF-16LE transport with exact NULL/empty distinction",
+    "rowCounts": {
+      "CompData": 1,
+      "ScoringData": 55,
+      "F5KData": 10,
+      "F5KBonusData": 4
+    },
+    "omittedColumns": {
+      "ScoringData.Data6, ScoringData.Data7": "extracted all-zero (0.000 on all 55 rows); per-flight slots beyond Data5 are unused — omitted from curation, documented here"
+    }
+  },
+  "redaction": {
+    "pilotNames": "REQUIRED (story): server ScoringData.PilotName carries real pilot names. The WI-1 tool redacted 6 distinct pilots (55 name cells) to deterministic Simpsons pilot-pool names keyed on sha256(CompID|PilotNo) before serialisation; FAI_ID blanked on all 55 rows; no helper names existed (HelperName empty everywhere). The mapping is NOT retained anywhere — it exists only in the tool's memory during a run. Real names live only in the gitignored server DB; curated files carry the redacted names only.",
+    "entriesPilots": "entries.json pilots rows carry the redacted names (FirstName/LastName split of the tool's PilotName) so the loader's join and the replay's /register-person have labels; they are fiction, never real names."
+  },
+  "derivation": {
+    "entries": "DERIVED from ScoringData distinct pilots (75, 79, 80, 82, 88, 102): PilotNo, PilotStartNo, Team (server decimal 0 -> 0) and OmitFromTeamScore (false) come from the rows; the server has NO CompPilots table, so Retired / IsPilot / Role / DrawFreq are NOT derivable and are honestly absent — no defaults invented. Pilot 88 'never flew' is a data fact (all his rows are zero stubs), NOT a Retired flag.",
+    "scoresRaw": "One row per ScoringData row (extract order = the tool's deterministic ORDER BY RoundNo, GroupNo, SeqNo, ReFlightNo, PilotNo). Canonical loader columns (TaskNo, RoundNo, GroupNo, ReFlightNo, PilotNo, SeqNo, Penalty, OriginalRoundNo) map 1:1 (TaskNo constant 6 as the Jet F3K/F5K corpus precedent — task identity lives in the F5KData schedule, never in the numeric column; ReFlightNo all 0; OriginalRoundNo == RoundNo everywhere). Penalty persisted as decimal 0.000; carried as integer 0 (the loader column is Integer; value and arithmetics unaffected). Server payload carried verbatim: Data1..5 (per-flight flight-point slots, cell-verified equal to Flight1..4's FPT), Flight1..4 detail strings BYTE-FAITHFUL (see flightStrings below), the server's own Progressive* standings columns, ResultsToRoundNo, Updated, RawScore and NormalisedScore as persisted.",
+    "decimals": "The extract's {'$decimal': '...'} wrappers are unwrapped to plain JSON number tokens that keep the persisted scale as text (617.000, 149.500, 955.400, 0.000 — server numeric(18,3) scale 3 throughout). System.Decimal binding is scale-insensitive on ==; curation keeps the server text for byte-faithfulness.",
+    "flightStrings": {
+      "formats": "Three coexisting serialisation formats across the 80 flight strings (67 UPPERCASE 3-letter FNO/FTM/TPT/HVA/HPT/NOF/NFP/LOT/LOP/LLN/LLP/OOF/MOS/HPN/SFY/SFP/FPT, 12 lowercase fno/..., 1 legacy long-key FltNbr/MdlID/FltTim/MinSec/TimPts/HgtVal/HgtPts/NbrFlts/NbrFltsPlty/LdgOut/LdgOutPlty/LateLdg/LateLdgPlty/OutOfFld/MotorReStart/HitPerson/Sfty/SftyPlty/FltPts — that legacy one is the shape the story spec described). All carried verbatim; consumers must parse case-insensitively over both key layouts.",
+      "fieldMap": "ftm/FltTim = packed minutes-seconds (400 = 4:00, 47 = 47 s; Jet Time1Mins packing); tpt/TimPts = clamped scoring seconds; hva/HgtVal = peak altitude m; hpt/HgtPts = band integral over (hva - round NLH); nof/NbrFlts = launch number WHERE IT MATTERS (task B's single stored flight: 1/2/3 -> nfp 0/-10/-20 cumulative launch cost = SeedF5K Task B lookup; inert elsewhere — A/C/D rows vary 1/0/empty with nfp always 0); lot/LdgOut -> landedInPilotArea flag inverse (witnessed once, -10); oof/OutOfFld -> landedOnField zeroing flag (never true); llp/LateLdgPlty + sfp/SftyPlty + MOS/HPN penalty payloads (all zero); MID/ModelID empty everywhere."
+    }
+  },
+  "raggedness": {
+    "shape": "55 rows for a 6-pilot x 10-round nominal comp: 30 scored rows (rounds 1–6, five pilots, two groups) + 25 zero stubs. Two distinct mechanisms:",
+    "mechanisms": [
+      "Pilot 88 NEVER FLEW: his five rows (R1 G2, R2 G2, R3 G2, R4 G1, R5 G2) are zero stubs (Updated=False, no flight data, RawScore/NormalisedScore 0.000) and he has NO rows at all from R6 — GS's own progressive standings ranked him 6 with 0.000 total while he was in the draw, then the R6 standings omit him entirely. Absent R6–R10 without stub rows (the f3k-southern-fling retired-pilot shape, but with zero flown scores).",
+      "Rounds 7–10 are UNSCORED placeholder rounds: stub rows exist for the five scored pilots only (Updated=False, Downloaded=False, no flight data, all scores 0.000, ProgressiveRank 0), mirroring f3k-sample-comp's NoTaskSet rounds. GS's results were never recomputed past round 6, so the R6 progressive standings are the comp-final standings the DB holds."
+    ],
+    "groupSizes": "R1–R5: G1=3, G2=3 (with 88 in the draw); R6–R10: G1=3, G2=2 (88's group unknown — he is out of the draw). Two groups throughout (story facts); no re-flight rows (ReFlightNo=0, OriginalRoundNo==RoundNo on all 55)."
+  },
+  "verification": {
+    "script": "ephemeral /tmp/opencode/wi2/verify.py (curation-time; not committed)",
+    "invariant": "story-named invariant: every persisted RawScore cell recomputes exactly as the sum of per-flight points, each flight point being time points + the signed band integral of the launch ladder (0.5/m below NLH; 1.0/m to 10 m over; 3.0/m beyond) + flight penalties — cell-exact before the oracle is trusted",
+    "result": "0 deviations",
+    "cells": {
+      "flightsParsed": 80,
+      "flightTimeClamp (TPT)": 80,
+      "launchLadder (HPT over hva-60)": 80,
+      "flightPointIdentity (FPT = TPT+HPT+NFP+LOP+LLP+SFP)": 80,
+      "Data-slot vs FPT (Data1..5 == Flight1..4 FPT)": 80,
+      "RawScore == sum of FPT": 30,
+      "NormalisedScore half-up 1dp per group": 30,
+      "ProgressiveTotal with Drop1@5 drop-worst-normalised": 30,
+      "stub cells all-zero": 25
+    },
+    "notes": [
+      "TPT clamp for target tasks A/D verified under descending-time <-> descending-target any-order pairing (min(seconds, target)); B/C verified under single per-flight cap 300/240. 80/80.",
+      "30 s bonus-suppression guard (5.5.10.4, SeedF5K's conditional): UNWITNESSED — the minimum recorded flight is 40 s, so no flight can exercise it; the class definition keeps the guard because the rule carries it, and this data can neither confirm nor deny GS's implementation.",
+      "Launch ladder bands verified against the server's own F5KBonusData rows read as bands over (HgtVal - F5KRefHeight): metres <= -1 -> 0.5/m below; 0 -> 0; 1..10 -> 1.0/m over; >= 11 -> 3.0/m beyond (10 x 1.0 then 3.0/m) — SeedF5K LaunchBands exactly (story: 'matches LaunchBands exactly')."
+    ]
+  },
+  "normalisationAndDrops": {
+    "grid": "Stored knobs GroupScoreOption=1 (points basis), GroupScoreDecimals=1, RoundOrTruncate=0: every one of the 30 scored cells equals round-half-up(1000 x RawScore / best-in-(RoundNo,GroupNo), 1 dp) — 30/30 including the tie-bearing groups; 12 scored round-groups total, winners at exactly 1000.000 (three groups carry a tied winner: R1G1 75+80, R5G1 75+80, R5G2 80+102 — all share NS 1000.000).",
+    "drops": "DropScoreOption=0 = drop worst individual normalised TASK scores; with TaskNo constant 6 one cell per round, so task-mode and round-mode coincide. Activation counts DISTINCT rounds with RawScore>0 (arithmetic story Drop-worst §3): rounds 1–6 all scored, so at 5 completed rounds exactly Drop1At=5's one drop fires (Drop2At=99 never). Verified against all 30 ProgressiveTotalScore cells: ProgTotal = sum(norms) − worst(norms) from R5 on, no drop at R1–4 — 30/30. Equal-candidate tie-break (latest-equally-bad-first, story §5) never bites: no pilot carries two equal normalised minima.",
+    "percent": "ProgressivePercent = 100 x ProgressiveTotalScore / leader's ProgressiveTotalScore at 1 dp half-up, 30/30 (display-only)."
+  },
+  "oracle": {
+    "file": "expected-result.json",
+    "source": "server-persisted-progressive (GS's own round-6 standings), cross-checked by independent recompute",
+    "divergencePreview": "GS's final Score drops the worst REAL normalised score (its option-0 candidate pool is TaskLastRound-gated = MAX(RoundNo) where Updated='True' = 6, arithmetic story Drop-worst §4), while a faithful 10-round replay hands our engine four zero cells per pilot whose dropCount-1 policy then drops a zero and publishes the full sum (pilot 75: ours 5817.600 vs GS 4928.100). Both drop targets induce the identical placing order (verified at curation), so the placing grain matches; WI-3 owns the triage and any divergences.json entry."
+  },
+  "loaderModelGapsForWI3": [
+    "FixtureModels.cs ScheduleTablesTable carries only F3KTaskByRound (Support/Gliderscore/FixtureModels.cs:53) — competition.json's F5KTaskandRefHeightByRound and F5KDataByRound are loader-invisible; ReplayDriver's per-round task lookup F3KTaskByRound(fixture) (Support/Gliderscore/ReplayDriver.cs:793-795) resolves nothing for F5K rounds. WI-3 must widen the schedule model + task lookup.",
+    "CaptureInputs branches on GsCompClass == 'F3K' else duration (ReplayDriver.cs:695-698); identity 'F5K2024' falls into CaptureDurationInputs, which refuses (no Dur family row). WI-3 needs an F5K capture map per GS task code decoding Flight1..4 (packed mmss + HVA) into per-flight flightTime + launchAltitude captures (multi-flight, unlike the duration family's single flight).",
+    "ScoresRow (FixtureModels.cs:114-129) has no Flight1..4 / Data1..5 members — the curated JSON carries them but the loader ignores them (file-header convention); WI-3's capture map must read the flight strings, widening ScoresRawFile or reading raw elements.",
+    "SyntheticFlightLessSlots (ReplayDriver.cs:186-191) needs a 'f5k-ni-round-2' entry: pilot 88 is absent from rounds 6–10 and prescribe-draw demands every registered competitor in every round (the f3k-southern-fling pilot-89 precedent). His group for those rounds is unknowable from the data (draw rows deleted); any group satisfying minPerGroup 2 is flight-less and cell-0, so the choice is score-neutral — document the choice made.",
+    "Triage model reads NbrForTeamScore; this fixture carries the server column name NoForTeamScore (inert under UseTeams=false) — deserialises to null, no action, noted for the record.",
+    "Three flight-string serialisation formats (see derivation.flightStrings): WI-3's decoder must parse case-insensitively over both key layouts plus the one legacy long-key flight."
+  ],
+  "perFileSha256": {
+    "extract/CompData.json": "ad720310e73fbba32aa6224102ee671ca4b4f233a317b926ed70908260622484",
+    "extract/ScoringData.json": "a0a6f5dfea9ea63b1e88a3c0d0da4b57abfe57ee0eb6b72e5f0c8343fcfd7703",
+    "extract/F5KData.json": "37e6c041b6ef41da60ba7e9ef0f2f4a1558b16bec91724bdc932d3eceb1cf7c6",
+    "extract/F5KBonusData.json": "751b8cf60853fc468d985ce792d39fb03904b705c766107c577ea22219716494"
+  },
+  "who": "soarscore agent pass 2026-09-04 (WI-2)"
+}

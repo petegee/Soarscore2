@@ -1,0 +1,33 @@
+{
+  "source": "server-persisted-progressive",
+  "notes": [
+    "Derivation of record: GS's own persisted progressive standings at the last scored round — the five round-6 rows (ResultsToRoundNo=6, Updated=True). ProgressiveRank at R6 = {80: '1', 75: '2', 82: '3', 79: '4', 102: '5'} over ProgressiveTotalScore {80: 5000.000, 75: 4928.100, 82: 4796.100, 79: 4359.900, 102: 4319.200}; all totals distinct, so plain ranks 1–5 with no '=n' marks.",
+    "Cross-checked at curation by an independent recompute (ephemeral /tmp/opencode/wi2 script): sum of the pilot's six normalised round cells minus the single worst (DropScoreOption=0 = worst individual normalised task score; activation counts DISTINCT rounds with RawScore>0, so Drop1At=5 fires from round 5 and Drop2At=99 never — arithmetic story, Drop-worst §3) reproduces all 30 persisted ProgressiveTotalScore cells exactly, and Score-DESC reproduces GS's ranks 1–5.",
+    "Rounds 7–10 are zero stubs (Updated=False, no flight data, NormalisedScore 0.000, ProgressiveRank 0): GS never recomputed results past round 6, so the round-6 progressive standings are the final standings the database holds.",
+    "Pilot 88 is deliberately ABSENT from this oracle: he never flew (all five of his rows, rounds 1–5, are zero stubs) and GS's own round-6 standings carry no row for him. His last witnessed standing was rank 6 with total 0.000 (rounds 1–5). The comparator's ranking grain is oracle-driven, so an engine placing for pilot 88 does not conflict; a placing at 1–5 for him would.",
+    "Known score-level divergence to triage at WI-3 (placing-neutral): GS's final Score drops the worst REAL normalised score — its option-0 candidate pool is gated by TaskLastRound = MAX(RoundNo) where Updated='True' (= 6), so unflown rounds never enter the pool (arithmetic story, Drop-worst §4). A faithful replay of all ten prescribed rounds hands our engine four zero cells per pilot, so its dropCount-1 policy (>=5 rounds) drops a zero instead and publishes the full six-cell sum (e.g. pilot 75: 5817.600 vs GS 4928.100). Both drop targets induce the identical placing order here (verified at curation), so the ranking grain is unaffected.",
+    "ProgressivePercent = 100 x ProgressiveTotalScore / leader's, 1 dp half-up — verified 30/30 at curation (display-only; the harness never reads it)."
+  ],
+  "ranks": [
+    {
+      "pilotNo": 80,
+      "rank": "1"
+    },
+    {
+      "pilotNo": 75,
+      "rank": "2"
+    },
+    {
+      "pilotNo": 82,
+      "rank": "3"
+    },
+    {
+      "pilotNo": 79,
+      "rank": "4"
+    },
+    {
+      "pilotNo": 102,
+      "rank": "5"
+    }
+  ]
+}

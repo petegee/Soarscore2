@@ -3,7 +3,11 @@
 // the harness reads are modelled; System.Text.Json ignores the rest, which is
 // the right default for a corpus whose schema block is the verbatim GS table
 // (tests/GliderscoreFixtures/index.md rule 5) and whose unused columns (Helper,
-// ModelID, Flight1..4, …) carry nothing the replay needs.
+// ModelID, …) carry nothing the replay needs.
+//
+// f5k-fixture-from-server-db.md WI-3 brings the first exception to that rule:
+// Scores.Flight1..4 (below) — GS's structured per-flight detail strings, which
+// the F5K capture map decodes into multi-flight captures.
 //
 // These DTOs deliberately use their OWN JsonSerializerOptions (see
 // FixtureLoader.Json), never ClassDefinitionIngestion.Options: the fixture
@@ -49,13 +53,31 @@ public sealed record FamilyRowsTable(DurFamilyRow? Dur = null, F3KFamilyRow? F3K
 /// </summary>
 public sealed record F3KFamilyRow(int CompNo);
 
-/// <summary>The per-round task schedule tables (competition.json scheduleTables).</summary>
-public sealed record ScheduleTablesTable(F3KTaskByRoundTable? F3KTaskByRound = null);
+/// <summary>
+/// The per-round task schedule tables (competition.json scheduleTables). F3K
+/// fixtures carry F3KTaskByRound; F5K fixtures (f5k-fixture-from-server-db.md
+/// WI-3) carry F5KTaskandRefHeightByRound — the per-round task AND per-round
+/// NLH in one row. F5KDataByRound (task descriptions, max flights/times) stays
+/// loader-invisible: curation metadata the replay never reads.
+/// </summary>
+public sealed record ScheduleTablesTable(
+    F3KTaskByRoundTable? F3KTaskByRound = null,
+    F5KTaskAndRefHeightByRoundTable? F5KTaskAndRefHeightByRound = null);
 
 public sealed record F3KTaskByRoundTable(F3KTaskRow[] Rows);
 
 /// <summary>One F3KTaskByRound row: round → GS task code ("G", "A(1)", …).</summary>
 public sealed record F3KTaskRow(int RoundNo, string Task);
+
+public sealed record F5KTaskAndRefHeightByRoundTable(F5KTaskAndRefHeightRow[] Rows);
+
+/// <summary>
+/// One F5KTaskandRefHeightByRound row: round → GS task code ("A"–"E") and that
+/// round's nominal launch height in metres — the origin of every launch band
+/// that round. (Server-table name has the lowercase "and"; the JSON options are
+/// case-insensitive, so the C# name need not reproduce it.)
+/// </summary>
+public sealed record F5KTaskAndRefHeightRow(int RoundNo, string Task, int RefHeight);
 
 public sealed record CompetitionIdentity(
     int CompNo,
@@ -110,6 +132,15 @@ public sealed record ScoresRawFile(ScoresRow[] Rows);
 /// One persisted Scores row. Decimals, not doubles: D6 compares decimals
 /// exactly, and every value this corpus carries in these columns reprs clean
 /// at its written precision (arithmetic story, Precision &amp; storage §6).
+/// <para>
+/// f5k-fixture-from-server-db.md WI-3 — the four per-flight detail strings the
+/// server-path fixtures carry (GS's structured Flight1..4, "" on never-flown
+/// rows). Optional with null defaults so every earlier fixture and the
+/// driver's synthetic-row constructors keep compiling; the duration/F3K
+/// capture maps never read them. Data1..5 (GS's own per-flight point slots)
+/// stay loader-invisible: curation-verified duplicates of what the strings'
+/// FPT fields hold, and the harness recomputes rather than reads them.
+/// </para>
 /// </summary>
 public sealed record ScoresRow(
     int TaskNo,
@@ -126,7 +157,11 @@ public sealed record ScoresRow(
     decimal FlightScoreDeduction,
     decimal Landing,
     int Penalty,
-    long OriginalRoundNo);
+    long OriginalRoundNo,
+    string? Flight1 = null,
+    string? Flight2 = null,
+    string? Flight3 = null,
+    string? Flight4 = null);
 
 public sealed record ExpectedScoresFile(Dictionary<string, ExpectedCell> Scores);
 

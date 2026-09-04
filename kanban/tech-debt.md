@@ -161,3 +161,44 @@ See CLAUDE.md house-keeping rule 5.
   between the engine fix and the seed flip, as designed. The failing-test-first
   prescription was followed: the two new `FlightInterpreterTests` below-origin
   cases went red before the engine change.
+- [ ] `SeedF5K.cs` / `40-f5k.json` tasks A and D lack `RankByMetric = "flightTime"`.
+  `BestNFlights` with `targets: AnyOrder` ranks candidates by SCORE when
+  `RankByMetric` is null (Poker semantics, F3K.11.5) and by the named metric when
+  set (longest-flights semantics, F3K.11.8). GS pairs any-order targets with the
+  LONGEST flights (desc-time ↔ desc-target, proven cell-exact by WI-2's TPT
+  verification), so the seed's A ("1,2,3,4 in any order") and D ("3,3,4 in any
+  order") fall into the wrong pairing whenever a flight's height bonus/penalty
+  reorders it against the time ranking — witnessed on real data by
+  `f5k-ni-round-2` (R4G2 P102, R5G1 P82, R5G2 P102; 3 of 15 A/D rows, e.g. 516
+  vs GS 526). The fixture's authored `class-definition.json` was corrected at
+  WI-3 replay triage (`rankByMetric: flightTime` on A and D; the NZ seed
+  `85d-nz-f5k-ndc.json` already carries it for task A), but the FAI seed still
+  carries the gap — `SeedF5K.cs` TaskA/TaskD need `RankByMetric = "flightTime"`
+  and `40-f5k.json` regenerating, plus a domain test pinning desc-time pairing
+  on a score/time-reordered row.
+- [ ] `FlightSelector`'s validWhen gate vs `FlightInterpreter`'s per-flight
+  zeroing — conflicting semantics, unwitnessed. `FlightInterpreter.Interpret`
+  zeroes a flight failing `flightValidWhen` but leaves it selected and counted
+  ("zero points for that flight only", 5.5.10.12 flight penalty b — the reading
+  `SeedF5K.cs` documents, with Task B's last flight staying last). But
+  `FlightSelector.SelectAndScore` step 4 re-evaluates `task.ValidWhen` over the
+  SELECTED flights and returns NoResult for the whole cell if ANY of them fails —
+  overriding the per-flight zeroing with an all-or-nothing gate. No corpus
+  fixture witnesses the difference yet (the F5K flight-zeroing flag OOF is never
+  true in `f5k-ni-round-2`; landedInPilotArea is a scored −10 term, not the
+  validWhen flag). Found 2026-09-04 during `kanban/in-progress/f5k-fixture-from-server-db.md`
+  WI-3. Decide which reading 5.5.10.12 means, align the two sites, and cover it
+  with a domain test before a fixture witnesses a zeroed flight.
+- [ ] Per-round F5K NLH parameter bindings — `ReplayDriver` binds parameters
+  per-slug with fixture-specific data (f3j precedent); `f5k-ni-round-2` needed
+  no binding only because all ten rounds share NLH 60 (the driver guards loudly
+  that every `F5KTaskandRefHeightByRound.RefHeight` equals the definition's
+  `nlh` default). A comp with varying per-round NLH needs per-round binds
+  decoded from `F5KDataByRound` (today loader-invisible, curation-only). Found
+  2026-09-04 during `kanban/in-progress/f5k-fixture-from-server-db.md` WI-2.
+- [ ] No product-version pin on the server-DB extraction path — the Jet corpus
+  pins GliderScore 6.78 via `DBParams.json`; the SQL Server schema carries no
+  version row, so `extract-mssql.py` slices record no GliderScore version.
+  Nothing actionable unless a version-sensitive behaviour surfaces; recorded in
+  `tests/GliderscoreFixtures/f5k-ni-round-2/provenance.json`. Found 2026-09-04
+  during `kanban/in-progress/f5k-fixture-from-server-db.md` WI-2.

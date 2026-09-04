@@ -121,6 +121,15 @@ Feature: Replaying a GliderScore fixture
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 
+  Scenario: The f5k-ni-round-2 fixture reproduces GliderScore exactly at all three grains across its per-round task catalogue and launch-altitude ladder
+    Given the fixture corpus manifest
+    When the harness replays the GliderScore fixture "f5k-ni-round-2"
+    Then every raw flight score matches the fixture oracle exactly
+    And every normalised round score matches the fixture oracle exactly
+    And the final ranking matches the fixture oracle exactly
+    And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
+    And the fixture carries no ledgered divergences
+
   Scenario: Replaying the ales-sample-comp fixture twice within one run issues identical command counts and compares exact twice
     Given the fixture corpus manifest
     When the harness replays the GliderScore fixture "ales-sample-comp" twice within this scenario

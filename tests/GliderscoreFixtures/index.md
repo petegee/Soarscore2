@@ -121,6 +121,30 @@ line starts with the slug token and contains "skipped".
   whitelist those five keys, never repair them); normalisation exact 199/199
   despite null stored knobs; reconstructed-ladder oracle settling the
   cancelled-zero aggregation.
+- f5k-ni-round-2 — active — F5K2024 (multiple-task duration scored against a
+  per-round nominal launch height) — exercises the corpus's FIRST F5K-family
+  witness and the FIRST server-DB acquisition (`extract/extract-mssql.py`,
+  WI-1 tooling, PII redaction on — a new path beside the Jet one): 6 pilots ×
+  10 rounds × 2 groups (55 rows); per-round task schedule A–D carried
+  faithfully from F5KTaskandRefHeightByRound (A,B,C,D,A,B,C,D,B,D) with NLH 60
+  every round; launch-altitude band-integral scoring per flight (0.5/m bonus
+  below the NLH under the ≥30 s guard, 1.0/m to 10 m over, 3.0/m beyond —
+  SeedF5K LaunchBands exactly), decoded from GS's structured Flight1..4
+  strings in THREE coexisting serialisations (uppercase, lowercase, one legacy
+  long-key row); task B's stored-last-flight shape replayed with NOF
+  launch-count padding so the counted flight carries its true sequence for the
+  cumulative launch cost (0/−10/−20); every scored group's winner at exactly
+  1000.000 under HalfUp-1dp points normalisation; mid-comp snapshot — R1–R6
+  scored, R7–R10 unscored placeholder stubs (Updated=False) replayed as
+  flight-less zeros, GS's results never recomputed past R6; a never-flew pilot
+  (88: zero stubs R1–R5, rows deleted from R6, group unknowable —
+  prescription-only slots, no entry, oracle omits him from R6 on); drop
+  activation Drop1@5 over the ten prescribed rounds — our drop lands on a
+  placeholder zero where GS's scored-round-gated pool drops a real score,
+  placing-identical (verified at curation and by the replay), the score-level
+  difference never compared by any grain; oracle = GS's own persisted round-6
+  progressive standings, independently recomputed cell-exact (30/30 raw,
+  normalisation and drop arithmetic); empty divergence ledger.
 - f3b-international — skipped — multi-task-per-round (Duration+Speed+Distance)
   hits unsupportedRoundComposition; NO fixture directory was curated — it
   remains available only in the shared extraction of record

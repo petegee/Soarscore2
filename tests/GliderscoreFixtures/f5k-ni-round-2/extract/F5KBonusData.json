@@ -1,0 +1,42 @@
+{
+  "schema": {
+    "CompID": "Text",
+    "Metres": "Integer",
+    "BonusPointsPerMetre": "Decimal",
+    "DateCreated": "Long"
+  },
+  "rows": [
+    {
+      "CompID": "237BA891f9949",
+      "Metres": -1,
+      "BonusPointsPerMetre": {
+        "$decimal": "0.5"
+      },
+      "DateCreated": 3804
+    },
+    {
+      "CompID": "237BA891f9949",
+      "Metres": 0,
+      "BonusPointsPerMetre": {
+        "$decimal": "0.0"
+      },
+      "DateCreated": 3804
+    },
+    {
+      "CompID": "237BA891f9949",
+      "Metres": 1,
+      "BonusPointsPerMetre": {
+        "$decimal": "1.0"
+      },
+      "DateCreated": 3804
+    },
+    {
+      "CompID": "237BA891f9949",
+      "Metres": 11,
+      "BonusPointsPerMetre": {
+        "$decimal": "3.0"
+      },
+      "DateCreated": 3804
+    }
+  ]
+}

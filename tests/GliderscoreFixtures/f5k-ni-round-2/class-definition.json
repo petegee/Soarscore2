@@ -1,0 +1,784 @@
+{
+  "name": "Gliderscore F5K2024 (f5k-ni-round-2)",
+  "faiDesignation": "F5K",
+  "version": "Authored from tools/Soarscore.SeedData/SeedF5K.cs (canonical JSON tools/Soarscore.SeedData/json/40-f5k.json) adapted to server comp 237BA891f9949 'F5K NI Round 2' (Haumoana NZ, 2026-05-29, CompType F5K2024). Realised-config adaptations, each recorded in provenance.json: single Preliminary phase (no fly-off was flown); task catalogue A–D only (the four tasks the comp's F5KData names over rounds 1–10 — E was never flown); drop policy collapsed to the one crossed GS knob (Drop1At=5: 1 drop from 5 rounds; Drop2At=99 never) instead of 5.5.10.16's 7; normalisation grid HalfUp 0.1 (GroupScoreDecimals=1, RoundOrTruncate=0 — both stored, all 30 scored cells cell-exact); seed rawScore whole-point truncation OMITTED (5.5.10.15/F4b is not what GS did — persisted RawScores carry exact half-point values at scale 3, 149.500 et al.); per-round NLH is 60 in all ten F5KData rows = the nlh parameter default, so no binding is needed (schedule carried in competition.json scheduleTables.F5KDataByRound); group.minPerGroup pinned to 2 (smallest witnessed group, R6+G2); tieBreaks reduced to bestDroppedScore (5.5.10.17) — no fly-off phase exists to tie-break into and no final tie arose (unwitnessed beyond that). Timing knobs kept from the seed: GS's stored F5KMaxTotalTime for task B is 300 against the seed's 420 s window ('Max 3 flights in 7 mins' — the GS knob reads 5 min; timing is score-neutral and the stored value rides competition.json verbatim). WI-3 replay-triage correction: tasks A and D gained rankByMetric=flightTime — GS pairs any-order targets with the LONGEST flights (desc-time ↔ desc-target, proven cell-exact by WI-2's TPT verification), which is F3K.11.8 semantics, not Poker's rank-by-score (F3K.11.5); without it the engine score-ranked the pairing and diverged on 3 of 15 A/D rows. The FAI seed 40-f5k.json/SeedF5K.cs carries the same gap (kanban/tech-debt.md).",
+  "finalRanking": "LastPhaseReplaces",
+  "parameters": [
+    {
+      "name": "nlh",
+      "kind": "Number",
+      "unit": "m",
+      "defaultValue": {
+        "kind": "Number",
+        "number": 60
+      },
+      "allowedValues": [
+        {
+          "kind": "Number",
+          "number": 60
+        },
+        {
+          "kind": "Number",
+          "number": 70
+        }
+      ],
+      "boundAt": "BeforeFlying"
+    }
+  ],
+  "reflight": {
+    "entitledScores": "Replacement",
+    "othersScore": "BetterOf",
+    "minNewGroupSize": 4
+  },
+  "penalties": [
+    {
+      "infractionType": "motorRestartInFlight",
+      "exclusionGroups": [],
+      "accrual": "OncePerAttempt",
+      "effects": [
+        {
+          "effect": "ZeroFlight"
+        }
+      ]
+    },
+    {
+      "infractionType": "hitPersonOtherThanTimer",
+      "exclusionGroups": [],
+      "accrual": "OncePerAttempt",
+      "effects": [
+        {
+          "effect": "ZeroRound"
+        }
+      ]
+    },
+    {
+      "infractionType": "safetyZone",
+      "exclusionGroups": [],
+      "accrual": "OncePerAttempt",
+      "effects": [
+        {
+          "effect": "DeductPoints",
+          "points": 300
+        }
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "ChooseFromCatalogue",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false
+      },
+      "validity": {
+        "minRounds": 1
+      },
+      "drops": [
+        {
+          "dimension": "ByRound",
+          "dropCount": 1,
+          "applyWhenRoundsCompletedAtLeast": 5
+        }
+      ],
+      "tieBreaks": [
+        {
+          "$kind": "bestDroppedScore"
+        }
+      ],
+      "tasks": [
+        {
+          "code": "A",
+          "name": "1, 2, 3, 4 minute flights in any order",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "launchAltitude",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInPilotArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "landedOnField",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "overflewLandingWindow",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "bestN",
+            "count": 4,
+            "rankByMetric": "flightTime",
+            "targets": "AnyOrder",
+            "targetValues": [
+              60,
+              120,
+              180,
+              240
+            ]
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 600,
+            "preparationTime": 300,
+            "maxLaunches": 4
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 0.1
+            }
+          },
+          "flightValidWhen": {
+            "$kind": "comparison",
+            "leftMetricRef": "landedOnField",
+            "op": "EqualTo",
+            "rightValue": {
+              "kind": "Flag",
+              "flag": true
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 599,
+              "capScope": "PerTask"
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "flightTime",
+                "op": "GreaterOrEqual",
+                "rightValue": {
+                  "kind": "Number",
+                  "number": 30
+                }
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "to": 0,
+                    "ratePerUnit": -0.5
+                  },
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              },
+              "else": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInPilotArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": false
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -10
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "overflewLandingWindow",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -100
+              }
+            }
+          ],
+          "scoreNormalised": []
+        },
+        {
+          "code": "B",
+          "name": "Last flight, 5 out of 7 minutes",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "launchAltitude",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInPilotArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "landedOnField",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "overflewLandingWindow",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "last"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 420,
+            "preparationTime": 300,
+            "maxLaunches": 3
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 0.1
+            }
+          },
+          "flightValidWhen": {
+            "$kind": "comparison",
+            "leftMetricRef": "landedOnField",
+            "op": "EqualTo",
+            "rightValue": {
+              "kind": "Flag",
+              "flag": true
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 300,
+              "capScope": "PerFlight"
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "flightTime",
+                "op": "GreaterOrEqual",
+                "rightValue": {
+                  "kind": "Number",
+                  "number": 30
+                }
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "to": 0,
+                    "ratePerUnit": -0.5
+                  },
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              },
+              "else": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "lookup",
+              "metricRef": "flight.sequence",
+              "rows": [
+                {
+                  "upTo": 1,
+                  "points": 0
+                },
+                {
+                  "upTo": 2,
+                  "points": -10
+                },
+                {
+                  "points": -20
+                }
+              ]
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInPilotArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": false
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -10
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "overflewLandingWindow",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -100
+              }
+            }
+          ],
+          "scoreNormalised": []
+        },
+        {
+          "code": "C",
+          "name": "All up, 4 minutes maximum (3x)",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "launchAltitude",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInPilotArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "landedOnField",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "overflewLandingWindow",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "all"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 241,
+            "preparationTime": 300,
+            "maxLaunches": 3
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 0.1
+            }
+          },
+          "flightValidWhen": {
+            "$kind": "comparison",
+            "leftMetricRef": "landedOnField",
+            "op": "EqualTo",
+            "rightValue": {
+              "kind": "Flag",
+              "flag": true
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 240,
+              "capScope": "PerFlight"
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "flightTime",
+                "op": "GreaterOrEqual",
+                "rightValue": {
+                  "kind": "Number",
+                  "number": 30
+                }
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "to": 0,
+                    "ratePerUnit": -0.5
+                  },
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              },
+              "else": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInPilotArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": false
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -10
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "overflewLandingWindow",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -100
+              }
+            }
+          ],
+          "scoreNormalised": []
+        },
+        {
+          "code": "D",
+          "name": "3, 3, 4 minute flights in any order",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "launchAltitude",
+              "kind": "Number",
+              "unit": "m",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            },
+            {
+              "name": "landedInPilotArea",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "landedOnField",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            },
+            {
+              "name": "overflewLandingWindow",
+              "kind": "Flag",
+              "declaredBeforeLaunch": false
+            }
+          ],
+          "flights": {
+            "$kind": "bestN",
+            "count": 3,
+            "rankByMetric": "flightTime",
+            "targets": "AnyOrder",
+            "targetValues": [
+              180,
+              180,
+              240
+            ]
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 600,
+            "preparationTime": 300,
+            "maxLaunches": 3
+          },
+          "group": {
+            "minPerGroup": 2
+          },
+          "normalise": {
+            "direction": "HigherIsBetter",
+            "winnerScore": 1000,
+            "round": {
+              "mode": "HalfUp",
+              "precision": 0.1
+            }
+          },
+          "flightValidWhen": {
+            "$kind": "comparison",
+            "leftMetricRef": "landedOnField",
+            "op": "EqualTo",
+            "rightValue": {
+              "kind": "Flag",
+              "flag": true
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": 599,
+              "capScope": "PerTask"
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "flightTime",
+                "op": "GreaterOrEqual",
+                "rightValue": {
+                  "kind": "Number",
+                  "number": 30
+                }
+              },
+              "then": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "to": 0,
+                    "ratePerUnit": -0.5
+                  },
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              },
+              "else": {
+                "$kind": "piecewise",
+                "metricRef": "launchAltitude",
+                "origin": {
+                  "param": "nlh"
+                },
+                "bands": [
+                  {
+                    "from": 0,
+                    "to": 10,
+                    "ratePerUnit": -1.0
+                  },
+                  {
+                    "from": 10,
+                    "ratePerUnit": -3.0
+                  }
+                ]
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "landedInPilotArea",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": false
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -10
+              }
+            },
+            {
+              "$kind": "conditional",
+              "when": {
+                "$kind": "comparison",
+                "leftMetricRef": "overflewLandingWindow",
+                "op": "EqualTo",
+                "rightValue": {
+                  "kind": "Flag",
+                  "flag": true
+                }
+              },
+              "then": {
+                "$kind": "constant",
+                "value": -100
+              }
+            }
+          ],
+          "scoreNormalised": []
+        }
+      ]
+    }
+  ]
+}

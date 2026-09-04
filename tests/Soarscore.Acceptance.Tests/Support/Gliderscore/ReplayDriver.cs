@@ -87,6 +87,25 @@
 // split into the two independent concepts Soarscore models, and whatever the
 // MVP cannot represent is ledgered as a semantic divergence, never emulated
 // (R1 discipline) — see MapGliderscoreTeamsAsync.
+//
+// f5k-fixture-from-server-db.md WI-3 widens four places for f5k-ni-round-2,
+// cited where they happen below:
+//   - the per-round task schedule: F5KTaskandRefHeightByRound names a GS task
+//     AND that round's NLH per round, so TaskByRound resolves F5K rounds too
+//     and guards every RefHeight against the definition's nlh default;
+//   - the F5K capture map, PER GS TASK CODE (trap 6): the row's Flight1..4
+//     structured strings decode — case-insensitively over the server's three
+//     coexisting key layouts (UPPER FNO/FTM/…, lowercase fno/…, one legacy
+//     FltNbr/FltTim/… row) — into multi-flight captures of flightTime (packed
+//     mmss) + launchAltitude (peak metres) + three flags, the first Flag-kind
+//     captures in the corpus; task B pads its known launch count (NOF) with
+//     score-neutral zero flights so the counted LAST flight carries its true
+//     flight.sequence for the task's launch-cost lookup;
+//   - ScoresRow gains the Flight1..4 strings (FixtureModels.cs);
+//   - pilot 88's R6–R10 slots are PRESCRIPTION-ONLY (see the table below) —
+//     GS deleted his rows when he stopped entering, so his group is
+//     unknowable; prescribing an unopened slot keeps the draw complete, the
+//     oracle (which omits him from R6 on) honest, and the ledger empty.
 
 using System.Net.Http.Json;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -169,18 +188,39 @@ public sealed class ReplayDriver(HttpClient client)
     //     which D5 step 1 drops (R1/R3 sizes {G1 6, G2 5, G3 6} → group 2;
     //     R2/R4 {G1 5, G2 6, G3 6} → group 1).
     //
+    // f5k-ni-round-2 (f5k-fixture-from-server-db.md WI-3) — the SAME MECHANISM
+    // for a different reason, the first non-make-up use: pilot 88 never flew
+    // (his five rows, R1–R5, are zero stubs) and GS DELETED his rows from R6
+    // on, so his group for R6–R10 is unknowable from the data (provenance).
+    // prescribe-draw still demands him in every prescribed round; a
+    // prescription-only slot satisfies that WITHOUT opening an entry, so no
+    // cell exists for him past R5 — exactly the oracle's shape (GS's own
+    // round-6 standings omit him; his last witnessed standing is R5's rank 6
+    // at 0.000). A flight-less entry instead would mint a zero cell for R6
+    // with no oracle counterpart — two ledger entries citing trap 3 for what
+    // is only a slot-shape choice, where the empty ledger is the point. Group
+    // 2 everywhere: mirrors his majority placement pre-deletion and the
+    // R1–R5 sizes {G1 3, G2 3}; score-neutral by construction — the slot is
+    // never opened, and a group's best (the only thing normalisation reads)
+    // is a max over flown results that an extra member cannot shift.
+    //
     // SyntheticFlightLessSlots — flight-less-entry slots, unchanged (D4): a
     // flight-less entry yields NoResult ⇒ cell 0, which is what puts GS's
     // placeholder zeros into the drop-candidate pool. f3k-southern-fling
     // (comp 17): pilot 89 Retired=true after round 8, absent R9–R15 (7 missing
     // slots; R9–R15 sizes {G1 5, G2 5, G3 4} → group 3). These are a retired
     // pilot's zeros, NOT make-ups — their behaviour is untouched (trap 3).
+    // f5k-ni-round-2 needs NO entry here: its wholly-stub rounds R7–R10 carry
+    // real (if unflown) rows for the five scored pilots, and pilot 88 is
+    // covered by the prescription-only table above.
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
         SyntheticPrescriptionOnlySlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
         {
             ["jerilderie-2010"] = [(12, 1, 29)],
             ["f5j-hawkes-bay-trials"] =
                 [(1, 2, 128), (2, 1, 128), (3, 2, 128), (4, 1, 128)],
+            ["f5k-ni-round-2"] =
+                [(6, 2, 88), (7, 2, 88), (8, 2, 88), (9, 2, 88), (10, 2, 88)],
         };
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
@@ -291,7 +331,7 @@ public sealed class ReplayDriver(HttpClient client)
         // WI-4 — the fixture's per-round GS task schedule (empty for the
         // duration-family fixtures, whose FixedSequence phases prescribe a null
         // TaskRef and repeat their single task).
-        var taskByRoundNo = F3KTaskByRound(fixture);
+        var taskByRoundNo = TaskByRound(fixture);
 
         var prescribedRounds = keptRows
             .GroupBy(r => r.RoundNo)
@@ -398,11 +438,13 @@ public sealed class ReplayDriver(HttpClient client)
                 {
                     await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
 
-                    foreach (var (metric, value, _) in flight)
+                    foreach (var (metric, value, _, flag) in flight)
                     {
                         await PostAsync<EntryId>(
                             "/capture-measurement",
-                            new CaptureMeasurement(entryId, flight.Key, metric, MeasuredValue.Of(value)));
+                            new CaptureMeasurement(
+                                entryId, flight.Key, metric,
+                                flag is { } f ? MeasuredValue.Of(f) : MeasuredValue.Of(value)));
                     }
                 }
             }
@@ -687,15 +729,36 @@ public sealed class ReplayDriver(HttpClient client)
     /// One decoded slot value: the metric it is captured under, its value in
     /// seconds, and WHICH flight of the entry carries it (1-based, slot order).
     /// The duration family yields only flight 1; F3K's packed columns become
-    /// flights 1..n in ScrArr order.
+    /// flights 1..n in ScrArr order; F5K's Flight1..4 strings become one
+    /// capture per declared metric per flight.
+    /// FlagValue — f5k-fixture-from-server-db.md WI-3: the corpus's first
+    /// Flag-kind captures (F5K's landedInPilotArea / landedOnField /
+    /// overflewLandingWindow). Null for the number captures every earlier map
+    /// emits; Entry.CaptureMeasurement refuses a Number value on a Flag metric
+    /// and vice versa, so the two shapes cannot be confused.
     /// </summary>
-    private sealed record SlotCapture(string Metric, decimal Value, int Flight);
+    private sealed record SlotCapture(string Metric, decimal Value, int Flight, bool? FlagValue = null)
+    {
+        /// <summary>A Flag-metric capture; Value is unused and 0.</summary>
+        public static SlotCapture Flag(string metric, bool value, int flight) =>
+            new(metric, 0m, flight, value);
+    }
 
     /// <summary>The (metric, value, flight) triples this row contributes, or null.</summary>
     private static List<SlotCapture>? CaptureInputs(GliderscoreFixture fixture, ScoresRow row) =>
         fixture.Competition.Identity.GsCompClass == "F3K"
             ? CaptureF3KInputs(fixture, row)
-            : CaptureDurationInputs(fixture, row);
+            : IsF5KFamily(fixture)
+                ? CaptureF5KInputs(fixture, row)
+                : CaptureDurationInputs(fixture, row);
+
+    /// <summary>
+    /// The F5K family — GsCompClass "F5K" plus the server-path CompType spellings
+    /// ("F5K2024"): everything the class family shares is the Flight1..4 capture
+    /// shape, and no existing class name starts with F5K except this family.
+    /// </summary>
+    private static bool IsF5KFamily(GliderscoreFixture fixture) =>
+        fixture.Competition.Identity.GsCompClass.StartsWith("F5K", StringComparison.Ordinal);
 
     /// <summary>
     /// Duration family (WI-3 capture map). A row counts as flown iff it
@@ -786,13 +849,50 @@ public sealed class ReplayDriver(HttpClient client)
     // ------------------------------------------------------- F3K capture map
 
     /// <summary>
-    /// The per-round GS task schedule (WI-4): F3KTaskByRound's round → task
-    /// code. Empty for every non-F3K fixture — their phases are FixedSequence
-    /// over one task and prescribe a null TaskRef.
+    /// The per-round GS task schedule (WI-4; f5k-fixture-from-server-db.md WI-3
+    /// widens it to the F5K family): F3KTaskByRound's / F5KTaskandRefHeightByRound's
+    /// round → task code. Empty for every non-catalogue fixture — their phases
+    /// are FixedSequence over one task and prescribe a null TaskRef.
+    ///
+    /// The F5K arm also guards the per-round NLH (RefHeight): every row must
+    /// equal the class definition's nlh parameter default. All ten rows are 60
+    /// in f5k-ni-round-2 = the default, so no per-round binding is needed (the
+    /// authored definition carries nlh=60 and provenance records that); a
+    /// fixture whose NLH varies per round is a loud widening gate here, not a
+    /// silent mis-score — the NLH is the origin of every launch band in the
+    /// class, so a divergent round would re-price every flight in it.
     /// </summary>
-    private static IReadOnlyDictionary<int, string> F3KTaskByRound(GliderscoreFixture fixture) =>
-        fixture.Competition.ScheduleTables?.F3KTaskByRound?.Rows.ToDictionary(r => r.RoundNo, r => r.Task)
-        ?? new Dictionary<int, string>();
+    private static IReadOnlyDictionary<int, string> TaskByRound(GliderscoreFixture fixture)
+    {
+        if (IsF5KFamily(fixture))
+        {
+            var rows = fixture.Competition.ScheduleTables?.F5KTaskAndRefHeightByRound?.Rows
+                ?? throw new InvalidOperationException(
+                    $"Fixture '{fixture.Slug}': GsCompClass '{fixture.Competition.Identity.GsCompClass}' but competition.json "
+                    + "carries no scheduleTables.F5KTaskandRefHeightByRound — an F5K fixture must name its per-round task and NLH.");
+
+            var nlhDefault = fixture.Definition.Parameters.FirstOrDefault(p => p.Name == "nlh")?.DefaultValue?.Number
+                ?? throw new InvalidOperationException(
+                    $"Fixture '{fixture.Slug}': the F5K schedule's per-round NLH has no definition default to be guarded against "
+                    + "(no Number default on a parameter named 'nlh').");
+
+            foreach (var row in rows)
+            {
+                if (row.RefHeight != nlhDefault)
+                {
+                    throw new NotSupportedException(
+                        $"Fixture '{fixture.Slug}': round {row.RoundNo} sets RefHeight {row.RefHeight} against the definition's "
+                        + $"nlh default {nlhDefault}. A per-round NLH binding (BindParameter, like the f3j-international "
+                        + "targetTime precedent) must be authored before this fixture can replay.");
+                }
+            }
+
+            return rows.ToDictionary(r => r.RoundNo, r => r.Task);
+        }
+
+        return fixture.Competition.ScheduleTables?.F3KTaskByRound?.Rows.ToDictionary(r => r.RoundNo, r => r.Task)
+            ?? new Dictionary<int, string>();
+    }
 
     /// <summary>
     /// The F3K slot-column capture map, PER GS TASK CODE (trap 6). GS packs up
@@ -869,7 +969,7 @@ public sealed class ReplayDriver(HttpClient client)
 
     private static List<SlotCapture>? CaptureF3KInputs(GliderscoreFixture fixture, ScoresRow row)
     {
-        var taskByRound = F3KTaskByRound(fixture);
+        var taskByRound = TaskByRound(fixture);
         var taskCode = taskByRound.GetValueOrDefault(row.RoundNo)
             ?? throw new InvalidOperationException(
                 $"Fixture '{fixture.Slug}': F3K schedule names no task for round {row.RoundNo}.");
@@ -1007,6 +1107,192 @@ public sealed class ReplayDriver(HttpClient client)
 
         return minutes * 60m + (packed - 100m * minutes);
     }
+
+    // -------------------------------------------------------- F5K capture map
+
+    /// <summary>
+    /// The F5K slot capture map, PER GS TASK CODE (f5k-fixture-from-server-db.md
+    /// WI-3; trap 6 precedent). GS packs each launch of an F5K round into one
+    /// structured Flight1..4 string on the Scores row, in THREE coexisting
+    /// serialisations of the same shape across the 80 flight strings
+    /// (provenance, derivation.flightStrings): 67 uppercase-keyed rows
+    /// (FNO/FTM/TPT/HVA/HPT/NOF/NFP/LOT/LOP/LLN/LLP/OOF/MOS/HPN/SFY/SFP/FPT),
+    /// 12 lowercase (fno/…), 1 legacy long-key row (FltNbr/MdlID/FltTim/MinSec/
+    /// TimPts/HgtVal/HgtPts/NbrFlts/NbrFltsPlty/LdgOut/LdgOutPlty/LateLdg/
+    /// LateLdgPlty/OutOfFld/MotorReStart/HitPerson/Sfty/SftyPlty/FltPts).
+    /// DecodeF5KFlightString parses case-insensitively over both key layouts.
+    ///
+    /// What each capture feeds (the authored class definition's metrics):
+    ///   flightTime            — FTM/FltTim, packed mmss (400 = 240 s, 47 = 47 s).
+    ///                           Never pre-clamped: tasks A/D clamp to the
+    ///                           assigned target themselves (bestN AnyOrder,
+    ///                           rank-by-flightTime) and B/C carry per-flight
+    ///                           caps — the engine owns the clamp, and grain 1
+    ///                           composes POST-clamp scores.
+    ///   launchAltitude        — HVA/HgtVal, peak metres; the piecewise launch
+    ///                           bands integrate (hva − nlh), the below-NLH bonus
+    ///                           guarded by flightTime ≥ 30 (5.5.10.4).
+    ///   landedInPilotArea     — !(LOT/LdgOut): the witnessed landed-out row
+    ///                           scores its −10 through the class's conditional.
+    ///   landedOnField         — !(OOF/OutOfFld): the flight-zeroing flag
+    ///                           (5.5.10.12 flight penalty b); never true in
+    ///                           this fixture, so flightValidWhen passes.
+    ///   overflewLandingWindow — LLN/LateLdg, the late-landing flag; never true
+    ///                           here (its LLP payload is 0 on every row).
+    ///
+    /// NOF/NbrFlts is NOT a capture: it is task B's launch COUNT, handled by
+    /// padding (CaptureF5BLastFlight). NFP/LOP/LLP/SFP are GS's own point
+    /// payloads — the class definition recomputes each from the captured
+    /// metrics, so reading them would bypass the engine this harness exists to
+    /// exercise (the curation-time verification proved GS's own payloads
+    /// identical to that recompute on all 80 flight strings / 30 scored cells).
+    /// </summary>
+    private static List<SlotCapture>? CaptureF5KInputs(GliderscoreFixture fixture, ScoresRow row)
+    {
+        var taskByRound = TaskByRound(fixture);
+        var taskCode = taskByRound.GetValueOrDefault(row.RoundNo)
+            ?? throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': F5K schedule names no task for round {row.RoundNo}.");
+
+        var flights = new[] { row.Flight1, row.Flight2, row.Flight3, row.Flight4 }
+            .Where(s => !string.IsNullOrEmpty(s))
+            .Select(s => DecodeF5KFlightString(s!))
+            .ToList();
+
+        if (flights.Count == 0)
+        {
+            return null;   // flight-less stub row ⇒ NoResult ⇒ cell 0 (D4)
+        }
+
+        return taskCode switch
+        {
+            "B" => CaptureF5BLastFlight(fixture, row, flights),
+            "A" or "C" or "D" => flights
+                .SelectMany((flight, index) => F5KFlightCaptures(flight, index + 1))
+                .ToList(),
+            _ => throw new NotSupportedException(
+                $"Fixture '{fixture.Slug}': round {row.RoundNo} names GS task '{taskCode}', which is not in the "
+                + "F5K capture map (this comp's F5KData catalogue is A–D) — widen CaptureF5KInputs with its semantics first."),
+        };
+    }
+
+    /// <summary>
+    /// Task B stores only the COUNTED last flight; NOF/NbrFlts names how many
+    /// launches were made (1/2/3 → the cumulative launch cost 0/−10/−20 the
+    /// class definition reads off that flight's flight.sequence — SeedF5K's F6
+    /// finding). The unknown earlier launches are padded as zero flights so the
+    /// counted flight carries its true sequence number; they are never selected
+    /// (last-flight task), so their zero metrics cannot score — the K-task
+    /// spike (nz-fixture-replay-scenarios.md D5 item 4) proved the engine
+    /// accepts zero-time flights.
+    /// </summary>
+    private static List<SlotCapture> CaptureF5BLastFlight(
+        GliderscoreFixture fixture,
+        ScoresRow row,
+        List<IReadOnlyDictionary<string, string>> flights)
+    {
+        if (flights.Count != 1)
+        {
+            throw new NotSupportedException(
+                $"Fixture '{fixture.Slug}': round {row.RoundNo} pilot {row.PilotNo} task B stores {flights.Count} flight "
+                + "strings — GS stores only the counted last flight; a multi-flight B row is an unwitnessed shape.");
+        }
+
+        var launches = (int)F5KNumber(flights[0], "nof", "nbrflts", 1m);
+
+        if (launches is < 1 or > 3)
+        {
+            throw new NotSupportedException(
+                $"Fixture '{fixture.Slug}': round {row.RoundNo} pilot {row.PilotNo} task B names NOF={launches} — "
+                + "outside the task's maxLaunches of 3.");
+        }
+
+        var captures = new List<SlotCapture>();
+
+        for (var launch = 1; launch < launches; launch++)
+        {
+            captures.AddRange(F5KPlaceholderFlightCaptures(launch));
+        }
+
+        captures.AddRange(F5KFlightCaptures(flights[0], launches));
+
+        return captures;
+    }
+
+    /// <summary>
+    /// A known-but-unrecorded launch: task B's NOF says it happened, GS stored
+    /// nothing about it. Zero metrics; never selected under the last-flight
+    /// selection, so nothing can read them — they exist to hold the sequence
+    /// numbers below the counted flight.
+    /// </summary>
+    private static IEnumerable<SlotCapture> F5KPlaceholderFlightCaptures(int sequence)
+    {
+        yield return new SlotCapture("flightTime", 0m, sequence);
+        yield return new SlotCapture("launchAltitude", 0m, sequence);
+        yield return SlotCapture.Flag("landedInPilotArea", true, sequence);
+        yield return SlotCapture.Flag("landedOnField", true, sequence);
+        yield return SlotCapture.Flag("overflewLandingWindow", false, sequence);
+    }
+
+    private static IEnumerable<SlotCapture> F5KFlightCaptures(
+        IReadOnlyDictionary<string, string> flight, int sequence)
+    {
+        yield return new SlotCapture(
+            "flightTime", DecodePackedMinutesSeconds(F5KNumber(flight, "ftm", "flttim")), sequence);
+        yield return new SlotCapture("launchAltitude", F5KNumber(flight, "hva", "hgtval"), sequence);
+        yield return SlotCapture.Flag("landedInPilotArea", !F5KFlag(flight, "lot", "ldgout"), sequence);
+        yield return SlotCapture.Flag("landedOnField", !F5KFlag(flight, "oof", "outoffld"), sequence);
+        yield return SlotCapture.Flag("overflewLandingWindow", F5KFlag(flight, "lln", "lateldg"), sequence);
+    }
+
+    /// <summary>
+    /// One Flight1..4 string → case-insensitive key → raw value. The server's
+    /// two key layouts collapse onto their lowercase form (FNO/fno and
+    /// FltNbr → fno); empty values ("NOF=", "MID=") are dropped so the
+    /// readers' defaults apply; GS's trailing separator is tolerated.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> DecodeF5KFlightString(string flight)
+    {
+        var fields = new Dictionary<string, string>();
+
+        foreach (var pair in flight.Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var separator = pair.IndexOf('=');
+
+            if (separator <= 0)
+            {
+                throw new InvalidOperationException($"Malformed F5K flight string segment '{pair}'.");
+            }
+
+            var value = pair[(separator + 1)..];
+
+            if (value.Length > 0)
+            {
+                fields[pair[..separator].ToLowerInvariant()] = value;
+            }
+        }
+
+        return fields;
+    }
+
+    /// <summary>First key present (current then legacy layout), parsed invariant; fallback when neither appears.</summary>
+    private static decimal F5KNumber(
+        IReadOnlyDictionary<string, string> flight, string key, string legacyKey, decimal fallback = 0m)
+    {
+        if (flight.TryGetValue(key, out var current))
+        {
+            return decimal.Parse(current, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return flight.TryGetValue(legacyKey, out var legacy)
+            ? decimal.Parse(legacy, System.Globalization.CultureInfo.InvariantCulture)
+            : fallback;
+    }
+
+    /// <summary>First key present (current then legacy layout) read as a GS boolean; absent = false.</summary>
+    private static bool F5KFlag(IReadOnlyDictionary<string, string> flight, string key, string legacyKey) =>
+        (flight.TryGetValue(key, out var current) ? current : flight.TryGetValue(legacyKey, out var legacy) ? legacy : null)
+        ?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
     // ---------------------------------------------------------------- misc
 

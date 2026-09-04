@@ -390,3 +390,148 @@ ad-hoc reader's baseline (stringified column-oriented dumps of the same file).
 identical ordered columns, identical row counts (105 data rows total), all
 1883 populated cells equal under stringification, and zero schema type-name
 differences. No disagreements to reconcile.
+
+## Server-DB extraction (`extract-mssql.py`)
+
+2026-09-04: a second acquisition path beside the Jet one. `extract-mssql.py`
+slices a **single competition** out of the gliderscore.com **server database**
+(`gliderscore/DB_12582_gliderscore_backup.bak`, SQL Server — gitignored, never
+committed; restored into the throwaway Docker container). Where `extract.py`
+dumps every table of a whole Jet file, this tool dumps exactly the comp-scoped
+tables that carry at least one row for the given CompID. Stdlib-only Python
+3.10, no third-party dependencies, run by hand, offline.
+
+### Usage
+
+```sh
+python3 extract-mssql.py <CompID> [--container NAME] [--db NAME] \
+    [--sqlcmd PATH] [--out DIR] [--slug NAME] [--no-redact] \
+    [--password-env NAME]
+```
+
+- `<CompID>` — case-sensitive hex string (e.g. `237BA891f9949`). The WHERE
+  comparison is forced case-sensitive with
+  `COLLATE Latin1_General_CS_AS`; a wrong-case ID finds no rows and the run
+  aborts with a case hint.
+- `--container` — Docker container name, default `mssql-gliderscore`.
+- `--db` — database name, default `gliderscore`.
+- `--sqlcmd` — sqlcmd path inside the container, default
+  `/opt/mssql-tools18/bin/sqlcmd`.
+- `--out` / `--slug` — as `extract.py`; slug default `mssql-comp-<CompID>`.
+- `--no-redact` — disable redaction (below). Never commit such output; the
+  tool prints a loud warning when set.
+- `--password-env NAME` — env var holding the SA password, default
+  `EXTRACT_MSSQL_SA_PASSWORD`. When unset the tool falls back to the
+  throwaway container's default password (`Gliderscore!Restore1` — the
+  container is disposable, so this is not treated as a secret); a real
+  password must come from the environment and is never printed or written.
+
+Queries run read-only via `docker exec` + sqlcmd:
+`-S localhost -U sa -P <password> -C -No -d <db> -Q "<query>" -s '|' -f 65001 -b -y 0`.
+`-y 0` is required (the default 256-char display truncation silently
+corrupts long rows) and is mutually exclusive with both `-W` and `-h`, so
+those classic flags are absent — the hex transport below needs neither.
+`-b` makes any SQL error exit non-zero and abort the run loudly.
+
+### Table discovery
+
+Tables are discovered dynamically from `INFORMATION_SCHEMA`: every base table
+with a `CompID` column is counted under the case-sensitive filter, and
+exactly those with ≥ 1 row are dumped — one `<Table>.json` per table under
+`<out>/<slug>/extract/`, written in sorted table order.
+
+### Output shape contract — reuse
+
+Identical to `extract.py`'s (above): `{"schema": {...}, "rows": [...]}`,
+2-space indent, `ensure_ascii=False`, `allow_nan=False`, trailing newline,
+column order = the table's ordinal position, native JSON values pass through
+natively, unknown value types fail the run loudly. Re-running on the same DB
+state yields byte-identical files (proven by double-run byte-compare in
+`/tmp`).
+
+SQL Server type-name mapping (INFORMATION_SCHEMA `DATA_TYPE` → simple name;
+types not listed abort the run):
+
+| DATA_TYPE                                        | name       |
+| ------------------------------------------------ | ---------- |
+| `char`, `nchar`, `varchar`, `nvarchar`, `text`, `ntext` | `Text` |
+| `tinyint`, `smallint`                            | `Integer`  |
+| `int`, `bigint`                                  | `Long`     |
+| `numeric`, `decimal`                             | `Decimal`  |
+| `bit`                                            | `Boolean`  |
+| `datetime2`, `datetime`, `smalldatetime`         | `DateTime` |
+| `date`                                           | `Date`     |
+| `float`, `real`                                  | `Double`   |
+
+### Value transport and NULL/empty
+
+Every cell is converted to nvarchar in SQL (datetime2 via CONVERT style 126 —
+ISO 8601, full fractional precision), hex-packed as UTF-16LE, and the fields
+joined with `|` into one row string; Python decodes the hex and re-parses
+each cell per the declared column type. Hex transport makes the pipeline
+immune to column separators, code pages and embedded newlines/quotes in data.
+
+NULL vs empty string is distinguished exactly: text columns carry an
+in-query ISNULL sentinel (`<<__NULL_TOKEN__>>`; a stored text value equal to
+that literal would be misread as NULL — no such value exists in the corpus
+tables), while non-text conversions never render to the empty string, so an
+empty field means NULL. Fixed-length `char`/`nchar` values are RTRIMmed (the
+padding is a column-width artifact, not data); `varchar`/`nvarchar` pass
+through untouched.
+
+Decimals: `numeric`/`decimal` cells are parsed with Python `Decimal` from
+the converted text — which preserves the column's stored scale exactly (e.g.
+`37.500` on a `numeric(18,3)` stays `37.500`) — and serialised via the
+`{"$decimal": "<str>"}` wrapper, matching `extract.py`'s value-encoding
+table. Byte-exact round-trip.
+
+### Deterministic row order
+
+Each table query ORDER BYs the table's natural key (ScoringData/ScoringBackup:
+RoundNo, GroupNo, SeqNo, ReFlightNo, PilotNo; F5KData/F3KData: RoundNo;
+F5KBonusData: Metres; LandingData: Distance, Points; TargetTimeByRound:
+RoundNo; DigitalTimerData: RoundNo, GroupNo, ReFlightNo) followed by every
+remaining column as a total-order tiebreaker — byte-stable across runs.
+
+### PII redaction (on by default)
+
+`PilotName` and `HelperName` carry real names in the server DB and `FAI_ID`
+carries licence numbers. Redaction happens before serialisation, so only
+redacted values are ever written:
+
+- Each distinct pilot — keyed on `(CompID, PilotNo)` (name fallback where a
+  table has `PilotName` but no `PilotNo`) — gets a deterministic name from a
+  fixed 20-name Simpsons pilot pool: keys are ordered by sha256 digest and
+  names assigned from the pool in order, so the assignment is collision-free
+  (≤ 20 pilots, the project's scale bound), stable across runs, and
+  consistent for the same pilot across all tables. Empty/null names pass
+  through unchanged.
+- Each distinct non-empty `HelperName` gets a deterministic name from a
+  disjoint non-pilot Simpsons pool (same hashing), so a helper never shares a
+  pilot's name.
+- `FAI_ID` is blanked to `""` (null or not).
+- **No mapping is persisted anywhere.** The assignment lives only in memory;
+  the run prints counts, never names.
+
+`--no-redact` restores the raw values (for verifying the tool against the
+database); its output must never be committed.
+
+### Limitations
+
+- The SA password travels as a process argument of `docker exec` (visible in
+  the local process table) — accepted for developer-run tooling; prefer
+  `--password-env` on shared machines.
+- Tables are matched by name in `INFORMATION_SCHEMA` without schema scoping;
+  the restore is single-schema, so this is fine today.
+- A text value exactly equal to the NULL sentinel would round-trip as NULL
+  (see above; none exist in the corpus tables).
+- Types outside the mapping abort the run loudly (extend `SQL_TYPE_NAMES`
+  then).
+- The tool expects the single-resultset, headerless output shape of the
+  mssql-tools18 sqlcmd build in the container; a header block, if a build
+  ever prints one, is detected and skipped, and anything else malformed
+  fails loudly.
+
+Offline-only rule: exactly as for `extract.py` — run once per fixture by
+hand, offline; nothing in `src/`, `tests/` builds or CI ever invokes this
+script; only its committed JSON output is consumed downstream.

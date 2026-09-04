@@ -1,0 +1,4010 @@
+{
+  "schema": {
+    "CompID": "Text",
+    "CompType": "Text",
+    "RoundNo": "Integer",
+    "GroupNo": "Integer",
+    "ReFlightNo": "Integer",
+    "PilotNo": "Long",
+    "Data1": "Decimal",
+    "Data2": "Decimal",
+    "Data3": "Decimal",
+    "Data4": "Decimal",
+    "Data5": "Decimal",
+    "Data6": "Decimal",
+    "Data7": "Decimal",
+    "Penalty": "Decimal",
+    "PilotName": "Text",
+    "PilotStartNo": "Long",
+    "DateCreated": "Long",
+    "Updated": "Text",
+    "OriginalRoundNo": "Long",
+    "SeqNo": "Long",
+    "LandingOver75m": "Boolean",
+    "Downloaded": "Boolean",
+    "ProgressiveTotalScore": "Decimal",
+    "ProgressiveRank": "Text",
+    "ProgressivePercent": "Decimal",
+    "ResultsToRoundNo": "Long",
+    "ProgressiveHiddenRank": "Long",
+    "ScoringLocked": "Boolean",
+    "RawScore": "Decimal",
+    "NormalisedScore": "Decimal",
+    "TaskNo": "Long",
+    "Country": "Text",
+    "HelperName": "Text",
+    "ModelIDList": "Text",
+    "ModelID": "Text",
+    "Flight1": "Text",
+    "Flight2": "Text",
+    "Flight3": "Text",
+    "Flight4": "Text",
+    "F5JMotorReStarted": "Boolean",
+    "FAI_ID": "Text",
+    "Team": "Decimal",
+    "OmitFromTeamScore": "Boolean",
+    "TimeSubmitted": "DateTime"
+  },
+  "rows": [
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 1,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "239.000"
+      },
+      "Data2": {
+        "$decimal": "187.500"
+      },
+      "Data3": {
+        "$decimal": "128.000"
+      },
+      "Data4": {
+        "$decimal": "62.500"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 1,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "1000.000"
+      },
+      "ProgressiveRank": "=1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 1,
+      "ProgressiveHiddenRank": 2,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "617.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=61&HPT=-1&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=239&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=300&MSC=3:00&TPT=180&HVA=45&HPT=7.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=187.5&",
+      "Flight3": "FNO=3&MID=&FTM=200&MSC=2:00&TPT=120&HVA=44&HPT=8&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=128&",
+      "Flight4": "FNO=4&MID=&FTM=47&MSC=47&TPT=47&HVA=29&HPT=15.5&NOF=&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=62.5&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 1,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "230.000"
+      },
+      "Data2": {
+        "$decimal": "172.500"
+      },
+      "Data3": {
+        "$decimal": "123.000"
+      },
+      "Data4": {
+        "$decimal": "64.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 1,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "955.400"
+      },
+      "ProgressiveRank": "3",
+      "ProgressivePercent": {
+        "$decimal": "95.500"
+      },
+      "ResultsToRoundNo": 1,
+      "ProgressiveHiddenRank": 3,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "589.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "955.400"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=70&HPT=-10&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=230&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=250&MSC=2:50&TPT=170&HVA=55&HPT=2.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=172.5&",
+      "Flight3": "FNO=3&MID=&FTM=200&MSC=2:00&TPT=120&HVA=54&HPT=3&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=123&",
+      "Flight4": "FNO=4&MID=&FTM=42&MSC=42&TPT=42&HVA=16&HPT=22&NOF=&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=64&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 1,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "244.000"
+      },
+      "Data2": {
+        "$decimal": "171.000"
+      },
+      "Data3": {
+        "$decimal": "118.000"
+      },
+      "Data4": {
+        "$decimal": "40.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 1,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "928.700"
+      },
+      "ProgressiveRank": "4",
+      "ProgressivePercent": {
+        "$decimal": "92.900"
+      },
+      "ResultsToRoundNo": 1,
+      "ProgressiveHiddenRank": 4,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "573.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "928.700"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=403&MSC=4:03&TPT=240&HVA=52&HPT=4&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=244&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=256&MSC=2:56&TPT=176&HVA=65&HPT=-5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=171&",
+      "Flight3": "FNO=3&MID=&FTM=200&MSC=2:00&TPT=120&HVA=62&HPT=-2&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=118&",
+      "Flight4": "FNO=4&MID=&FTM=42&MSC=42&TPT=42&HVA=62&HPT=-2&NOF=&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=40&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 1,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "200.000"
+      },
+      "Data2": {
+        "$decimal": "177.000"
+      },
+      "Data3": {
+        "$decimal": "117.000"
+      },
+      "Data4": {
+        "$decimal": "49.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 1,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "1000.000"
+      },
+      "ProgressiveRank": "=1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 1,
+      "ProgressiveHiddenRank": 1,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "543.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=80&HPT=-40&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=200&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=300&MSC=3:00&TPT=180&HVA=63&HPT=-3&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=177&",
+      "Flight3": "FNO=3&MID=&FTM=200&MSC=2:00&TPT=120&HVA=63&HPT=-3&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=117&",
+      "Flight4": "FNO=4&MID=&FTM=40&MSC=40&TPT=40&HVA=42&HPT=9&NOF=&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=49&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 1,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "69.500"
+      },
+      "Data2": {
+        "$decimal": "84.000"
+      },
+      "Data3": {
+        "$decimal": "132.500"
+      },
+      "Data4": {
+        "$decimal": "198.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 1,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "891.300"
+      },
+      "ProgressiveRank": "5",
+      "ProgressivePercent": {
+        "$decimal": "89.100"
+      },
+      "ResultsToRoundNo": 1,
+      "ProgressiveHiddenRank": 5,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "484.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "891.300"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=113&MSC=1:13&TPT=60&HVA=41&HPT=9.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=69.5&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=114&MSC=1:14&TPT=74&HVA=40&HPT=10&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=84&",
+      "Flight3": "FNO=3&MID=&FTM=202&MSC=2:02&TPT=122&HVA=39&HPT=10.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=132.5&",
+      "Flight4": "FNO=4&MID=&FTM=305&MSC=3:05&TPT=185&HVA=34&HPT=13&NOF=&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=198&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 1,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 88,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Ned Flanders",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 1,
+      "SeqNo": 4,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "6",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 1,
+      "ProgressiveHiddenRank": 6,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 2,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "283.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 2,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "1930.900"
+      },
+      "ProgressiveRank": "2",
+      "ProgressivePercent": {
+        "$decimal": "96.500"
+      },
+      "ResultsToRoundNo": 2,
+      "ProgressiveHiddenRank": 2,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "283.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "930.900"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=444&MSC=4:44&TPT=284&HVA=61&HPT=-1&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=283&Updated=True&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 2,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "129.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 2,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "1379.700"
+      },
+      "ProgressiveRank": "5",
+      "ProgressivePercent": {
+        "$decimal": "69.000"
+      },
+      "ResultsToRoundNo": 2,
+      "ProgressiveHiddenRank": 5,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "129.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "424.300"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=207&MSC=2:07&TPT=127&HVA=56&HPT=2&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=129&Updated=True&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 2,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "304.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 2,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2000.000"
+      },
+      "ProgressiveRank": "1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 2,
+      "ProgressiveHiddenRank": 1,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "304.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FltNbr=1&MdlID=&FltTim=500&MinSec=5:00&TimPts=300&HgtVal=52&HgtPts=4&NbrFlts=1&NbrFltsPlty=0&LdgOut=False&LdgOutPlty=0&LateLdg=False&LateLdgPlty=0&OutOfFld=False&MotorReStart=False&HitPerson=False&Sfty=False&SftyPlty=0&FltPts=304&Updated=True&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 2,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "149.500"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 2,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "1424.600"
+      },
+      "ProgressiveRank": "4",
+      "ProgressivePercent": {
+        "$decimal": "71.200"
+      },
+      "ResultsToRoundNo": 2,
+      "ProgressiveHiddenRank": 4,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "149.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "495.900"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=237&MSC=2:37&TPT=157&HVA=55&HPT=2.5&NOF=2&NFP=-10&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=149.5&Updated=True&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 2,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "301.500"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 2,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "1891.300"
+      },
+      "ProgressiveRank": "3",
+      "ProgressivePercent": {
+        "$decimal": "94.600"
+      },
+      "ResultsToRoundNo": 2,
+      "ProgressiveHiddenRank": 3,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "301.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=500&MSC=5:00&TPT=300&HVA=57&HPT=1.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=301.5&Updated=True&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 2,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 88,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Ned Flanders",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 2,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "6",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 2,
+      "ProgressiveHiddenRank": 6,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 3,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "238.000"
+      },
+      "Data2": {
+        "$decimal": "242.000"
+      },
+      "Data3": {
+        "$decimal": "219.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 3,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2930.900"
+      },
+      "ProgressiveRank": "1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 3,
+      "ProgressiveHiddenRank": 1,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "699.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=62&HPT=-2&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=238&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=400&MSC=4:00&TPT=240&HVA=56&HPT=2&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=242&",
+      "Flight3": "FNO=3&MID=&FTM=346&MSC=3:46&TPT=226&HVA=67&HPT=-7&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=219&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 3,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "242.500"
+      },
+      "Data2": {
+        "$decimal": "242.500"
+      },
+      "Data3": {
+        "$decimal": "116.500"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 3,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2285.100"
+      },
+      "ProgressiveRank": "4",
+      "ProgressivePercent": {
+        "$decimal": "78.000"
+      },
+      "ResultsToRoundNo": 3,
+      "ProgressiveHiddenRank": 4,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "601.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "860.500"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=55&HPT=2.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=242.5&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=400&MSC=4:00&TPT=240&HVA=55&HPT=2.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=242.5&",
+      "Flight3": "FNO=3&MID=&FTM=151&MSC=1:51&TPT=111&HVA=49&HPT=5.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=116.5&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 3,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "151.000"
+      },
+      "Data2": {
+        "$decimal": "233.000"
+      },
+      "Data3": {
+        "$decimal": "121.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 3,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2102.200"
+      },
+      "ProgressiveRank": "5",
+      "ProgressivePercent": {
+        "$decimal": "71.700"
+      },
+      "ResultsToRoundNo": 3,
+      "ProgressiveHiddenRank": 5,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "505.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "722.500"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=240&MSC=2:40&TPT=160&HVA=69&HPT=-9&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=151&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=400&MSC=4:00&TPT=240&HVA=67&HPT=-7&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=233&",
+      "Flight3": "FNO=3&MID=&FTM=154&MSC=1:54&TPT=114&HVA=46&HPT=7&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=121&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 3,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "117.500"
+      },
+      "Data2": {
+        "$decimal": "245.500"
+      },
+      "Data3": {
+        "$decimal": "102.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 3,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2928.100"
+      },
+      "ProgressiveRank": "2",
+      "ProgressivePercent": {
+        "$decimal": "99.900"
+      },
+      "ResultsToRoundNo": 3,
+      "ProgressiveHiddenRank": 2,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "465.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "928.100"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=203&msc=2:03&tpt=123&hva=51&hpt=4.5&nof=1&nfp=0&lot=true&lop=-10&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=117.5&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=400&MSC=4:00&TPT=240&HVA=49&HPT=5.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=245.5&",
+      "Flight3": "FNO=3&MID=&FTM=136&MSC=1:36&TPT=96&HVA=48&HPT=6&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=102&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 3,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "201.500"
+      },
+      "Data2": {
+        "$decimal": "240.500"
+      },
+      "Data3": {
+        "$decimal": "59.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 3,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2891.300"
+      },
+      "ProgressiveRank": "3",
+      "ProgressivePercent": {
+        "$decimal": "98.600"
+      },
+      "ResultsToRoundNo": 3,
+      "ProgressiveHiddenRank": 3,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "501.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=320&msc=3:20&tpt=200&hva=57&hpt=1.5&nof=1&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=201.5&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=400&MSC=4:00&TPT=240&HVA=59&HPT=0.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=240.5&",
+      "Flight3": "FNO=3&MID=&FTM=59&MSC=0:59&TPT=59&HVA=40&HPT=10&NOF=1&NFP=0&LOT=True&LOP=-10&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=59&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 3,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 88,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Ned Flanders",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 3,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "6",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 3,
+      "ProgressiveHiddenRank": 6,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 4,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 88,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Ned Flanders",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 4,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "6",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 4,
+      "ProgressiveHiddenRank": 6,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 4,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "230.000"
+      },
+      "Data2": {
+        "$decimal": "98.000"
+      },
+      "Data3": {
+        "$decimal": "154.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 4,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3930.900"
+      },
+      "ProgressiveRank": "1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 4,
+      "ProgressiveHiddenRank": 1,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "482.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=70&HPT=-10&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=230&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=148&MSC=1:48&TPT=108&HVA=70&HPT=-10&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=98&",
+      "Flight3": "FNO=3&MID=&FTM=247&MSC=2:47&TPT=167&HVA=71&HPT=-13&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=154&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 4,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "67.000"
+      },
+      "Data2": {
+        "$decimal": "143.000"
+      },
+      "Data3": {
+        "$decimal": "205.500"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 4,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3147.100"
+      },
+      "ProgressiveRank": "4",
+      "ProgressivePercent": {
+        "$decimal": "80.100"
+      },
+      "ResultsToRoundNo": 4,
+      "ProgressiveHiddenRank": 4,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "415.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "862.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=107&MSC=1:07&TPT=67&HVA=60&HPT=0&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=67&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=226&MSC=2:26&TPT=146&HVA=63&HPT=-3&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=143&",
+      "Flight3": "FNO=3&MID=&FTM=321&MSC=3:21&TPT=201&HVA=51&HPT=4.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=205.5&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 4,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "243.000"
+      },
+      "Data2": {
+        "$decimal": "182.000"
+      },
+      "Data3": {
+        "$decimal": "173.500"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 4,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3928.100"
+      },
+      "ProgressiveRank": "2",
+      "ProgressivePercent": {
+        "$decimal": "99.900"
+      },
+      "ResultsToRoundNo": 4,
+      "ProgressiveHiddenRank": 2,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "598.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=400&MSC=4:00&TPT=240&HVA=54&HPT=3&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=243&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=300&MSC=3:00&TPT=180&HVA=56&HPT=2&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=182&",
+      "Flight3": "FNO=3&MID=&FTM=250&MSC=2:50&TPT=170&HVA=53&HPT=3.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=173.5&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 4,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "157.000"
+      },
+      "Data2": {
+        "$decimal": "241.500"
+      },
+      "Data3": {
+        "$decimal": "123.500"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 4,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3763.500"
+      },
+      "ProgressiveRank": "3",
+      "ProgressivePercent": {
+        "$decimal": "95.700"
+      },
+      "ResultsToRoundNo": 4,
+      "ProgressiveHiddenRank": 3,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "522.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "872.200"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=239&MSC=2:39&TPT=159&HVA=62&HPT=-2&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=157&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=400&MSC=4:00&TPT=240&HVA=57&HPT=1.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=241.5&",
+      "Flight3": "FNO=3&MID=&FTM=157&MSC=1:57&TPT=117&HVA=47&HPT=6.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=123.5&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 4,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "140.500"
+      },
+      "Data2": {
+        "$decimal": "184.500"
+      },
+      "Data3": {
+        "$decimal": "201.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 4,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "2981.100"
+      },
+      "ProgressiveRank": "5",
+      "ProgressivePercent": {
+        "$decimal": "75.800"
+      },
+      "ResultsToRoundNo": 4,
+      "ProgressiveHiddenRank": 5,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "526.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "878.900"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "FNO=1&MID=&FTM=219&MSC=2:19&TPT=139&HVA=57&HPT=1.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=140.5&Updated=True&",
+      "Flight2": "FNO=2&MID=&FTM=317&MSC=3:17&TPT=180&HVA=51&HPT=4.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=184.5&",
+      "Flight3": "FNO=3&MID=&FTM=327&MSC=3:27&TPT=207&HVA=66&HPT=-6&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=201&",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 5,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "122.000"
+      },
+      "Data2": {
+        "$decimal": "63.500"
+      },
+      "Data3": {
+        "$decimal": "132.000"
+      },
+      "Data4": {
+        "$decimal": "108.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 5,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "4000.000"
+      },
+      "ProgressiveRank": "=1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 5,
+      "ProgressiveHiddenRank": 2,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "425.500"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=200&msc=2:00&tpt=120&hva=56&hpt=2&nof=1&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=122&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=127&MSC=1:27&TPT=60&HVA=53&HPT=3.5&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=63.5&",
+      "Flight3": "FNO=3&MID=&FTM=213&MSC=2:13&TPT=133&HVA=61&HPT=-1&NOF=1&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=132&",
+      "Flight4": "FNO=4&MID=&FTM=146&MSC=1:46&TPT=106&HVA=56&HPT=2&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=108&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 5,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "66.500"
+      },
+      "Data2": {
+        "$decimal": "76.000"
+      },
+      "Data3": {
+        "$decimal": "117.000"
+      },
+      "Data4": {
+        "$decimal": "127.500"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 5,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3560.700"
+      },
+      "ProgressiveRank": "4",
+      "ProgressivePercent": {
+        "$decimal": "89.000"
+      },
+      "ResultsToRoundNo": 5,
+      "ProgressiveHiddenRank": 4,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "387.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "909.500"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=107&msc=1:07&tpt=60&hva=47&hpt=6.5&nof=0&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=66.5&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=113&MSC=1:13&TPT=73&HVA=54&HPT=3&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=76&",
+      "Flight3": "FNO=3&MID=&FTM=154&MSC=1:54&TPT=114&HVA=54&HPT=3&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=117&",
+      "Flight4": "FNO=4&MID=&FTM=205&MSC=2:05&TPT=125&HVA=55&HPT=2.5&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=127.5&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 5,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "124.000"
+      },
+      "Data2": {
+        "$decimal": "60.500"
+      },
+      "Data3": {
+        "$decimal": "99.000"
+      },
+      "Data4": {
+        "$decimal": "124.500"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 5,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3850.200"
+      },
+      "ProgressiveRank": "3",
+      "ProgressivePercent": {
+        "$decimal": "96.300"
+      },
+      "ResultsToRoundNo": 5,
+      "ProgressiveHiddenRank": 3,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "408.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "958.900"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=205&msc=2:05&tpt=125&hva=61&hpt=-1&nof=0&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=124&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=102&MSC=1:02&TPT=60&HVA=59&HPT=0.5&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=60.5&",
+      "Flight3": "FNO=3&MID=&FTM=135&MSC=1:35&TPT=95&HVA=52&HPT=4&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=99&",
+      "Flight4": "FNO=4&MID=&FTM=155&MSC=1:55&TPT=115&HVA=41&HPT=9.5&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=124.5&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 5,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "219.000"
+      },
+      "Data2": {
+        "$decimal": "158.000"
+      },
+      "Data3": {
+        "$decimal": "108.000"
+      },
+      "Data4": {
+        "$decimal": "58.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 5,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "4000.000"
+      },
+      "ProgressiveRank": "=1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 5,
+      "ProgressiveHiddenRank": 1,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "543.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=358&msc=3:58&tpt=238&hva=73&hpt=-19&nof=0&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=219&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=242&MSC=2:42&TPT=162&HVA=64&HPT=-4&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=158&",
+      "Flight3": "FNO=3&MID=&FTM=158&MSC=1:58&TPT=118&HVA=70&HPT=-10&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=108&",
+      "Flight4": "FNO=4&MID=&FTM=49&MSC=0:49&TPT=49&HVA=42&HPT=9&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=58&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 5,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 88,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Ned Flanders",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 5,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "6",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 5,
+      "ProgressiveHiddenRank": 6,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 5,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "65.000"
+      },
+      "Data2": {
+        "$decimal": "118.000"
+      },
+      "Data3": {
+        "$decimal": "103.000"
+      },
+      "Data4": {
+        "$decimal": "128.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 5,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "3319.200"
+      },
+      "ProgressiveRank": "5",
+      "ProgressivePercent": {
+        "$decimal": "83.000"
+      },
+      "ResultsToRoundNo": 5,
+      "ProgressiveHiddenRank": 5,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "414.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "762.400"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=139&msc=1:39&tpt=60&hva=50&hpt=5&nof=0&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=65&updated=true&",
+      "Flight2": "FNO=2&MID=&FTM=154&MSC=1:54&TPT=114&HVA=52&HPT=4&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=118&",
+      "Flight3": "FNO=3&MID=&FTM=141&MSC=1:41&TPT=101&HVA=56&HPT=2&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=103&",
+      "Flight4": "FNO=4&MID=&FTM=213&MSC=2:13&TPT=133&HVA=65&HPT=-5&NOF=0&NFP=0&LOT=False&LOP=0&LLN=False&LLP=0&OOF=False&MOS=False&HPN=False&SFY=False&SFP=0&FPT=128&",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 6,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "245.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 6,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "4796.100"
+      },
+      "ProgressiveRank": "3",
+      "ProgressivePercent": {
+        "$decimal": "95.900"
+      },
+      "ResultsToRoundNo": 6,
+      "ProgressiveHiddenRank": 3,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "245.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "945.900"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=410&msc=4:10&tpt=250&hva=65&hpt=-5&nof=1&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=245&updated=true&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 6,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "259.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 6,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "4319.200"
+      },
+      "ProgressiveRank": "5",
+      "ProgressivePercent": {
+        "$decimal": "86.400"
+      },
+      "ResultsToRoundNo": 6,
+      "ProgressiveHiddenRank": 5,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "259.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=435&msc=4:35&tpt=275&hva=72&hpt=-16&nof=1&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=259&updated=true&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 6,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "207.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 6,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "4359.900"
+      },
+      "ProgressiveRank": "4",
+      "ProgressivePercent": {
+        "$decimal": "87.200"
+      },
+      "ResultsToRoundNo": 6,
+      "ProgressiveHiddenRank": 4,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "207.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "799.200"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=346&msc=3:46&tpt=226&hva=69&hpt=-9&nof=2&nfp=-10&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=207&updated=true&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 6,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "161.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 6,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "4928.100"
+      },
+      "ProgressiveRank": "2",
+      "ProgressivePercent": {
+        "$decimal": "98.600"
+      },
+      "ResultsToRoundNo": 6,
+      "ProgressiveHiddenRank": 2,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "161.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "889.500"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=258&msc=2:58&tpt=178&hva=54&hpt=3&nof=3&nfp=-20&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=161&updated=true&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 6,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "181.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "True",
+      "OriginalRoundNo": 6,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": true,
+      "ProgressiveTotalScore": {
+        "$decimal": "5000.000"
+      },
+      "ProgressiveRank": "1",
+      "ProgressivePercent": {
+        "$decimal": "100.000"
+      },
+      "ResultsToRoundNo": 6,
+      "ProgressiveHiddenRank": 1,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "181.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "1000.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "fno=1&mid=&ftm=307&msc=3:07&tpt=187&hva=66&hpt=-6&nof=1&nfp=0&lot=false&lop=0&lln=false&llp=0&oof=false&mos=false&hpn=false&sfy=false&sfp=0&fpt=181&updated=true&",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 7,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 7,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 7,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 7,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 7,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 7,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 7,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 7,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 7,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 7,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 7,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 7,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 7,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 7,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 7,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 8,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 8,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 8,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 8,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 8,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 8,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 8,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 8,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 8,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 8,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 8,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 8,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 8,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 8,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 8,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 9,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 9,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 9,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 9,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 9,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 9,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 9,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 9,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 9,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 9,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 9,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 9,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 9,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 9,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 9,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 10,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 82,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Homer Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 10,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 10,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 10,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 79,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Bart Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 10,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 10,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 10,
+      "GroupNo": 1,
+      "ReFlightNo": 0,
+      "PilotNo": 80,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Lisa Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 10,
+      "SeqNo": 3,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 10,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 10,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 75,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Marge Simpson",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 10,
+      "SeqNo": 1,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 10,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    },
+    {
+      "CompID": "237BA891f9949",
+      "CompType": "F5K2024",
+      "RoundNo": 10,
+      "GroupNo": 2,
+      "ReFlightNo": 0,
+      "PilotNo": 102,
+      "Data1": {
+        "$decimal": "0.000"
+      },
+      "Data2": {
+        "$decimal": "0.000"
+      },
+      "Data3": {
+        "$decimal": "0.000"
+      },
+      "Data4": {
+        "$decimal": "0.000"
+      },
+      "Data5": {
+        "$decimal": "0.000"
+      },
+      "Data6": {
+        "$decimal": "0.000"
+      },
+      "Data7": {
+        "$decimal": "0.000"
+      },
+      "Penalty": {
+        "$decimal": "0.000"
+      },
+      "PilotName": "Mr Burns",
+      "PilotStartNo": 0,
+      "DateCreated": 3804,
+      "Updated": "False",
+      "OriginalRoundNo": 10,
+      "SeqNo": 2,
+      "LandingOver75m": false,
+      "Downloaded": false,
+      "ProgressiveTotalScore": {
+        "$decimal": "0.000"
+      },
+      "ProgressiveRank": "0",
+      "ProgressivePercent": {
+        "$decimal": "0.000"
+      },
+      "ResultsToRoundNo": 10,
+      "ProgressiveHiddenRank": 0,
+      "ScoringLocked": false,
+      "RawScore": {
+        "$decimal": "0.000"
+      },
+      "NormalisedScore": {
+        "$decimal": "0.000"
+      },
+      "TaskNo": 6,
+      "Country": "",
+      "HelperName": "",
+      "ModelIDList": "",
+      "ModelID": "",
+      "Flight1": "",
+      "Flight2": "",
+      "Flight3": "",
+      "Flight4": "",
+      "F5JMotorReStarted": false,
+      "FAI_ID": "",
+      "Team": {
+        "$decimal": "0"
+      },
+      "OmitFromTeamScore": false,
+      "TimeSubmitted": null
+    }
+  ]
+}
