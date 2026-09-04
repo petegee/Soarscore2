@@ -972,21 +972,23 @@ every list written more than once in `tools/Soarscore.SeedData/` was extracted a
 | 11-row landing table (`5.5.11.12 h`) | 2 | F5J preliminary and fly-off | `rows f5jLanding` |
 | 2-band start-height list (`5.5.11.12 e`) | 2 | F5J preliminary and fly-off | `bands f5jStartHeight` |
 | 3-band launch-altitude list (`5.5.10.4`) | 4 | F5K Tasks A, B, C, E | `bands f5kLaunch` |
-| 2-band penalty-only list (`5.5.10.4`) | 3 | F5K Tasks A, B, C | `bands f5kLaunchPenaltyOnly` |
+| 2-band penalty-only list (`5.5.10.4`) | 4 | F5K Tasks A, B, C, E — E via the nested shared conditional's `else` | `bands f5kLaunchPenaltyOnly` |
 | 3-row `flight.sequence` list (`5.5.10.2`) | 2 | F5K Tasks B and E | **nothing** — see below |
 
 Three things fall out of that table, and only the first was expected.
 
 **The row list, not the score term.** A whole-`ScoreTerm` unit was the obvious
-alternative and it very nearly fits: F3J's and F5J's landing conditionals are
-identical guard and all, F5J's two start-height terms are identical, and F5K
-Tasks A, B and C carry a `when flightTime >= 30 / then … / else …` conditional
-that is identical between the three, cap and origin included. It fails on the
-fourth site. F5K Task E scores the *same bands* under a *different* guard —
-`5.5.10.2` adds a target-achieved condition and there is no `else` — so a
-term-level unit reaches three of that list's four uses and leaves E writing the
-bands out again, while the row-list unit reaches all four. That is a difference
-on fit, and it points the same way as the two other grounds.
+alternative and it fits: F3J's and F5J's landing conditionals are identical
+guard and all, F5J's two start-height terms are identical, and F5K Tasks A, B
+and C carry a `when flightTime >= 30 / then … / else …` conditional that is
+identical between the three, cap and origin included. It *used* to fail on the
+fourth site — Task E scored the same bands under a different guard, so a
+term-level unit reached three of the list's four uses — but correcting E to
+*nest* A's conditional (`when flightTime >= targetTime / then <that
+conditional>`; the conjoined-guard form it replaced was an under-deduction, see
+the seed's Task E note) means E now reuses the whole term and a term-level unit
+reaches all four. Fit therefore no longer decides between the units; the two
+grounds below do.
 
 The row list is the smaller surface, and it names something the model already
 treats as a whole: `ScoreTerm *-- 0..* Band` and `*-- 0..* LookupRow` are

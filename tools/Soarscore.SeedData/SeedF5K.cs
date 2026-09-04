@@ -34,17 +34,6 @@ public static class SeedF5K
     // the bands: A, B and C carry the 5.5.10.4 guard alone, while E WRAPS that
     // same guard in 5.5.10.2's target-achieved condition (see Task E).
     //
-    // NOTE for notation §7.1. That section argues the reusable unit is the band
-    // list rather than the whole score term BECAUSE "F5K Task E scores the same
-    // bands under a different guard … so a term-level unit reaches three of that
-    // list's four uses". Correcting E to nest rather than conjoin means E now
-    // reuses the whole LaunchAltitude term, so a term-level unit would have
-    // reached all four and that argument no longer holds on its own facts. The
-    // band list is still defensible on the other two grounds §7.1 gives — it is
-    // the smaller surface, and it names something the model already treats as an
-    // ordered whole — but §7.1's worked example needs revisiting. Flagged, not
-    // acted on: it is a docs change.
-    //
     // The first
     // band is the bonus — a NEGATIVE rate over a NEGATIVE portion of the
     // measurement, which is how each metre below the NLH adds points. Stated
