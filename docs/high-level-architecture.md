@@ -246,6 +246,10 @@ the combinations absence makes incoherent.
     rejected — diagram §2. An infraction no scope permits can never be
     recorded, so the declaration is provably inert (the check-19
     precedent). Absent, the infraction is recordable at any scope.
+21. A phase's `TieBreaks` containing `EqualPlaces` contains only it —
+    notation §4, diagram §2. "Ties are never broken" stated beside any rung
+    that could separate is a self-contradiction (the check-18 shape; Pete's
+    2026-09-04 NZ ruling, which introduced the directive).
 
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in

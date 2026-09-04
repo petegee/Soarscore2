@@ -1,11 +1,11 @@
 # Graph Report - SoarScore2  (2026-09-04)
 
 ## Corpus Check
-- 627 files · ~1,076,156 words
+- 628 files · ~1,077,701 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 7968 nodes · 21660 edges · 384 communities (371 shown, 13 thin omitted)
+- 7977 nodes · 21676 edges · 373 communities (365 shown, 8 thin omitted)
 - Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 2339 edges (avg confidence: 0.84)
 - Token cost: 0 input · 0 output
 
@@ -31,11 +31,11 @@
 - DropPolicy
 - .New
 - .SeedWired
-- ResolvedTask
+- .Of
 - EntryId
-- .LoadAsync
-- TeamsEventStoreTests
-- GroupSpot
+- IStoreFixture
+- .All_seven_team_events_round_trip_through_the_real_store_and_replay_to_the_expected_state
+- IDispatcher
 - Corpus.cs
 - ClassDefinition
 - MeasuredValue
@@ -45,8 +45,8 @@
 - Soarscore.Application.Queries.Competitions
 - ClosingACompetitionSteps
 - .New
-- FixtureModels.cs
-- Group
+- GliderscoreFixture
+- Phase
 - Entry
 - 3.16 CLASS Q: NZ F5K (Hand Launch Electric Glider)
 - Comparator
@@ -55,23 +55,23 @@
 - AcceptingTheDrawSteps
 - Then
 - AmendMeasurementDecideTests
-- FakeClock
-- .Of
+- .Exact
+- BindParameterDecideTests
 - Plan — Capturing a score: the Entry write path and `entry_index`
 - Plan — Scoring: de-orphaning the scoring engine
 - PenaltyDefinition
 - The Competition Class notation — draft spec
 - TaskRoundRecordingPropertyTests
-- GroupId
+- ReflightRole
 - Refined plan
 - PhaseDrawn
-- RecordingAReflightRulingSteps
+- When
 - 2 SOARING (All Classes)
 - B.4 DEFINITIONS OF EXPRESSIONS
 - ScoringTeamsSteps
 - .LoadCurrentAsync
 - FinaliseDecideTests
-- DeclaredTeamResult
+- ScoringTeamMembership
 - Scoring Service Build Plan
 - .SeedOpenEntry
 - .SeedScoredTeamCompetition
@@ -92,13 +92,13 @@
 - Plan — The CD's choices: `BindParameter`
 - Context
 - Work items
-- CompetitorId
+- CompetitionId
 - PersonRegistered
 - .BuildDrawnCompetition
 - TaskRoundCompleted
-- .SeedOpenEntryWithFlight
+- .HandleAsync
 - Work items
-- Round
+- .ComputeEntries
 - ScoringServicePropertyTests
 - Story — Model tie-break policy as class data
 - .Validate
@@ -109,17 +109,17 @@
 - HarnessSelfCheckSteps
 - .DrawnCompetitionAsync
 - .New
-- IEventStore
+- .AppendAsync
 - Work items
 - DrawAcceptanceDecideTests
 - 5.5.10 F5K – RC THERMAL DURATION GLIDERS FOR MULTIPLE TASK COMPETITION WITH
 - Work items
 - Plan — The field: `RegisterCompetitor` and `WithdrawCompetitor`
 - test_triage.py
-- GliderscoreFixture
-- TaskResultState
+- ReplayDriver
+- NormalisationEnginePropertyTests
 - F3F.1 GENERAL RULES
-- DispatcherTests
+- Dispatcher
 - Plan — Class-definition adoption steel thread: `Validate()` and `PublishClassDefinition`
 - Design decisions (settled here, cited from code)
 - PublishClassDefinition
@@ -144,19 +144,19 @@
 - Rule map — topic × class
 - SECTION A - CIAM INTERNAL REGULATIONS
 - Design decisions — settled here, do not relitigate
-- IDomainEvent
+- FakeEventStore
 - F3K.11 DEFINITIONS OF TASKS
-- IProjection
+- .LoadCurrentAsync
 - Story — Ship on three stores: Fisher/SQLite, Marten/PostgreSQL, Polecat/SQL Server
 - WithdrawCompetitorHandler
-- .LoadCurrentAsync
-- .BuildDispatcher
+- IProjection
+- ContactDetails
 - 1 GENERAL DEFINITIONS
 - .AddSoarscoreInfrastructure
 - .Classify
-- DateTimeOffset
+- ReflightRule
 - NzNdcSeedArithmeticTests
-- RankingEnginePropertyTests
+- SeedF3K
 - F3G.1 GENERAL RULES
 - Gliderscore Jet DB — Schema Analysis and Indicative Domain Mapping
 - Story — Gliderscore golden-fixture pipeline
@@ -168,7 +168,7 @@
 - CLAUDE.md — Soarscore
 - fai-rule.sh
 - .SeedCompetition
-- IDispatcher
+- PrescribeDrawEventStoreTests
 - TaskDefinition
 - 4 F3J – RADIO CONTROLED THERMAL DURATION GLIDERS
 - PART 5 – TECHNICAL REGULATIONS FOR RADIO
@@ -186,7 +186,7 @@
 - Enumerations.cs
 - 3.17 CLASS R: E-RES 2M (Electric Rudder Elevator Spoiler 2M Glider)
 - BindParameterPropertyTests
-- B.1.2 Classification of model aircraft
+- DrawAcceptancePropertyTests
 - Soarscore — Users
 - Drop-worst
 - ClassDefinitionSummary
@@ -195,7 +195,7 @@
 - LADR-0002 — Competition Class definition: representation, ingestion and identity
 - .Select
 - F5K — RC Electric Thermal Duration, Multiple-Task
-- AdoptedRules
+- CaptureMeasurementDecideTests
 - F3J — RC Thermal Duration Gliders
 - C.16.2 Requirements for radio control
 - C.2.1 First category events
@@ -205,7 +205,7 @@
 - Soarscore.Acceptance.Tests.csproj
 - Soarscore.sln
 - test_fetch_comp.py
-- IServiceProvider
+- .RunPayoffCaptureScenarioAsync
 - Soarscore.Infrastructure.Tests.csproj
 - non-functional-requirements.md
 - Competition rules for RC soaring
@@ -225,20 +225,20 @@
 - Plan
 - Ranking & tie-breaks
 - Deferred decisions
-- SeedF5K
+- .LoadAsync
 - Story — NZ NDC seed classes: X5J (Class O), F5J NDC, F5K NDC
 - ScoringCorpusPropertyTests
 - Compliance check
 - f5j-hawkes-bay-trials/ladder.py
 - test_mine_catalogue.py
 - RC Soaring Competitions — Domain Class Diagram
-- validate.py
+- GroupId
 - F5L — RC Electric Thermal Gliders, RES
 - NZ Soaring — Generally Applicable Rules
 - 3.10 CLASS K: Thermal R.E.S. (Rudder, Elevator, Spoiler)
 - 3.12 CLASS M: ALES 200 (Altitude Limited Electric Soaring)
 - C.18 SAFETY
-- Competitor
+- .Seed
 - 5.5.1 GENERAL RULES
 - Work items
 - Plan — Per-round parameter bindings
@@ -258,8 +258,8 @@
 - 3.3 CLASS C: PREMIER THERMAL DURATION.
 - f5j-christchurch-2019/ladder.py
 - C.20 COMPLAINTS AND PROTESTS
-- TeamClassificationPropertyTests
-- .DrawnCompetitionAsync
+- CompetitionResult
+- RegisterPersonHandler
 - 5.5.2 CONTEST RULES
 - Model
 - Normalisation
@@ -267,15 +267,15 @@
 - Soarscore.Infrastructure.csproj
 - NZMAA Flying Rules, Section 5: Soaring — March 2024 (extracted source text)
 - SeedF5kNdc
-- ScoringServiceZeroRoutingTests
+- .BuildCompetition
 - Story — Permitted scopes on PenaltyDefinition (adoption-time scope hardening)
-- TaskRoundClosurePropertyTests
+- PhaseDefinition
 - AssigningSpotsSteps
 - Story — Ranking's secondary key: RawScore tie-break
-- .ApplyAsync
+- TeamsEventJsonTests
 - Story — GliderScore webmine tool (read-only online comp acquisition)
-- F3B.2 RULES FOR MULTI-TASK CONTESTS
-- IStoreFixture
+- .Apply
+- RegisterCompetitorHandler
 - LayerRuleTests
 - LADR-0003 — Library choices
 - 3.1 CLASS A: 6 MINUTE THERMAL DURATION
@@ -287,11 +287,11 @@
 - FindEntries
 - Story — Coverage: normalisation is per group, not per round
 - Stop storing `Entry.WorkingTime`
-- FakeEventStore
-- F3G.2 RULES FOR MULTI-TASK CONTESTS
+- IDomainEvent
+- .ComputeGroupViews
 - .SetUpAsync
 - OpKind
-- .SeedDrawnCompetitionAsync
+- AdoptedRules
 - Work items
 - 3.2 CLASS B: 10 MINUTE THERMAL DURATION
 - 3.9 CLASS J: THERMAL 2,4,6,8,10
@@ -299,8 +299,8 @@
 - reflight-aggregate-destination.md
 - .BuildGroups
 - webmine/ — GliderScore online competition acquisition (read-only)
-- .Exact
-- TeamStanding
+- FakeEventStore
+- FakeClassLibraryQuery
 - .PostCommandRawAsync
 - .Rank
 - Story — Resolve GliderScore scoring arithmetic from source
@@ -308,31 +308,31 @@
 - RecordEntryPenaltyDecideTests
 - .Apply
 - Story — NZ F3K NDC seed class
-- PhaseDrawPropertyTests
+- CompetitorId
 - f5j-nz-south-island/ladder.py
 - extract.py
 - GliderScore fixture corpus index
-- FakeEventStore
+- SeedF3J
 - Refined plan
 - Seed classes — the authoring source
 - LookupRow
 - .SeedEntryUnderF5K
 - C.10 NUMBER OF MODELS ELIGIBLE FOR ENTRY
 - C.15.6 Classification
-- gsclient.py
+- ScoringTeamId
 - AnnulEntryDecideTests
 - F3J.10 SCORING
-- .Accrue
+- .SearchAsync
 - 5.5.11.1 General Rules
 - opencode.json
 - ProtectedPair
 - Soarscore.Application
 - GliderScore golden comparison — state after http-grain-one-metric-bridge
-- ParameterBinding
+- FixtureLoader
 - Story — Smaller items
 - .mcp.json
 - graphify.js
-- .SeedScoredGroup
+- F3 Soaring — Generally Applicable Rules
 - F3K — RC Hand-Launch Gliders
 - .BuildDispatcher
 - .ScoreGroup
@@ -340,32 +340,31 @@
 - tech-debt.md
 - Story — Source an FAI-conformant F3K fixture (seed-definition parallel-run witness)
 - .ScoreWith
-- EndpointRouteBuilderExtensions
-- .FindAsync
+- A.6 BUREAU
+- IEntryQuery
 - TaskRound
 - F3B — RC Multi-Task Gliders
-- IClock
+- RegisterCompetitorPropertyTests
 - .SeedOpenEntryWithFlight
-- Model
+- Story — Signed-width piecewise bands (the FAI F5K below-NLH bonus)
 - .MapQueries
 - f3k-southern-fling/ladder.py
 - Story — webmine agent-skill wrapper
 - F3J.8 LAUNCHING
 - Story — OmitFromTeamScore=true witness fixture
-- FlightModel
-- .DescribeContributors
-- ClassDefinitionEventJsonTests
+- Mutation
+- ComparisonReport
 - NZ Class P — ALES Radian (or similar 2 m all-foam electric glider)
 - ClassDefinitionPublished
 - DocumentClassLibraryQuery
-- CompetitorModel
+- NZ ALES — Generally Applicable Rules
 - SoarscoreEventTypes
 - .HandleAsync
 - _FormScanner
 - F5J — RC Electric Powered Thermal Duration Gliders
-- Actual
-- Actual
-- A.5 PLENARY MEETING
+- EntryEventJsonTests
+- .TaskWithParameterisedWorkingTime
+- _documented_row
 - CreateCompetitionPropertyTests
 - F3K.2 DEFINITION OF MODEL GLIDER
 - F3K.9 DEFINITION OF A ROUND
@@ -373,30 +372,19 @@
 - Story — Operational tie-break resolution: record the outcome, re-rank
 - NZ Class N — ALES 123 Open (Altitude Limited Electric Soaring)
 - .ApplyRounding
-- PenaltyAccrual
-- FlightResultState
+- PenaltyEnginePropertyTests
+- ScoringResultTypes.cs
 - Result
-- Json.cs
-- MeasurementModel
-- 2.3 TIMING
+- Soarscore.SeedData
+- 2.5 CONTESTS
 - FakeClock
-- F3J.11 FINAL CLASSIFICATION
 - FakeTransport
-- ClassDefinitionProjectionPropertyTests
-- F3J.1 GENERAL RULES
-- .Random_event_sequences_fold_to_the_structurally_matching_reference_model
+- .Publishing_then_optionally_retiring_preserves_identity_fields_and_models_RetiredAt_correctly
 - ExpectedVersion
-- F3J.2 THE FLYING SITE
 - F3K.10 SCORING
 - F3K.4 SAFETY
-- FinaliseValidityPropertyTests
-- .Random_event_sequences_fold_to_the_structurally_matching_reference_model
 - RulesAmendment
-- F3J.6 ORGANISATION OF THE FLYING
-- F3J.13 ADVISORY INFORMATION
-- F3J.9 LANDING
 - F3K.1 GENERAL
-- .NextUnused
 - RateTerm
 
 ## God Nodes (most connected - your core abstractions)
@@ -426,31 +414,31 @@
 ## Import Cycles
 - None detected.
 
-## Communities (384 total, 13 thin omitted)
+## Communities (373 total, 8 thin omitted)
 
 ### Community 0 - "Competition"
-Cohesion: 0.09
-Nodes (23): Defect, Penalty, ReflightRuling, TaskRoundCoordinate, Competition, AdoptedRules, EndDate, EvaluatorVersion (+15 more)
+Cohesion: 0.05
+Nodes (47): ResolvedSchedule, DateOnly, DateTimeOffset, Defect, ImmutableArray, Penalty, ReflightRuling, Result (+39 more)
 
 ### Community 1 - "Soarscore.Domain.PublishedClassDefinition"
-Cohesion: 0.05
-Nodes (13): Soarscore.Domain.Scoring, Soarscore.Domain.Tests, Soarscore.Domain.Competitions, Soarscore.Application.Tests.Commands.Entries, Soarscore.Application.Tests, Soarscore.Domain.People, Soarscore.SeedData, Soarscore.Application.Tests.Queries.Entries (+5 more)
+Cohesion: 0.07
+Nodes (7): Soarscore.Domain.Scoring, Soarscore.Domain.Tests, Soarscore.Domain.Competitions, Soarscore.Domain.People, Soarscore.Domain.Entries, Soarscore.Domain.PublishedClassDefinition, Soarscore.Application.Tests.Queries.Scoring
 
 ### Community 2 - "FakeEntryQuery"
-Cohesion: 0.17
-Nodes (24): CancellationToken, IClock, IEventStore, Task, OpenEntryHandler, EntrySummary, Competitors, EntryOpened (+16 more)
+Cohesion: 0.22
+Nodes (18): CancellationToken, IClock, IEventStore, Task, OpenEntryHandler, EntrySummary, EntryOpened, DateTimeOffset (+10 more)
 
 ### Community 3 - "ReflightingForAMissedRoundSteps"
 Cohesion: 0.13
 Nodes (12): CompetitionId, Dictionary, Given, Group, HttpClient, HttpResponseMessage, IReadOnlyList, List (+4 more)
 
 ### Community 4 - "SystemClock"
-Cohesion: 0.08
-Nodes (46): IClassFixture, Round2GroupRef, CancellationToken, IClock, IEventStore, Task, DrawPhaseHandler, CancellationToken (+38 more)
+Cohesion: 0.09
+Nodes (43): CancellationToken, IClock, IEventStore, Task, DrawPhaseHandler, CancellationToken, Competition, IEventStore (+35 more)
 
 ### Community 5 - "test_gsclient.py"
-Cohesion: 0.10
-Nodes (36): _action_candidates(), _audit_plans(), check_common_audit_fields(), exact_sleep_factory(), execute_op(), FakeClock, FakeTransport, granular_sleep_factory() (+28 more)
+Cohesion: 0.07
+Nodes (53): base_competition(), check_integrity(), check_rule_1(), check_rule_2(), check_rule_3(), check_rule_4(), check_rule_5(), composite_key() (+45 more)
 
 ### Community 6 - "Work items"
 Cohesion: 0.09
@@ -458,11 +446,11 @@ Nodes (22): As built (2026-08-26), Before starting — all discharged, Decisions
 
 ### Community 7 - "Soarscore.Domain"
 Cohesion: 0.08
-Nodes (8): Soarscore.Application.Shared.Entries, Soarscore.Application.Commands.Competitions, Soarscore.Application.Shared.People, Soarscore.Application.Tests.Shared.Competitions, Soarscore.Application.Queries.Entries, Soarscore.Domain, Soarscore.Application.Tests.Commands.Competitions, Soarscore.Application.Shared.Competitions
+Nodes (9): Soarscore.Application.Tests.Commands.Entries, Soarscore.Application.Shared.Entries, Soarscore.Application.Commands.Competitions, Soarscore.Application.Shared.People, Soarscore.Application.Tests.Queries.Entries, Soarscore.Application.Queries.Entries, Soarscore.Domain, Soarscore.Application.Tests.Shared.Entries (+1 more)
 
 ### Community 8 - "CatalogueDrawPropertyTests"
-Cohesion: 0.14
-Nodes (13): MinPerGroupByRound, Sizes, TaskCount, Competition, DateTimeOffset, Dictionary, Fact, Field (+5 more)
+Cohesion: 0.13
+Nodes (14): MinPerGroupByRound, Sizes, MinPerGroup, TaskCount, Competition, DateTimeOffset, Dictionary, Fact (+6 more)
 
 ### Community 9 - ".CheckLimits"
 Cohesion: 0.15
@@ -473,8 +461,8 @@ Cohesion: 0.05
 Nodes (43): Application, API, and infrastructure, Best fit, Best fit, Best fit, Changes required, Changes required, Changes required, Classification and finalisation (+35 more)
 
 ### Community 11 - "ScoringTeamCommandHandlerTests"
-Cohesion: 0.14
-Nodes (21): CancellationToken, IClock, IEventStore, Task, AssignScoringTeamMembershipHandler, CancellationToken, IClock, IEventStore (+13 more)
+Cohesion: 0.15
+Nodes (18): CancellationToken, IClock, IEventStore, Task, AssignScoringTeamMembershipHandler, CancellationToken, Task, CancellationToken (+10 more)
 
 ### Community 12 - "PrescribingADrawSteps"
 Cohesion: 0.16
@@ -486,79 +474,79 @@ Nodes (29): aggregate, dropped, DropPolicy, ApplyWhenResultsAtLeast, ApplyWhenRo
 
 ### Community 14 - ".New"
 Cohesion: 0.08
-Nodes (31): Id, Competition, DateOnly, CompetitionCreated, DrawAccepted, Competition, Dictionary, Entries (+23 more)
+Nodes (28): Competition, DateOnly, CompetitionCreated, DrawAccepted, EntryQuery, FakeEventStore, ImmutableArray, Store (+20 more)
 
 ### Community 15 - ".SeedWired"
 Cohesion: 0.19
 Nodes (17): CancellationToken, IEventStore, ImmutableArray, Task, GetTeamRosters, GetTeamRostersHandler, ProtectionGroupRosterView, ScoringTeamMemberView (+9 more)
 
-### Community 16 - "ResolvedTask"
-Cohesion: 0.09
-Nodes (18): Bindings, ClassDef, ExpectedRawScore, AllFlights, LastNFlights, ResolvedGroupConstraint, ResolvedTask, ResolvedTiming (+10 more)
+### Community 16 - ".Of"
+Cohesion: 0.17
+Nodes (6): AllFlights, ResolvedTask, ResolvedTiming, ArgumentException, Fact, FlightInterpreterTests
 
 ### Community 17 - "EntryId"
 Cohesion: 0.09
-Nodes (17): Guid, EntryId, CompetitionId, Dictionary, Given, Group, HttpClient, HttpResponseMessage (+9 more)
+Nodes (18): Guid, EntryId, CompetitionId, Dictionary, Given, Group, HttpClient, HttpResponseMessage (+10 more)
 
-### Community 18 - ".LoadAsync"
+### Community 18 - "IStoreFixture"
 Cohesion: 0.06
-Nodes (50): ICommandHandler, CancellationToken, IClock, IEventStore, ImmutableArray, Task, FinaliseCompetition, FinaliseCompetitionHandler (+42 more)
+Nodes (51): ICommandHandler, CancellationToken, IClock, IEventStore, ImmutableArray, Task, FinaliseCompetition, FinaliseCompetitionHandler (+43 more)
 
-### Community 19 - "TeamsEventStoreTests"
+### Community 19 - ".All_seven_team_events_round_trip_through_the_real_store_and_replay_to_the_expected_state"
+Cohesion: 0.13
+Nodes (21): DeclaredTeamContributor, CompetitorRef, Placing, Score, DeclaredTeamResult, BestIndividualPlacing, Contributors, Name (+13 more)
+
+### Community 20 - "IDispatcher"
 Cohesion: 0.19
-Nodes (13): DeclaredTeamContributor, CompetitorRef, Placing, Score, CancellationToken, Competition, DateTimeOffset, Fact (+5 more)
-
-### Community 20 - "GroupSpot"
-Cohesion: 0.31
-Nodes (9): GroupSpot, CancellationToken, Fact, Group, IReadOnlyList, List, Task, GroupSpotsEventStoreTests (+1 more)
+Nodes (15): IDispatcher, GroupSpot, CancellationToken, Fact, Task, DrawAcceptanceEventStoreTests, Ct, CancellationToken (+7 more)
 
 ### Community 21 - "Corpus.cs"
 Cohesion: 0.50
 Nodes (4): ImmutableArray, Corpus, All, SeedClass
 
 ### Community 22 - "ClassDefinition"
-Cohesion: 0.10
-Nodes (23): Path, HashSet, IEnumerable, ImmutableArray, IReadOnlyDictionary, List, Phase, Task (+15 more)
+Cohesion: 0.11
+Nodes (24): Path, HashSet, IEnumerable, ImmutableArray, IReadOnlyDictionary, List, Phase, Task (+16 more)
 
 ### Community 23 - "MeasuredValue"
 Cohesion: 0.11
-Nodes (23): Exception, Parameter, AllowedValues, BoundAt, DefaultValue, Kind, Name, Unit (+15 more)
+Nodes (25): Exception, Parameter, AllowedValues, BoundAt, DefaultValue, Kind, Name, Unit (+17 more)
 
 ### Community 24 - "Soarscore.Application.Commands.CompetitionClasses"
-Cohesion: 0.09
-Nodes (10): Soarscore.Application.Tests.Commands.CompetitionClasses, Soarscore.Application.Queries.CompetitionClasses, Soarscore.Application.Tests.Shared.CompetitionClasses, Soarscore.Application.Shared.CompetitionClasses, Soarscore.Application.Commands.CompetitionClasses, Soarscore.Application.Tests.Queries.CompetitionClasses, Fact, ClassDefinitionHashingTests (+2 more)
+Cohesion: 0.08
+Nodes (11): Soarscore.Application.Tests, Soarscore.Application.Tests.Commands.CompetitionClasses, Soarscore.Application.Queries.CompetitionClasses, Soarscore.Application.Tests.Shared.CompetitionClasses, Soarscore.Application.Shared.CompetitionClasses, Soarscore.Application.Commands.CompetitionClasses, Soarscore.Application.Tests.Queries.CompetitionClasses, Fact (+3 more)
 
 ### Community 25 - "AcceptanceFixture"
 Cohesion: 0.06
 Nodes (28): AfterTestRun, BeforeTestRun, Soarscore.Api, Soarscore.ArchitectureTests, GeneratedRegex, HttpMethodMetadata, MethodInfo, Regex (+20 more)
 
 ### Community 26 - "EntryCapturePropertyTests"
-Cohesion: 0.06
-Nodes (32): DecideActual, DecideFlightModel, DecideModel, FlagValue, FlightPlan, MetricIndex, NumericValue, Pick (+24 more)
+Cohesion: 0.07
+Nodes (30): DecideActual, DecideFlightModel, DecideModel, FlagValue, MetricIndex, NumericValue, Pick, PlannedCapture (+22 more)
 
 ### Community 27 - "Soarscore.Application.Queries.Competitions"
 Cohesion: 0.12
-Nodes (11): Soarscore.Application.Commands.Entries, Soarscore.Application.Commands.People, Soarscore.Application.Tests.Queries.Competitions, Soarscore.Api.Commands, Soarscore.Acceptance.Tests.Support, Soarscore.Api.Queries, Soarscore.Application.Queries.Competitions, Soarscore.Application.Queries.Scoring (+3 more)
+Nodes (12): Soarscore.Application.Commands.Entries, Soarscore.Application.Commands.People, Soarscore.Application.Tests.Queries.Competitions, Soarscore.Acceptance.Tests.Support, Soarscore.Api.Queries, Soarscore.Application.Queries.Competitions, Soarscore.Application.Queries.Scoring, Soarscore.Acceptance.Tests.Support.Gliderscore (+4 more)
 
 ### Community 28 - "ClosingACompetitionSteps"
-Cohesion: 0.13
-Nodes (14): ImmutableArray, CompetitionScoreView, CompetitionId, DateTimeOffset, Dictionary, Given, Group, HttpClient (+6 more)
+Cohesion: 0.16
+Nodes (12): CompetitionId, DateTimeOffset, Dictionary, Given, Group, HttpClient, HttpResponseMessage, List (+4 more)
 
 ### Community 29 - ".New"
 Cohesion: 0.11
 Nodes (19): TaskRoundState, Annulled, Complete, Drawn, InProgress, DateTimeOffset, Fact, EntryTests (+11 more)
 
-### Community 30 - "FixtureModels.cs"
-Cohesion: 0.10
-Nodes (30): JsonElement, IReadOnlyList, JsonSerializerOptions, List, FixtureLoader, Dictionary, IReadOnlyList, CompetitionFile (+22 more)
+### Community 30 - "GliderscoreFixture"
+Cohesion: 0.14
+Nodes (28): JsonElement, List, Dictionary, IReadOnlyList, CompetitionFile, CompetitionIdentity, CompetitionScoring, CompPilotRow (+20 more)
 
-### Community 31 - "Group"
-Cohesion: 0.13
-Nodes (16): ResolvedSchedule, Round, ImmutableArray, Draw, CreatedAt, Status, Group, CompetitorRefs (+8 more)
+### Community 31 - "Phase"
+Cohesion: 0.14
+Nodes (14): Round, Draw, CreatedAt, Status, Phase, Draw, Ordinal, Rounds (+6 more)
 
 ### Community 32 - "Entry"
 Cohesion: 0.06
-Nodes (40): DateTimeOffset, Func, ImmutableArray, Penalty, Result, Amendment, At, By (+32 more)
+Nodes (41): DateTimeOffset, Func, ImmutableArray, Penalty, PenaltyRecorded, Result, Amendment, At (+33 more)
 
 ### Community 33 - "3.16 CLASS Q: NZ F5K (Hand Launch Electric Glider)"
 Cohesion: 0.05
@@ -566,35 +554,35 @@ Nodes (37): 3.16.10 Landing rules:, 3.16.11 Retrieving of model glider, 3.16.12 
 
 ### Community 34 - "Comparator"
 Cohesion: 0.16
-Nodes (18): KeyCollection, Mismatches, StandingsCompared, Competition, Dictionary, Entry, HashSet, HttpClient (+10 more)
+Nodes (18): GroupNo, KeyCollection, Mismatches, PilotNo, RoundNo, StandingsCompared, Competition, Dictionary (+10 more)
 
 ### Community 35 - "FlightOpened"
-Cohesion: 0.16
-Nodes (15): PenaltyRecorded, DateTimeOffset, Penalty, EntryAnnulled, EntryEvent, FlightOpened, MeasurementAmended, MeasurementCaptured (+7 more)
+Cohesion: 0.18
+Nodes (14): FlightPlan, DateTimeOffset, Penalty, EntryAnnulled, EntryEvent, FlightOpened, MeasurementAmended, MeasurementCaptured (+6 more)
 
 ### Community 36 - "ReflightingAGroupSteps"
-Cohesion: 0.13
-Nodes (14): Competition, ImmutableArray, CompetitionView, CompetitionId, Dictionary, Given, Group, HttpClient (+6 more)
+Cohesion: 0.16
+Nodes (11): CompetitionId, Dictionary, Given, Group, HttpClient, HttpResponseMessage, List, ProblemDetails (+3 more)
 
 ### Community 37 - "AcceptingTheDrawSteps"
 Cohesion: 0.14
 Nodes (9): CompetitionId, Given, HttpClient, HttpResponseMessage, IReadOnlyList, List, Task, AcceptingTheDrawSteps (+1 more)
 
 ### Community 38 - "Then"
-Cohesion: 0.12
-Nodes (14): Then, When, CompetitionId, DateTimeOffset, Dictionary, Given, Group, HttpClient (+6 more)
+Cohesion: 0.10
+Nodes (15): ImmutableArray, CompetitionScoreView, Then, CompetitionId, DateTimeOffset, Dictionary, Given, Group (+7 more)
 
 ### Community 39 - "AmendMeasurementDecideTests"
-Cohesion: 0.16
-Nodes (10): AmendmentFact, MeasurementDigest, DateTimeOffset, Fact, Gen, ImmutableArray, IReadOnlyList, AmendMeasurementDecideTests (+2 more)
+Cohesion: 0.14
+Nodes (13): AmendmentFact, MeasurementDigest, DateTimeOffset, Fact, Gen, ImmutableArray, IReadOnlyList, AmendMeasurementDecideTests (+5 more)
 
-### Community 40 - "FakeClock"
-Cohesion: 0.15
+### Community 40 - ".Exact"
+Cohesion: 0.14
 Nodes (24): CancellationToken, IClock, IEventStore, Task, AddProtectionGroupMemberHandler, CancellationToken, IClock, IEventStore (+16 more)
 
-### Community 41 - ".Of"
-Cohesion: 0.15
-Nodes (7): Fact, InlineData, Theory, BindParameterDecideTests, Fact, ImmutableArray, CaptureMeasurementDecideTests
+### Community 41 - "BindParameterDecideTests"
+Cohesion: 0.21
+Nodes (4): Fact, InlineData, Theory, BindParameterDecideTests
 
 ### Community 42 - "Plan — Capturing a score: the Entry write path and `entry_index`"
 Cohesion: 0.06
@@ -605,8 +593,8 @@ Cohesion: 0.06
 Nodes (32): Acceptance, Context, Dependency order, Finding 1 — `ScoreCompetition` is a shell, not a mis-typed method, Finding 2 — amendment resolution exists nowhere in the tree, Finding 3 — the engine speaks `string`, the domain speaks typed ids, Finding 4 — `RecordedPenalty` and `Penalty` do not have the same shape, Finding 5 — nothing ever marks a task-round `Complete`, so the leaderboard must derive its own field (+24 more)
 
 ### Community 44 - "PenaltyDefinition"
-Cohesion: 0.17
-Nodes (19): PenaltyScope, PenaltyDefinition, Accrual, Effects, ExclusionGroups, PermittedScopes, PenaltyEffectSpec, PenaltyApplication (+11 more)
+Cohesion: 0.18
+Nodes (21): AccruedInfo, PenaltyScope, PenaltyDefinition, Accrual, Effects, ExclusionGroups, PermittedScopes, PenaltyEffectSpec (+13 more)
 
 ### Community 45 - "The Competition Class notation — draft spec"
 Cohesion: 0.06
@@ -616,45 +604,45 @@ Nodes (30): 10. Findings F1–F15, 11. Findings F16–F21, 12. Findings F22–F2
 Cohesion: 0.11
 Nodes (27): GenEntry, GenFlight, Noise, PlacedEntry, Shape, Competition, DateTimeOffset, Entry (+19 more)
 
-### Community 47 - "GroupId"
-Cohesion: 0.08
-Nodes (18): CancellationToken, IReadOnlyList, Task, GroupId, ReflightRole, Entitled, Filler, Original (+10 more)
+### Community 47 - "ReflightRole"
+Cohesion: 0.17
+Nodes (10): ReflightRole, Entitled, Filler, Original, DateTimeOffset, Fact, ImmutableArray, List (+2 more)
 
 ### Community 48 - "Refined plan"
 Cohesion: 0.09
 Nodes (21): API — `src/Soarscore.Api` (`Commands.cs` / `Queries.cs`, kebab-case), Application commands — `src/Soarscore.Application/Commands/Competitions/`, Application queries — derived in-handler from the Competition aggregate (no new read-model documents), Classification engine — new `src/Soarscore.Domain/Scoring/TeamClassification.cs`, Cross-reference (house rule 2 — done during refinement, 2026-09-02), Decide functions (`Competition.cs`, defect-chain style, own code prefixes), Decisions settled with the owner (2026-09-02), Domain model — all inside the Competition aggregate (+13 more)
 
 ### Community 49 - "PhaseDrawn"
-Cohesion: 0.06
-Nodes (52): PenaltyRecorded, DateTimeOffset, Group, ImmutableArray, Penalty, ReflightRuling, Round, CompetitionEvent (+44 more)
+Cohesion: 0.10
+Nodes (30): PenaltyRecorded, DateTimeOffset, Group, ImmutableArray, Penalty, ReflightRuling, Round, CompetitionEvent (+22 more)
 
-### Community 50 - "RecordingAReflightRulingSteps"
-Cohesion: 0.15
-Nodes (10): CompetitionId, Given, Group, HttpClient, HttpResponseMessage, List, ProblemDetails, Task (+2 more)
+### Community 50 - "When"
+Cohesion: 0.16
+Nodes (11): When, CompetitionId, Given, Group, HttpClient, HttpResponseMessage, List, ProblemDetails (+3 more)
 
 ### Community 51 - "2 SOARING (All Classes)"
 Cohesion: 0.07
-Nodes (28): 2.1 THERMAL SOARING, 2.2.1 General., 2.2.2 Launch apparatus shall conform to the following specifications:, 2.2 LAUNCHING, 2.5.1 Contestants Meeting., 2.5.2 Round Identification., 2.5 CONTESTS, 2.6 NZ CLASSES (+20 more)
+Nodes (30): 2.1 THERMAL SOARING, 2.2.1 General., 2.2.2 Launch apparatus shall conform to the following specifications:, 2.2 LAUNCHING, 2.3.1 Timing of the flight commences when the parachute/pennant is seen to drop from the, 2.3.2 Timing of the flight shall finish when the sailplane first touches the ground or a ground based, 2.3.3 Models already in the air and being timed at the completion of the round, may complete that, 2.3.4 If the sailplane comes into contact with a person during the flight and before the model (+22 more)
 
 ### Community 52 - "B.4 DEFINITIONS OF EXPRESSIONS"
-Cohesion: 0.07
-Nodes (28): B.4.10 Hand launching, B.4.11 Helicopter, B.4.12 Hot-air balloon, B.4.13 Jet reaction motor, B.4.14 Landing, B.4.15 Loading, B.4.16 Motor glider, B.4.17 Multi-rotor (+20 more)
+Cohesion: 0.04
+Nodes (47): B.1.1 General definition, B.1.2.1 Category F1 - Free Flight, B.1.2.2 Category F2 - Control Line Flight, B.1.2.3 Category F3 - Radio Controlled Flight, B.1.2.4 Category F4 - Scale Model Aircraft, B.1.2.5 Category F5 - Radio Control Electric Powered Aircraft, B.1.2.6 Category F7 - Radio Controlled Aerostats, B.1.2.7 Category F9 - Drone Sports (+39 more)
 
 ### Community 53 - "ScoringTeamsSteps"
-Cohesion: 0.10
-Nodes (22): CompetitorFinalScoreView, Contributes, TeamContributor, CompetitorRef, Placing, Score, StandingsSnapshot, CompetitionId (+14 more)
+Cohesion: 0.11
+Nodes (19): CompetitorFinalScoreView, Contributes, StandingsSnapshot, CompetitionId, Dictionary, Given, Group, HashSet (+11 more)
 
 ### Community 54 - ".LoadCurrentAsync"
 Cohesion: 0.26
 Nodes (10): CancellationToken, Guid, IDocumentOperations, IDocumentSession, IEvent, IReadOnlyList, Task, EntryIndexProjection (+2 more)
 
 ### Community 55 - "FinaliseDecideTests"
-Cohesion: 0.16
-Nodes (7): DateTimeOffset, Fact, ImmutableArray, InlineData, Theory, FinaliseDecideTests, OneTeamResult
+Cohesion: 0.13
+Nodes (12): DeclaredResult, Aggregate, CompetitorRef, Placing, Promoted, DateTimeOffset, Fact, ImmutableArray (+4 more)
 
-### Community 56 - "DeclaredTeamResult"
-Cohesion: 0.14
-Nodes (14): DeclaredTeamResult, BestIndividualPlacing, Contributors, Name, Placing, PlacingSum, TeamRef, Total (+6 more)
+### Community 56 - "ScoringTeamMembership"
+Cohesion: 0.13
+Nodes (22): ProtectionGroupMemberAdded, ScoringTeamDefined, ScoringTeamMembershipAssigned, TeamClassificationConfigured, ProtectionGroup, Id, Name, ProtectionGroupMembership (+14 more)
 
 ### Community 57 - "Scoring Service Build Plan"
 Cohesion: 0.07
@@ -665,16 +653,16 @@ Cohesion: 0.18
 Nodes (16): CancellationToken, IClock, IEventStore, Task, OpenFlightHandler, CancellationToken, DateTimeOffset, Fact (+8 more)
 
 ### Community 59 - ".SeedScoredTeamCompetition"
-Cohesion: 0.15
-Nodes (18): CancellationToken, IEventStore, ImmutableArray, Task, ScoreTeamStandings, ScoreTeamStandingsHandler, TeamStandingsView, StandingsSnapshot (+10 more)
+Cohesion: 0.16
+Nodes (17): CancellationToken, IEventStore, ImmutableArray, Task, ScoreTeamStandings, ScoreTeamStandingsHandler, TeamStandingsView, AdoptedRules (+9 more)
 
 ### Community 60 - "Work items"
 Cohesion: 0.08
 Nodes (25): 1. `TaskRoundState.InProgress` stays unreachable — but `TaskRoundReopened` is added, 2. Finalisation is competition-scope only this thread, Before starting — done, Out of scope — deliberately, Plan — Task-round lifecycle: `TaskRoundCompleted` / `TaskRoundReopened` / `TaskRoundAnnulled` / `Finalised`, Risks, The governing principle: the system does not order score capture, Three decisions taken up front (+17 more)
 
 ### Community 61 - "MetricDefinition"
-Cohesion: 0.05
-Nodes (40): MetricDefinition, DeclaredBeforeLaunch, Kind, Name, Precision, Unit, M, ImmutableArray (+32 more)
+Cohesion: 0.04
+Nodes (44): MetricDefinition, DeclaredBeforeLaunch, Kind, Name, Precision, Unit, M, ImmutableArray (+36 more)
 
 ### Community 62 - ".HandleAsync"
 Cohesion: 0.20
@@ -682,19 +670,19 @@ Nodes (14): CancellationToken, IClock, IEventStore, Task, BindParameterHandler, 
 
 ### Community 63 - "NumberOrParam"
 Cohesion: 0.08
-Nodes (30): Bands, JsonConverter, JsonSerializerOptions, ClassDefinitionHashing, JsonSerializerOptions, Utf8JsonReader, Utf8JsonWriter, DecimalAsStringConverter (+22 more)
+Nodes (27): Bands, JsonConverter, JsonSerializerOptions, ClassDefinitionHashing, JsonSerializerOptions, Utf8JsonReader, Utf8JsonWriter, DecimalAsStringConverter (+19 more)
 
 ### Community 64 - "Plan — Catalogue-choice draws: the CD picks each round's task"
 Cohesion: 0.08
 Nodes (24): Acceptance, Appendix A — the deferred follow-on: per-round parameter bindings, Context, Dependency order, Governing documents, Out of scope (deliberately), Phase A — Domain, Phase B — Application (+16 more)
 
 ### Community 65 - ".BuildCompetition"
-Cohesion: 0.19
+Cohesion: 0.17
 Nodes (14): RoundOrdinal, TaskCode, Competitors, DateTimeOffset, Dictionary, Fact, GroupByRound, ImmutableArray (+6 more)
 
 ### Community 66 - "CompetitionReplaceTaskRoundPropertyTests"
-Cohesion: 0.11
-Nodes (17): EventKind, phaseCount, roundsPerPhase, targetPhase, targetTaskRound, taskRoundsPerRound, Dictionary, Gen (+9 more)
+Cohesion: 0.12
+Nodes (15): EventKind, phaseCount, roundsPerPhase, targetPhase, targetTaskRound, taskRoundsPerRound, Gen, kind (+7 more)
 
 ### Community 67 - "Story — Normalisation lower clamp (floor NormalisedScore at 0)"
 Cohesion: 0.11
@@ -705,8 +693,8 @@ Cohesion: 0.09
 Nodes (22): Before starting, D1 — The composition formula and its row condition, D2 — Which flights: all of the entry's, guarded to be equivalent to the selection, D3 — Term source: the resolved task, per round, D4 — Metrics construction: decode, plus the intrinsic — do not call Interpret, D5 — The classification split dissolves; the mirror survives, re-anchored, D6 — Transitional parity gate, then delete (the prior story's proven pattern), D7 — Nothing outside `tests/` + `kanban/` (+14 more)
 
 ### Community 69 - "GroupSpotsPropertyTests"
-Cohesion: 0.04
-Nodes (50): DrawOp, FieldOp, IReadOnlyCollection, OpKind, Ops, SpotBase, Op, Gen (+42 more)
+Cohesion: 0.07
+Nodes (34): FieldOp, IReadOnlyCollection, OpKind, Ops, SpotBase, Op, Gen, Index (+26 more)
 
 ### Community 70 - "Work items"
 Cohesion: 0.08
@@ -736,23 +724,23 @@ Nodes (22): A model gap this plan closes before WI-1, not silently, Context, Dep
 Cohesion: 0.06
 Nodes (32): As built (2026-08-28), Before starting, D1 — Replay mechanics per fixture, D2 — Divergence citation register (new token N1), D3 — F5J class-definition authoring spec (comps 45, 135, 121), D4 — F3K class-definition authoring spec (comps 17, 54), D5 — ReplayDriver / ReplaySteps widening (WI-1, exhaustive; shared files), D6 — The G4 comparator-property step (new Then, shared file, WI-1) (+24 more)
 
-### Community 77 - "CompetitorId"
+### Community 77 - "CompetitionId"
 Cohesion: 0.06
-Nodes (70): ICommand, IHttpMaxRequestBodySizeFeature, IParsable, WebApplication, Commands, IReadOnlyList, WebApplication, Composition (+62 more)
+Nodes (78): ICommand, IHttpMaxRequestBodySizeFeature, IParsable, WebApplication, Commands, IReadOnlyList, WebApplication, Composition (+70 more)
 
 ### Community 78 - "PersonRegistered"
-Cohesion: 0.05
-Nodes (41): IDomainEvent, PeopleProjection, DateTimeOffset, Defect, Result, ClubAffiliation, ClubName, MembershipNumber (+33 more)
+Cohesion: 0.06
+Nodes (34): PeopleProjection, DateTimeOffset, Defect, Result, ClubAffiliation, ClubName, MembershipNumber, Person (+26 more)
 
 ### Community 79 - ".BuildDrawnCompetition"
 Cohesion: 0.19
 Nodes (7): Competitors, DateTimeOffset, Fact, ImmutableArray, InlineData, Theory, AppendReflightGroupDecideTests
 
 ### Community 80 - "TaskRoundCompleted"
-Cohesion: 0.14
-Nodes (13): TaskRoundAnnulled, TaskRoundCompleted, Fact, Fact, Dictionary, Fact, Group, Round (+5 more)
+Cohesion: 0.11
+Nodes (20): minRounds, minTasks, outcomes, RoundOutcome, TaskRoundCompleted, taskRefs, DateTimeOffset, Fact (+12 more)
 
-### Community 81 - ".SeedOpenEntryWithFlight"
+### Community 81 - ".HandleAsync"
 Cohesion: 0.15
 Nodes (17): CancellationToken, IClock, IEventStore, Task, AmendMeasurementHandler, Competition, TaskResolver, CancellationToken (+9 more)
 
@@ -760,29 +748,29 @@ Nodes (17): CancellationToken, IClock, IEventStore, Task, AmendMeasurementHandle
 Cohesion: 0.09
 Nodes (21): Before starting — done, Decisions settled before planning (user, 2026-08-24), Findings from reading the tree, Out of scope — deliberately, Plan, Planner's calls — flag for veto when this plan is reviewed, Property-based invariants (named now, per CLAUDE.md), Reflight-scoring rulings (+13 more)
 
-### Community 83 - "Round"
-Cohesion: 0.13
-Nodes (14): ImmutableArray, ImmutableDictionary, PairwiseCoOccurrence, PairwiseCoOccurrenceEntry, Round, IsCompleteOrAnnulled, IsFullyFlown, Ordinal (+6 more)
+### Community 83 - ".ComputeEntries"
+Cohesion: 0.18
+Nodes (9): ImmutableArray, ImmutableDictionary, PairwiseCoOccurrence, PairwiseCoOccurrenceEntry, Dictionary, Fact, Group, Round (+1 more)
 
 ### Community 84 - "ScoringServicePropertyTests"
-Cohesion: 0.14
-Nodes (14): Scope, InfractionType, SubjectIndex, Competitors, DateTimeOffset, Dictionary, Entries, Fact (+6 more)
+Cohesion: 0.13
+Nodes (15): Scope, InfractionType, SubjectIndex, Competitors, DateTimeOffset, Dictionary, Entries, Fact (+7 more)
 
 ### Community 85 - "Story — Model tie-break policy as class data"
 Cohesion: 0.10
 Nodes (19): Adoption checks 17–19 (the inventory grows by three), Decisions (pre-answered during flesh-out 2026-08-30; D1, D8, D10 and the, Engine design, Invariant T — the property, named here per CLAUDE.md (goes verbatim into, Known traps (pre-answered — do not reopen inside this story), Out of scope (restated for sign-off), Record (close-out 2026-08-30), Story invariant for sign-off (+11 more)
 
 ### Community 86 - ".Validate"
-Cohesion: 0.20
-Nodes (5): IReadOnlyList, Fact, ClassDefinitionValidationTests, AdoptedRules, ClassDefinitionFixtures
+Cohesion: 0.23
+Nodes (4): IReadOnlyList, Fact, ClassDefinitionValidationTests, ClassDefinitionFixtures
 
 ### Community 87 - "Core Principles"
 Cohesion: 0.10
 Nodes (20): Access is strictly via an REST based API, Append only immutable log as state storage (Event Sourced), Commands and Queries only, Core-owned invariants, Core Principles, CQRS pattern to cleanly seperate Reads from Writes, Domain Driven Design, Functional-Like as a Core Princple (+12 more)
 
 ### Community 88 - "00-general-rules.md"
-Cohesion: 0.13
-Nodes (13): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score, 4. Round & final score, 5. Re-flights, F3 Soaring — Generally Applicable Rules, Source references, CIAM General Rules — 2026 Edition (extracted source text) (+5 more)
+Cohesion: 0.25
+Nodes (4): CIAM General Rules — 2026 Edition (extracted source text), 2 F3F - RADIO CONTROL SLOPE SOARING GLIDERS, F3 Radio Control Soaring — 2025 Edition v2 (extracted source text), F5 Radio Control Electric Powered Motor Gliders — 2026 Edition 2 (extracted source text)
 
 ### Community 89 - "RC Soaring Competitions — Key Concepts"
 Cohesion: 0.08
@@ -793,19 +781,19 @@ Cohesion: 0.10
 Nodes (20): Context, Dependency order, Governing documents, Out of scope (deliberately), Phase A — Foundations, Phase B — The Application kernel, Phase C — Adapters, Plan — Command-side steel thread: Person end-to-end (+12 more)
 
 ### Community 91 - "HarnessSelfCheckSteps"
-Cohesion: 0.13
-Nodes (11): Given, IReadOnlyList, Task, Then, When, HarnessSelfCheckSteps, ComparisonReport, AllGrainsExact (+3 more)
+Cohesion: 0.17
+Nodes (6): Given, IReadOnlyList, Task, Then, When, HarnessSelfCheckSteps
 
 ### Community 92 - ".DrawnCompetitionAsync"
-Cohesion: 0.23
+Cohesion: 0.22
 Nodes (12): CancellationToken, IClock, IEventStore, Task, RecordReflightRulingHandler, CancellationToken, Competition, Fact (+4 more)
 
 ### Community 93 - ".New"
-Cohesion: 0.12
-Nodes (14): DeclaredResult, Aggregate, CompetitorRef, Placing, Promoted, ArgumentException, Competition, DateTimeOffset (+6 more)
-
-### Community 94 - "IEventStore"
 Cohesion: 0.14
+Nodes (10): ArgumentException, Competition, DateTimeOffset, Fact, CompetitionFoldTests, Fact, Fact, InlineData (+2 more)
+
+### Community 94 - ".AppendAsync"
+Cohesion: 0.15
 Nodes (18): CancellationToken, Guid, IReadOnlyList, Task, IEventStore, RecordedEvent, CancellationToken, Guid (+10 more)
 
 ### Community 95 - "Work items"
@@ -832,21 +820,21 @@ Nodes (19): Context, Dependency order, Governing documents, Out of scope (delibe
 Cohesion: 0.09
 Nodes (30): assignments_of(), _convertible_record_sets(), _expected_assignment(), make_record(), composite, given, parametrize, settings (+22 more)
 
-### Community 101 - "GliderscoreFixture"
-Cohesion: 0.20
-Nodes (16): GroupNo, Kept, PilotNo, ReflightRows, RoundNo, SlotCapture, GliderscoreFixture, ScoresRow (+8 more)
+### Community 101 - "ReplayDriver"
+Cohesion: 0.23
+Nodes (12): Kept, ReflightRows, SlotCapture, ScoresRow, HttpClient, IReadOnlyDictionary, IReadOnlyList, List (+4 more)
 
-### Community 102 - "TaskResultState"
-Cohesion: 0.67
-Nodes (3): TaskResultState, NoResult, Valid
+### Community 102 - "NormalisationEnginePropertyTests"
+Cohesion: 0.22
+Nodes (9): TaskResultState, NoResult, Valid, state, Fact, Gen, IReadOnlyDictionary, raw (+1 more)
 
 ### Community 103 - "F3F.1 GENERAL RULES"
 Cohesion: 0.11
 Nodes (19): F3F.1.10 Safety, F3F.1.11 Judging, F3F.1.12 Scoring, F3F.1.13 Classification, F3F.1.14 Team Classification, F3F.1.15 Organisation of the Contest, F3F.1.16 Changes, F3F.1.17 Weather Conditions and interruptions (+11 more)
 
-### Community 104 - "DispatcherTests"
-Cohesion: 0.21
-Nodes (14): CountLetters, Echo, CancellationToken, Dictionary, Fact, InvalidOperationException, Task, Type (+6 more)
+### Community 104 - "Dispatcher"
+Cohesion: 0.08
+Nodes (32): CountLetters, Echo, IServiceProvider, CancellationToken, IServiceProvider, Task, Type, Dispatcher (+24 more)
 
 ### Community 105 - "Plan — Class-definition adoption steel thread: `Validate()` and `PublishClassDefinition`"
 Cohesion: 0.11
@@ -865,8 +853,8 @@ Cohesion: 0.10
 Nodes (20): Cross-references checked (housekeeping rule 2), D1 — Stage follows recorded scope; effect picks the action within the stage, D2 — Accrual and exclusion-group semantics at the raw stage are identical to the aggregate stage, D3 — Ordering within one entry's penalty set: contribution, suppression, then zeroing dominance, D4 — Floor: a deducted HigherIsBetter raw never goes below zero, D5 — Existing fixtures and seed classes are unaffected byte-for-byte, D6 — Read-side tolerance unchanged, Decision (argued, per "to be argued in-story") (+12 more)
 
 ### Community 109 - "RecordCompetitionPenaltyDecideTests"
-Cohesion: 0.21
-Nodes (6): DateTimeOffset, Fact, Gen, Penalty, PenaltyScope, RecordCompetitionPenaltyDecideTests
+Cohesion: 0.13
+Nodes (15): Competitor, CompetitorNumber, Id, PersonRef, RegisteredAt, WithdrawnAt, DateTimeOffset, Fact (+7 more)
 
 ### Community 110 - "6 F3L – RADIO CONTROLLED THERMAL GLIDERS RES"
 Cohesion: 0.11
@@ -905,8 +893,8 @@ Cohesion: 0.12
 Nodes (17): C.15.10 Multiple Classes (combined Championships – Cancellation of a class, C.15.1 CIAM championships naming policy, C.15.2.1 Class F (Model Aircraft), C.15.2.2 Class S (Space Models), C.15.2 Current World Championships, C.15.3 Offers to host a World or Continental Championship, C.15.4.1 Bulletin 0, C.15.4.2 Bulletin 1 (+9 more)
 
 ### Community 119 - "ScoringVocabulary.cs"
-Cohesion: 0.06
-Nodes (36): Comparator, EqualTo, GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, TargetAssignment, AnyOrder (+28 more)
+Cohesion: 0.08
+Nodes (27): Comparator, EqualTo, GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, TargetAssignment, AnyOrder (+19 more)
 
 ### Community 120 - "Plan — Create-competition steel thread: `CreateCompetition`"
 Cohesion: 0.12
@@ -917,15 +905,15 @@ Cohesion: 0.18
 Nodes (11): CancellationToken, Exception, Guid, IDocumentReadOperations, IDocumentSessionFactory, IDocumentSessionOperations, IEventStoreOperations, IQueryEventStore (+3 more)
 
 ### Community 122 - ".Normalise"
-Cohesion: 0.14
-Nodes (17): Normalisation, Direction, Round, WinnerScore, Rounding, ImmutableDictionary, IReadOnlyDictionary, NormalisationEngine (+9 more)
+Cohesion: 0.22
+Nodes (11): Normalisation, Direction, Round, WinnerScore, Rounding, ImmutableDictionary, IReadOnlyDictionary, NormalisationEngine (+3 more)
 
 ### Community 123 - "2. Findings"
 Cohesion: 0.15
 Nodes (12): 1. Why, 2.1 Competition catalogue (public, easy), 2.2 What `eScoringInterface.exe` actually is, 2.3 Server API (recovered by decompiling GliderScore.exe 6.79 U5), 2.4 Download zip contents, 2.5 Caveats learned the hard way, 2. Findings, 3. Fit with the existing fixture pipeline (+4 more)
 
 ### Community 124 - ".ScoreCompetition"
-Cohesion: 0.19
+Cohesion: 0.20
 Nodes (16): DateTimeOffset, ReflightRuling, At, By, CompetitorRef, Reason, Selection, TaskRound (+8 more)
 
 ### Community 125 - "PrescribeDrawDecideTests"
@@ -938,23 +926,23 @@ Nodes (15): Contest shape, Contest shape, Cross-class NZ rules, Drop-worst, Flig
 
 ### Community 127 - "SECTION A - CIAM INTERNAL REGULATIONS"
 Cohesion: 0.06
-Nodes (36): A.10.1 Requirements for proposals, A.10.2 Effective date of rule changes, A.10.3 Submission procedure, A.10 SUBMISSION OF PROPOSALS TO THE CIAM, A.11.1 Emergency safety rules, A.11.2 Emergency safety notices, A.11 EMERGENCY SAFETY RULES & NOTICES, A.12 AEROMODELLING FUND (+28 more)
+Nodes (35): A.10.1 Requirements for proposals, A.10.2 Effective date of rule changes, A.10.3 Submission procedure, A.10 SUBMISSION OF PROPOSALS TO THE CIAM, A.11.1 Emergency safety rules, A.11.2 Emergency safety notices, A.11 EMERGENCY SAFETY RULES & NOTICES, A.12 AEROMODELLING FUND (+27 more)
 
 ### Community 128 - "Design decisions — settled here, do not relitigate"
 Cohesion: 0.08
 Nodes (23): As-built (2026-08-29), Before starting, D1 — Exact semantics of the exposed value, D2 — Placement: parallel map on `GroupResult`, not a second field on `TaskResult`, D3 — Population rules inside `NormalisationEngine.Normalise` (both branches), D4 — Fail-loud view mapping, D5 — API surface changes none, D6 — Harness grain-1 flips to HTTP where the authored class permits it (+15 more)
 
-### Community 129 - "IDomainEvent"
-Cohesion: 0.30
-Nodes (9): IDomainEvent, CancellationToken, ExpectedVersion, Guid, IReadOnlyList, List, RecordedEvent, Task (+1 more)
+### Community 129 - "FakeEventStore"
+Cohesion: 0.27
+Nodes (9): IEventStore, CancellationToken, ExpectedVersion, Guid, IReadOnlyList, List, RecordedEvent, Task (+1 more)
 
 ### Community 130 - "F3K.11 DEFINITIONS OF TASKS"
 Cohesion: 0.13
 Nodes (15): F3K.11.10 Task J (Three last flights), F3K.11.11 Task K (Increasing time by 30 seconds, “Big Ladder”), F3K.11.12 Task L (One flight), F3K.11.13 Fly-off Task M (Increasing time by 2 minutes “Huge Ladder”), F3K.11.14 Task N (Best flight), F3K.11.1 Task A (Last flight), F3K.11.2 Task B (Next to last and last flight), F3K.11.3 Task C (All up, last down) (+7 more)
 
-### Community 131 - "IProjection"
-Cohesion: 0.14
-Nodes (19): IJasperFxProjection, IProjection, IDocumentOperations, IDocumentSession, ClassDefinitionSummaryProjection, FisherClassDefinitionSummaryProjection, MartenClassDefinitionSummaryProjection, CancellationToken (+11 more)
+### Community 131 - ".LoadCurrentAsync"
+Cohesion: 0.26
+Nodes (10): CancellationToken, Guid, IDocumentOperations, IDocumentSession, IEvent, IReadOnlyList, Task, CompetitionSummaryProjection (+2 more)
 
 ### Community 132 - "Story — Ship on three stores: Fisher/SQLite, Marten/PostgreSQL, Polecat/SQL Server"
 Cohesion: 0.13
@@ -964,41 +952,41 @@ Nodes (14): Also done, not in the original plan, Before starting, Deliberately n
 Cohesion: 0.22
 Nodes (11): CancellationToken, IClock, IEventStore, Task, WithdrawCompetitorHandler, DateTimeOffset, Fact, FakeEventStore (+3 more)
 
-### Community 134 - ".LoadCurrentAsync"
-Cohesion: 0.26
-Nodes (10): CancellationToken, Guid, IDocumentOperations, IDocumentSession, IEvent, IReadOnlyList, Task, FisherPersonSummaryProjection (+2 more)
+### Community 134 - "IProjection"
+Cohesion: 0.11
+Nodes (23): IJasperFxProjection, IProjection, CancellationToken, IDocumentOperations, IDocumentSession, IEvent, IReadOnlyList, Task (+15 more)
 
-### Community 135 - ".BuildDispatcher"
-Cohesion: 0.09
-Nodes (33): IQueryHandler, CancellationToken, IClock, IEventStore, Task, ChangePersonClubAffiliationHandler, CancellationToken, IClock (+25 more)
+### Community 135 - "ContactDetails"
+Cohesion: 0.12
+Nodes (24): IQuery, IQueryHandler, RegisterPerson, CancellationToken, IEventStore, Task, GetClassDefinition, GetClassDefinitionHandler (+16 more)
 
 ### Community 136 - "1 GENERAL DEFINITIONS"
 Cohesion: 0.14
 Nodes (14): 1.1 DEFINITIONS, 1.2 CHARACTERISTICS, 1.3 RADIO CONTROL TRANSMITTER., 1.4.1 Unless otherwise specified in class rules, the competitor may use a maximum of two models, 1.4.2 The competitor must own the model(s) flown but is not required to have built them., 1.4.3 A model may be flown in a contest by only one competitor., 1.4 NUMBER OF MODELS, OWNERSHIP AND OPERATION., 1.5 BALLASTING (+6 more)
 
 ### Community 137 - ".AddSoarscoreInfrastructure"
-Cohesion: 0.11
-Nodes (16): IConfiguration, IServiceCollection, CancellationToken, DateOnly, IDocumentSessionFactory, IReadOnlyList, Task, DocumentCompetitionsQuery (+8 more)
+Cohesion: 0.08
+Nodes (21): IConfiguration, IServiceCollection, DateTimeOffset, IClock, UtcNow, DocumentStore, MartenConfig, CancellationToken (+13 more)
 
 ### Community 138 - ".Classify"
-Cohesion: 0.09
-Nodes (25): Member, FinalRankingKind, LastPhaseReplaces, SinglePhase, SplitByPromotion, ImmutableArray, ImmutableDictionary, TieBreakDirective (+17 more)
+Cohesion: 0.07
+Nodes (33): Member, HashSet, ImmutableArray, Result, Candidate, Member, TeamClassificationEngine, TeamClassificationResult (+25 more)
 
-### Community 139 - "DateTimeOffset"
-Cohesion: 0.16
-Nodes (5): DateTimeOffset, IReadOnlyList, Result, FinalisationScope, Phase
+### Community 139 - "ReflightRule"
+Cohesion: 0.14
+Nodes (13): ReflightRule, EntitledScores, MinNewGroupSize, OthersScore, ReflightSelection, BetterOf, NotPermitted, Replacement (+5 more)
 
 ### Community 140 - "NzNdcSeedArithmeticTests"
 Cohesion: 0.27
 Nodes (5): Dictionary, Fact, InlineData, Theory, NzNdcSeedArithmeticTests
 
-### Community 141 - "RankingEnginePropertyTests"
-Cohesion: 0.22
-Nodes (13): Cells, Disq, IList, Position, Entry, FinalCompetitorScore, Fact, Gen (+5 more)
+### Community 141 - "SeedF3K"
+Cohesion: 0.10
+Nodes (19): ImmutableArray, SeedF3K, Catalogue, Definition, FlightMetrics, TaskA, TaskB, TaskC (+11 more)
 
 ### Community 142 - "F3G.1 GENERAL RULES"
-Cohesion: 0.15
-Nodes (13): F3G.1.10 Organisation of Contests, F3G.1.11 Safety Rules, F3G.1.12 Weather Conditions/Interruptions, F3G.1.1 Definition of a Radio-Controlled Glider with Electric Motor, F3G.1.2 Characteristics data of Radio-Controlled Gliders F3G, F3G.1.3 Technical equipment, F3G.1.4 General requirements, F3G.1.5 Competitors and Helpers (+5 more)
+Cohesion: 0.08
+Nodes (24): 3 F3G - RADIO CONTROLLED MULTI-TASK GLIDERS WITH ELECTRIC, F3G.1.10 Organisation of Contests, F3G.1.11 Safety Rules, F3G.1.12 Weather Conditions/Interruptions, F3G.1.1 Definition of a Radio-Controlled Glider with Electric Motor, F3G.1.2 Characteristics data of Radio-Controlled Gliders F3G, F3G.1.3 Technical equipment, F3G.1.4 General requirements (+16 more)
 
 ### Community 143 - "Gliderscore Jet DB — Schema Analysis and Indicative Domain Mapping"
 Cohesion: 0.15
@@ -1009,24 +997,24 @@ Cohesion: 0.15
 Nodes (12): Before starting, Export format — resolved from source 2026-08-25, Ranking oracle — decided 2026-08-25 (hybrid), Sequencing, Story — Gliderscore golden-fixture pipeline, What, Why it matters, WI-1 — Extraction tool (+4 more)
 
 ### Community 145 - ".BuildDrawnCompetition"
-Cohesion: 0.18
-Nodes (13): ReflightSelection, BetterOf, NotPermitted, Replacement, UndefinedRequiresRuling, Competition, Competitors, DateTimeOffset (+5 more)
+Cohesion: 0.24
+Nodes (8): Competition, Competitors, DateTimeOffset, Fact, ImmutableArray, InlineData, Theory, RecordReflightRulingDecideTests
 
 ### Community 146 - "Pre-requisites (sub-agent dispatchable — gate WI-1–4)"
 Cohesion: 0.12
 Nodes (15): As built 2026-08-27, Before starting, PRE-1 — Per-comp export: comp 45, 2019 F5J Christchurch (`f5j-christchurch-2019`), PRE-2 — Per-comp export: comp 135, F5J Hawkes Bay and Team Trials (`f5j-hawkes-bay-trials`), PRE-3 — Per-comp export: comp 17, Southern Fling (`f3k-southern-fling`), PRE-4 — Per-comp export: comp 121, NZ South Island F5J (`f5j-nz-south-island`), PRE-5 — Per-comp export: comp 54, 2020 June F3K (`f3k-june-2020`), Pre-requisites (sub-agent dispatchable — gate WI-1–4) (+7 more)
 
 ### Community 147 - "ReplaySteps"
-Cohesion: 0.18
-Nodes (7): Given, Table, Task, Then, When, ReplaySteps, Fixture
+Cohesion: 0.21
+Nodes (6): Table, Task, Then, When, ReplaySteps, Fixture
 
 ### Community 148 - "triage.py"
 Cohesion: 0.19
 Nodes (18): _assignment_sort_key(), check_draw_completeness(), _common_fields(), convert_records(), _decode_duration_slots(), _decode_f3k_slots(), _decode_f5k_flights(), _decode_passthrough() (+10 more)
 
 ### Community 149 - "EntryModelBasedFoldTests"
-Cohesion: 0.27
-Nodes (10): actual, Actual, Model, model, Gen, GenOperation, CompetitionModelBasedFoldTests, Gen (+2 more)
+Cohesion: 0.06
+Nodes (37): actual, Actual, Model, FlightModel, MeasurementModel, model, Competition, Fact (+29 more)
 
 ### Community 150 - "CLAUDE.md — Soarscore"
 Cohesion: 0.17
@@ -1037,20 +1025,20 @@ Cohesion: 0.39
 Nodes (9): cmd_check_links(), cmd_find(), cmd_show(), cmd_toc(), die(), norm_ref(), fai-rule.sh script, volume_file() (+1 more)
 
 ### Community 152 - ".SeedCompetition"
-Cohesion: 0.25
-Nodes (12): CancellationToken, IEventStore, Task, RecordCompetitionPenalty, RecordCompetitionPenaltyHandler, DateTimeOffset, Fact, FakeEventStore (+4 more)
+Cohesion: 0.19
+Nodes (16): CancellationToken, IEventStore, Task, RecordCompetitionPenalty, RecordCompetitionPenaltyHandler, CancellationToken, DateTimeOffset, Fact (+8 more)
 
-### Community 153 - "IDispatcher"
-Cohesion: 0.18
-Nodes (15): IDispatcher, IQueryHandler, PrescribedGroup, PrescribedRound, CancellationToken, Fact, Task, DrawAcceptanceEventStoreTests (+7 more)
+### Community 153 - "PrescribeDrawEventStoreTests"
+Cohesion: 0.29
+Nodes (9): IReadOnlyList, PrescribedGroup, PrescribedRound, CancellationToken, Fact, IReadOnlyList, Task, PrescribeDrawEventStoreTests (+1 more)
 
 ### Community 154 - "TaskDefinition"
-Cohesion: 0.03
-Nodes (82): ImmutableArray, PhaseDefinition, Drops, Ordinal, Promotion, Rounds, Tasks, TieBreaks (+74 more)
+Cohesion: 0.04
+Nodes (52): TaskDefinition, Code, Flights, FlightValidWhen, Group, Metrics, Name, Normalise (+44 more)
 
 ### Community 155 - "4 F3J – RADIO CONTROLED THERMAL DURATION GLIDERS"
-Cohesion: 0.22
-Nodes (9): 4 F3J – RADIO CONTROLED THERMAL DURATION GLIDERS, F3J.12 WEATHER CONDITIONS AND INTERRUPTIONS, F3J.3.1 Rounds and Attempts, F3J.3 CONTEST FLIGHTS, F3J.4 RE-FLIGHTS, F3J.5.1 Judging, F3J.5.2 Neutralisation of a flight group, F3J.5 CANCELLATION OF A FLIGHT AND/OR DISQUALIFICATION (+1 more)
+Cohesion: 0.06
+Nodes (36): 4 F3J – RADIO CONTROLED THERMAL DURATION GLIDERS, F3J.11.2 Fly-off Working Time, F3J.11.3 Fly-off Scoring, F3J.11.4 Final Placing, F3J.11.5 Ranking for International Team Classification, F3J.11 FINAL CLASSIFICATION, F3J.12.1 for details., F3J.12 WEATHER CONDITIONS AND INTERRUPTIONS (+28 more)
 
 ### Community 156 - "PART 5 – TECHNICAL REGULATIONS FOR RADIO"
 Cohesion: 0.17
@@ -1073,16 +1061,16 @@ Cohesion: 0.17
 Nodes (12): Duration time→points curve (`GetTimeScore` Case 1, `Scoring_MOD.vb:645–673`), F3K (`CalcRawScoreF3K`, `Scoring_MOD.vb:1467–1887`), F5K four-flights-in-four-columns packing and height bonus, Landing distance → points (`GetLandingBonus`, `Scoring_MOD.vb:726–803`), Per-family raw-score formulas (`Update_RawScore`, `Scoring_MOD.vb:137–244`; branch on `drv("TaskNo")` at :162), Raw score, Score pipeline and persistence, Unresolved (+4 more)
 
 ### Community 161 - "PrescribeDrawPropertyTests"
-Cohesion: 0.17
-Nodes (14): Mutation, DateTimeOffset, Fact, IReadOnlyList, Rounds, Mutation, DeleteMember, DuplicateMember (+6 more)
+Cohesion: 0.31
+Nodes (7): Mutation, DateTimeOffset, Fact, IReadOnlyList, Rounds, PrescribeDrawPropertyTests, WithdrawnId
 
 ### Community 162 - "GliderScore fixture extraction"
 Cohesion: 0.12
 Nodes (16): Adding a fixture, Differential gate result, GliderScore fixture extraction, How the corpus is consumed, Index contract (rule 5), NZ master caveat and opt-in tolerant mode, Offline-only rule, Output shape contract (+8 more)
 
 ### Community 163 - "PublishedClassDefinition"
-Cohesion: 0.12
-Nodes (14): CancellationToken, IEventStore, Task, ClassDefinitionLoader, CancellationToken, Task, DateTimeOffset, Guid (+6 more)
+Cohesion: 0.14
+Nodes (12): CancellationToken, IEventStore, Task, ClassDefinitionLoader, DateTimeOffset, Guid, PublishedClassDefinition, ContentHash (+4 more)
 
 ### Community 164 - "test_csvparse.py"
 Cohesion: 0.10
@@ -1097,20 +1085,20 @@ Cohesion: 0.18
 Nodes (11): 1. Pilot assignment to groups (the draw), 2. Launch (`NZ.3.12.1`), 3. Data the timer / helper collects, 4. The task (`NZ.3.12.1 f, g, m, n`), 5. Group score (`NZ.3.12.3`), 6. Round and final score, 7. Re-flights (`NZ.3.12.5 l`), 8. NDC format (`NZ.3.12.7`) — a different scoring pipeline (+3 more)
 
 ### Community 168 - "Enumerations.cs"
-Cohesion: 0.06
-Nodes (33): CompositionKind, ChooseFromCatalogue, FixedSequence, DropDimension, ByRound, ByTask, NormalisationDirection, HigherIsBetter (+25 more)
+Cohesion: 0.08
+Nodes (25): CompositionKind, ChooseFromCatalogue, FixedSequence, DropDimension, ByRound, ByTask, NormalisationDirection, HigherIsBetter (+17 more)
 
 ### Community 169 - "3.17 CLASS R: E-RES 2M (Electric Rudder Elevator Spoiler 2M Glider)"
 Cohesion: 0.18
 Nodes (11): 3.17.0 Contents:, 3.17.1 Introduction, 3.17.2 Model Specifications, 3.17.3 Competition Terrain, 3.17.4 Cancellation, 3.17.5 Competition Flights, 3.17.6 Launching, 3.17.7 Landing (+3 more)
 
 ### Community 170 - "BindParameterPropertyTests"
-Cohesion: 0.28
+Cohesion: 0.30
 Nodes (4): DateTimeOffset, Fact, Ref, BindParameterPropertyTests
 
-### Community 171 - "B.1.2 Classification of model aircraft"
-Cohesion: 0.11
-Nodes (19): B.1.1 General definition, B.1.2.1 Category F1 - Free Flight, B.1.2.2 Category F2 - Control Line Flight, B.1.2.3 Category F3 - Radio Controlled Flight, B.1.2.4 Category F4 - Scale Model Aircraft, B.1.2.5 Category F5 - Radio Control Electric Powered Aircraft, B.1.2.6 Category F7 - Radio Controlled Aerostats, B.1.2.7 Category F9 - Drone Sports (+11 more)
+### Community 171 - "DrawAcceptancePropertyTests"
+Cohesion: 0.12
+Nodes (16): DrawOp, DateTimeOffset, Gen, List, DrawAcceptancePropertyTests, DrawOp, Accept, Register (+8 more)
 
 ### Community 172 - "Soarscore — Users"
 Cohesion: 0.18
@@ -1121,16 +1109,16 @@ Cohesion: 0.18
 Nodes (11): 1. Configuration source (Comps table), 2. `DropScoreOption` decode and gating, 3. Staged activation — how many drops at R rounds flown, 4. Selection basis (task-driven vs round-driven), 5. Tie-breaking among equal drop candidates — deterministic, 6. Marking and exclusion, 7. Re-flights, 8. F3K-gated variant (`f3kRecord`) (+3 more)
 
 ### Community 174 - "ClassDefinitionSummary"
-Cohesion: 0.15
-Nodes (18): IQuery, DateTimeOffset, Guid, ClassDefinitionSummary, CancellationToken, IReadOnlyList, Task, FindClassDefinitions (+10 more)
+Cohesion: 0.20
+Nodes (12): DateTimeOffset, Guid, ClassDefinitionSummary, CancellationToken, IReadOnlyList, Task, FindClassDefinitions, FindClassDefinitionsHandler (+4 more)
 
 ### Community 175 - "DrawingACatalogueChoicePhaseSteps"
 Cohesion: 0.20
 Nodes (11): CompetitionId, HttpClient, HttpResponseMessage, List, ProblemDetails, Table, Task, Then (+3 more)
 
 ### Community 176 - "PersonSummary"
-Cohesion: 0.14
-Nodes (20): CancellationToken, IReadOnlyList, Task, FindPeople, FindPeopleHandler, CancellationToken, IReadOnlyList, Task (+12 more)
+Cohesion: 0.19
+Nodes (15): CancellationToken, IReadOnlyList, Task, FindPeople, FindPeopleHandler, CancellationToken, IReadOnlyList, Task (+7 more)
 
 ### Community 177 - "LADR-0002 — Competition Class definition: representation, ingestion and identity"
 Cohesion: 0.20
@@ -1144,9 +1132,9 @@ Nodes (10): CountsFor, Role, Entry, IReadOnlyList, Score, ReflightSelector, Fact
 Cohesion: 0.20
 Nodes (10): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score (`5.5.10.15`), 4. Round score, 5. Final classification (`5.5.10.16–10.18`), 6. Re-flights (`5.5.10.13`), F5K — RC Electric Thermal Duration, Multiple-Task, Nominal Launch Height (NLH) and launch points (`5.5.10.3–10.4`) (+2 more)
 
-### Community 180 - "AdoptedRules"
-Cohesion: 0.16
-Nodes (10): DateOnly, AdoptedRules, AdoptedAt, Definition, SourceClassId, SourceVersion, DateOnly, Fact (+2 more)
+### Community 180 - "CaptureMeasurementDecideTests"
+Cohesion: 0.32
+Nodes (3): Fact, ImmutableArray, CaptureMeasurementDecideTests
 
 ### Community 181 - "F3J — RC Thermal Duration Gliders"
 Cohesion: 0.22
@@ -1184,9 +1172,9 @@ Nodes (4): $(SoarscoreTargetFramework), Microsoft.NET.Sdk, $(SoarscoreTargetFram
 Cohesion: 0.19
 Nodes (34): boolean_token_csv_bytes(), check_urls(), csv_member_name(), duration_csv_bytes(), fetch(), fixture_csv_bytes(), make_client(), make_zip_bytes() (+26 more)
 
-### Community 190 - "IServiceProvider"
-Cohesion: 0.16
-Nodes (12): IServiceProvider, Type, Type, FakeServiceProvider, Dictionary, Type, FakeServiceProvider, Dictionary (+4 more)
+### Community 190 - ".RunPayoffCaptureScenarioAsync"
+Cohesion: 0.46
+Nodes (3): Fact, Task, EntryCaptureEventStoreTests
 
 ### Community 191 - "Soarscore.Infrastructure.Tests.csproj"
 Cohesion: 0.20
@@ -1205,12 +1193,12 @@ Cohesion: 0.22
 Nodes (9): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score (normalisation), 4. Round score, 5. Final classification (common), 6. Penalties (common), 7. Re-flights (common pattern), Competition Rules — Generally Applicable (all contest types) (+1 more)
 
 ### Community 195 - "GsClient"
-Cohesion: 0.23
-Nodes (3): GsClient, Read-only, rate-limited, auditable client for gliderscore.com., ValueError
+Cohesion: 0.13
+Nodes (12): classify_action(), GsClient, Exception, Read-only, rate-limited, auditable client for gliderscore.com., True iff action is exactly a read-only allowlisted ACTION (case-sensitive)., Raised for any attempt outside the read-only allowlist., Wraps OS/HTTP-level transport failures (never an allowlist refusal)., Default transport: one urllib.request round trip per request dict. (+4 more)
 
 ### Community 196 - "ScoreTerm"
-Cohesion: 0.17
-Nodes (14): FlightSelection, ScoreTerm, ImmutableArray, IReadOnlyDictionary, FlightSelector, IReadOnlyDictionary, FlightResult, InterpretedFlight (+6 more)
+Cohesion: 0.10
+Nodes (22): Bindings, ClassDef, ExpectedRawScore, BestNFlights, Count, RankByMetric, Targets, TargetValues (+14 more)
 
 ### Community 197 - "C.13 REQUIREMENTS FOR ORGANISATION OF INTERNATIONAL EVENTS"
 Cohesion: 0.22
@@ -1264,9 +1252,9 @@ Nodes (9): Fly-off / preliminary-final override (note), `HiddenRanking` vs displ
 Cohesion: 0.18
 Nodes (10): Annulments and penalties, Competition class model, Decisions that have since been taken up, Deferred decisions, Draw, Event store, GliderScore replay harness, Score capture and corrections (+2 more)
 
-### Community 210 - "SeedF5K"
-Cohesion: 0.13
-Nodes (15): ImmutableArray, SeedF5K, Catalogue, Definition, FlightMetrics, LaunchAltitude, LaunchBands, LaunchPenaltyOnlyBands (+7 more)
+### Community 210 - ".LoadAsync"
+Cohesion: 0.19
+Nodes (10): CancellationToken, Entry, IEventStore, Task, Version, EntryLoader, DateTimeOffset, Fact (+2 more)
 
 ### Community 211 - "Story — NZ NDC seed classes: X5J (Class O), F5J NDC, F5K NDC"
 Cohesion: 0.20
@@ -1285,16 +1273,16 @@ Cohesion: 0.42
 Nodes (8): Decimal, cell_key(), dec(), die(), gs_round(), load(), main(), GS report-time re-round: RoundNumber = Int(Nbr + 0.5*10^-d), half-up.
 
 ### Community 215 - "test_mine_catalogue.py"
-Cohesion: 0.12
-Nodes (22): build_page(), _documented_row(), fake_sleep(), FakeClock, FakeTransport, make_harness(), option(), _picker_scenarios() (+14 more)
+Cohesion: 0.15
+Nodes (17): build_page(), fake_sleep(), FakeClock, FakeTransport, make_harness(), option(), given, settings (+9 more)
 
 ### Community 216 - "RC Soaring Competitions — Domain Class Diagram"
 Cohesion: 0.25
 Nodes (6): 1. The competition spine, 2. Competition Class — structure, 3. Competition Class — the scoring vocabulary, 4. Scoring, Modelling notes, RC Soaring Competitions — Domain Class Diagram
 
-### Community 217 - "validate.py"
-Cohesion: 0.28
-Nodes (17): base_competition(), check_integrity(), check_rule_1(), check_rule_2(), check_rule_3(), check_rule_4(), check_rule_5(), composite_key() (+9 more)
+### Community 217 - "GroupId"
+Cohesion: 0.23
+Nodes (4): IFormatProvider, GroupId, Fact, IdRoundTripPropertyTests
 
 ### Community 218 - "F5L — RC Electric Thermal Gliders, RES"
 Cohesion: 0.25
@@ -1316,9 +1304,9 @@ Nodes (8): 3.12.1 Event Rules, 3.12.2 Landing, 3.12.3 Scoring, 3.12.4 General Re
 Cohesion: 0.25
 Nodes (8): C.18.1 Premise, C.18.2 Competence, C.18.3 Prohibited, C.18.4 Other requirements, C.18.5 Pre-flight checks, C.18.6 After launch of the model, C.18.7 Flying sites, C.18 SAFETY
 
-### Community 223 - "Competitor"
-Cohesion: 0.25
-Nodes (6): Competitor, CompetitorNumber, Id, PersonRef, RegisteredAt, WithdrawnAt
+### Community 223 - ".Seed"
+Cohesion: 0.21
+Nodes (8): Id, Competition, DateTimeOffset, Dictionary, Entries, Entry, ImmutableArray, FinaliseCompetitionPropertyTests
 
 ### Community 224 - "5.5.1 GENERAL RULES"
 Cohesion: 0.25
@@ -1396,13 +1384,13 @@ Nodes (6): get_time_in_seconds(), load(), main(), GlobalFunctions_MOD.vb:3116-31
 Cohesion: 0.29
 Nodes (7): C.20.1.1 Complaints prior to an event, C.20.1.2 Complaints during an event, C.20.1 Complaints, C.20.2 Protests, C.20.3 Time limit for lodging protests, C.20.4 Appeals, C.20 COMPLAINTS AND PROTESTS
 
-### Community 243 - "TeamClassificationPropertyTests"
-Cohesion: 0.15
-Nodes (17): Memberships, Random, Row, Scenario, Teams, Fact, Gen, IEnumerable (+9 more)
+### Community 243 - "CompetitionResult"
+Cohesion: 0.12
+Nodes (22): Memberships, Random, Row, Scenario, ImmutableArray, TieBreakDirective, CompetitionResult, PendingTieBreaks (+14 more)
 
-### Community 244 - ".DrawnCompetitionAsync"
-Cohesion: 0.18
-Nodes (14): CancellationToken, IClock, IEventStore, Task, AppendReflightGroupHandler, CancellationToken, Competition, Fact (+6 more)
+### Community 244 - "RegisterPersonHandler"
+Cohesion: 0.08
+Nodes (28): IClassFixture, Round2GroupRef, CancellationToken, IClock, IEventStore, Task, AppendReflightGroupHandler, CancellationToken (+20 more)
 
 ### Community 245 - "5.5.2 CONTEST RULES"
 Cohesion: 0.29
@@ -1432,41 +1420,41 @@ Nodes (7): 0.0 NDC Rules for FAI Events, 0.1 F3F - RC SLOPE SOARING GLIDERS, 0.2
 Cohesion: 0.14
 Nodes (11): ImmutableArray, SeedF5kNdc, Catalogue, Definition, FlightMetrics, FlightValidWhen, LaunchAdjustment, TaskA (+3 more)
 
-### Community 252 - "ScoringServiceZeroRoutingTests"
-Cohesion: 0.21
-Nodes (9): Other, Subject, DateTimeOffset, Entries, Fact, ImmutableArray, ImmutableDictionary, IReadOnlyDictionary (+1 more)
+### Community 252 - ".BuildCompetition"
+Cohesion: 0.18
+Nodes (12): Other, Subject, Competitors, DateTimeOffset, Dictionary, Entries, Fact, ImmutableArray (+4 more)
 
 ### Community 253 - "Story — Permitted scopes on PenaltyDefinition (adoption-time scope hardening)"
 Cohesion: 0.11
 Nodes (17): Before starting, D-1 — Field shape: `PenaltyScope[]?`, exactly as approved, D-2 — Check placement and precedence: scope refusal outranks payload completeness, D-3 — Adoption check 20 rejects only the empty list; no effect×scope cross-check, D-4 — Read path untouched; engine, views, handlers: zero edits, D-5 — Seeds and fixtures untouched, Design decisions (settled here, cited from code), Out of scope (+9 more)
 
-### Community 254 - "TaskRoundClosurePropertyTests"
-Cohesion: 0.18
-Nodes (11): closure, ClosureKind, DateTimeOffset, fieldSize, Gen, rounds, targetRound, ClosureKind (+3 more)
+### Community 254 - "PhaseDefinition"
+Cohesion: 0.07
+Nodes (28): closure, ClosureKind, ImmutableArray, PhaseDefinition, Drops, Ordinal, Promotion, Rounds (+20 more)
 
 ### Community 255 - "AssigningSpotsSteps"
-Cohesion: 0.16
-Nodes (11): HttpClient, HttpResponseMessage, IReadOnlyList, Task, AssigningSpotsSteps, Client, CompetitionId, IReadOnlyList (+3 more)
+Cohesion: 0.14
+Nodes (12): Spots, HttpClient, HttpResponseMessage, IReadOnlyList, Task, AssigningSpotsSteps, Client, CompetitionId (+4 more)
 
 ### Community 256 - "Story — Ranking's secondary key: RawScore tie-break"
 Cohesion: 0.13
 Nodes (14): As built (2026-08-29), Decisions (settled during planning 2026-08-28; D1 gets Pete's sign-off at WI-0), Engine design (the entire `src/` change), Known traps (pre-answered — do not reopen inside this story), Out of scope (restated for sign-off), Story invariant for sign-off, Story — Ranking's secondary key: RawScore tie-break, What (+6 more)
 
-### Community 257 - ".ApplyAsync"
-Cohesion: 0.40
-Nodes (4): CancellationToken, IEvent, IReadOnlyList, Task
+### Community 257 - "TeamsEventJsonTests"
+Cohesion: 0.38
+Nodes (3): DateTimeOffset, Fact, TeamsEventJsonTests
 
 ### Community 258 - "Story — GliderScore webmine tool (read-only online comp acquisition)"
 Cohesion: 0.20
 Nodes (9): As built (2026-08-27), Before starting, Confidentiality, Open questions carried forward, Plan, Story — GliderScore webmine tool (read-only online comp acquisition), Validation of the mining approach (source cross-reference, 2026-08-26), What (+1 more)
 
-### Community 259 - "F3B.2 RULES FOR MULTI-TASK CONTESTS"
-Cohesion: 0.18
-Nodes (11): F3B.2.10 Site, F3B.2.1 Definition, F3B.2.2 Launching, F3B.2.3 Task A - Duration, F3B.2.4 Task B - Distance, F3B.2.5 Task C - Speed, F3B.2.6 Partial Scores, F3B.2.7 Total Score (+3 more)
+### Community 259 - ".Apply"
+Cohesion: 0.33
+Nodes (4): ClassDefinitionProjection, ArgumentException, Fact, ClassDefinitionProjectionTests
 
-### Community 260 - "IStoreFixture"
-Cohesion: 0.07
-Nodes (39): CancellationToken, IClock, IEventStore, Task, RegisterCompetitorHandler, CancellationToken, IClock, IEventStore (+31 more)
+### Community 260 - "RegisterCompetitorHandler"
+Cohesion: 0.16
+Nodes (16): CancellationToken, IClock, IEventStore, Task, RegisterCompetitorHandler, DateTimeOffset, Fact, FakeEventStore (+8 more)
 
 ### Community 261 - "LayerRuleTests"
 Cohesion: 0.47
@@ -1512,25 +1500,25 @@ Nodes (5): As built — notes, Deferred, Story — Coverage: normalisation is pe
 Cohesion: 0.33
 Nodes (6): Before starting, Decisions — user-confirmed 2026-08-21, Stop storing `Entry.WorkingTime`, What, What a removal must not break, Why it matters
 
-### Community 272 - "FakeEventStore"
-Cohesion: 0.11
-Nodes (21): IEventStore, CancellationToken, Entry, IEventStore, Task, Version, EntryLoader, DateTimeOffset (+13 more)
+### Community 272 - "IDomainEvent"
+Cohesion: 0.14
+Nodes (19): IDomainEvent, CancellationToken, Guid, IReadOnlyDictionary, IReadOnlyList, List, Task, FakeEventStore (+11 more)
 
-### Community 273 - "F3G.2 RULES FOR MULTI-TASK CONTESTS"
-Cohesion: 0.20
-Nodes (10): F3G.2.1 Definition, F3G.2.2 Launching / Relaunching, F3G.2.3 Task A – Duration, F3G.2.4 Task B Distance, F3G.2.5 Task C – Speed, F3G.2.6 Partial Scores, F3G.2.7 Total Score, F3G.2.8 Classification (+2 more)
+### Community 273 - ".ComputeGroupViews"
+Cohesion: 0.33
+Nodes (9): Competition, Entry, ImmutableArray, IReadOnlyDictionary, EntryGapsView, FlightGapsView, GroupRecordingView, GroupSpotView (+1 more)
 
 ### Community 274 - ".SetUpAsync"
-Cohesion: 0.17
-Nodes (20): CancellationToken, Competition, Entry, IEventStore, ImmutableArray, IReadOnlyDictionary, Task, EntryGapsView (+12 more)
+Cohesion: 0.28
+Nodes (11): CancellationToken, IEventStore, Task, GetTaskRoundRecording, GetTaskRoundRecordingHandler, TaskRoundRecordingView, Fact, Group (+3 more)
 
 ### Community 275 - "OpKind"
 Cohesion: 0.17
 Nodes (12): OpKind, AnnulRound, EmptyList, InvalidSpot, MissingMember, RepeatedCompetitor, RepeatedSpot, UnknownCompetitor (+4 more)
 
-### Community 276 - ".SeedDrawnCompetitionAsync"
-Cohesion: 0.17
-Nodes (14): CancellationToken, IClock, IEventStore, Task, AssignGroupSpotsHandler, GroupRef, DateTimeOffset, Fact (+6 more)
+### Community 276 - "AdoptedRules"
+Cohesion: 0.09
+Nodes (24): CancellationToken, IClock, IEventStore, Task, AssignGroupSpotsHandler, AdoptedRules, AdoptedAt, Definition (+16 more)
 
 ### Community 277 - "Work items"
 Cohesion: 0.10
@@ -1545,8 +1533,8 @@ Cohesion: 0.40
 Nodes (5): 3.9.1 Launching, 3.9.2 Scoring, 3.9.3 Contest time, 3.9.4 NDC Competition, 3.9 CLASS J: THERMAL 2,4,6,8,10
 
 ### Community 280 - "F3B.1 GENERAL RULES"
-Cohesion: 0.17
-Nodes (12): F3B.1.10 Safety Rules, F3B.1.11 Weather Conditions / Interruptions, F3B.1.1 Definition of a Radio-Controlled Glider, F3B.1.2 Prefabrication of F3B Model Aircraft, F3B.1.3 Characteristics of Radio-Controlled Gliders F3B, F3B.1.4 Competitors and Helpers, F3B.1.5 Definition of an Attempt, F3B.1.6 Definition of the Official Flight (+4 more)
+Cohesion: 0.08
+Nodes (24): 1 F3B – RADIO CONTROL MULTI-TASK GLIDERS, F3B.1.10 Safety Rules, F3B.1.11 Weather Conditions / Interruptions, F3B.1.1 Definition of a Radio-Controlled Glider, F3B.1.2 Prefabrication of F3B Model Aircraft, F3B.1.3 Characteristics of Radio-Controlled Gliders F3B, F3B.1.4 Competitors and Helpers, F3B.1.5 Definition of an Attempt (+16 more)
 
 ### Community 281 - "reflight-aggregate-destination.md"
 Cohesion: 0.09
@@ -1560,21 +1548,21 @@ Nodes (7): Remaining, Dictionary, HashSet, IEnumerable, ImmutableArray, PhaseDra
 Cohesion: 0.25
 Nodes (7): Etiquette and volumes, Layout, Permission state, Pipeline position, Usage, webmine/ — GliderScore online competition acquisition (read-only), Wire-format facts worth remembering (cited, not re-derived)
 
-### Community 284 - ".Exact"
-Cohesion: 0.10
-Nodes (21): IsBogus, ImmutableArray, DateTimeOffset, Fact, FakeEventStore, Gen, Index, RegisterCompetitorPropertyTests (+13 more)
-
-### Community 285 - "TeamStanding"
+### Community 284 - "FakeEventStore"
 Cohesion: 0.15
-Nodes (14): ImmutableArray, TeamClassificationResult, Method, SourceClassification, Standings, TeamStanding, BestIndividualPlacing, Contributors (+6 more)
+Nodes (17): DateTimeOffset, Fact, FakeEventStore, Gen, ImmutableArray, DrawPhasePropertyTests, CancellationToken, DateOnly (+9 more)
+
+### Community 285 - "FakeClassLibraryQuery"
+Cohesion: 0.44
+Nodes (5): Fact, IDispatcher, Task, FindClassDefinitionsTests, FakeClassLibraryQuery
 
 ### Community 286 - ".PostCommandRawAsync"
-Cohesion: 0.29
+Cohesion: 0.33
 Nodes (6): HttpClient, HttpResponseMessage, JsonSerializerOptions, Task, ApiClient, Options
 
 ### Community 287 - ".Rank"
-Cohesion: 0.17
-Nodes (16): AdditionalFullRound, BestDroppedScore, ClassificationRounds, EqualPlaces, QualifyingPosition, SourcePhaseOrdinal, TieBreakDirective, TieBreakFlyoff (+8 more)
+Cohesion: 0.08
+Nodes (40): Cells, Disq, IList, Position, Entry, PromotionRule, CarryPenalties, Kind (+32 more)
 
 ### Community 288 - "Story — Resolve GliderScore scoring arithmetic from source"
 Cohesion: 0.40
@@ -1596,9 +1584,9 @@ Nodes (4): EntryProjection, DateTimeOffset, Fact, EntryProjectionTests
 Cohesion: 0.22
 Nodes (8): Before starting (residual items for the builder), Build plan (WI-1 .. WI-4), Completion note (2026-08-30), Rulebook findings (verified against the corpus this session), Rulings (2026-08-30 — Pete; these supersede the story's earlier, Story — NZ F3K NDC seed class, What, Why it matters
 
-### Community 293 - "PhaseDrawPropertyTests"
+### Community 293 - "CompetitorId"
 Cohesion: 0.25
-Nodes (8): Dictionary, Fact, Field, Gen, IEnumerable, ImmutableArray, MinPerGroup, PhaseDrawPropertyTests
+Nodes (10): Guid, CompetitorId, Dictionary, Fact, Field, Gen, IEnumerable, ImmutableArray (+2 more)
 
 ### Community 294 - "f5j-nz-south-island/ladder.py"
 Cohesion: 0.27
@@ -1612,9 +1600,9 @@ Nodes (14): encode(), extract_table(), _install_tolerant_parser_patch(), load_re
 Cohesion: 0.40
 Nodes (4): Competitions, Diversity wanted, GliderScore fixture corpus index, Standing skip reasons
 
-### Community 297 - "FakeEventStore"
-Cohesion: 0.27
-Nodes (9): CancellationToken, Dictionary, Guid, IReadOnlyDictionary, IReadOnlyList, List, Task, FakeEventStore (+1 more)
+### Community 297 - "SeedF3J"
+Cohesion: 0.22
+Nodes (7): ImmutableArray, SeedF3J, Definition, FlightMetrics, FlyoffTaskD, LandingRows, TaskD
 
 ### Community 298 - "Refined plan"
 Cohesion: 0.14
@@ -1625,8 +1613,8 @@ Cohesion: 0.40
 Nodes (4): How the notation maps, Running it, Seed classes — the authoring source, Status of the transcription
 
 ### Community 300 - "LookupRow"
-Cohesion: 0.06
-Nodes (30): Builder, Rows, LookupRow, LookupTerm, MetricRef, Rows, ImmutableArray, Rows (+22 more)
+Cohesion: 0.10
+Nodes (18): Builder, Rows, ConstantTerm, Value, LookupRow, LookupTerm, MetricRef, Rows (+10 more)
 
 ### Community 301 - ".SeedEntryUnderF5K"
 Cohesion: 0.18
@@ -1640,9 +1628,9 @@ Nodes (4): C.10.1 Class F - Model aircraft, C.10.2 Class S - Space models, C.10.
 Cohesion: 0.50
 Nodes (4): C.15.6.1 Individual classification, C.15.6.2 National team classification, C.15.6.3 Overall classification in multiple contest categories, C.15.6 Classification
 
-### Community 304 - "gsclient.py"
-Cohesion: 0.20
-Nodes (9): classify_action(), Exception, True iff action is exactly a read-only allowlisted ACTION (case-sensitive)., Raised for any attempt outside the read-only allowlist., Wraps OS/HTTP-level transport failures (never an allowlist refusal)., Default transport: one urllib.request round trip per request dict., RefusedError, TransportError (+1 more)
+### Community 304 - "ScoringTeamId"
+Cohesion: 0.32
+Nodes (3): Guid, IFormatProvider, ScoringTeamId
 
 ### Community 305 - "AnnulEntryDecideTests"
 Cohesion: 0.35
@@ -1652,9 +1640,9 @@ Nodes (5): DateTimeOffset, Fact, Gen, ImmutableArray, AnnulEntryDecideTests
 Cohesion: 0.17
 Nodes (12): F3J.10.10 Group Winner, F3J.10.11 Corrected Score, F3J.10.1 Flight Timing, F3J.10.2 Flight Time Recording, F3J.10.3 Overflying of the Working Time, F3J.10.4 Long Overflying, F3J.10.5 Landing Evaluation, F3J.10.6 Landing distance Measuring (+4 more)
 
-### Community 307 - ".Accrue"
-Cohesion: 0.27
-Nodes (8): AccruedInfo, Dictionary, HashSet, ImmutableArray, AccruedInfo, HasDisqualify, TotalDeduction, PenaltyEngine
+### Community 307 - ".SearchAsync"
+Cohesion: 0.25
+Nodes (6): CancellationToken, DateOnly, IDocumentSessionFactory, IReadOnlyList, Task, DocumentCompetitionsQuery
 
 ### Community 308 - "5.5.11.1 General Rules"
 Cohesion: 0.50
@@ -1665,36 +1653,36 @@ Cohesion: 0.50
 Nodes (3): plugin, $schema, .opencode/plugins/graphify.js
 
 ### Community 310 - "ProtectedPair"
-Cohesion: 0.15
-Nodes (19): CancellationToken, Competition, IEventStore, ImmutableArray, Task, DrawProtectionDiagnosticsView, DrawProtectionViolationView, GetDrawProtectionDiagnostics (+11 more)
+Cohesion: 0.14
+Nodes (21): CancellationToken, Competition, IEventStore, ImmutableArray, Task, DrawProtectionDiagnosticsView, DrawProtectionViolationView, GetDrawProtectionDiagnostics (+13 more)
 
 ### Community 311 - "Soarscore.Application"
 Cohesion: 0.03
-Nodes (71): Soarscore.Infrastructure.Competitions, Soarscore.Infrastructure.Tests, Soarscore.Infrastructure.CompetitionClasses, Soarscore.Infrastructure.People, Soarscore.Application.Queries.People, Soarscore.Infrastructure, Soarscore.Application, Soarscore.Infrastructure.Entries (+63 more)
+Nodes (71): Soarscore.Infrastructure.Competitions, Soarscore.Infrastructure.Tests, Soarscore.Infrastructure.CompetitionClasses, Soarscore.Infrastructure.People, Soarscore.Application.Queries.People, Soarscore.Api.Commands, Soarscore.Infrastructure, Soarscore.Application (+63 more)
 
 ### Community 312 - "GliderScore golden comparison — state after http-grain-one-metric-bridge"
 Cohesion: 0.29
 Nodes (6): Confidence, Corpus, GliderScore golden comparison — state after http-grain-one-metric-bridge, Harness shape, Ledgers, What could improve
 
-### Community 313 - "ParameterBinding"
+### Community 313 - "FixtureLoader"
 Cohesion: 0.29
-Nodes (7): ParameterBinding, At, BoundValue, By, ParameterName, PhaseOrdinal, RoundOrdinal
+Nodes (4): Given, IReadOnlyList, JsonSerializerOptions, FixtureLoader
 
-### Community 317 - ".SeedScoredGroup"
-Cohesion: 0.24
-Nodes (9): DateTimeOffset, Fact, FakeEventStore, GroupRef, ImmutableArray, IReadOnlyList, Store, Task (+1 more)
+### Community 317 - "F3 Soaring — Generally Applicable Rules"
+Cohesion: 0.29
+Nodes (7): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score, 4. Round & final score, 5. Re-flights, F3 Soaring — Generally Applicable Rules, Source references
 
 ### Community 318 - "F3K — RC Hand-Launch Gliders"
-Cohesion: 0.18
+Cohesion: 0.20
 Nodes (10): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score (`F3K.9.1`), 4. Round score, 5. Final classification (`F3K.10`), 6. Re-flights (`F3K.9.6`, `F3K.4.2`, `F3K.2.4`), F3K — RC Hand-Launch Gliders, Penalty schedule (+2 more)
 
 ### Community 319 - ".BuildDispatcher"
-Cohesion: 0.36
-Nodes (9): IEventStore, GetClassDefinition, GetClassDefinitionHandler, Fact, FakeClock, FakeEventStore, IDispatcher, Task (+1 more)
+Cohesion: 0.49
+Nodes (6): Fact, FakeClock, FakeEventStore, IDispatcher, Task, PublishClassDefinitionTests
 
 ### Community 320 - ".ScoreGroup"
-Cohesion: 0.22
-Nodes (9): GroupResult, ImmutableArray, ImmutableDictionary, IReadOnlyDictionary, Penalty, Result, TaskRoundCoordinate, EmittedCell (+1 more)
+Cohesion: 0.20
+Nodes (10): ImmutableDictionary, GroupResult, ImmutableArray, ImmutableDictionary, IReadOnlyDictionary, Penalty, Result, TaskRoundCoordinate (+2 more)
 
 ### Community 321 - "F5 Electric Soaring — Generally Applicable Rules"
 Cohesion: 0.29
@@ -1708,37 +1696,37 @@ Nodes (4): Before starting, Story — Source an FAI-conformant F3K fixture (seed
 Cohesion: 0.25
 Nodes (8): DateTimeOffset, Fact, Func, Group, ImmutableArray, NormalisationGroupIsolationPropertyTests, World, World
 
-### Community 325 - "EndpointRouteBuilderExtensions"
-Cohesion: 0.28
-Nodes (4): IEndpointRouteBuilder, IResult, EndpointRouteBuilderExtensions, Func
+### Community 325 - "A.6 BUREAU"
+Cohesion: 0.29
+Nodes (7): A.6.1 Composition, A.6.2 Term of office and election, A.6.3 Resignation, A.6.4 Suspension and Dismissal, A.6.5 Competence, A.6.6 Bureau Meeting Minutes, A.6 BUREAU
 
-### Community 326 - ".FindAsync"
-Cohesion: 0.33
-Nodes (5): CancellationToken, IDocumentSessionFactory, IReadOnlyList, Task, DocumentEntryQuery
+### Community 326 - "IEntryQuery"
+Cohesion: 0.12
+Nodes (14): CancellationToken, IEventStore, IReadOnlyDictionary, Task, EntryCollector, CancellationToken, IReadOnlyList, Task (+6 more)
 
 ### Community 327 - "TaskRound"
-Cohesion: 0.20
-Nodes (8): Group, Func, TaskRound, Groups, Ordinal, State, TaskRef, TaskRoundState
+Cohesion: 0.11
+Nodes (15): Group, Func, Round, IsCompleteOrAnnulled, IsFullyFlown, Ordinal, TaskRounds, TaskRound (+7 more)
 
 ### Community 328 - "F3B — RC Multi-Task Gliders"
 Cohesion: 0.22
 Nodes (9): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score — three partial scores (`F3B.2.6`), 4. Round score (`F3B.2.7`), 5. Final classification (`F3B.2.8`), 6. Re-flights (`F3B.1.5`, `F3B.1.11`), F3B — RC Multi-Task Gliders, Penalty schedule (+1 more)
 
-### Community 330 - "IClock"
-Cohesion: 0.29
-Nodes (6): DateTimeOffset, IClock, UtcNow, DateTimeOffset, FakeClock, UtcNow
+### Community 330 - "RegisterCompetitorPropertyTests"
+Cohesion: 0.33
+Nodes (5): IsBogus, DateTimeOffset, Gen, Index, RegisterCompetitorPropertyTests
 
 ### Community 331 - ".SeedOpenEntryWithFlight"
-Cohesion: 0.23
-Nodes (12): CancellationToken, IClock, IEventStore, Task, CaptureMeasurementHandler, DateTimeOffset, Fact, FakeEventStore (+4 more)
+Cohesion: 0.17
+Nodes (15): CancellationToken, IClock, IEventStore, Task, CaptureMeasurementHandler, CancellationToken, DateTimeOffset, Fact (+7 more)
 
-### Community 332 - "Model"
-Cohesion: 0.33
-Nodes (6): FlightModel, List, Model, Flights, LastAnnulmentReason, PenaltyCount
+### Community 332 - "Story — Signed-width piecewise bands (the FAI F5K below-NLH bonus)"
+Cohesion: 0.29
+Nodes (6): Blast-radius audit (all 12 `T.Piecewise` call sites), Completion note (2026-09-04), Plan, Story — Signed-width piecewise bands (the FAI F5K below-NLH bonus), What, Why it matters
 
 ### Community 333 - ".MapQueries"
-Cohesion: 0.15
-Nodes (19): IReadOnlyList, WebApplication, Queries, CancellationToken, Entry, IEventStore, ImmutableArray, IReadOnlyDictionary (+11 more)
+Cohesion: 0.10
+Nodes (24): IReadOnlyList, WebApplication, Queries, CancellationToken, Entry, IEventStore, ImmutableArray, IReadOnlyDictionary (+16 more)
 
 ### Community 334 - "f3k-southern-fling/ladder.py"
 Cohesion: 0.36
@@ -1756,29 +1744,29 @@ Nodes (8): F3J.8.1 Start Direction, F3J.8.2 Launching, F3J.8.3 Launching Procedu
 Cohesion: 0.40
 Nodes (4): Before starting, Story — OmitFromTeamScore=true witness fixture, What, Why it matters
 
-### Community 338 - "FlightModel"
-Cohesion: 0.40
-Nodes (4): MeasurementModel, FlightModel, Measurements, Sequence
+### Community 338 - "Mutation"
+Cohesion: 0.29
+Nodes (7): Mutation, DeleteMember, DuplicateMember, MoveBetweenGroups, SplitOffSingleton, SubstituteUnregistered, WithdrawAMember
 
-### Community 339 - ".DescribeContributors"
-Cohesion: 0.40
-Nodes (4): Func, Placing, Ref, Score
+### Community 339 - "ComparisonReport"
+Cohesion: 0.15
+Nodes (12): Func, IEnumerable, IReadOnlyList, Placing, Ref, Score, ComparisonReport, AllGrainsExact (+4 more)
 
 ### Community 341 - "NZ Class P — ALES Radian (or similar 2 m all-foam electric glider)"
 Cohesion: 0.18
 Nodes (11): 1. Pilot assignment to groups (the draw) — **and the open problem**, 2. Launch (`NZ.3.15.1 d, f, g`), 3. Data the timer / helper collects, 4. The task (`NZ.3.15.1 c`), 5. Score (`NZ.3.15.1 i`), 6. Rounds, 7. Re-flights (`NZ.3.15.1 h`), 8. A defect in the rule text — `NZ.3.15.1 j` (+3 more)
 
 ### Community 342 - "ClassDefinitionPublished"
-Cohesion: 0.17
-Nodes (11): ClassDefinitionProjection, DateTimeOffset, ClassDefinitionEvent, ClassDefinitionPublished, ClassDefinitionRetired, Fact, ArgumentException, Fact (+3 more)
+Cohesion: 0.23
+Nodes (9): IDomainEvent, DateTimeOffset, ClassDefinitionEvent, ClassDefinitionPublished, ClassDefinitionRetired, Fact, ClassDefinitionEventJsonTests, Fact (+1 more)
 
 ### Community 343 - "DocumentClassLibraryQuery"
-Cohesion: 0.38
+Cohesion: 0.32
 Nodes (5): CancellationToken, IDocumentSessionFactory, IReadOnlyList, Task, DocumentClassLibraryQuery
 
-### Community 344 - "CompetitorModel"
-Cohesion: 0.40
-Nodes (5): Guid, CompetitorModel, CompetitorNumber, Id, Withdrawn
+### Community 344 - "NZ ALES — Generally Applicable Rules"
+Cohesion: 0.33
+Nodes (6): 1. The shared shape, 2. Data the timer / helper collects, 3. What is *not* scoring data, 4. Re-flights, NZ ALES — Generally Applicable Rules, Source references
 
 ### Community 345 - "SoarscoreEventTypes"
 Cohesion: 0.50
@@ -1796,17 +1784,17 @@ Nodes (3): HTMLParser, _FormScanner, Collects form fields and selects-with-optio
 Cohesion: 0.25
 Nodes (8): 1. Pilot assignment to groups (the draw), 2. Data the timer / helper collects, 3. Group score (`5.5.11.12`), 4. Round score, 5. Final classification (`5.5.11.13`), 6. Re-flights (`5.5.11.6`), F5J — RC Electric Powered Thermal Duration Gliders, Source references
 
-### Community 349 - "Actual"
-Cohesion: 0.67
-Nodes (3): Competition, Actual, Value
+### Community 349 - "EntryEventJsonTests"
+Cohesion: 0.47
+Nodes (3): DateTimeOffset, Fact, EntryEventJsonTests
 
-### Community 350 - "Actual"
-Cohesion: 0.67
-Nodes (3): Entry, Actual, Value
+### Community 350 - ".TaskWithParameterisedWorkingTime"
+Cohesion: 0.53
+Nodes (3): Fact, ImmutableArray, ResolvedWorkingTimeTests
 
-### Community 351 - "A.5 PLENARY MEETING"
-Cohesion: 0.33
-Nodes (6): A.5.1 Agenda, A.5.2 Technical Meetings, A.5.3 Voting procedure, A.5.4 Plenary Meeting Minutes, A.5.5 Extraordinary Cases, A.5 PLENARY MEETING
+### Community 351 - "_documented_row"
+Cohesion: 0.40
+Nodes (5): _documented_row(), _picker_scenarios(), composite, One picker row built from documented parts, plus the parts themselves., Unique-value option lists, some duplicated, shuffled into a document order.
 
 ### Community 352 - "CreateCompetitionPropertyTests"
 Cohesion: 0.33
@@ -1829,48 +1817,36 @@ Cohesion: 0.40
 Nodes (4): Before starting, Story — Operational tie-break resolution: record the outcome, re-rank, What, Why it matters
 
 ### Community 357 - "NZ Class N — ALES 123 Open (Altitude Limited Electric Soaring)"
-Cohesion: 0.13
-Nodes (16): 1. Pilot assignment to groups (the draw), 2. Launch (`NZ.3.13.1 d, f, g`), 3. Data the timer / helper collects, 4. The task (`NZ.3.13.1 c`), 5. Score (`NZ.3.13.1 i`), 6. Rounds, 7. Re-flights (`NZ.3.13.1 h`), 8. What is not stated (+8 more)
+Cohesion: 0.20
+Nodes (10): 1. Pilot assignment to groups (the draw), 2. Launch (`NZ.3.13.1 d, f, g`), 3. Data the timer / helper collects, 4. The task (`NZ.3.13.1 c`), 5. Score (`NZ.3.13.1 i`), 6. Rounds, 7. Re-flights (`NZ.3.13.1 h`), 8. What is not stated (+2 more)
 
-### Community 359 - "PenaltyAccrual"
-Cohesion: 0.67
-Nodes (3): PenaltyAccrual, OncePerAttempt, PerOccurrence
+### Community 359 - "PenaltyEnginePropertyTests"
+Cohesion: 0.24
+Nodes (7): PenaltyAccrual, OncePerAttempt, PerOccurrence, Fact, Gen, ImmutableArray, PenaltyEnginePropertyTests
 
-### Community 360 - "FlightResultState"
-Cohesion: 0.67
-Nodes (3): FlightResultState, NoResult, Valid
+### Community 360 - "ScoringResultTypes.cs"
+Cohesion: 0.17
+Nodes (12): IReadOnlyDictionary, FlightResult, FlightResultState, NoResult, Valid, PenaltyApplication, ResolvedGroupConstraint, ResolvedMeasurements (+4 more)
 
 ### Community 361 - "Result"
-Cohesion: 0.12
-Nodes (17): CancellationToken, Task, Type, ICommand, IQuery, IReadOnlyList, Result, Code (+9 more)
+Cohesion: 0.06
+Nodes (25): IEndpointRouteBuilder, IResult, EndpointRouteBuilderExtensions, CancellationToken, Task, CancellationToken, Task, CancellationToken (+17 more)
 
-### Community 363 - "MeasurementModel"
+### Community 362 - "Soarscore.SeedData"
+Cohesion: 0.08
+Nodes (6): Soarscore.Application.Tests.Shared.Competitions, Soarscore.SeedData, Soarscore.Application.Tests.Commands.Competitions, JsonSerializerContext, Intrinsic, ClassDefinitionContext
+
+### Community 363 - "2.5 CONTESTS"
 Cohesion: 0.67
-Nodes (3): MeasurementModel, AmendmentCount, Metric
+Nodes (3): 2.5.1 Contestants Meeting., 2.5.2 Round Identification., 2.5 CONTESTS
 
-### Community 364 - "2.3 TIMING"
+### Community 368 - ".Publishing_then_optionally_retiring_preserves_identity_fields_and_models_RetiredAt_correctly"
 Cohesion: 0.40
-Nodes (5): 2.3.1 Timing of the flight commences when the parachute/pennant is seen to drop from the, 2.3.2 Timing of the flight shall finish when the sailplane first touches the ground or a ground based, 2.3.3 Models already in the air and being timed at the completion of the round, may complete that, 2.3.4 If the sailplane comes into contact with a person during the flight and before the model, 2.3 TIMING
-
-### Community 366 - "F3J.11 FINAL CLASSIFICATION"
-Cohesion: 0.40
-Nodes (5): F3J.11.2 Fly-off Working Time, F3J.11.3 Fly-off Scoring, F3J.11.4 Final Placing, F3J.11.5 Ranking for International Team Classification, F3J.11 FINAL CLASSIFICATION
-
-### Community 368 - "ClassDefinitionProjectionPropertyTests"
-Cohesion: 0.67
-Nodes (3): DateTimeOffset, Gen, ClassDefinitionProjectionPropertyTests
-
-### Community 369 - "F3J.1 GENERAL RULES"
-Cohesion: 0.40
-Nodes (5): F3J.1.1 Definition of a Radio-Controlled Glider, F3J.1.2 Prefabrication of the Model aircraft, F3J.1.3 Characteristics of Radio-Controlled Gliders, F3J.1.4 Competitors and Helpers, F3J.1 GENERAL RULES
+Nodes (4): DateTimeOffset, Fact, Gen, ClassDefinitionProjectionPropertyTests
 
 ### Community 371 - "ExpectedVersion"
-Cohesion: 0.14
-Nodes (16): ExpectedVersion, Any, IsAny, IsExact, IsNoStream, NoStream, Version, Kind (+8 more)
-
-### Community 372 - "F3J.2 THE FLYING SITE"
-Cohesion: 0.40
-Nodes (5): F3J.2.1 Site Surface, F3J.2.2 Site Marking, F3J.2.3 Landing Spots, F3J.2.4 Safety Rules, F3J.2 THE FLYING SITE
+Cohesion: 0.17
+Nodes (12): ExpectedVersion, Any, IsAny, IsExact, IsNoStream, NoStream, Version, Kind (+4 more)
 
 ### Community 373 - "F3K.10 SCORING"
 Cohesion: 0.40
@@ -1880,53 +1856,37 @@ Nodes (5): F3K.10.1 Final score, F3K.10.2 Resolution of a tie, F3K.10.3 Fly-off,
 Cohesion: 0.40
 Nodes (5): F3K.4.1 Contact with a person, F3K.4.2 Mid air collision, F3K.4.3 Safety area, F3K.4.4 Forbidden airspace, F3K.4 SAFETY
 
-### Community 375 - "FinaliseValidityPropertyTests"
-Cohesion: 0.15
-Nodes (13): minRounds, minTasks, outcomes, RoundOutcome, taskRefs, DateTimeOffset, Gen, rounds (+5 more)
-
 ### Community 377 - "RulesAmendment"
 Cohesion: 0.40
 Nodes (5): RulesAmendment, At, By, Definition, Reason
-
-### Community 378 - "F3J.6 ORGANISATION OF THE FLYING"
-Cohesion: 0.50
-Nodes (4): F3J.12.1 for details., F3J.6.1 Rounds and Groups, F3J.6.2 Flying in Groups, F3J.6 ORGANISATION OF THE FLYING
-
-### Community 379 - "F3J.13 ADVISORY INFORMATION"
-Cohesion: 0.50
-Nodes (4): F3J.13.1 Organisational Requirements, F3J.13.2 Time-keeper Duties, F3J.13.3 Groups, F3J.13 ADVISORY INFORMATION
-
-### Community 381 - "F3J.9 LANDING"
-Cohesion: 0.50
-Nodes (4): F3J.9.1 Landing SCircle, F3J.9.2 Timekeeper Position, F3J.9.3 Model Retrrieving, F3J.9 LANDING
 
 ### Community 382 - "F3K.1 GENERAL"
 Cohesion: 0.50
 Nodes (4): F3K.1.1 Timekeepers, F3K.1.2 Helper, F3K.1.3 Transmitter Pound, F3K.1 GENERAL
 
 ### Community 385 - "RateTerm"
-Cohesion: 0.17
-Nodes (14): CapScope, PerFlight, PerTask, ConstantTerm, Value, RateTerm, Cap, CapScope (+6 more)
+Cohesion: 0.22
+Nodes (11): CapScope, PerFlight, PerTask, RateTerm, Cap, CapScope, Rate, IReadOnlyDictionary (+3 more)
 
 ## Knowledge Gaps
-- **2239 isolated node(s):** `context7`, `rider`, `$schema`, `.opencode/plugins/graphify.js`, `$(SoarscoreTargetFramework)` (+2234 more)
+- **2244 isolated node(s):** `context7`, `rider`, `$schema`, `.opencode/plugins/graphify.js`, `$(SoarscoreTargetFramework)` (+2239 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ClassDefinition` connect `ClassDefinition` to `FakeEntryQuery`, `ReflightingForAMissedRoundSteps`, `SystemClock`, `CatalogueDrawPropertyTests`, `.CheckLimits`, `ScoringTeamCommandHandlerTests`, `.New`, `ResolvedTask`, `EntryId`, `.LoadAsync`, `TeamsEventStoreTests`, `GroupSpot`, `Corpus.cs`, `MeasuredValue`, `ClosingACompetitionSteps`, `.New`, `FixtureModels.cs`, `ReflightingAGroupSteps`, `AcceptingTheDrawSteps`, `Then`, `.Of`, `PenaltyDefinition`, `PhaseDrawn`, `RecordingAReflightRulingSteps`, `ScoringTeamsSteps`, `FinaliseDecideTests`, `.SeedOpenEntry`, `MetricDefinition`, `.HandleAsync`, `CompetitionReplaceTaskRoundPropertyTests`, `GroupSpotsPropertyTests`, `.CompetitionAdopting`, `CompetitorId`, `.BuildDrawnCompetition`, `.SeedOpenEntryWithFlight`, `.Validate`, `.DrawnCompetitionAsync`, `.New`, `GliderscoreFixture`, `PublishClassDefinition`, `RecordCompetitionPenaltyDecideTests`, `.ScoreCompetition`, `PrescribeDrawDecideTests`, `WithdrawCompetitorHandler`, `.Classify`, `.BuildDrawnCompetition`, `EntryModelBasedFoldTests`, `.SeedCompetition`, `IDispatcher`, `TaskDefinition`, `PrescribeDrawPropertyTests`, `PublishedClassDefinition`, `BindParameterPropertyTests`, `AdoptedRules`, `ClassDefinitionValidationPropertyTests`, `.Apply`, `SeedF5K`, `SeeingWhatIsRecordedSteps`, `.DrawnCompetitionAsync`, `SeedF5kNdc`, `ScoringServiceZeroRoutingTests`, `IStoreFixture`, `.SetUpAsync`, `.SeedDrawnCompetitionAsync`, `.Exact`, `LookupRow`, `.SeedEntryUnderF5K`, `Soarscore.Application`, `.SeedScoredGroup`, `.BuildDispatcher`, `.ScoreGroup`, `.SeedOpenEntryWithFlight`, `.MapQueries`, `ClassDefinitionEventJsonTests`, `ClassDefinitionPublished`, `CreateCompetitionPropertyTests`, `ClassDefinitionProjectionPropertyTests`, `RulesAmendment`?**
-  _High betweenness centrality (0.147) - this node is a cross-community bridge._
-- **Why does `CompetitorId` connect `CompetitorId` to `Competition`, `Soarscore.Domain.PublishedClassDefinition`, `FakeEntryQuery`, `ReflightingForAMissedRoundSteps`, `SystemClock`, `CatalogueDrawPropertyTests`, `ScoringTeamCommandHandlerTests`, `PrescribingADrawSteps`, `DropPolicy`, `.New`, `.SeedWired`, `EntryId`, `.LoadAsync`, `TeamsEventStoreTests`, `GroupSpot`, `EntryCapturePropertyTests`, `ClosingACompetitionSteps`, `.New`, `Group`, `Entry`, `Comparator`, `FlightOpened`, `ReflightingAGroupSteps`, `AcceptingTheDrawSteps`, `Then`, `AmendMeasurementDecideTests`, `FakeClock`, `.Of`, `TaskRoundRecordingPropertyTests`, `GroupId`, `PhaseDrawn`, `RecordingAReflightRulingSteps`, `ScoringTeamsSteps`, `.SeedScoredTeamCompetition`, `.BuildCompetition`, `GroupSpotsPropertyTests`, `TeamsDecideTests`, `.BuildDrawnCompetition`, `TaskRoundCompleted`, `Round`, `ScoringServicePropertyTests`, `.DrawnCompetitionAsync`, `.New`, `DrawAcceptanceDecideTests`, `GliderscoreFixture`, `RecordCompetitionPenaltyDecideTests`, `.ScoreCompetition`, `PrescribeDrawDecideTests`, `WithdrawCompetitorHandler`, `.Classify`, `DateTimeOffset`, `.BuildDrawnCompetition`, `.SeedCompetition`, `IDispatcher`, `TaskDefinition`, `PrescribeDrawPropertyTests`, `OpenFlightDecideTests`, `Competitor`, `DrawProtectionPropertyTests`, `SeeingWhatIsRecordedSteps`, `TeamClassificationEngineTests`, `TeamClassificationPropertyTests`, `.DrawnCompetitionAsync`, `ScoringServiceZeroRoutingTests`, `AssigningSpotsSteps`, `IStoreFixture`, `.BuildDrawnCompetition`, `FindEntries`, `FakeEventStore`, `.SetUpAsync`, `.SeedDrawnCompetitionAsync`, `.BuildGroups`, `.Exact`, `RecordEntryPenaltyDecideTests`, `PhaseDrawPropertyTests`, `AnnulEntryDecideTests`, `ProtectedPair`, `.SeedScoredGroup`, `.ScoreWith`, `.FindAsync`, `.MapQueries`, `.DescribeContributors`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
-- **Why does `CompetitionId` connect `CompetitorId` to `Competition`, `Soarscore.Domain.PublishedClassDefinition`, `FakeEntryQuery`, `IProjection`, `SystemClock`, `IStoreFixture`, `WithdrawCompetitorHandler`, `ScoringTeamCommandHandlerTests`, `FindEntries`, `.New`, `.SeedWired`, `FakeEventStore`, `.LoadAsync`, `.SetUpAsync`, `.SeedDrawnCompetitionAsync`, `GroupSpot`, `.SeedCompetition`, `IDispatcher`, `EntryCapturePropertyTests`, `.Exact`, `Entry`, `Comparator`, `FlightOpened`, `RecordEntryPenaltyDecideTests`, `OpenFlightDecideTests`, `AmendMeasurementDecideTests`, `FakeClock`, `.Of`, `GroupId`, `AnnulEntryDecideTests`, `AdoptedRules`, `ProtectedPair`, `.SeedOpenEntry`, `.SeedScoredTeamCompetition`, `.SeedScoredGroup`, `.HandleAsync`, `.FindAsync`, `CompetitionSummary`, `.SeedOpenEntryWithFlight`, `.MapQueries`, `.SeedOpenEntryWithFlight`, `.DrawnCompetitionAsync`, `GliderscoreFixture`, `PublishClassDefinition`, `.DrawnCompetitionAsync`?**
+- **Why does `ClassDefinition` connect `ClassDefinition` to `FakeEntryQuery`, `ReflightingForAMissedRoundSteps`, `SystemClock`, `CatalogueDrawPropertyTests`, `.CheckLimits`, `ScoringTeamCommandHandlerTests`, `.New`, `EntryId`, `IStoreFixture`, `.All_seven_team_events_round_trip_through_the_real_store_and_replay_to_the_expected_state`, `IDispatcher`, `Corpus.cs`, `MeasuredValue`, `ClosingACompetitionSteps`, `.New`, `GliderscoreFixture`, `FlightOpened`, `ReflightingAGroupSteps`, `AcceptingTheDrawSteps`, `Then`, `BindParameterDecideTests`, `PenaltyDefinition`, `ReflightRole`, `PhaseDrawn`, `When`, `ScoringTeamsSteps`, `FinaliseDecideTests`, `ScoringTeamMembership`, `.SeedOpenEntry`, `MetricDefinition`, `.HandleAsync`, `.BuildCompetition`, `CompetitionReplaceTaskRoundPropertyTests`, `GroupSpotsPropertyTests`, `.CompetitionAdopting`, `CompetitionId`, `.BuildDrawnCompetition`, `.HandleAsync`, `ScoringServicePropertyTests`, `.Validate`, `.DrawnCompetitionAsync`, `.New`, `DrawAcceptanceDecideTests`, `PublishClassDefinition`, `RecordCompetitionPenaltyDecideTests`, `.ScoreCompetition`, `PrescribeDrawDecideTests`, `WithdrawCompetitorHandler`, `ContactDetails`, `ReflightRule`, `SeedF3K`, `.BuildDrawnCompetition`, `EntryModelBasedFoldTests`, `.SeedCompetition`, `PrescribeDrawEventStoreTests`, `TaskDefinition`, `PrescribeDrawPropertyTests`, `PublishedClassDefinition`, `BindParameterPropertyTests`, `DrawAcceptancePropertyTests`, `.RunPayoffCaptureScenarioAsync`, `ScoreTerm`, `ClassDefinitionValidationPropertyTests`, `.Apply`, `.Seed`, `SeeingWhatIsRecordedSteps`, `RegisterPersonHandler`, `SeedF5kNdc`, `.BuildCompetition`, `PhaseDefinition`, `.Apply`, `RegisterCompetitorHandler`, `.SetUpAsync`, `AdoptedRules`, `FakeEventStore`, `.Rank`, `SeedF3J`, `LookupRow`, `.SeedEntryUnderF5K`, `.BuildDispatcher`, `.ScoreGroup`, `RegisterCompetitorPropertyTests`, `.SeedOpenEntryWithFlight`, `.MapQueries`, `ClassDefinitionPublished`, `CreateCompetitionPropertyTests`, `.Publishing_then_optionally_retiring_preserves_identity_fields_and_models_RetiredAt_correctly`, `RulesAmendment`?**
+  _High betweenness centrality (0.133) - this node is a cross-community bridge._
+- **Why does `CompetitorId` connect `CompetitorId` to `Competition`, `Soarscore.Domain.PublishedClassDefinition`, `FakeEntryQuery`, `ReflightingForAMissedRoundSteps`, `SystemClock`, `CatalogueDrawPropertyTests`, `ScoringTeamCommandHandlerTests`, `PrescribingADrawSteps`, `DropPolicy`, `.New`, `.SeedWired`, `EntryId`, `IStoreFixture`, `.All_seven_team_events_round_trip_through_the_real_store_and_replay_to_the_expected_state`, `IDispatcher`, `EntryCapturePropertyTests`, `ClosingACompetitionSteps`, `.New`, `Entry`, `Comparator`, `FlightOpened`, `ReflightingAGroupSteps`, `AcceptingTheDrawSteps`, `Then`, `AmendMeasurementDecideTests`, `.Exact`, `TaskRoundRecordingPropertyTests`, `ReflightRole`, `PhaseDrawn`, `When`, `ScoringTeamsSteps`, `FinaliseDecideTests`, `ScoringTeamMembership`, `.SeedScoredTeamCompetition`, `.BuildCompetition`, `GroupSpotsPropertyTests`, `TeamsDecideTests`, `CompetitionId`, `.BuildDrawnCompetition`, `.ComputeEntries`, `ScoringServicePropertyTests`, `.DrawnCompetitionAsync`, `DrawAcceptanceDecideTests`, `ReplayDriver`, `PublishClassDefinition`, `RecordCompetitionPenaltyDecideTests`, `.ScoreCompetition`, `PrescribeDrawDecideTests`, `WithdrawCompetitorHandler`, `ContactDetails`, `.Classify`, `ReflightRule`, `.BuildDrawnCompetition`, `.SeedCompetition`, `PrescribeDrawEventStoreTests`, `PrescribeDrawPropertyTests`, `OpenFlightDecideTests`, `CaptureMeasurementDecideTests`, `.RunPayoffCaptureScenarioAsync`, `GroupId`, `DrawProtectionPropertyTests`, `SeeingWhatIsRecordedSteps`, `TeamClassificationEngineTests`, `CompetitionResult`, `RegisterPersonHandler`, `.BuildCompetition`, `AssigningSpotsSteps`, `RegisterCompetitorHandler`, `.BuildDrawnCompetition`, `FindEntries`, `IDomainEvent`, `.ComputeGroupViews`, `.SetUpAsync`, `AdoptedRules`, `.BuildGroups`, `FakeEventStore`, `RecordEntryPenaltyDecideTests`, `AnnulEntryDecideTests`, `ProtectedPair`, `.ScoreWith`, `IEntryQuery`, `.MapQueries`, `ComparisonReport`, `EntryEventJsonTests`?**
+  _High betweenness centrality (0.077) - this node is a cross-community bridge._
+- **Why does `CompetitionId` connect `CompetitionId` to `Competition`, `Soarscore.Domain.PublishedClassDefinition`, `FakeEntryQuery`, `.LoadCurrentAsync`, `SystemClock`, `RegisterCompetitorHandler`, `WithdrawCompetitorHandler`, `ScoringTeamCommandHandlerTests`, `FindEntries`, `.New`, `.SeedWired`, `IDomainEvent`, `IStoreFixture`, `.SetUpAsync`, `AdoptedRules`, `IDispatcher`, `.SeedCompetition`, `PrescribeDrawEventStoreTests`, `EntryCapturePropertyTests`, `FakeEventStore`, `Entry`, `Comparator`, `FlightOpened`, `RecordEntryPenaltyDecideTests`, `CompetitorId`, `OpenFlightDecideTests`, `AmendMeasurementDecideTests`, `.Exact`, `AnnulEntryDecideTests`, `CaptureMeasurementDecideTests`, `ProtectedPair`, `.SeedOpenEntry`, `.SeedScoredTeamCompetition`, `.HandleAsync`, `.RunPayoffCaptureScenarioAsync`, `IEntryQuery`, `CompetitionSummary`, `RegisterCompetitorPropertyTests`, `.SeedOpenEntryWithFlight`, `.MapQueries`, `.HandleAsync`, `GroupId`, `.DrawnCompetitionAsync`, `.New`, `EntryEventJsonTests`, `.Seed`, `ReplayDriver`, `PublishClassDefinition`, `RegisterPersonHandler`?**
   _High betweenness centrality (0.043) - this node is a cross-community bridge._
 - **What connects `context7`, `rider`, `$schema` to the rest of the system?**
-  _2239 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2244 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Competition` be split into smaller, more focused modules?**
-  _Cohesion score 0.09220779220779221 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04537114261884904 - nodes in this community are weakly interconnected._
 - **Should `Soarscore.Domain.PublishedClassDefinition` be split into smaller, more focused modules?**
-  _Cohesion score 0.05341712490180676 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0745274914089347 - nodes in this community are weakly interconnected._
 - **Should `ReflightingForAMissedRoundSteps` be split into smaller, more focused modules?**
   _Cohesion score 0.12775842044134728 - nodes in this community are weakly interconnected._

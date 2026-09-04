@@ -190,7 +190,7 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   NZ classes.** `UndefinedRequiresRuling` was the wrong shape (it asserts a CD
   ruling is required); the eight NZ seeds ship the new `EqualPlaces` directive
   — the "ties are never broken" rung the model had withheld until a rulebook
-  context stated one — with adoption check 20 (it must stand alone) and no
+  context stated one — with adoption check 21 (it must stand alone) and no
   `PendingTieBreak` (nothing is pending). `UndefinedRequiresRuling` remains
   for genuine silence: F5L and FAI General `C.15.6.1`. Reopen only if NZMAA
   amends `NZ.0.3` / `NZ.3.16.37` / `NZ.3.16.26`.

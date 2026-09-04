@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/CompetitionClasses/ClassDefinitionValidation.cs": {
-    "mtime": 1788472142.985407,
-    "seen": 1788472559.0467393,
-    "ast_hash": "1a2eb4a97bc114822d7956773b4c64a0",
+    "mtime": 1788485795.2880661,
+    "seen": 1788486220.0052352,
+    "ast_hash": "2fca5d13817df58ab96708401ab8ce32",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/CompetitionClasses/PublishClassDefinition.cs": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/CompetitionClasses/ClassDefinitionValidationTests.cs": {
-    "mtime": 1788472327.1563323,
-    "seen": 1788472559.0534792,
-    "ast_hash": "31ed881648ad25a6efe0e60367992510",
+    "mtime": 1788485797.780062,
+    "seen": 1788486220.0123165,
+    "ast_hash": "d457f1b2a80394e7f691231a319c61d4",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/CompetitionClasses/PublishClassDefinitionPropertyTests.cs": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/SeedF5K.cs": {
-    "mtime": 1788483586.0584695,
-    "seen": 1788483929.0064805,
-    "ast_hash": "835a367ac5fe72742997a2f4e58ead49",
+    "mtime": 1788485545.1254933,
+    "seen": 1788486220.0154939,
+    "ast_hash": "32292bc6bfb63a37c1ad9ba534c33e7b",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/SeedF5L.cs": {
@@ -1962,15 +1962,15 @@
     "semantic_hash": ""
   },
   "docs/competition-class-notation.md": {
-    "mtime": 1788483576.037488,
-    "seen": 1788483929.0067759,
-    "ast_hash": "47ef487d273f407fca582fa9880b2ece",
+    "mtime": 1788485916.8108587,
+    "seen": 1788486220.0158105,
+    "ast_hash": "817c54c462c3f55ac951e1582305759c",
     "semantic_hash": ""
   },
   "docs/high-level-architecture.md": {
-    "mtime": 1788135189.8996825,
-    "seen": 1788135308.1718593,
-    "ast_hash": "bdd299f412549300c6b8e7d9ba5941f1",
+    "mtime": 1788485896.5088935,
+    "seen": 1788486220.0158122,
+    "ast_hash": "347efd9c01da87e54ff87c9cf615e07b",
     "semantic_hash": ""
   },
   "docs/ladr/ladr-0001-event-store.md": {
@@ -2106,9 +2106,9 @@
     "semantic_hash": ""
   },
   "docs/soaring-domain-class-diagram.md": {
-    "mtime": 1788317064.0332186,
-    "seen": 1788319546.3344994,
-    "ast_hash": "af324c851451aed5052ac4721497a634",
+    "mtime": 1788485891.2659023,
+    "seen": 1788486220.0162182,
+    "ast_hash": "226480384f0920b397f30b593d7a0b71",
     "semantic_hash": ""
   },
   "docs/soaring-domain-glossary.md": {
@@ -2298,9 +2298,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1788472547.090838,
-    "seen": 1788472559.057989,
-    "ast_hash": "d4f814d96e55f9ffca7cc4d1c5d7851b",
+    "mtime": 1788485804.5500505,
+    "seen": 1788486220.0172288,
+    "ast_hash": "75b7904b8a6e35d73b1786d2520bb767",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -3462,9 +3462,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/TieBreakPolicy.cs": {
-    "mtime": 1788472133.2893584,
-    "seen": 1788472559.048527,
-    "ast_hash": "592607875e682ca68a6bb294b121dd0c",
+    "mtime": 1788486053.0706263,
+    "seen": 1788486220.0069327,
+    "ast_hash": "b74f2b76cf3644438a88f85fa7cc823f",
     "semantic_hash": ""
   },
   "kanban/completed/http-grain-one-metric-bridge.md": {

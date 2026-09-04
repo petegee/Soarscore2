@@ -521,7 +521,7 @@ public static class ClassDefinitionValidation
     }
 
     /// <summary>
-    /// Check 20 — a phase's TieBreaks containing EqualPlaces contains only
+    /// Check 21 — a phase's TieBreaks containing EqualPlaces contains only
     /// it: "ties are never broken" stated beside any rung that could
     /// separate is a self-contradiction (the check-18 shape; Pete's
     /// 2026-09-04 NZ ruling, which introduced EqualPlaces).
@@ -533,7 +533,7 @@ public static class ClassDefinitionValidation
             var tieBreaks = definition.Phases[p].TieBreaks;
             if (tieBreaks.Length > 1 && tieBreaks.Any(t => t is EqualPlaces))
             {
-                defects.Add(new Defect("class-definition.check-20.equal-places-mixed-with-stated",
+                defects.Add(new Defect("class-definition.check-21.equal-places-mixed-with-stated",
                     $"$.phases[{p}].tieBreaks",
                     "A tie-break ladder containing equalPlaces must contain only it."));
             }

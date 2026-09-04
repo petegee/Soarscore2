@@ -393,7 +393,7 @@ public class ClassDefinitionValidationTests
     }
 
     [Fact]
-    public void Check20_equalPlaces_must_be_the_only_rung_in_a_ladder()
+    public void Check21_equalPlaces_must_be_the_only_rung_in_a_ladder()
     {
         // Pete's 2026-09-04 NZ ruling: the stated settlement stands alone —
         // any rung beside it could separate what it settles.
@@ -406,7 +406,7 @@ public class ClassDefinitionValidationTests
 
         var defects = ClassDefinitionValidation.Validate(definition);
 
-        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-20.equal-places-mixed-with-stated");
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-21.equal-places-mixed-with-stated");
     }
 
     [Fact]

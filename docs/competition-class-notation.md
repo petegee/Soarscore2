@@ -361,7 +361,7 @@ re-derived.
 ```
 
 `<directive>` ∈ `bestDroppedScore | qualifyingPosition <ordinal> |
-additionalFullRound | tiebreakFlyoff | classificationRounds |
+additionalFullRound | tiebreakFlyoff | classificationRounds | equalPlaces |
 undefinedRequiresRuling`.
 
 **`tiebreak` is optional, and absence keeps the display ladder.** Rung 1 is
@@ -379,12 +379,14 @@ by a mechanism `F3B.2.8` does not state (the rulebook's answer to a tie is
 countback".
 
 **The stated list is walked in order.** Comparator rungs narrow the tie group;
-the first operational or `undefinedRequiresRuling` rung reached with the group
-still tied halts evaluation — the group shares places and the requirement
-surfaces to contest flow as data (the engine never resolves more flying) —
-and rungs after the halt stay dormant. F3F is the shape that needs the
-dormancy: its comparator is stated *after* the operational rung, as the "if
-this is not possible" fallback the rulebook's own future:
+the first non-comparator rung reached with the group still tied halts
+evaluation, and rungs after the halt stay dormant. What the halt means depends
+on the rung: operational and `undefinedRequiresRuling` rungs leave the group
+sharing places with the requirement surfaced to contest flow as data (the
+engine never resolves more flying); `equalPlaces` is the stated settlement —
+the shared place IS the outcome, so nothing surfaces. F3F is the shape that
+needs the dormancy: its comparator is stated *after* the operational rung, as
+the "if this is not possible" fallback the rulebook's own future:
 
 ```
     tiebreak classificationRounds          # F3F.1.13 "classification rounds are
@@ -398,7 +400,7 @@ shared — F3J's fly-off: equal aggregate *and* equal qualifying position share
 the final place, and the rulebook states nothing further. That is a settled
 shared place, not a surfaced requirement.
 
-The six directives, with what each reads and the rule that states it:
+The seven directives, with what each reads and the rule that states it:
 
 | Directive | Meaning | Source |
 |---|---|---|
@@ -407,6 +409,7 @@ The six directives, with what each reads and the rule that states it:
 | `additionalFullRound` | the tied competitors fly one additional full round — all the class's tasks | `F3B.2.8` |
 | `tiebreakFlyoff` | a separate fly-off for the tied competitors; the CD defines one task | `F3K.10.2`, `5.5.10.17` |
 | `classificationRounds` | more rounds of the class's task are flown until the ties break | `F3F.1.13` |
+| `equalPlaces` | ties are never broken: the group keeps the shared place ("1st equal") at every placing, and nothing is pending — the outcome is stated, not awaited | Pete's 2026-09-04 ruling for the NZ classes (the NZ rules state no tie-break anywhere) |
 | `undefinedRequiresRuling` | the rulebook is silent; the tie stands (shared places) and a CD ruling is required | F5L `5.5.12.12` states classification and stops; the NZ general rules state no tie-break anywhere; FAI General `C.15.6.1` likewise |
 
 `bestDroppedScore` is the max dropped *cell* and so requires the phase to
@@ -418,18 +421,25 @@ ordinal than the phase writing the rung — the figure is a *previous* phase's
 placing, so the rung is unwritable on phase 1 — and **adoption rejects any
 other value**. A ladder containing `undefinedRequiresRuling` must contain
 *only* it — mixing "the rulebook is silent" with stated rungs is a
-self-contradiction — and **adoption rejects the mix**. Directives *after* an
-operational one are deliberately not rejected: `F3F.1.13` requires exactly
-that shape. These are adoption checks 17, 18 and 19.
+self-contradiction — and **adoption rejects the mix**. A ladder containing
+`equalPlaces` likewise contains only it — "ties stand equal" beside any rung
+that could separate is a self-contradiction — and **adoption rejects the
+mix**. Directives *after* an operational one are deliberately not rejected:
+`F3F.1.13` requires exactly that shape. These are adoption checks 17, 18, 19
+and 21.
 
 **`undefinedRequiresRuling` suppresses the countback.** Behind a stated
 silence the tie stands and the PreDropScore countback does not apply — nothing
 has ruled, and applying the countback would be the software deciding what the
 CD has not. This is the re-flight block's NotPermitted/Undefined distinction
-applied to lists, and it is why there is deliberately no
-`notPermitted`-analogue here: no rulebook in either corpus states a definite
-"ties are never broken" — the corpus is silent, not negative, and the silence
-is stateable so that grepping a definition finds it.
+applied to lists. For most of the model's life there was deliberately no
+`notPermitted`-analogue here: no rulebook in either corpus stated a definite
+"ties are never broken" — the corpus was silent, not negative, and the silence
+was stateable so that grepping a definition finds it. Pete's 2026-09-04
+ruling stated one for the NZ classes — ties are never broken, announced equal
+("1st equal") at every placing — and `equalPlaces` is that stated negative,
+admitted the day a rulebook context stated it. It suppresses the countback
+for the same reason, and surfaces nothing: nothing is pending.
 
 **The F3K and F5K clauses are preliminary-scoped.** `F3K.10.2` sits between
 10.1 (the preliminary's final score) and 10.3 (the fly-off), and its "a
@@ -813,8 +823,10 @@ predicates. It stays statically validatable at adoption.
 - **Tie-breaking, now written (F15 resolved).** The former hole is closed by
   the `tiebreak` phase block (§4): F3B's additional full round, F3K/F5K's best
   dropped score then tie-break fly-off, F3F's classification rounds, F3J/F5J's
-  qualifying position, and `undefinedRequiresRuling` for the classes whose
-  rulebooks state none. What the notation still cannot say is F3F.1.13's
+  qualifying position, `undefinedRequiresRuling` for the classes whose
+  rulebooks state none, and — since Pete's 2026-09-04 NZ no-tie-breaking
+  ruling — `equalPlaces`, the stated settlement, for the NZ classes. What the
+  notation still cannot say is F3F.1.13's
   "concerning the five best scores" scoping — a contest-flow scope recorded as
   deliberately unmodelled, readmitted as a scope field the day a second class
   needs one.
@@ -1300,7 +1312,7 @@ of this document already states about each. Nothing below is new.
 | F11 | Five variants removed: `LastPhaseOnly`, `NormalisedRoundScore`, `ZeroScoreTerm`, `wholeFieldAsOneGroup`, `DuringRound` | no class in the six required them; each is readmitted the day one does, with the citation |
 | F12 | `no default` — `Parameter.defaultValue` left unset | rules that state no default at all — F3B's group minimum, F5L's `5.5.12.9`, NZ Class M's `NZ.3.12.5 l` |
 | F14 | Target values are written in the units of the metric scored, not in points | the model did not originally say whether `FlightSelection.targetValues` were metric units or points |
-| F15 | ~~Tie-breaking left deliberately unmodelled~~ **Resolved** — the `tiebreak` phase block (§4), six directive kinds in two families: comparators (best dropped score, qualifying position) and operational directives (additional full round, tie-break fly-off, classification rounds), plus `undefinedRequiresRuling` for the silent classes | F3B (`F3B.2.8`), F3K/F5K (`F3K.10`, `5.5.10.17`) and, later, F3F (`F3F.1.13`) all needed one and none was writable |
+| F15 | ~~Tie-breaking left deliberately unmodelled~~ **Resolved** — the `tiebreak` phase block (§4), six directive kinds in two families: comparators (best dropped score, qualifying position) and operational directives (additional full round, tie-break fly-off, classification rounds), plus `undefinedRequiresRuling` for the silent classes; `equalPlaces` (the stated settlement) joined 2026-09-04 by Pete's NZ no-tie-breaking ruling — seven kinds in three families | F3B (`F3B.2.8`), F3K/F5K (`F3K.10`, `5.5.10.17`) and, later, F3F (`F3F.1.13`) all needed one and none was writable |
 
 `F7`, `F10` and `F13` do not appear anywhere else in this document, and no earlier
 draft naming them survives in git history. They are treated as retired — findings
@@ -1512,7 +1524,9 @@ contain, so the multiplicity was wrong rather than the classes.
   model gap**, and it is flagged in `SeedNzPRadian.cs` so it is not silently
   inherited.
 - **Tie-break: all three state none** — consistent with F15 at the time;
-  the silence is now stateable (`undefinedRequiresRuling`, §4).
+  the silence is now stateable (`undefinedRequiresRuling`, §4) — and since
+  Pete's 2026-09-04 ruling the NZ classes state the settlement itself:
+  `equalPlaces` (§4), equal places at every placing.
 
 ---
 

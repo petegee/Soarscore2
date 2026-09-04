@@ -2,7 +2,7 @@
 // (D2), retiring docs/soaring-domain-class-diagram.md's closing note
 // "Tie-breaking is not yet modelled".
 //
-// Six kinds, one closed hierarchy, and the kind IS the type — exactly the
+// Seven kinds, one closed hierarchy, and the kind IS the type — exactly the
 // FlightSelection idiom (ScoringVocabulary.cs): a subtype and a tag naming it
 // are two records of one fact, and only one of them can be wrong. No tag enum
 // (the ScoreTermKind/SelectionKind precedent).
@@ -109,9 +109,10 @@ public sealed record ClassificationRounds : TieBreakDirective;
 /// is required). Pete's 2026-09-04 ruling for the NZ classes: the NZ rules
 /// state no tie-break anywhere (docs/rules/nz/00-nz-general-rules.md:117),
 /// and the treatment that silence leaves open is equal places, announced at
-/// every placing. Never mixed with other rungs (adoption check 20): "ties
+/// every placing. Never mixed with other rungs: "ties
 /// stand equal" beside any rung that could separate is a self-contradiction,
-/// and rungs after it would be dormant anyway — it halts evaluation settled.
+/// and rungs after it would be dormant anyway — it halts evaluation settled
+/// (adoption check 21).
 /// </summary>
 public sealed record EqualPlaces : TieBreakDirective;
 

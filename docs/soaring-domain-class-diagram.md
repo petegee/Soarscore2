@@ -400,12 +400,14 @@ classDiagram
     %% under append, F3B.2.8's additionalFullRound could never fire — the
     %% countback would separate every Score tie first, deciding by a mechanism
     %% the rulebook does not state. Stated, the list is walked in order:
-    %% comparators narrow the tie group; the first operational or
-    %% UndefinedRequiresRuling rung reached with the group still tied halts
-    %% evaluation — the group shares places and the requirement surfaces to
-    %% contest flow; rungs after the halt stay dormant (F3F's bestDroppedScore
-    %% fallback is stated for exactly that future). An exhausted comparator
-    %% ladder also leaves the tie shared. Per-phase, not class-level: the
+    %% comparators narrow the tie group; the first non-comparator rung reached
+    %% with the group still tied halts evaluation — an operational or
+    %% UndefinedRequiresRuling rung leaves the group sharing places with the
+    %% requirement surfaced to contest flow, an EqualPlaces rung is the stated
+    %% settlement and surfaces nothing; rungs after the halt stay dormant
+    %% (F3F's bestDroppedScore fallback is stated for exactly that future). An
+    %% exhausted comparator ladder also leaves the tie shared. Per-phase, not
+    %% class-level: the
     %% directives attach to phase rankings and genuinely differ within one
     %% class (F3J's preliminary is silent, its fly-off states qualifying
     %% position) — the same grain and reasoning as the drop list below.
@@ -454,18 +456,20 @@ classDiagram
     class TieBreakDirective {
         <<abstract>>
     }
-    %% Six kinds, and the kind IS the type — FlightSelection's idiom (§3): a
-    %% subtype and a tag naming it are two records of one fact. Two families.
+    %% Seven kinds, and the kind IS the type — FlightSelection's idiom (§3): a
+    %% subtype and a tag naming it are two records of one fact. Three families.
     %% Comparators are engine-evaluable: each names a figure and narrows the
     %% tie group. Operational directives are never engine-resolved — reaching
     %% one with the group still tied halts evaluation, shares the places and
     %% surfaces the requirement to contest flow as data (PendingTieBreak);
-    %% surfacing is their whole effect. An ordered list of comparators alone
+    %% surfacing is their whole effect. EqualPlaces is the stated settlement
+    %% (below). An ordered list of comparators alone
     %% cannot express "fly more", which is why this is a discriminated union
-    %% and not a sort-key list. There is deliberately NO NotPermitted-analogue
-    %% ("ties are definitely never broken"): no rulebook in either corpus
-    %% states one — the corpus is silent, not negative, and the model admits a
-    %% construct only when a rule requires it (the F11 / no-anyOf precedents).
+    %% and not a sort-key list. The NotPermitted-analogue ("ties are definitely
+    %% never broken") was withheld while no rulebook context stated one — the
+    %% corpus was silent, not negative, and the model admits a construct only
+    %% when a rule requires it (the F11 / no-anyOf precedents) — until Pete's
+    %% 2026-09-04 ruling stated one for the NZ classes.
 
     class BestDroppedScore {
         <<value object>>
@@ -515,13 +519,28 @@ classDiagram
     %% deliberately not modelled — contest-flow guidance, readmitted as a
     %% scope field the day a second class needs one.
 
+    class EqualPlaces {
+        <<value object>>
+    }
+    %% The stated settlement: ties are never broken — the group keeps the
+    %% shared place ("1st equal") at EVERY placing, and nothing is pending,
+    %% because the outcome is stated rather than awaited (contrast
+    %% UndefinedRequiresRuling, whose whole point is that a ruling is
+    %% required). Pete's 2026-09-04 ruling for the NZ classes: the NZ rules
+    %% state no tie-break anywhere, and the treatment that silence leaves
+    %% open is equal places. It can never share a list with another rung
+    %% (adoption check 21) and halts evaluation settled — rungs after it
+    %% stay dormant.
+
     class UndefinedRequiresRuling {
         <<value object>>
     }
     %% The rulebook is silent: the tie stands (shared places) and a CD ruling
     %% is required. F5L's 5.5.12.12 states classification and stops; the NZ
     %% general rules state no tie-break anywhere; FAI General C.15.6.1 likewise
-    %% states none. The re-flight block's precedent applied to lists: the
+    %% states none. Silence, not a stated negative — where a context STATES
+    %% the no-tie-break treatment instead, that is EqualPlaces. The
+    %% re-flight block's precedent applied to lists: the
     %% silence is stateable so that grepping a definition finds it, and behind
     %% it the display ladder's PreDropScore countback does NOT apply — nothing
     %% has ruled, and applying the countback would be the software deciding
@@ -722,6 +741,7 @@ classDiagram
     TieBreakDirective <|-- AdditionalFullRound
     TieBreakDirective <|-- TieBreakFlyoff
     TieBreakDirective <|-- ClassificationRounds
+    TieBreakDirective <|-- EqualPlaces
     TieBreakDirective <|-- UndefinedRequiresRuling
 
     note for PhaseDefinition "A flyoff changes working times, caps, available tasks and penalty carry-over. Those rules live here, not on the class."
@@ -1400,7 +1420,7 @@ stage reads anything new from `AdoptedRules` for it.
   construct only when a rule requires it. This is not an expression language —
   no arithmetic, no functions — so a definition stays statically validatable at
   adoption.
-- **Tie-breaking is phase data with two directive kinds.** `PhaseDefinition.TieBreaks` is an ordered list of `TieBreakDirective`s, because the corpus's mechanisms are genuinely two things: *comparison against another figure* (a best dropped score, a qualifying position — engine-evaluable) and *scheduling more flying* (an additional full round, a one-task tie-break fly-off, classification rounds — never engine-resolved; reaching one with the tie intact halts evaluation and surfaces the requirement to contest flow). An ordered list of comparators cannot express the second, which is why the directives are a discriminated union rather than a sort-key list. The ladder semantics live on the field: absent keeps the display ladder, stated supersedes its rung 2, and `UndefinedRequiresRuling` makes the rulebook's silence stateable for F5L and the NZ classes.
+- **Tie-breaking is phase data with three directive families.** `PhaseDefinition.TieBreaks` is an ordered list of `TieBreakDirective`s, because the corpus's mechanisms are genuinely three things: *comparison against another figure* (a best dropped score, a qualifying position — engine-evaluable), *scheduling more flying* (an additional full round, a one-task tie-break fly-off, classification rounds — never engine-resolved; reaching one with the tie intact halts evaluation and surfaces the requirement to contest flow), and *the stated settlement* (`EqualPlaces` — Pete's 2026-09-04 NZ ruling: ties are never broken, announced equal at every placing; the shared place IS the outcome, so nothing surfaces). An ordered list of comparators cannot express the second, which is why the directives are a discriminated union rather than a sort-key list. The ladder semantics live on the field: absent keeps the display ladder, stated supersedes its rung 2, and `UndefinedRequiresRuling` makes the rulebook's silence stateable for F5L.
 - **Two rule exceptions remain unwritable.** `F3B.2.3 b` and `F3B.2.4 f` zero a
   flight that misses the landing area *"except in the case of midair collision"*
   — an exception to a score term, which no predicate over measurements reaches.
