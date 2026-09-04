@@ -172,6 +172,29 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   notation, not an input format) and **class-definition drift detection** — both settled
   out of scope.
 
+- **No fly-offs and no tie-breaking in the NZ NDC pipelines.** **Decided
+  2026-09-04** (`kanban/completed/nz-ndc-seed-classes.md`, Interpretation 1).
+  `NZ.0.3 d` and `NZ.3.16.37 a+c` fix the contest score at the raw sum of four
+  rounds; an FAI-style fly-off (`5.5.11.13` / `NZ.3.16.27`) would nullify that
+  total, so `SeedF5jNdc` and `SeedF5kNdc` are single-phase with no promotion
+  and no drop, as `SeedNzF3kNdc` already was (Pete's 2026-08-30 ruling). X5J
+  needs no decision — `NZ.3.14` states no fly-off. **Amended 2026-09-04
+  (Pete's ruling): there are never any fly-offs in NZ NDC — not even the
+  tie-break fly-off.** `NZ.3.16.26` a's fly-off half does not carry into the
+  F5K NDC, superseding the story's Interpretation 2 and the "still binding"
+  carry this entry first recorded. The best-dropped-score half of `3.16.26` a
+  is doubly dead — vacuous at a fixed four rounds with no discard (`3.16.25 b`
+  can never fire) and refused by adoption check 19 regardless. **Amended again
+  2026-09-04 (Pete's ruling): NZ has NO tie-breaking at all — ties are never
+  broken, announced equal ("1st equal") at EVERY placing — covering all eight
+  NZ classes.** `UndefinedRequiresRuling` was the wrong shape (it asserts a CD
+  ruling is required); the eight NZ seeds ship the new `EqualPlaces` directive
+  — the "ties are never broken" rung the model had withheld until a rulebook
+  context stated one — with adoption check 20 (it must stand alone) and no
+  `PendingTieBreak` (nothing is pending). `UndefinedRequiresRuling` remains
+  for genuine silence: F5L and FAI General `C.15.6.1`. Reopen only if NZMAA
+  amends `NZ.0.3` / `NZ.3.16.37` / `NZ.3.16.26`.
+
 ## GliderScore replay harness
 
 - **Exact-decimal oracle comparison stands; GliderScore's binary64 raw artefacts are
@@ -331,14 +354,3 @@ Kept briefly, because the reasoning still binds the code that resulted.
   auditable and the effective value is reconstructible — and seeding would silently
   defeat `RulesAmended`'s retroactive intent. Shipped as WI-2 of
   `kanban/completed/bind-parameter-steel-thread-plan.md`.
-
-- **No fly-off phase in the NDC pipelines.** **Decided 2026-09-04**
-  (`kanban/completed/nz-ndc-seed-classes.md`, Interpretation 1). `NZ.0.3 d` and
-  `NZ.3.16.37 a+c` fix the contest score at the raw sum of four rounds; an
-  FAI-style fly-off (`5.5.11.13` / `NZ.3.16.27`) would nullify that total, so
-  `SeedF5jNdc` and `SeedF5kNdc` are single-phase with no promotion and no drop,
-  as `SeedNzF3kNdc` already was (Pete's 2026-08-30 ruling). X5J needs no
-  decision — `NZ.3.14` states no fly-off. Still binding: `NZ.3.16.26`'s
-  tie-break fly-off is ranking machinery, not a scoring phase, and it DOES carry
-  into the F5K NDC (`TieBreakFlyoff`; its best-dropped-score half is vacuous at
-  a fixed four rounds and adoption check 19 refuses to encode it).

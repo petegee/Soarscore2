@@ -69,6 +69,7 @@ public static class ClassDefinitionValidation
         CheckPermittedScopesNotEmpty(definition, defects);
         CheckQualifyingPositionSourceIsEarlierPhase(definition, defects);
         CheckUndefinedRequiresRulingStandsAlone(definition, defects);
+        CheckEqualPlacesStandsAlone(definition, defects);
         CheckBestDroppedScoreRequiresDropPolicy(definition, defects);
 
         return defects;
@@ -515,6 +516,26 @@ public static class ClassDefinitionValidation
                 defects.Add(new Defect("class-definition.check-18.undefined-requires-ruling-mixed-with-stated",
                     $"$.phases[{p}].tieBreaks",
                     "A tie-break ladder containing undefinedRequiresRuling must contain only it."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 20 — a phase's TieBreaks containing EqualPlaces contains only
+    /// it: "ties are never broken" stated beside any rung that could
+    /// separate is a self-contradiction (the check-18 shape; Pete's
+    /// 2026-09-04 NZ ruling, which introduced EqualPlaces).
+    /// </summary>
+    private static void CheckEqualPlacesStandsAlone(ClassDefinition definition, List<Defect> defects)
+    {
+        for (var p = 0; p < definition.Phases.Length; p++)
+        {
+            var tieBreaks = definition.Phases[p].TieBreaks;
+            if (tieBreaks.Length > 1 && tieBreaks.Any(t => t is EqualPlaces))
+            {
+                defects.Add(new Defect("class-definition.check-20.equal-places-mixed-with-stated",
+                    $"$.phases[{p}].tieBreaks",
+                    "A tie-break ladder containing equalPlaces must contain only it."));
             }
         }
     }

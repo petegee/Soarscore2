@@ -84,17 +84,20 @@ public static class SeedF5kNdc
     // flight-time points.
     //
     // SIGN CONVENTION. FlightInterpreter.EvaluatePiecewise integrates each
-    // band's rate over the UNSIGNED width of its overlap with
-    // [0, metric − origin] (width = overlapEnd − overlapStart; both sides of
-    // the origin count positively). A BONUS below the origin therefore needs a
-    // POSITIVE rate here, and a penalty above it a negative one. A future
-    // signed-width evaluator would flip these signs — cross-ref
-    // kanban/tech-debt.md (the FAI F5K below-bonus finding, same evaluator
-    // fact).
+    // band's rate over the walk from the origin to metric − origin as a SIGNED
+    // integral: the direction of travel (the sign of metric − origin) flips the
+    // sign of the accumulated rate × width. A BONUS below the origin therefore
+    // carries a NEGATIVE rate — the backwards walk flips it to points — and a
+    // penalty above the origin a negative one too, so every non-zero rate in
+    // this table is negative and only its position relative to the origin says
+    // bonus or penalty. Same convention as FAI F5K's Below(0, −0.5) (5.5.10.4);
+    // see kanban/completed/signed-width-piecewise-integration.md (the engine
+    // fix that made both encodings agree).
     //
-    // Bands (rate, s/m): (−∞, −6] +2, [−6, −2] +1, [−2, +2] 0, [+2, +6] −1,
+    // Bands (rate, s/m): (−∞, −6] −2, [−6, −2] −1, [−2, +2] 0, [+2, +6] −1,
     // [+6, ∞) −2. Verification against NZ.3.16.29's own examples (adjusted =
-    // altitude − 60; each side integrated separately over its unsigned width):
+    // altitude − 60; below-origin rows accumulate |rate| × metres and the walk
+    // direction flips their sign — above-origin rows keep the negative sign):
     //   41 → −19: 13×2 + 4×1 = +30        50 → −10: 4×2 + 4×1   = +12
     //   51 →  −9:  3×2 + 4×1 = +10        52 →  −8: 2×2 + 4×1   = +8
     //   53 →  −7:  1×2 + 4×1 = +6         54 →  −6: 0×2 + 4×1   = +4
@@ -108,7 +111,7 @@ public static class SeedF5kNdc
     //   70 → +10:  −4 + 4×(−2) = −12
     private static PiecewiseTerm LaunchAdjustment =>                       // NZ.3.16.29 e-g
         T.Piecewise("launchAltitude",
-            Bands.Below(-6, 2).UpTo(-2, 1).UpTo(2, 0).UpTo(6, -1).Rest(-2),
+            Bands.Below(-6, -2).UpTo(-2, -1).UpTo(2, 0).UpTo(6, -1).Rest(-2),
             60);                                                           // NLH fixed 60 — NZ.3.16.29 b
 
     // ---- Task A, the task the other three derive from ----------------------
@@ -370,18 +373,23 @@ public static class SeedF5kNdc
                 //   — and 3.16.25 b's discard (6+ rounds) can never fire at a
                 //   fixed four
                 // NZ.3.16.26 a ("the best dropped score defines the ranking. If
-                //   the tie still exists, a separate fly-off ...") carries into
-                //   NDC by 3.16.37 b "Contest rules as per 3.16 except scoring".
-                //   Its best-dropped-score half is vacuous here — the NDC has a
-                //   fixed four rounds and no discard (3.16.37 c; 3.16.25 b's
-                //   6+ discard can never fire) — and adoption check 19 refuses
-                //   BestDroppedScore without a drop policy, so the vacuous
-                //   clause is UNENCODABLE rather than silently no-oped. The
-                //   ladder is therefore the fly-off half alone: a tie at four
-                //   raw-summed rounds goes straight to the CD's tie-break
-                //   fly-off (the CD defines one task, NZ.3.16.26).
+                //   the tie still exists, a separate fly-off ...") — BOTH halves
+                //   are varied away in the NDC frame. Pete's 2026-09-04 ruling:
+                //   there are never any fly-offs in NZ NDC. The scoring fly-off
+                //   is textually impossible (NZ.3.16.27 b discards prior rounds
+                //   from the final score; 0.3 d / 3.16.37 c fix the score at the
+                //   raw sum of four), and the tie-break fly-off half does not
+                //   carry either — superseding the story's Interpretation 2.
+                //   The best-dropped-score half is vacuous besides — a fixed
+                //   four rounds and no discard (3.16.37 c; 3.16.25 b's 6+
+                //   discard can never fire) — and adoption check 19 refuses
+                //   BestDroppedScore without a drop policy regardless. The
+                //   ladder is the STATED SETTLEMENT: Pete ruled the same day
+                //   that NZ has NO tie-breaking at all — a tie is never
+                //   broken, the competitors share the place ("1st equal") at
+                //   EVERY placing — EqualPlaces, across all eight NZ classes.
                 //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
-                TieBreaks = [new TieBreakFlyoff()],                            // NZ.3.16.26 a via 3.16.37 b (see above)
+                TieBreaks = [new EqualPlaces()],                               // Pete 2026-09-04: no fly-offs, no tie-breaking — equal places
                 Tasks = Catalogue,                                             // NZ.3.16.37 c: tasks A, B, C & E only
             },
         ],

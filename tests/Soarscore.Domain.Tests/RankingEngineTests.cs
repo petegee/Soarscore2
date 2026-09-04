@@ -263,6 +263,62 @@ public class RankingEngineTests
         result.PendingTieBreaks[0].Directive.Should().BeOfType<UndefinedRequiresRuling>();
     }
 
+    // --------------------------------------- Stated settlement (Pete's 2026-09-04 NZ ruling)
+
+    [Fact]
+    public void EqualPlaces_shares_and_settles_nothing_pending()
+    {
+        // Pete's 2026-09-04 NZ ruling: ties are never broken — "1st equal"
+        // is the outcome at every placing. A's higher PreDropScore would win
+        // the display countback; the stated settlement refuses it, and unlike
+        // UndefinedRequiresRuling nothing is surfaced: there is no ruling to
+        // make and nobody to fly.
+        var scores = new[]
+        {
+            Score("A", 1000m, 1100m),
+            Score("B", 1000m, 1050m),
+            Score("C", 900m, 900m),
+        }.ToImmutableArray();
+
+        var context = new TieBreakContext(
+            [new EqualPlaces()],
+            ImmutableDictionary<string, int>.Empty);
+
+        var result = RankingEngine.Rank(scores, null, null, context);
+
+        result.Placings["A"].Should().Be(1);
+        result.Placings["B"].Should().Be(1);
+        result.Placings["C"].Should().Be(3);
+
+        result.PendingTieBreaks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void EqualPlaces_halts_evaluation_rungs_after_it_stay_dormant()
+    {
+        // Adoption-invalid (check 20 refuses the mix) but engine-visible: the
+        // first rung settles the group, so a later operational rung must not
+        // surface through it — the same dormancy the operational rungs get.
+        var scores = new[]
+        {
+            Score("A", 1000m, 1100m),
+            Score("B", 1000m, 1050m),
+            Score("C", 900m, 900m),
+        }.ToImmutableArray();
+
+        var context = new TieBreakContext(
+            [new EqualPlaces(), new TieBreakFlyoff()],
+            ImmutableDictionary<string, int>.Empty);
+
+        var result = RankingEngine.Rank(scores, null, null, context);
+
+        result.Placings["A"].Should().Be(1);
+        result.Placings["B"].Should().Be(1);
+        result.Placings["C"].Should().Be(3);
+
+        result.PendingTieBreaks.Should().BeEmpty();
+    }
+
     // ------------------------------------------------------ Operational rungs (D5)
 
     [Fact]

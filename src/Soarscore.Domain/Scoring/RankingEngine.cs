@@ -81,11 +81,12 @@ public static class RankingEngine
         // NO tie-breaks (TieBreaks empty, the default) keeps the display rung
         // 2, the PreDropScore countback. A phase stating a list SUPERSEDES
         // rung 2: comparator rungs narrow tie groups in order, and the FIRST
-        // operational or UndefinedRequiresRuling rung halts evaluation — rungs
-        // after it stay dormant (F3F.1.13's bestDroppedScore fallback is stated
-        // for exactly that future), so only the comparators before the halt
-        // are sort keys (story D3). The engine evaluates rungs generically; it
-        // never branches on which class is being run.
+        // non-comparator rung (operational, EqualPlaces or
+        // UndefinedRequiresRuling) halts evaluation — rungs after it stay
+        // dormant (F3F.1.13's bestDroppedScore fallback is stated for exactly
+        // that future), so only the comparators before the halt are sort keys
+        // (story D3). The engine evaluates rungs generically; it never
+        // branches on which class is being run.
         var directives = tieBreaks.Directives;
         var halt = directives.FirstOrDefault(
             d => d is not BestDroppedScore and not QualifyingPosition);
@@ -175,8 +176,11 @@ public static class RankingEngine
             // An exhausted comparator ladder lands here with `halt` null:
             // shared places, settled, NO pending entry (F3J's fly-off: equal
             // aggregate and equal qualifying place share the final place — the
-            // rulebook states nothing further).
-            if (j - i > 1 && halt is not null)
+            // rulebook states nothing further). An EqualPlaces halt is ALSO
+            // settled — the stated settlement (Pete's 2026-09-04 NZ ruling)
+            // IS the shared place above, so nothing is pending; rungs after
+            // it stay dormant.
+            if (j - i > 1 && halt is not null and not EqualPlaces)
             {
                 pending.Add(new PendingTieBreak(
                     ranked.Skip(i).Take(j - i).Select(s => s.CompetitorRef).ToImmutableArray(),

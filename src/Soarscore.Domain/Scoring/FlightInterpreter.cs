@@ -139,6 +139,16 @@ public static class FlightInterpreter
         return new TermContribution(MetricConsumed: metricValue, Points: 0m);
     }
 
+    // kanban/completed/signed-width-piecewise-integration.md. The walk from the
+    // origin to metric − origin is a SIGNED integral ∫rate·d(adjusted): the
+    // direction of travel (the sign of `adjusted`) multiplies the accumulated
+    // rate × width. A band above the origin contributes +width × rate; a band
+    // below it has its rate's sign flipped by the direction of travel, which is
+    // how the notation writes a bonus — "A negative rate over a negative
+    // portion is what makes a low launch a bonus"
+    // (docs/competition-class-notation.md, the `from <origin>` bullet). FAI F5K's
+    // Below(0, −0.5) is correct as written; NZ F5K NDC's below-origin bonus
+    // bands carry the same negative-rate encoding (NZ.3.16.29 g).
     private static TermContribution EvaluatePiecewise(PiecewiseTerm term, IReadOnlyDictionary<string, MeasuredValue> metrics)
     {
         var metricValue = GetNumberMetric(term.MetricRef, metrics);
@@ -147,7 +157,9 @@ public static class FlightInterpreter
         decimal origin = term.Origin is NumberOrParam.Literal l ? l.Value : 0m;
         decimal adjusted = metricValue - origin;
 
-        // The adjusted value spans from 0 to adjusted (or adjusted to 0 if negative).
+        // The signed walk spans from 0 to adjusted; the direction of travel is
+        // the sign of adjusted (0 contributes nothing — no band is traversed).
+        decimal direction = adjusted < 0m ? -1m : 1m;
         decimal valueStart = Math.Min(0m, adjusted);
         decimal valueEnd = Math.Max(0m, adjusted);
 
@@ -175,7 +187,7 @@ public static class FlightInterpreter
             }
         }
 
-        return new TermContribution(MetricConsumed: metricValue, Points: total);
+        return new TermContribution(MetricConsumed: metricValue, Points: total * direction);
     }
 
     private static TermContribution EvaluateConditional(

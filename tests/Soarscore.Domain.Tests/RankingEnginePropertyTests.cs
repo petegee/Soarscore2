@@ -19,10 +19,11 @@ namespace Soarscore.Domain.Tests;
 /// PreDropScore DESC) and an empty PendingTieBreaks; (3) comparator rungs only
 /// refine Score ties — they never invert a Score ordering; (4) operational and
 /// ruling rungs never separate a tie and surface exactly one PendingTieBreak
-/// per halted group."
+/// per halted group; an EqualPlaces rung is the stated settlement — it
+/// separates nothing and surfaces nothing."
 ///
 /// "Full ladder" is the evaluated ladder: Score, then the stated comparators
-/// before the first operational/UndefinedRequiresRuling rung — rungs after a
+/// before the first non-comparator rung — rungs after a
 /// halt stay dormant, so the preorder they leave is equality (shared places),
 /// which is what clause 4 pins. Generated entries have
 /// PreDropScore − Score = Σ dropped cells ≥ 0 and BestDroppedScore = max
@@ -52,14 +53,15 @@ public class RankingEnginePropertyTests
         select (score, cells, position, disqualified);
 
     private static readonly Gen<TieBreakDirective> DirectiveGen =
-        Gen.Int[0, 5].Select(k => k switch
+        Gen.Int[0, 6].Select(k => k switch
         {
             0 => (TieBreakDirective)new BestDroppedScore(),
             1 => new QualifyingPosition { SourcePhaseOrdinal = 0 },
             2 => new AdditionalFullRound(),
             3 => new TieBreakFlyoff(),
             4 => new ClassificationRounds(),
-            _ => new UndefinedRequiresRuling(),
+            5 => new UndefinedRequiresRuling(),
+            _ => new EqualPlaces(),
         });
 
     private static readonly Gen<ImmutableArray<TieBreakDirective>> PolicyGen =
@@ -221,7 +223,8 @@ public class RankingEnginePropertyTests
             // stated list, or none when the ladder is comparator-only).
             var groups = ExpectedTieGroups(entries, policy);
             var halt = policy.FirstOrDefault(d => d is not BestDroppedScore and not QualifyingPosition);
-            var halted = halt is null ? [] : groups;
+            // EqualPlaces halts settled — the stated outcome, nothing pending.
+            var halted = halt is null or EqualPlaces ? [] : groups;
 
             result.PendingTieBreaks.Length.Should().Be(halted.Count);
             foreach (var group in result.PendingTieBreaks)

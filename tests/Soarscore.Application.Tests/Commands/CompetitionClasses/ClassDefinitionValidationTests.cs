@@ -393,6 +393,23 @@ public class ClassDefinitionValidationTests
     }
 
     [Fact]
+    public void Check20_equalPlaces_must_be_the_only_rung_in_a_ladder()
+    {
+        // Pete's 2026-09-04 NZ ruling: the stated settlement stands alone —
+        // any rung beside it could separate what it settles.
+        var definition = Minimal();
+        var phase = definition.Phases[0] with
+        {
+            TieBreaks = [new EqualPlaces(), new TieBreakFlyoff()],
+        };
+        definition = definition with { Phases = [phase] };
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-20.equal-places-mixed-with-stated");
+    }
+
+    [Fact]
     public void Check19_bestDroppedScore_requires_a_declared_drop_policy()
     {
         // Minimal()'s phase declares no Drops, so stating bestDroppedScore alone

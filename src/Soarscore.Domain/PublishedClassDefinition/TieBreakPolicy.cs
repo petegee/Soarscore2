@@ -7,18 +7,20 @@
 // are two records of one fact, and only one of them can be wrong. No tag enum
 // (the ScoreTermKind/SelectionKind precedent).
 //
-// Two families. Comparators are engine-evaluable: each names a figure and
+// Three families. Comparators are engine-evaluable: each names a figure and
 // narrows the tie group. Operational directives are never engine-resolved —
 // reaching one with the group still tied halts evaluation, shares the places
 // and surfaces the requirement to contest flow as data (PendingTieBreak). An
 // ordered list of comparators alone cannot express "fly more", which is the
 // whole reason this is a discriminated union, not a sort-key list.
 //
-// There is deliberately NO NotPermitted-analogue ("ties are definitely never
-// broken"): no rulebook in either corpus states one, and the model admits a
-// construct only when a rule requires it (the F11 / no-anyOf precedents). The
-// corpus is silent, not negative — UndefinedRequiresRuling is that silence
-// made stateable (the F12 philosophy: grep a definition and find the silence).
+// EqualPlaces is the stated settlement — "ties are never broken" — and it was
+// deliberately withheld while no rulebook context stated one: the model admits
+// a construct only when a rule requires it (the F11 / no-anyOf precedents),
+// the corpus was silent, not negative, and UndefinedRequiresRuling was that
+// silence made stateable (the F12 philosophy: grep a definition and find the
+// silence). Pete's 2026-09-04 ruling stated one for the NZ classes, and the
+// analogue landed the same day.
 
 using System.Text.Json.Serialization;
 
@@ -37,6 +39,7 @@ namespace Soarscore.Domain.PublishedClassDefinition;
 [JsonDerivedType(typeof(AdditionalFullRound), "additionalFullRound")]
 [JsonDerivedType(typeof(TieBreakFlyoff), "tiebreakFlyoff")]
 [JsonDerivedType(typeof(ClassificationRounds), "classificationRounds")]
+[JsonDerivedType(typeof(EqualPlaces), "equalPlaces")]
 [JsonDerivedType(typeof(UndefinedRequiresRuling), "undefinedRequiresRuling")]
 public abstract record TieBreakDirective
 {
@@ -93,13 +96,34 @@ public sealed record TieBreakFlyoff : TieBreakDirective;
 /// </summary>
 public sealed record ClassificationRounds : TieBreakDirective;
 
+// --------------------------------------------------------- stated settlement
+// Engine-resolvable in the degenerate sense: its resolution IS the shared
+// place, already assigned by the skip-ahead loop. It settles the group and
+// surfaces nothing.
+
+/// <summary>
+/// Ties are never broken: the tie group keeps the shared place — "1st equal"
+/// — at EVERY placing, and nothing is pending, because the outcome is stated
+/// rather than awaited (no PendingTieBreak; contrast
+/// <see cref="UndefinedRequiresRuling"/>, whose whole point is that a ruling
+/// is required). Pete's 2026-09-04 ruling for the NZ classes: the NZ rules
+/// state no tie-break anywhere (docs/rules/nz/00-nz-general-rules.md:117),
+/// and the treatment that silence leaves open is equal places, announced at
+/// every placing. Never mixed with other rungs (adoption check 20): "ties
+/// stand equal" beside any rung that could separate is a self-contradiction,
+/// and rungs after it would be dormant anyway — it halts evaluation settled.
+/// </summary>
+public sealed record EqualPlaces : TieBreakDirective;
+
 /// <summary>
 /// The rulebook is silent: the tie stands (shared places) and a CD ruling is
 /// required. F5L's 5.5.12.12 states classification and stops; the NZ rules
 /// state no tie-break anywhere (docs/rules/nz/00-nz-general-rules.md); FAI
-/// General C.15.6.1 likewise states none. Not a NotPermitted-analogue — trap
-/// 3 — and never mixed with stated rungs in one list (adoption check 18):
-/// mixing "the rulebook is silent" with stated rungs is a self-contradiction.
+/// General C.15.6.1 likewise states none. Silence, not a stated negative —
+/// where a context STATES the no-tie-break treatment, that is
+/// <see cref="EqualPlaces"/> (Pete's 2026-09-04 NZ ruling) — and never mixed
+/// with stated rungs in one list (adoption check 18): mixing "the rulebook is
+/// silent" with stated rungs is a self-contradiction.
 /// Behind it the display-ladder PreDropScore countback does not apply (D8):
 /// nothing has ruled, and applying the countback would be the software
 /// deciding what the CD has not.

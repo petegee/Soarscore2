@@ -47,7 +47,11 @@ public static class SeedF5K
     //
     // The first
     // band is the bonus — a NEGATIVE rate over a NEGATIVE portion of the
-    // measurement, which is how each metre below the NLH adds points.
+    // measurement, which is how each metre below the NLH adds points. Stated
+    // as the engine rule: bands integrate with sign — the walk from the origin
+    // (the NLH) to metric − origin accumulates rate × width and multiplies by
+    // the direction of travel, so the backwards walk below the NLH flips this
+    // band's negative rate into the 5.5.10.4 bonus.
     private static ImmutableArray<Band> LaunchBands =>                         // 5.5.10.4
         Bands.Below(0, -0.5m)
              .UpTo(10, -1.0m)

@@ -197,6 +197,57 @@ public class FlightInterpreterTests
     }
 
     [Fact]
+    public void F5K_TaskA_launch_10m_below_NLH_scores_plus_5_bonus()
+    {
+        // 5.5.10.4: "For each meter under the NLH: 0.5 points per meter bonus."
+        // launchAltitude at NLH−10 with bands any..0 @ -0.5, 0..10 @ -1, 10..any @ -3
+        // origin=60m (nlh) → adjusted=−10 → the signed walk from 0 to −10
+        // traverses any..0 @ -0.5 backwards: −1 direction flips the negative
+        // rate into the bonus → −(10 * -0.5) = +5.
+        var task = ResolveF5KTaskA();
+
+        var metrics = new Dictionary<string, MeasuredValue>
+        {
+            ["flightTime"] = MeasuredValue.Of(180m),
+            ["launchAltitude"] = MeasuredValue.Of(50m), // NLH 60 − 10
+            ["landedOnField"] = MeasuredValue.Of(true),
+            ["landedInPilotArea"] = MeasuredValue.Of(true),
+            ["overflewLandingWindow"] = MeasuredValue.Of(false),
+            ["flight.sequence"] = MeasuredValue.Of(1),
+        };
+
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
+
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        // flightTime=180, launchAltitude at NLH−10 → +5 bonus. No land/pilot/overfly deductions.
+        result.Score.Should().Be(185m);
+    }
+
+    [Fact]
+    public void F5K_TaskA_dead_launch_60m_below_NLH_scores_plus_30_bonus()
+    {
+        // 5.5.10.4 again: 60 m under the NLH at 0.5/m = +30. The extreme case —
+        // the whole walk sits below the origin.
+        var task = ResolveF5KTaskA();
+
+        var metrics = new Dictionary<string, MeasuredValue>
+        {
+            ["flightTime"] = MeasuredValue.Of(180m),
+            ["launchAltitude"] = MeasuredValue.Of(0m), // dead launch: NLH 60 − 60
+            ["landedOnField"] = MeasuredValue.Of(true),
+            ["landedInPilotArea"] = MeasuredValue.Of(true),
+            ["overflewLandingWindow"] = MeasuredValue.Of(false),
+            ["flight.sequence"] = MeasuredValue.Of(1),
+        };
+
+        var result = FlightInterpreter.Interpret(task, 1, metrics);
+
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        // flightTime=180, launchAltitude at NLH−60 → +30 bonus. Total: 210
+        result.Score.Should().Be(210m);
+    }
+
+    [Fact]
     public void F5K_TaskA_pilot_area_deduction()
     {
         var task = ResolveF5KTaskA();

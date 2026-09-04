@@ -733,7 +733,11 @@ when <predicate>
   are evaluated over `metric − origin`. Required by F5K, whose launch points are
   per metre *relative to the announced Nominal Launch Height* — `5.5.10.4`,
   "always calculated with reference to the announced NLH". A negative rate over
-  a negative portion is what makes a low launch a bonus.
+  a negative portion is what makes a low launch a bonus. Stated as an engine
+  rule: bands integrate **with sign** — the walk from the origin to
+  `metric − origin` accumulates `rate × width` over each band and is multiplied
+  by the direction of travel, so below the origin a negative rate scores points
+  and a positive rate deducts (`FlightInterpreter.EvaluatePiecewise`).
 - **`lookup` rows are ascending**; the first row whose `upTo` is ≥ the measured
   value wins. `any -> <pts>` is the unbounded final row — `LookupRow.upTo` is
   nullable (F9), legal only as the last row.

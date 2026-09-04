@@ -133,7 +133,7 @@ See CLAUDE.md house-keeping rule 5.
   on the NZ master, so stored config cannot prove scoring-time behaviour).
   Unify to the structured shape if any consumer ever needs machine-readable
   effective knobs corpus-wide.
-- [ ] `FlightInterpreter.EvaluatePiecewise` scores below-origin bonus bands as
+- [x] `FlightInterpreter.EvaluatePiecewise` scores below-origin bonus bands as
   deductions. The walk integrates each band's rate over the UNSIGNED width of its
   overlap with `[0, metric − origin]`, so a bonus on the below-origin side needs a
   POSITIVE rate under the current engine. `SeedF5K.cs`'s `LaunchBands` therefore
@@ -149,3 +149,15 @@ See CLAUDE.md house-keeping rule 5.
   must flip sign) or flipping `SeedF5K`'s rate sign. Either way, write the failing
   test first; the NZ arithmetic tests are the tripwire that catches whichever
   convention moves.
+  **Discharged 2026-09-04 by
+  `kanban/completed/signed-width-piecewise-integration.md`**, by the signed-width
+  route. The drill found the notation doc had documented signed semantics all
+  along ("a negative rate over a negative portion is what makes a low launch a
+  bonus", `docs/competition-class-notation.md`) — the engine never implemented
+  it. `EvaluatePiecewise` now multiplies the accumulated rate × width by the
+  walk direction, `SeedF5K` is correct as written (no data change), and
+  `SeedF5kNdc`'s below bands flipped to negative rates with the NZ.3.16.29
+  table passing unchanged — the tripwire fired on exactly the bonus rows
+  between the engine fix and the seed flip, as designed. The failing-test-first
+  prescription was followed: the two new `FlightInterpreterTests` below-origin
+  cases went red before the engine change.

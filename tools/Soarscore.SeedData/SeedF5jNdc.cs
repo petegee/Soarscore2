@@ -178,8 +178,11 @@ public static class SeedF5jNdc
                 //   rounds" — a dropped round would contradict it
                 // no tie-breaks: 5.5.11.13 h covers fly-off placing only and
                 //   there is no fly-off here; the NZ rules state none anywhere
-                //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
-                TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
+                //   (docs/rules/nz/00-nz-general-rules.md:117), and Pete's
+                //   2026-09-04 ruling fixes what that silence left open:
+                //   ties are never broken — equal places ("1st equal") at
+                //   every placing
+                TieBreaks = [new EqualPlaces()],                               // Pete 2026-09-04: ties stand equal, every placing
                                                                                 //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },

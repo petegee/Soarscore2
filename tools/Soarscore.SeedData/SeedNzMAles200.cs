@@ -142,9 +142,12 @@ public static class SeedNzMAles200
                 Type = PhaseType.Preliminary,
                 Validity = new() { MinRounds = NumberOrParam.Param("minRounds") },
                 // no drop: NZ.3.12 states no discard
-                // no tie-breaks: the NZ rules state none anywhere
-                //   (docs/rules/nz/00-nz-general-rules.md:117) — silence
-                TieBreaks = [new UndefinedRequiresRuling()],                   // docs/rules/nz/00-nz-general-rules.md:117
+                // no tie-breaking: the NZ rules state none anywhere
+                //   (docs/rules/nz/00-nz-general-rules.md:117), and Pete's
+                //   2026-09-04 ruling fixes what that silence left open:
+                //   ties are never broken — equal places ("1st equal") at
+                //   every placing
+                TieBreaks = [new EqualPlaces()],                               // Pete 2026-09-04: ties stand equal, every placing
                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
                 Tasks = [TaskD],
             },

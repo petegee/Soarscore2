@@ -230,9 +230,10 @@ public sealed record CompetitionResult(
 {
     /// <summary>
     /// One per tie group whose next unevaluated rung is operational or
-    /// UndefinedRequiresRuling (D5) — empty for the display ladder and for
-    /// comparator-only ladders, where an exhausted ladder is a settled shared
-    /// place. A read-side annotation, never a write gate (NFR-4): shared places
+    /// UndefinedRequiresRuling (D5) — empty for the display ladder, for
+    /// comparator-only ladders, and for EqualPlaces ladders (the stated
+    /// settlement: the shared place IS the outcome, nothing is awaited).
+    /// A read-side annotation, never a write gate (NFR-4): shared places
     /// are assigned exactly as today while the tie stands. HTTP/read-model
     /// exposure is out of scope (no route, DTO or projection change) — the
     /// surface exists when contest flow wants it, as data.

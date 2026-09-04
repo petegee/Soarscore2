@@ -96,6 +96,7 @@ public static class SoarscoreJson
 [JsonSerializable(typeof(AdditionalFullRound))]
 [JsonSerializable(typeof(TieBreakFlyoff))]
 [JsonSerializable(typeof(ClassificationRounds))]
+[JsonSerializable(typeof(EqualPlaces))]
 [JsonSerializable(typeof(UndefinedRequiresRuling))]
 [JsonSerializable(typeof(NumberOrParam))]
 [JsonSerializable(typeof(FlagOrParam))]

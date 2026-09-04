@@ -13,11 +13,14 @@ namespace Soarscore.Domain.Tests;
 /// through ParameterResolver, evaluated by FlightInterpreter.
 ///
 /// These are the tests that lock the launch-adjustment SIGN CONVENTION: the
-/// below-origin bonus bands in SeedF5kNdc are POSITIVE-rate because
-/// FlightInterpreter.EvaluatePiecewise integrates band rates over the UNSIGNED
-/// width of [0, metric − origin]. A future signed-width evaluator (see
-/// kanban/tech-debt.md — the FAI F5K below-bonus finding) would flip them, and
-/// these tests are what fails when that happens.
+/// below-origin bonus bands in SeedF5kNdc are NEGATIVE-rate because
+/// FlightInterpreter.EvaluatePiecewise integrates band rates over the walk
+/// from the origin to [metric − origin] as a SIGNED integral — the direction
+/// of travel flips a negative rate into points below the origin. This is the
+/// same convention FAI F5K's Below(0, -0.5) bonus has always used
+/// (kanban/completed/signed-width-piecewise-integration.md made the engine
+/// agree with it); these rows are the tripwire should either encoding or the
+/// evaluator move again.
 ///
 /// Every expected value below is a number the rulebook itself states —
 /// NZ.3.16.29's worked table, NZ.3.14.2/3's maxima, NZ.0.3 f's restated
