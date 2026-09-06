@@ -12,6 +12,7 @@
 // Trait("Category", "Storage"); EventStoreTests.cs's header says why.
 
 using AwesomeAssertions;
+using System.Collections.Immutable;
 using Soarscore.Application.Commands.CompetitionClasses;
 using Soarscore.Application.Queries.CompetitionClasses;
 using Soarscore.Application.Shared.CompetitionClasses;
@@ -47,6 +48,58 @@ public abstract class ClassDefinitionEventStoreTests<TFixture>(TFixture fixture)
         // is reference-based (LADR-0003), so round-trip correctness is a canonical-JSON
         // question, not a `.Should().Be()` one.
         ClassDefinitionHashing.ComputeContentHash(fetched.Value).Should().Be(published.Value);
+    }
+
+    // kanban/in-progress/metric-absence-semantics.md WI-1: the richest payload
+    // with a whenNotRecorded assumption added to the first metric of every
+    // task — a Flag metric assumed true, a Number metric assumed 0, exactly as
+    // the notation will write it. Round-trips through both stores: the event
+    // JSON carries it as the same MeasuredValue shape the predicates'
+    // rightValue uses.
+    private static readonly ClassDefinition WhenNotRecordedDefinition = WithWhenNotRecorded(RichestDefinition);
+
+    private static ClassDefinition WithWhenNotRecorded(ClassDefinition definition) => definition with
+    {
+        Phases = definition.Phases
+            .Select(p => p with
+            {
+                Tasks = p.Tasks
+                    .Select(t => t with
+                    {
+                        Metrics = t.Metrics
+                            .Select((m, i) => i == 0
+                                ? m with { WhenNotRecorded = m.Kind == MeasuredKind.Flag
+                                    ? MeasuredValue.Of(true)
+                                    : MeasuredValue.Of(0m) }
+                                : m)
+                            .ToImmutableArray()
+                    })
+                    .ToImmutableArray()
+            })
+            .ToImmutableArray()
+    };
+
+    [Fact]
+    public async Task Publish_then_GetClassDefinition_round_trips_whenNotRecorded_assumed_values()
+    {
+        var handler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
+        var published = await handler.HandleAsync(new PublishClassDefinition(WhenNotRecordedDefinition), TestContext.Current.CancellationToken);
+        published.IsSuccess.Should().BeTrue();
+
+        var getHandler = new GetClassDefinitionHandler(fixture.EventStore);
+        var fetched = await getHandler.HandleAsync(new GetClassDefinition(published.Value), TestContext.Current.CancellationToken);
+        fetched.IsSuccess.Should().BeTrue();
+
+        // Content-hash equality against the ORIGINAL definition proves the
+        // serialised shape round-trips every whenNotRecorded field.
+        ClassDefinitionHashing.ComputeContentHash(fetched.Value).Should().Be(published.Value);
+
+        // And directly: every task's first metric comes back with the assumed
+        // value it was published with.
+        var metrics = fetched.Value.Phases.SelectMany(p => p.Tasks).Select(t => t.Metrics[0]);
+        metrics.Should().OnlyContain(m => m.WhenNotRecorded != null);
+        var publishedMetrics = WhenNotRecordedDefinition.Phases.SelectMany(p => p.Tasks).Select(t => t.Metrics[0]);
+        metrics.Should().Equal(publishedMetrics);
     }
 
     [Fact]

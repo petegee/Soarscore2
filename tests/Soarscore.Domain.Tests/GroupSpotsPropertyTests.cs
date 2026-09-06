@@ -43,6 +43,7 @@ using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 using Xunit;
 
@@ -439,18 +440,16 @@ public class GroupSpotsPropertyTests
                 competition = competition.Apply(competition.WithdrawCompetitor(vacated.Value, Now).Value);
             }
 
-            var declaredMetrics = competition.AdoptedRules.Definition.Phases
+            var taskDefinition = competition.AdoptedRules.Definition.Phases
                 .SelectMany(p => p.Tasks)
-                .First(task => task.Code == "A")
-                .Metrics
-                .Select(m => m.Name)
-                .ToImmutableArray();
+                .First(task => task.Code == "A");
 
             var view = RecordingCore.ComputeGroupViews(
                 competition, 0, 1, 1,
                 competition.Phases[0].Rounds.SelectMany(r => r.TaskRounds[0].Groups).ToImmutableArray(),
                 new Dictionary<EntryId, Entry>(),
-                declaredMetrics);
+                taskDefinition.Metrics,
+                FlightMetricResolution.ReferencedMetrics(taskDefinition));
 
             view.Length.Should().Be(2);
             view[0].GroupRef.Should().Be(assigned.Value.GroupRef);

@@ -24,13 +24,17 @@ public static class SeedNzF3kNdc
 {
     // ---- metricSet f3kFlight -----------------------------------------------
     // Same as SeedF3K, with the NZ.0.2.1 a timing citation alongside F3K.7 —
-    // same Truncate / 0.1 s precision.
+    // same Truncate / 0.1 s precision. flightTime is the demanded observation —
+    // no assumption; the two flags are the recorded EXCEPTIONS of F3K.9.3 and
+    // F3K.7 (carried wholesale by NZ.0.2), so absence resolves to compliance.
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
         M.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7; NZ.0.2.1 a recorded to 0.1 s, truncated
-        M.Flag("landedWithinWindow"),                              // F3K.9.3 the 30 s landing window
-        M.Flag("launchedInWorkingTime"),                           // F3K.7 launched before the working time = zero score
+        M.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 (carried by NZ.0.2) — "lands later ⇒ that flight will
+                                                                    //   score zero" is what is recorded; absence ⇒ within the window
+        M.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 (carried by NZ.0.2) — the early-launch zero is what is
+                                                                    //   recorded; absence ⇒ in time
     ];
 
     // ---- tasks: B, D, G, H only (NZ.0.2.1 a) -------------------------------

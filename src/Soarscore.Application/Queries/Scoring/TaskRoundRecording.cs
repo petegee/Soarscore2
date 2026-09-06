@@ -9,6 +9,20 @@
 // recorded ("not recorded", "missing") and none states a verdict. Nothing here
 // may be phrased or later renamed as "complete".
 //
+// Metric absence (kanban/in-progress/metric-absence-semantics.md WI-3)
+// refines the gap lists without touching that law. MissingMetrics stays the
+// pure recorded fact — declared on the task, no measurement recorded. The new
+// AwaitingCapture is its subset scoring actually awaits: referenced by the
+// task's predicates and score terms AND declared without a whenNotRecorded
+// assumed value — absence on the other missing metrics is not a capture gap
+// at all, since an assumed metric resolves to its declared value and an
+// unreferenced one scoring never reads. Referenced-ness comes from the
+// Domain's FlightMetricResolution.ReferencedMetrics walk at the handler — the
+// same resolution point the engine resolves absences with, never a
+// re-derivation here. The task's declared metrics also ride the view with
+// their optional assumed value (DeclaredMetricView), so a consumer can mark a
+// metric optional and show what absence resolves to.
+//
 // Field spots follow the same law (lane-assignment.md WI-5): the recorded
 // assignment is stated as recorded, spot-ordered; empty means *unassigned* —
 // a fact, never a gap — and a spot whose competitor has since withdrawn is
@@ -28,13 +42,24 @@ using Soarscore.Application.Shared.Entries;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
+using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Application.Queries.Scoring;
 
-/// <summary>One flight's declared-but-absent metrics, in the task's declared order.</summary>
+/// <summary>One flight's declared-but-absent metrics, in the task's declared
+/// order. MissingMetrics is the recorded fact — declared on the task, no
+/// measurement recorded. AwaitingCapture is the subset of those scoring
+/// actually awaits: referenced by the task's predicates/score terms and
+/// declared without an assumed value — the engine pends the flight naming the
+/// first of these (declared order) and fills in as each capture arrives
+/// (kanban/in-progress/metric-absence-semantics.md WI-3). Absence on the rest
+/// either resolves to its declared assumed value or scoring never reads it.
+/// Both lists state facts; neither is a verdict.</summary>
 public sealed record FlightGapsView(
     int Sequence,
-    ImmutableArray<string> MissingMetrics);
+    ImmutableArray<string> MissingMetrics,
+    ImmutableArray<string> AwaitingCapture);
 
 /// <summary>One live Entry's gapped flights — only Entries with at least one gap appear.</summary>
 public sealed record EntryGapsView(
@@ -77,6 +102,15 @@ public sealed record GroupRecordingView(
     ImmutableArray<EntryGapsView> MetricGaps,
     ImmutableArray<GroupSpotView> Spots);
 
+/// <summary>
+/// One declared metric and its optional assumed value, in the task's declared
+/// order — the class's absence semantics for the metric
+/// (kanban/in-progress/metric-absence-semantics.md WI-3). WhenNotRecorded null
+/// means the task declares no assumption: an uncaptured referenced metric
+/// then awaits capture.
+/// </summary>
+public sealed record DeclaredMetricView(string Name, MeasuredValue? WhenNotRecorded);
+
 /// <summary>One task-round's recording status — the GET /task-round-recording response shape.</summary>
 public sealed record TaskRoundRecordingView(
     CompetitionId CompetitionRef,
@@ -84,6 +118,7 @@ public sealed record TaskRoundRecordingView(
     int RoundOrdinal,
     int TaskRoundOrdinal,
     string TaskRef,
+    ImmutableArray<DeclaredMetricView> Metrics,
     ImmutableArray<GroupRecordingView> Groups);
 
 public readonly record struct GetTaskRoundRecording(
@@ -178,11 +213,15 @@ public sealed class GetTaskRoundRecordingHandler(IEventStore eventStore, IEntryQ
             entries[summary.Id] = loadedEntry.Value.Entry;
         }
 
-        var declaredMetrics = taskDefinition.Metrics.Select(m => m.Name).ToImmutableArray();
+        // The referenced set is the Domain's structural walk
+        // (FlightMetricResolution — kanban/in-progress/metric-absence-semantics.md
+        // WI-3): one resolution point, the same notion of "read by scoring" the
+        // engine resolves absences with, never a re-derivation here.
+        var referencedMetrics = FlightMetricResolution.ReferencedMetrics(taskDefinition);
 
         var groupViews = RecordingCore.ComputeGroupViews(
             competition, query.PhaseOrdinal, query.RoundOrdinal, query.TaskRoundOrdinal,
-            groups, entries, declaredMetrics);
+            groups, entries, taskDefinition.Metrics, referencedMetrics);
 
         return Result<TaskRoundRecordingView>.Success(new TaskRoundRecordingView(
             query.CompetitionRef,
@@ -190,6 +229,7 @@ public sealed class GetTaskRoundRecordingHandler(IEventStore eventStore, IEntryQ
             query.RoundOrdinal,
             query.TaskRoundOrdinal,
             taskRound.TaskRef,
+            [.. taskDefinition.Metrics.Select(m => new DeclaredMetricView(m.Name, m.WhenNotRecorded))],
             groupViews));
     }
 }
@@ -201,6 +241,10 @@ public sealed class GetTaskRoundRecordingHandler(IEventStore eventStore, IEntryQ
 /// reported PER ENTRY, both Entries', since either may hold an unrecorded
 /// metric. Annulled Entries have no result and count as neither recording nor
 /// gapping; a competitor whose only Entry is annulled reads as NotRecorded.
+/// Within the gaps, MissingMetrics is the recorded fact and AwaitingCapture
+/// the subset scoring awaits (kanban/in-progress/metric-absence-semantics.md
+/// WI-3) — the referenced set and the declared assumptions arrive as inputs,
+/// so no absence semantics is derived here.
 /// </summary>
 internal static class RecordingCore
 {
@@ -211,7 +255,8 @@ internal static class RecordingCore
         int taskRoundOrdinal,
         ImmutableArray<Group> groups,
         IReadOnlyDictionary<EntryId, Entry> entries,
-        ImmutableArray<string> declaredMetrics)
+        ImmutableArray<MetricDefinition> declaredMetrics,
+        IReadOnlySet<string> referencedMetrics)
     {
         var competitorsById = competition.Competitors.ToDictionary(c => c.Id);
 
@@ -251,11 +296,27 @@ internal static class RecordingCore
                     entry.CompetitorRef,
                     entry.Role,
                     entry.Flights
-                        .Select(flight => new FlightGapsView(
-                            flight.Sequence,
-                            declaredMetrics
-                                .Where(metric => !flight.Measurements.Any(m => m.Metric == metric))
-                                .ToImmutableArray()))
+                        .Select(flight =>
+                        {
+                            // MissingMetrics: the recorded fact — declared on
+                            // the task, no measurement recorded. AwaitingCapture:
+                            // its subset scoring awaits — referenced by the
+                            // task's predicates/score terms and declared without
+                            // an assumed value; absence on an assumed metric
+                            // resolves to the assumption, absence on an
+                            // unreferenced one scoring never reads
+                            // (metric-absence-semantics.md WI-3).
+                            var absent = declaredMetrics
+                                .Where(metric => !flight.Measurements.Any(m => m.Metric == metric.Name))
+                                .ToImmutableArray();
+                            return new FlightGapsView(
+                                flight.Sequence,
+                                [.. absent.Select(metric => metric.Name)],
+                                [.. absent
+                                    .Where(metric => referencedMetrics.Contains(metric.Name)
+                                                  && metric.WhenNotRecorded is null)
+                                    .Select(metric => metric.Name)]);
+                        })
                         .Where(gaps => !gaps.MissingMetrics.IsEmpty)
                         .ToImmutableArray()))
                 .Where(gaps => !gaps.Flights.IsEmpty)

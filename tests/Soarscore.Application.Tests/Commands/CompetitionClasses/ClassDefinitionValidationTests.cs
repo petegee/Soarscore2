@@ -426,6 +426,125 @@ public class ClassDefinitionValidationTests
         defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-19.best-dropped-score-without-drop-policy");
     }
 
+    // Check 22 (kanban/in-progress/metric-absence-semantics.md#wi-2): a
+    // whenNotRecorded assumption carries the metric's own kind — Flag/Flag,
+    // Number/Number. Kind is the only restriction: an assumption on a
+    // reporting-only metric is harmless.
+
+    [Fact]
+    public void Check22_number_assumption_on_a_flag_metric_is_rejected()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" },
+                new MetricDefinition { Name = "touchedByCompetitor", Kind = MeasuredKind.Flag, WhenNotRecorded = MeasuredValue.Of(0m) },
+            ],
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-22.when-not-recorded-kind-mismatch");
+        defect.Path.Should().Be("$.phases[0].tasks[0].metrics[1].whenNotRecorded");
+    }
+
+    [Fact]
+    public void Check22_flag_assumption_on_a_number_metric_is_rejected()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s", WhenNotRecorded = MeasuredValue.Of(false) },
+            ],
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-22.when-not-recorded-kind-mismatch");
+        defect.Path.Should().Be("$.phases[0].tasks[0].metrics[0].whenNotRecorded");
+    }
+
+    [Fact]
+    public void Check22_kind_matched_assumptions_produce_no_defects()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s", WhenNotRecorded = MeasuredValue.Of(0m) },
+                new MetricDefinition { Name = "touchedByCompetitor", Kind = MeasuredKind.Flag, WhenNotRecorded = MeasuredValue.Of(false) },
+            ],
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Should().NotContain(d => d.Code.StartsWith("class-definition.check-22"));
+        defects.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Check22_metric_without_an_assumption_produces_no_defect()
+    {
+        // Minimal()'s flightTime declares no whenNotRecorded — check 22 has
+        // nothing to say about a metric with no assumption.
+        var defects = ClassDefinitionValidation.Validate(Minimal());
+
+        defects.Should().NotContain(d => d.Code.StartsWith("class-definition.check-22"));
+    }
+
+    [Fact]
+    public void Check22_assumption_on_a_reporting_only_metric_is_accepted()
+    {
+        // touchedByCompetitor is read by no term and no predicate — an
+        // assumption on it is harmless; kind is the only adoption restriction
+        // (the story's decision, not a licence for more checks).
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" },
+                new MetricDefinition { Name = "touchedByCompetitor", Kind = MeasuredKind.Flag, WhenNotRecorded = MeasuredValue.Of(false) },
+            ],
+        };
+        definition = WithSingleTask(definition, task);
+
+        ClassDefinitionValidation.Validate(definition).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Check22_runs_alongside_the_other_checks()
+    {
+        // Total and non-throwing: the kind mismatch is returned together with
+        // the unrelated unresolved-metric-ref defect, not instead of it.
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Score = [new RateTerm { MetricRef = "bogus", Rate = 1 }],
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s", WhenNotRecorded = MeasuredValue.Of(false) },
+            ],
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        defects.Select(d => d.Code).Should().BeEquivalentTo(
+            "class-definition.check-1.unresolved-metric-ref",
+            "class-definition.check-22.when-not-recorded-kind-mismatch");
+    }
+
     [Fact]
     public void All_seed_definitions_validate_clean()
     {

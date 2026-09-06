@@ -18,13 +18,20 @@ public static class SeedF3J
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
+        // flightTime and landingDistance are the demanded observations (F3J.10.2,
+        // F3J.10.6) — no assumption; a flight without them is a genuine await.
+        // The other three are the rulebook's recorded EXCEPTIONS, so absence is
+        // informative and resolves to compliance.
         M.Number("flightTime", "s", RoundingMode.HalfUp, 0.1m),                // F3J.10.2 "recorded to one decimal place" — the MODE is not
-                                                                               //   stated. F3K states truncation explicitly, which suggests
-                                                                               //   F3J is not truncated. Chosen, not cited (F12 residual).
+                                                                                //   stated. F3K states truncation explicitly, which suggests
+                                                                                //   F3J is not truncated. Chosen, not cited (F12 residual).
         M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // F3J.10.6 — no capture precision stated (F12 residual)
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1),             // F3J.10.3, 10.4 — seconds flown past the end of working time
-        M.Flag("touchedByCompetitor"),                                         // F3J.10.8
-        M.Flag("restedWithin75m"),                                             // F3J.5.1 e
+        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
+            whenNotRecorded: 0),                                               // F3J.10.3, 10.4 — seconds past working time are what the
+                                                                                //   timekeeper records; a flight landing within time has none
+        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // F3J.10.8 — the touch forfeits the bonus; absence ⇒ no touch
+        M.Flag("restedWithin75m", whenNotRecorded: true),                      // F3J.5.1 e — the outside-75m cancellation is what is recorded;
+                                                                                //   absence ⇒ came to rest within 75 m
     ];
 
     // The landing table of F3J.10.5, declared once and used by both phases

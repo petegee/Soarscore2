@@ -530,6 +530,7 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
       use        <name>                                             # a class-scope
                                                                     #   `metricSet`, §7.1
       metric     <name> <Number|Flag> [<unit>] [<Truncate|HalfUp|Ceiling> <precision>] [declared]
+                 [whenNotRecorded <literal>]
       flights    <selection>
       timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n>]
       group      minPerGroup <n> [minValidResults <n>]             # optional
@@ -549,6 +550,33 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
 
 `declared` sets `MetricDefinition.declaredBeforeLaunch` — a value the pilot
 nominates before releasing (a Poker target).
+
+**`whenNotRecorded`** sets `MetricDefinition.whenNotRecorded` — the metric's
+assumed value, what a flight that records no measurement for the metric
+resolves it to. The literal is kind-matched to the metric: `true` or `false`
+for a Flag, a number for a Number — the same value shape a predicate's
+right-hand side writes. The semantics in one line: **absence of a recorded
+measurement resolves to the assumed value; a recorded measurement (or an
+amendment to one) always wins.** The assumption is an interpretation of
+absence at scoring time and is never captured as a measurement — officials
+record exceptions, not compliance, and the class declares what a clean
+flight's silence stands for. **Adoption rejects an assumed value whose kind
+does not match the metric's** (`true` on a Number metric, say). Absent, the
+metric has no assumed value and a flight missing the capture is a pending
+result until it arrives (`soaring-domain-class-diagram.md` §4) — not an error.
+F3J's flight metrics are the shape:
+
+```
+      metric  flightTime          Number s HalfUp 0.1               # F3J.10.2 — precision cited, mode chosen (F12 residual)
+      metric  overflySeconds      Number s Truncate 1 whenNotRecorded 0
+                                                                    # F3J.10.3, 10.4 — an overfly is recorded when it happens, never inferred
+      metric  touchedByCompetitor Flag whenNotRecorded false         # F3J.10.8 — the touch is recorded; its absence means there was none
+```
+
+A flight whose timekeeper wrote down only the time and the landing distance
+now scores whole: the landing conditional reads `touchedByCompetitor` as
+`false` and the overfly deduction reads `overflySeconds` as `0` — the class's
+own assumption, not a fabricated capture.
 
 **An omitted `maxLaunches` means the task limits launches not at all**, which is
 half the corpus — F3B, F3J, F5J, F5L and eight of F3K's tasks. It is the absence

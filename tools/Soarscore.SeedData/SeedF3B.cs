@@ -21,11 +21,17 @@ public static class SeedF3B
         Name = "Duration",                                                     // F3B.2.3
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // F3B.2.3 b "each full second"
-            M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // F3B.2.3 d "rounded to the nearest higher metre"
-            M.Flag("landedInDefinedArea"),                                     // F3B.2.3 b
-            M.Flag("atRestBy12Min"),                                           // F3B.2.3 e
-            M.Flag("touchedByCompetitor"),                                     // F3B.1.7 d
+        // flightTime and landingDistance are the demanded observations (F3B.2.3
+        // b/d) — no assumption. The three flags are the rulebook's recorded
+        // EXCEPTIONS, so absence resolves to compliance.
+        M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // F3B.2.3 b "each full second"
+        M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // F3B.2.3 d "rounded to the nearest higher metre"
+        M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.3 b — "does not land on the defined landing area ⇒ the whole
+                                                                            //   flight is zero" is what is recorded; absence ⇒ on the area
+        M.Flag("atRestBy12Min", whenNotRecorded: true),                    // F3B.2.3 e — not at rest at 12 min ⇒ time-only scoring, no bonus;
+                                                                            //   that ruling is what is recorded; absence ⇒ at rest in time
+        M.Flag("touchedByCompetitor", whenNotRecorded: false),             // F3B.1.7 d — the touch forfeiting landing points is what is
+                                                                            //   recorded; absence ⇒ no touch
         ],
         Flights = new LastFlight(),                                            // F3B.1.5 unlimited attempts; the last is the attempt
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 720 },    // F3B.2.3 a 12 min from the order of the starter, incl. towing
@@ -72,7 +78,8 @@ public static class SeedF3B
         Metrics =
         [
             M.Number("legs", "legs", RoundingMode.Truncate, 1),                // F3B.2.4 e only full 150 m legs are counted
-            M.Flag("landedInDefinedArea"),                                     // F3B.2.4 f
+            M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.4 f — landing off the defined area ⇒ the flight is zero;
+                                                                                //   that ruling is what is recorded; absence ⇒ on the area
         ],
         Flights = new LastFlight(),
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 420 },    // F3B.2.4 a 7 min incl. towing (F13: the 4 min timed window inside it is not modelled)
@@ -100,8 +107,10 @@ public static class SeedF3B
         Metrics =
         [
             M.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3B.2.5 c "recorded to at least 1/100 sec"
-            M.Flag("courseCompleted"),                                         // F3B.2.5 g "models which come to rest before having completed the task will score zero"
-            M.Flag("landedInDefinedArea"),                                     // F3B.2.5 f
+            M.Flag("courseCompleted", whenNotRecorded: true),                  // F3B.2.5 g — resting before completing the task ⇒ zero is what
+                                                                                //   is recorded; absence ⇒ completed
+            M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.5 f — landing off the defined area ⇒ zero is what is
+                                                                                //   recorded; absence ⇒ on the area
         ],
         Flights = new LastFlight(),                                            // F3B.2.5 i re-launch permitted only before Base A is first crossed
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 240 },    // F3B.2.5 a 4 min incl. towing

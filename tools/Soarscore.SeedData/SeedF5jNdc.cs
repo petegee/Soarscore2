@@ -29,22 +29,36 @@ public static class SeedF5jNdc
 {
     // ---- metricSet f5jFlight -----------------------------------------------
     // SeedF5J's flight metrics verbatim, plus landedWithin75m (NZ.0.3 h).
+    // flightTime, startHeight and landingDistance are demanded observations —
+    // no assumption; startHeightRecorded deliberately assumes NOTHING: 5.5.11.7 e
+    // (carried by NZ.0.3 c) cancels a flight whose AMRT records no Start Height
+    // data, and NZ.0.3 f restates the start-height deduction as core scoring, so
+    // an uncaptured height must pend the flight, never fabricate validity.
+    // overflySeconds, touchedByCompetitor and landedWithin75m are the rulebook's
+    // recorded EXCEPTIONS, so absence resolves to compliance.
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
         M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.11.12 b truncated to the nearest second
         M.Number("startHeight", "m", RoundingMode.Truncate, 1),                // 5.5.11.12 d truncated to the nearest metre
         M.Flag("startHeightRecorded"),                                         // 5.5.11.7 e "the AMRT does not record any Start Height data"
-                                                                               //   (5.5.11.12 d is the truncation rule, not the zeroing one)
+                                                                                //   (5.5.11.12 d is the truncation rule, not the zeroing one)
+                                                                                //   NO whenNotRecorded: the recorded height is demanded — an
+                                                                                //   uncaptured height pends the flight (WI-4)
         M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 i — the rules state no capture precision, and a
-                                                                               //   MetricDefinition precision is not coverable by a Parameter
-                                                                               //   (F12 residual). Chosen, not cited.
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1),             // 5.5.11.12 g, k — seconds flown past the end of working time
-        M.Flag("touchedByCompetitor"),                                         // 5.5.11.12 j
-        M.Flag("landedWithin75m"),                                             // NZ.0.3 h "No points if landing more than 75m from the
-                                                                               //   landing spot"; FAI 5.5.11.7 d — the FAI seed omits it
-                                                                               //   (0.3 h restates 5.5.11.7 d for the NDC, so it is
-                                                                               //   encoded here)
+                                                                                //   MetricDefinition precision is not coverable by a Parameter
+                                                                                //   (F12 residual). Chosen, not cited.
+        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
+            whenNotRecorded: 0),                                               // 5.5.11.12 g, k (carried by NZ.0.3 c) — seconds past working
+                                                                                //   time are what the timekeeper records; a flight landing
+                                                                                //   within time has none
+        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j (carried by NZ.0.3 c) — the touch forfeits the
+                                                                                //   bonus; absence ⇒ no touch
+        M.Flag("landedWithin75m", whenNotRecorded: true),                      // NZ.0.3 h "No points if landing more than 75m from the
+                                                                                //   landing spot"; FAI 5.5.11.7 d — the FAI seed omits it
+                                                                                //   (0.3 h restates 5.5.11.7 d for the NDC, so it is
+                                                                                //   encoded here); the outside-75m zero is what is recorded,
+                                                                                //   absence ⇒ within
     ];
 
     // The two scoring tables of 5.5.11.12, carried per NZ.0.3 c and restated by

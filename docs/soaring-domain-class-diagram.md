@@ -773,11 +773,20 @@ classDiagram
         +MeasuredKind kind
         +string unit
         +bool declaredBeforeLaunch
+        +MeasuredValue? whenNotRecorded
     }
     %% Capture precision is 0..1, not 1: a Flag metric has nothing to round, so
     %% no Flag in tools/Soarscore.SeedData/ writes one. Where a Number metric's rules state no
     %% capture precision the definition still chooses one and says so — that is
     %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 i).
+    %% whenNotRecorded is the metric's assumed value: what a flight that
+    %% records no measurement for it (and no amendment overrides) resolves it
+    %% to. Nullable — absent, absence has no declared meaning and a flight
+    %% missing the capture yields a Pending result (§4). The assumption's kind
+    %% must match the metric's kind, checked at adoption. It is resolved when
+    %% scores are computed and is never captured as a Measurement: a recorded
+    %% measurement or an amendment always displaces it — absence is the only
+    %% trigger.
 
     class FlightSelection {
         <<abstract>>
@@ -1152,6 +1161,7 @@ classDiagram
         <<enumeration>>
         Valid
         NoResult
+        Pending
     }
 
     ScoringService ..> TaskResult : produces
@@ -1159,6 +1169,7 @@ classDiagram
     TaskResult "1" *-- "1" ResultState
 
     note for ResultState "NoResult is not a score of zero. It is excluded when finding the group winner."
+    note for ResultState "Pending contributes nothing exactly as NoResult does; it says the flight is awaiting a captured measurement, not that it ended without one."
 ```
 
 **The pipeline is fixed and core-owned; every stage takes class data.**

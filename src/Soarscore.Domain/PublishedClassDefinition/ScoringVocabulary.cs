@@ -49,6 +49,23 @@ public sealed record MetricDefinition
 
     /// <summary>Capture precision, 0..1: a Flag metric has nothing to round.</summary>
     public Rounding? Precision { get; init; }
+
+    /// <summary>
+    /// The value this metric's measurement resolves to when the flight records
+    /// none (and no amendment overrides it) — the class-declared absence
+    /// semantics, kanban/in-progress/metric-absence-semantics.md WI-1. Absence
+    /// is informative: contest officials record exceptions, not compliance, so
+    /// a clean flight carries only its observed quantities and a metric the
+    /// class marks assumed resolves to the assumption. Explicit capture always
+    /// wins — a recorded value (or amendment) is an observation and displaces
+    /// the assumption; ABSENCE is the only trigger. Null means the task
+    /// declares no assumption: an uncaptured declared metric then yields a
+    /// <c>FlightResultState.Pending</c> flight result, never an error —
+    /// missing measurements are never tier 3.
+    /// Serialises as the same MeasuredValue shape the predicates' rightValue
+    /// uses (a plain record — nothing polymorphic, no $kind of its own).
+    /// </summary>
+    public MeasuredValue? WhenNotRecorded { get; init; }
 }
 
 // ------------------------------------------------------------ flight selection

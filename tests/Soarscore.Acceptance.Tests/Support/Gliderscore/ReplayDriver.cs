@@ -106,6 +106,17 @@
 //     GS deleted his rows when he stopped entering, so his group is
 //     unknowable; prescribing an unopened slot keeps the draw complete, the
 //     oracle (which omits him from R6 on) honest, and the ledger empty.
+//
+// seed-definition-parallel-run.md WI-1 adds the PARALLEL-RUN MODE, cited
+// where it happens below: ReplayAsync(fixture, new ParallelRunMode(seed))
+// publishes the SEED class from tools/Soarscore.SeedData/json
+// (SeedDefinitionLoader) instead of the fixture's GS-mirrored definition,
+// binds the seed's no-default parameters from the comp's actual config
+// before /prescribe-draw (DeriveParallelRunBindings records each value's
+// derivation), gates capture on the PUBLISHED definition's metrics, and
+// refuses a GS penalty row under an unauthored seed infraction mapping
+// loudly. Entries, realised draw and flights are unchanged — the parity
+// path (no ParallelRunMode) behaves exactly as before.
 
 using System.Net.Http.Json;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -136,7 +147,30 @@ public sealed record ReplayOutcome(
     IReadOnlyDictionary<(int RoundNo, int GroupNo), GroupId> GroupIdByRoundAndGroup,
     IReadOnlyDictionary<(int RoundNo, int GroupNo, long PilotNo), EntryId> EntryIdBySlot,
     IReadOnlyDictionary<long, CompetitorId> CompetitorByPilotNo,
-    int CommandsIssued);
+    int CommandsIssued,
+    // seed-definition-parallel-run.md WI-1 — what /publish-class-definition
+    // returned (adoption's content hash: the proof the published definition
+    // was accepted). Set in BOTH modes; parity behaviour is untouched.
+    string? DefinitionContentHash = null,
+    // The seed class's parameters bound from the comp's actual config in
+    // parallel-run mode (name → value), in bind order. Null in parity mode.
+    // Recorded on the outcome so the WI-2 ledger's provenance block can name
+    // exactly what was bound and why — the provenance the parallel-run claim
+    // is stated *given*.
+    IReadOnlyDictionary<string, decimal>? ParallelRunBindings = null);
+
+/// <summary>
+/// seed-definition-parallel-run.md WI-1 item 2 — the parallel-run mode switch:
+/// pass the seed class the fixture must run under and ReplayAsync publishes it
+/// instead of the fixture's GS-mirrored definition, binds the seed's
+/// parameters from the comp's actual config before the draw, and gates
+/// capture on the published definition's metrics. Omit it and the replay is
+/// the parity path, byte-identical in behaviour.
+/// </summary>
+/// <param name="SeedDefinition">The seed class, loaded from
+/// tools/Soarscore.SeedData/json by SeedDefinitionLoader — the single source
+/// of truth, never a copy.</param>
+public sealed record ParallelRunMode(ClassDefinition SeedDefinition);
 
 public sealed class ReplayDriver(HttpClient client)
 {
@@ -230,13 +264,109 @@ public sealed class ReplayDriver(HttpClient client)
                 [(9, 3, 89), (10, 3, 89), (11, 3, 89), (12, 3, 89), (13, 3, 89), (14, 3, 89), (15, 3, 89)],
         };
 
-    public async Task<ReplayOutcome> ReplayAsync(GliderscoreFixture fixture)
+    // ------------------------------------------- WI-1 item 2 parameter binds
+
+    /// <summary>
+    /// seed-definition-parallel-run.md WI-1 item 2 — the seed class's
+    /// parameters bound from the comp's ACTUAL config, before /prescribe-draw.
+    /// Every value is derived from the fixture's data or recorded as an
+    /// explicitly unexercised choice — never tuned to make GS's numbers come
+    /// out (the story's anti-goal); this record is the provenance WI-2's
+    /// ledger block cites.
+    ///
+    /// Binding rules, per seed parameter:
+    ///   no default      ⇒ MUST be bound — the engine cannot resolve an
+    ///                     unbound parameter (prescription resolves
+    ///                     minPerGroup; finalisation resolves MinRounds), and
+    ///                     a no-default CompetitionSetup parameter freezes
+    ///                     once the draw is accepted. The value is derived
+    ///                     from the comp's actual data by parameter name; a
+    ///                     name this mapping does not know is a per-pair
+    ///                     mapping gap and fails loudly here.
+    ///   targetTime      ⇒ the comp's actual announced target time — GS's
+    ///                     durTargetTime, the value the club actually ran
+    ///                     (ales: 600, which happens to equal the seed's
+    ///                     declared default). Bound explicitly per the story,
+    ///                     competition-wide (unscoped): round-scoped binds
+    ///                     are refused for a non-PerRound parameter.
+    ///   anything else   ⇒ the declared default governs; the harness binds
+    ///                     nothing (a defaulted parameter is the class
+    ///                     author's rulebook-faithful choice).
+    ///
+    /// Derivations for the ales pair (ales-sample-comp ↔ 80-nz-m-ales200):
+    ///   groupSize  = 10 — the largest ACTUAL group size in the realised draw
+    ///              (the fixture draws one group of ten per round; R1–R3/G1).
+    ///   minRounds  = 3  — the rounds actually flown (the fixture's three
+    ///              distinct RoundNos), matching the phase validity the seed
+    ///              resolves at finalisation.
+    ///   minNewGroup = 1 — the fixture has NO re-flights (every row carries
+    ///              OriginalRoundNo == RoundNo and ReFlightNo == 0), so no
+    ///              data determines the value and it is never exercised.
+    ///              NZ.3.12.5 l states NO minimum for a re-flight group (F12)
+    ///              — the seed parameter exists precisely because the CD
+    ///              decides at setup — so 1 is the least-constraining
+    ///              rulebook-consistent choice (the engine's own
+    ///              members-empty refusal is the real floor), not an
+    ///              assertion about this club's practice.
+    ///   targetTime = 600 — the comp's actual durTargetTime (the announced
+    ///              10-minute target the fixture ran under).
+    /// </summary>
+    private static IReadOnlyList<(string Parameter, decimal Value)> DeriveParallelRunBindings(
+        GliderscoreFixture fixture, ClassDefinition seed, IReadOnlyList<ScoresRow> drawnRows)
+    {
+        // The comp's actual shape, over the rows the realised draw keeps —
+        // the same rows prescription will validate the seed's minPerGroup
+        // against.
+        var largestActualGroup = drawnRows
+            .GroupBy(r => (r.RoundNo, r.GroupNo))
+            .Max(g => g.Count());
+        var roundsFlown = drawnRows.Select(r => r.RoundNo).Distinct().Count();
+
+        var binds = new List<(string Parameter, decimal Value)>();
+
+        foreach (var parameter in seed.Parameters)
+        {
+            if (parameter.DefaultValue is null)
+            {
+                binds.Add((parameter.Name, parameter.Name switch
+                {
+                    "groupSize" => (decimal)largestActualGroup,
+                    "minRounds" => (decimal)roundsFlown,
+                    "minNewGroup" => 1m,
+                    _ => throw new NotSupportedException(
+                        $"Seed class '{seed.Name}' declares no-default parameter '{parameter.Name}', which this "
+                        + "harness's per-pair parameter mapping does not derive — a mapping gap "
+                        + "(seed-definition-parallel-run.md WI-1 item 2), not something to guess."),
+                }));
+            }
+            else if (parameter.BoundAt == ParameterBindingPoint.BeforeFlying && parameter.Name == "targetTime")
+            {
+                var dur = DurFamilyRow.Of(fixture.Competition)
+                    ?? throw new InvalidOperationException(
+                        $"Fixture '{fixture.Slug}': the seed's targetTime is derived from the comp's actual durTargetTime, "
+                        + "but the fixture carries no Dur family row — a non-duration pair needs its own mapping.");
+
+                binds.Add(("targetTime", dur.DurTargetTime));
+            }
+        }
+
+        return binds;
+    }
+
+    public async Task<ReplayOutcome> ReplayAsync(GliderscoreFixture fixture, ParallelRunMode? parallelRun = null)
     {
         // ------------------------------------------------------------ publish
         // Fails loudly here if the authored definition does not pass adoption
         // validation — which is how WI-1 proves it does.
+        //
+        // WI-1 item 2 — in parallel-run mode the SEED definition is published
+        // instead of the fixture's GS-mirrored twin, through the same endpoint.
+        // A seed class that fails adoption is an authoring-gap defect (story
+        // anti-goal): it surfaces as this POST's failure and is REPORTED, never
+        // worked around in the harness.
+        var definition = parallelRun?.SeedDefinition ?? fixture.Definition;
         var contentHash = await PostAsync<string>(
-            "/publish-class-definition", new PublishClassDefinition(fixture.Definition));
+            "/publish-class-definition", new PublishClassDefinition(definition));
 
         // ------------------------------------------------------------- create
         // Name/emails carry a run slug so scenarios sharing one store never
@@ -249,7 +379,15 @@ public sealed class ReplayDriver(HttpClient client)
         // CreateCompetition's display dates, never a score), so a fixed
         // 2000-01-01 stands in for a missing one. Fixtures with real dates —
         // the seven originals — parse exactly as before.
+        //
+        // WI-1 naming — a parallel-run competition carries the seed class's OWN
+        // name/version ("ALES 200 (Altitude Limited Electric Soaring) — NZMAA
+        // Section 5 Soaring, March 2024"), never the fixture's, so parallel-run
+        // artifacts are self-describing against the fixture's GS-mirrored twin.
         var slug = Guid.NewGuid().ToString("N");
+        var compName = parallelRun is null
+            ? $"{fixture.Competition.Identity.CompName} ({slug})"
+            : $"{parallelRun.SeedDefinition.Name} — {parallelRun.SeedDefinition.Version} ({slug})";
         var compDate = string.IsNullOrWhiteSpace(fixture.Competition.Identity.CompDate)
             ? new DateOnly(2000, 1, 1)
             : DateOnly.Parse(
@@ -258,8 +396,8 @@ public sealed class ReplayDriver(HttpClient client)
         var competitionId = await PostAsync<CompetitionId>(
             "/create-competition",
             new CreateCompetition(
-                $"{fixture.Competition.Identity.CompName} ({slug})",
-                "Gliderscore replay",
+                compName,
+                parallelRun is null ? "Gliderscore replay" : "Gliderscore parallel run",
                 compDate,
                 compDate,
                 contentHash));
@@ -351,6 +489,33 @@ public sealed class ReplayDriver(HttpClient client)
             })
             .ToList();
 
+        // ------------------------------------------------- WI-1 item 2 binds
+        // Parallel-run mode: the seed's parameters are bound from the comp's
+        // ACTUAL config BEFORE /prescribe-draw — the no-default
+        // CompetitionSetup parameters must be bound (the engine cannot resolve
+        // an unbound one at prescription time, and CompetitionSetup freezes
+        // once the draw is accepted), and BeforeFlying parameters are bound
+        // competition-wide before any flight. Unscoped binds (no phase/round
+        // named): round-scoped binds are refused for non-PerRound parameters,
+        // and the seed's targetTime is BeforeFlying, not PerRound.
+        // DeriveParallelRunBindings documents each value's derivation — they
+        // are the WI-2 ledger provenance's binding record.
+        IReadOnlyDictionary<string, decimal>? parallelRunBindings = null;
+
+        if (parallelRun is not null)
+        {
+            var parallelBinds = DeriveParallelRunBindings(fixture, parallelRun.SeedDefinition, keptRows);
+
+            foreach (var (parameter, value) in parallelBinds)
+            {
+                await PostAsync<CompetitionId>(
+                    "/bind-parameter",
+                    new BindParameter(competitionId, parameter, MeasuredValue.Of(value), CdName));
+            }
+
+            parallelRunBindings = parallelBinds.ToDictionary(b => b.Parameter, b => b.Value);
+        }
+
         await PostAsync<CompetitionId>("/prescribe-draw", new PrescribeDraw(competitionId, prescribedRounds, CdName));
         await PostAsync<CompetitionId>("/accept-draw", new AcceptDraw(competitionId));
 
@@ -366,6 +531,22 @@ public sealed class ReplayDriver(HttpClient client)
         // task-round is still Drawn and no entry exists (the decide function
         // refuses a bind into a round that has started flying). Phase 0 is the
         // prescribed first phase (Phase.Ordinal is Phases.Length at draw time).
+        //
+        // WI-1 — never under parallel-run: these binds are ORACLE-RECONCILED
+        // GS knowledge authored for the fixture's GS-mirrored definition (and
+        // round-scoped, which a non-PerRound seed parameter refuses anyway).
+        // Applying them under a seed class would tune the seed run to GS —
+        // the story's stated anti-goal — so the pair is refused loudly and
+        // must author its own mapping (the same discipline as
+        // DeriveParallelRunBindings' unknown-parameter arm).
+        if (parallelRun is not null && RoundParameterBindings.ContainsKey(fixture.Slug))
+        {
+            throw new NotSupportedException(
+                $"Fixture '{fixture.Slug}' carries parity round-scoped parameter binds, which are GS-oracle knowledge "
+                + "for its GS-mirrored definition. A parallel-run pair must author its own parameter mapping "
+                + "(seed-definition-parallel-run.md anti-goal: seed classes are never tuned to GS).");
+        }
+
         if (RoundParameterBindings.GetValueOrDefault(fixture.Slug) is { } binds)
         {
             foreach (var (parameter, roundNo, value) in binds)
@@ -417,6 +598,16 @@ public sealed class ReplayDriver(HttpClient client)
         // The flight + capture half both passes share (reflight-aggregate-
         // destination.md WI-4): every opened entry — regular, flight-less or
         // make-up — is flown and captured identically (CaptureInputs unchanged).
+        //
+        // WI-1 item 3 — the capture GATE (which metrics a decoded row may be
+        // captured under) reads the PUBLISHED definition: the seed class in
+        // parallel-run mode, the fixture's own definition on the parity path.
+        // The harness still captures only what the fixture data records — the
+        // seed's never-recorded flags resolve through their declared
+        // whenNotRecorded values in the engine, never through harness-fabricated
+        // measurements.
+        var captureGateDefinition = parallelRun?.SeedDefinition ?? fixture.Definition;
+
         async Task FlyAndCaptureAsync(EntryId entryId, ScoresRow row)
         {
             // Placeholder rows stay flight-less ⇒ NoResult ⇒ cell 0 (D4).
@@ -425,7 +616,7 @@ public sealed class ReplayDriver(HttpClient client)
             // for F3K's packed columns (WI-4); captures carry the
             // flight sequence they belong to. Deliberate zeros inside a
             // flown slot — see CaptureInputs (WI-3 widening).
-            var captures = CaptureInputs(fixture, row);
+            var captures = CaptureInputs(fixture, captureGateDefinition, row);
 
             if (captures is not null)
             {
@@ -520,6 +711,33 @@ public sealed class ReplayDriver(HttpClient client)
         // infraction type and PerOccurrence accrual multiplies the points, so
         // pilot 56's two rows become one 200 deduction. Recorded before
         // finalise, though RecordPenalty imposes no finalisation gate.
+        //
+        // WI-1 item 4 — under a seed class, GS penalty rows need a
+        // declared-infraction mapping authored FOR THAT PAIR (the seed declares
+        // its own infractions; the harness's GS-mapped 'competitionPenalty' is
+        // not one of them unless the pair's mapping says so). The engine's
+        // RecordPenalty already refuses an undeclared infraction — this guard
+        // surfaces the same fact one step earlier as what it is: a MAPPING GAP
+        // that fails the scenario, never a silent skip and never a harness
+        // workaround. Moot for the ales pair (no Scores.Penalty rows); the
+        // pair that needs a mapping authors it beside this check.
+        if (parallelRun is not null)
+        {
+            var declaredInfractions = parallelRun.SeedDefinition.Penalties
+                .Select(p => p.InfractionType)
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (fixture.ScoresRaw.Rows.Any(r => r.Penalty > 0)
+                && !declaredInfractions.Contains(CompetitionPenaltyInfractionType))
+            {
+                throw new NotSupportedException(
+                    $"Fixture '{fixture.Slug}' under seed class '{parallelRun.SeedDefinition.Name}': Scores.Penalty rows exist "
+                    + $"but the harness's GS penalty infraction '{CompetitionPenaltyInfractionType}' is not declared by the seed "
+                    + "class — a per-pair mapping gap (seed-definition-parallel-run.md WI-1 item 4). Author the mapping; "
+                    + $"declared infractions: {(declaredInfractions.Count == 0 ? "<none>" : string.Join(", ", declaredInfractions))}.");
+            }
+        }
+
         foreach (var row in fixture.ScoresRaw.Rows.Where(r => r.Penalty > 0))
         {
             await PostAsync<CompetitionId>(
@@ -539,7 +757,9 @@ public sealed class ReplayDriver(HttpClient client)
             GroupIdByRoundAndGroup: groupIdByRoundAndGroup,
             EntryIdBySlot: entryIdBySlot,
             CompetitorByPilotNo: competitorByPilotNo,
-            CommandsIssued: _commandsIssued);
+            CommandsIssued: _commandsIssued,
+            DefinitionContentHash: contentHash,
+            ParallelRunBindings: parallelRunBindings);
     }
 
     // ------------------------------------------------- WI-9 decision-8 mapping
@@ -744,13 +964,17 @@ public sealed class ReplayDriver(HttpClient client)
             new(metric, 0m, flight, value);
     }
 
-    /// <summary>The (metric, value, flight) triples this row contributes, or null.</summary>
-    private static List<SlotCapture>? CaptureInputs(GliderscoreFixture fixture, ScoresRow row) =>
+    /// <summary>The (metric, value, flight) triples this row contributes, or null.
+    /// <paramref name="captureGateDefinition"/> is the PUBLISHED definition whose
+    /// declared metrics gate the captures (WI-1 item 3: the seed class in
+    /// parallel-run mode, the fixture's own definition on the parity path).</summary>
+    private static List<SlotCapture>? CaptureInputs(
+        GliderscoreFixture fixture, ClassDefinition captureGateDefinition, ScoresRow row) =>
         fixture.Competition.Identity.GsCompClass == "F3K"
             ? CaptureF3KInputs(fixture, row)
             : IsF5KFamily(fixture)
                 ? CaptureF5KInputs(fixture, row)
-                : CaptureDurationInputs(fixture, row);
+                : CaptureDurationInputs(fixture, captureGateDefinition, row);
 
     /// <summary>
     /// The F5K family — GsCompClass "F5K" plus the server-path CompType spellings
@@ -783,8 +1007,18 @@ public sealed class ReplayDriver(HttpClient client)
     ///                          pre-normalisation — expressed in the class
     ///                          definition as a −1 rate term over this metric.
     /// Laps is ignored (trap 6); Time2* would mean two timekeepers (trap 5).
+    ///
+    /// WI-1 item 3 — the declared-metrics gate reads the PUBLISHED definition
+    /// (the seed class in parallel-run mode): a metric the seed does not
+    /// declare is not captured, even when the fixture's own definition would
+    /// have (the engine refuses a capture of an undeclared metric); a metric
+    /// the seed declares that the fixture data never records is NOT captured
+    /// either — its absence resolves through the seed's declared
+    /// whenNotRecorded values at scoring time, never through a
+    /// harness-fabricated measurement.
     /// </summary>
-    private static List<SlotCapture>? CaptureDurationInputs(GliderscoreFixture fixture, ScoresRow row)
+    private static List<SlotCapture>? CaptureDurationInputs(
+        GliderscoreFixture fixture, ClassDefinition captureGateDefinition, ScoresRow row)
     {
         var dur = DurFamilyRow.Of(fixture.Competition)
             ?? throw new InvalidOperationException(
@@ -802,10 +1036,10 @@ public sealed class ReplayDriver(HttpClient client)
             return null;
         }
 
-        // Only metrics the fixture's own definition declares may be captured —
+        // Only metrics the PUBLISHED definition declares may be captured —
         // the earlier fixtures declare no deduction column, so their flown
         // slots keep the two-capture shape.
-        var declared = fixture.Definition.Phases
+        var declared = captureGateDefinition.Phases
             .SelectMany(p => p.Tasks)
             .SelectMany(t => t.Metrics)
             .Select(m => m.Name)

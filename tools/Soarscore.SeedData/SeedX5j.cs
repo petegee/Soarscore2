@@ -21,15 +21,24 @@ public static class SeedX5j
         Name = "Glide Duration",
         Metrics =
         [
+            // glideTime and landingDistance are the demanded observations
+            // (NZ.3.14.2 c-d, NZ.2.4.5) — no assumption. motorRestartRunTime's
+            // content exists ONLY when the NZ.3.14.2 e restart exception occurred
+            // (no restart ⇒ no run times to record), so its absence resolves to 0;
+            // the other flags are that clause's and NZ.2.4.6's recorded EXCEPTIONS.
             M.Number("glideTime", "s", RoundingMode.Truncate, 1),              // NZ.3.14.2 c/d — glide only, motor run excluded;
-                                                                               //   no precision stated (F12 residual): Truncate/1 s
-                                                                               //   is CHOSEN here, not cited
-            M.Number("motorRestartRunTime", "s", RoundingMode.Truncate, 1),    // NZ.3.14.2 e "subsequent run times"; zero when
-                                                                               //   there is no restart
-            M.Flag("motorRestarted"),                                          // NZ.3.14.2 e
-            M.Flag("airborneAtRoundEnd"),                                      // NZ.3.14.2 (second d) — the per-flight working
-                                                                               //   time IS the round here; name matches Class P's idiom
-            M.Flag("landedWithin75m"),                                         // NZ.2.4.6
+                                                                                //   no precision stated (F12 residual): Truncate/1 s
+                                                                                //   is CHOSEN here, not cited
+            M.Number("motorRestartRunTime", "s", RoundingMode.Truncate, 1,
+                whenNotRecorded: 0),                                           // NZ.3.14.2 e "subsequent run times" — only a restart creates
+                                                                                //   any; absence ⇒ no restart ⇒ nothing to deduct
+            M.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.14.2 e — the restart (and its landing-points forfeit) is
+                                                                                //   what is recorded; absence ⇒ no restart
+            M.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.14.2 (second d) — the still-airborne-at-round-end ruling
+                                                                                //   (watch stops, no landing points) is what is recorded;
+                                                                                //   absence ⇒ landed within the round. Name matches Class P's idiom
+            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
+                                                                                //   absence ⇒ within
             M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5 "rounded to the next full metre"
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round

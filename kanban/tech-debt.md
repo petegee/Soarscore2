@@ -213,3 +213,20 @@ See CLAUDE.md house-keeping rule 5.
   Nothing actionable unless a version-sensitive behaviour surfaces; recorded in
   `tests/GliderscoreFixtures/f5k-ni-round-2/provenance.json`. Found 2026-09-04
   during `kanban/in-progress/f5k-fixture-from-server-db.md` WI-2.
+- [ ] `TaskResult.AwaitingCapture`'s doc comment overstates `default`. Found
+  2026-09-06 during `kanban/completed/metric-absence-semantics.md` WI-5. The
+  comment claims `default` ≡ `IsEmpty == true`; on this runtime `IsEmpty`
+  throws NRE on a default `ImmutableArray` — only `IsDefaultOrEmpty` is safe.
+  Every current construction site populates or defaults consistently and
+  `ScoreTaskRound.cs` already guards with `IsDefaultOrEmpty`, so nothing breaks;
+  fix the comment (and sweep any future consumer for the same trap) whenever
+  `src` next changes around it.
+- [ ] Parallel-run declared-infraction penalty mapping is unimplemented —
+  unknown infraction under a seed class refuses loudly. WI-1.4 of
+  `kanban/completed/seed-definition-parallel-run.md`: `RecordPenalty`
+  validates infraction types against the adopted rules, so a GS penalty row
+  under a seed class needs a declared-infraction mapping that does not exist
+  yet. Deliberately deferred there: moot for the landed ales pair (no
+  `Scores.Penalty` rows), the loud refusal is correct behaviour (mapping gap
+  = fail the scenario), and the mapping belongs to the first pair that needs
+  it — justified against the rulebook, never against GS.

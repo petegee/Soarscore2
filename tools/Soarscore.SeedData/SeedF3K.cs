@@ -15,11 +15,15 @@ public static class SeedF3K
 {
     // ---- metricSet f3kFlight -----------------------------------------------
 
+    // flightTime is the demanded observation (F3K.7) — no assumption. The two
+    // flags are the rulebook's recorded EXCEPTIONS (the zero rulings of F3K.9.3
+    // and F3K.7), so absence resolves to compliance.
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
         M.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7 recorded to 0.1 s, truncated
-        M.Flag("landedWithinWindow"),                              // F3K.9.3 the 30 s landing window
-        M.Flag("launchedInWorkingTime"),                           // F3K.7 launched before the working time = zero score
+        M.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 the 30 s landing window — "lands later ⇒ that flight will
+                                                                    //   score zero" is what is recorded; absence ⇒ within the window
+        M.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 — the early-launch zero is what is recorded; absence ⇒ in time
     ];
 
     // ---- A, the task every other one derives from --------------------------
@@ -64,7 +68,8 @@ public static class SeedF3K
     {
         Code = "C",
         Name = "All up, last down",                                            // F3K.11.3
-        Metrics = [.. FlightMetrics, M.Flag("launchedOnSignal")],              // F3K.11.3 within 3 s of the acoustic signal
+        Metrics = [.. FlightMetrics, M.Flag("launchedOnSignal", whenNotRecorded: true)],  // F3K.11.3 — the early/>3 s-late launch zero is what is
+                                                                                            //   recorded; absence ⇒ launched on the signal
         Flights = new AllFlights(),
         Timing = new()
         {

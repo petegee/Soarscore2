@@ -45,11 +45,35 @@ public static class FlightSelector
         if (interpretedFlights.IsDefaultOrEmpty)
             return new TaskResult(TaskResultState.NoResult, null, 0m);
 
+        // 1b. Pending flights are not selectable
+        //     (kanban/in-progress/metric-absence-semantics.md WI-1): selection,
+        //     validWhen, targets and caps all operate on complete flights only
+        //     — score what it can. If nothing complete remains, the flight-less
+        //     precedent NoResult carries the diagnostics so reporting
+        //     distinguishes "awaiting capture" from a genuine no-result.
+        var pending = interpretedFlights
+            .Where(f => f.Result.State == FlightResultState.Pending)
+            .ToImmutableArray();
+
+        var awaiting = pending
+            .Select(f => f.Result.Awaited)
+            .OfType<PendingFlightDiagnostic>()
+            .ToImmutableArray();
+
+        var complete = pending.IsEmpty
+            ? interpretedFlights
+            : interpretedFlights
+                .Where(f => f.Result.State != FlightResultState.Pending)
+                .ToImmutableArray();
+
+        if (complete.IsDefaultOrEmpty)
+            return new TaskResult(TaskResultState.NoResult, null, 0m, AwaitingCapture: awaiting);
+
         // 2. Select flights based on FlightSelection kind.
-        var selected = SelectFlights(interpretedFlights, task.Flights);
+        var selected = SelectFlights(complete, task.Flights);
 
         if (selected.IsEmpty)
-            return new TaskResult(TaskResultState.NoResult, null, 0m);
+            return new TaskResult(TaskResultState.NoResult, null, 0m, AwaitingCapture: awaiting);
 
         // 3. If targets are assigned, clamp and re-score (before validWhen check).
         var withTargets = ApplyTargets(selected, task.Flights, task.Score);
@@ -82,12 +106,14 @@ public static class FlightSelector
         if (task.RawScore is not null)
             rawScore = RoundingSupport.ApplyRounding(rawScore, task.RawScore);
 
-        // 8. Return.
+        // 8. Return — the awaited-capture diagnostics ride along so read
+        //    models surface pending flights without re-deriving them.
         var targetAssignments = BuildTargetAssignments(withTargets, task.Flights);
         return new TaskResult(
             State: TaskResultState.Valid,
             Selection: new SelectedFlights(withTargets, targetAssignments),
-            RawScore: rawScore
+            RawScore: rawScore,
+            AwaitingCapture: awaiting
         );
     }
 

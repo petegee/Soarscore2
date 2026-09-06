@@ -36,9 +36,15 @@ public static class SeedNzMAles200
             // M adds landing points after normalising. Deliberately NOT two flags:
             // the CD's opinion is not independently observable, and a second flag
             // would invite the damage to be recorded on its own.
-            M.Flag("damagedAndNotSafelyFlyable"),                              // NZ.3.12.2 d
-            M.Flag("touchedByCompetitor"),                                     // NZ.3.12.2 e "touches EITHER THE PILOT OR HIS HELPER"
-            M.Flag("landedWithin75m"),                                         // NZ.2.4.6
+            // The three flags are the NZMAA observation protocol's recorded
+            // EXCEPTIONS: NZ.2.4.6 records a cancelled flight when the model does
+            // NOT come to rest within 75 m, NZ.3.12.2 d/e record "no landing
+            // points" rulings when the model is damaged-and-not-flyable or
+            // touched. A compliant flight is recorded as its measurements only,
+            // so each flag's absence resolves to compliance.
+            M.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — recorded exception; absence ⇒ no such damage
+            M.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches EITHER THE PILOT OR HIS HELPER"; absence ⇒ no touch
+            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded; absence ⇒ within
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
         Timing = new()

@@ -1,0 +1,89 @@
+{
+  "pair": {
+    "fixture": "ales-sample-comp",
+    "seed": "80-nz-m-ales200"
+  },
+  "seedClass": {
+    "name": "ALES 200 (Altitude Limited Electric Soaring)",
+    "version": "NZMAA Section 5 Soaring, March 2024"
+  },
+  "provenance": {
+    "parameterBindings": [
+      {
+        "parameter": "targetTime",
+        "value": 600,
+        "derivation": "the comp's actual announced target time — GS's durTargetTime 600 (competition.json familyRows.Dur), the value the club actually ran. Equals the seed's declared default, but is bound explicitly (BeforeFlying, competition-wide) per the story: the binding records the club's announced value, never leans on the seed author's default."
+      },
+      {
+        "parameter": "groupSize",
+        "value": 10,
+        "derivation": "the largest ACTUAL group size in the realised draw (the fixture draws one group of ten per round, R1-R3/G1). The seed declares no default — the value must be bound before /prescribe-draw (CompetitionSetup parameters freeze once the draw is accepted)."
+      },
+      {
+        "parameter": "minRounds",
+        "value": 3,
+        "derivation": "the rounds actually flown (the fixture's three distinct RoundNos), matching the phase validity the seed resolves at finalisation. No default — bound before /prescribe-draw."
+      },
+      {
+        "parameter": "minNewGroup",
+        "value": 1,
+        "derivation": "the fixture has NO re-flights (every scores-raw row carries OriginalRoundNo == RoundNo and ReFlightNo == 0), so no data determines the value and it is never exercised. NZ.3.12.5 l states no minimum for a re-flight group (entitlement only: 'hindered or aborted by an unexpected event not within his control'), so 1 is the least-constraining rulebook-consistent choice — the engine's own members-empty refusal is the real floor. Not an assertion about this club's practice."
+      }
+    ],
+    "metricMappings": [
+      {
+        "metric": "landedWithin75m",
+        "resolved": true,
+        "mechanism": "seed-declared whenNotRecorded (Flag true), resolved by the engine (FlightMetricResolution tier 1, metric-absence-semantics.md) — the harness emits NO assumed values; the capture map stays exactly the parity replay's and records only what the fixture data carries.",
+        "justification": "P1 (assumed-clean unless recorded to the contrary): the club records exceptions, not compliance — a clean flight is recorded as just time and distance. NZ.2.4.6 cancels the flight and scores zero when the nose does not come to rest within 75 m of the centre of the designated landing spot; an unrecorded cancellation is the negative recording of the exception. Corroborated inside the foil's own data: every scores-raw row carries LandingOver75m false (no contrary record). The seed declares the flag as the flightValidWhen gate, matching NZ.2.4.6's shape — it zeroes the flight, not the bonus."
+      },
+      {
+        "metric": "damagedAndNotSafelyFlyable",
+        "resolved": false,
+        "mechanism": "seed-declared whenNotRecorded (Flag false), resolved by the engine — no harness-emitted values.",
+        "justification": "P1: NZ.3.12.2 d removes the landing points when the model sustains significant damage during the landing and, in the CD's opinion, is not safely flyable — an exception a timer/helper records. No GS column records it on this fixture, so the benign value (no such damage; the landing points stand per NZ.3.12.2 b) is the negative recording. The seed declares the flag inside the conditional gating its landing lookup (scoreNormalised)."
+      },
+      {
+        "metric": "touchedByCompetitor",
+        "resolved": false,
+        "mechanism": "seed-declared whenNotRecorded (Flag false), resolved by the engine — no harness-emitted values.",
+        "justification": "P1: NZ.3.12.2 e removes the landing points when the model touches the pilot or helper during the landing — an exception. No contrary record in the fixture data, so the benign value (no contact) stands."
+      }
+    ],
+    "notes": [
+      "UNWITNESSED triaged candidate — landing-distance precision: the seed declares Ceiling 1 m per NZ.2.4.5 ('the measured distance is rounded to the next full metre') where GS truncates. Every recorded landing here is a whole metre (3.0/4.0/5.0), so the difference cannot appear on this data. A provenance note, NOT a ledger entry: a triaged difference that fails to appear FAILS the scenario (WI-2.3).",
+      "UNWITNESSED triaged candidate — normalise rounding: GS's proven grid rounds normalised cells HalfUp to 1 dp while the seed leaves the rulebook's values exact (the rule states no normalised-score rounding precision). Every normalised cell on this fixture is a whole number (440/835/1030 and zeros), so no fractional cell witnesses the difference. A provenance note, not a ledger entry.",
+      "UNWITNESSED triaged candidate — EqualPlaces tie-break: the seed declares an equalPlaces tie-break where the NZ rulebook states none (docs/rules/nz/00-nz-general-rules.md §6), and GS's ladder carries its own RawScore secondary key. The seven zero-score pilots tie identically on both sides ('=4' with EqualPlaces), so no tie-break decision was exercised. A provenance note, not a ledger entry.",
+      "UNWITNESSED triaged candidate — ZeroRound penalties: the seed declares launchOutsideBuzzerWindow (NZ.3.12.1 h) and landedOutsideFieldBounds (NZ.3.12.4 a) as ZeroRound infractions. The fixture records no Penalty rows and no such violations, so the penalty path never runs. A provenance note, not a ledger entry."
+    ]
+  },
+  "triagedDifferences": [
+    {
+      "triageKind": 1,
+      "grain": "raw",
+      "round": 1,
+      "group": 1,
+      "pilotNo": 13,
+      "difference": "Raw score-cell composition: GS's stored RawScore folds the landing points into the pre-normalisation raw (flight 120 s = 120 pts + 3 m landing = 40 pts, stored 160), while the NZ rulebook composition the seed-run produces keeps the pre-normalisation raw at flight points only (120) and adds the landing points after normalisation (final cell 440 = 400 + 40, identical on both sides). Witnessed: raw cell 1/1/1/0/13 is 160 in GS's oracle, 120 in the seed-run.",
+      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "raw",
+      "round": 1,
+      "group": 1,
+      "pilotNo": 48,
+      "difference": "Raw score-cell composition: GS's stored RawScore folds the landing points into the pre-normalisation raw (flight 240 s = 240 pts + 4 m landing = 35 pts, stored 275), while the NZ rulebook composition the seed-run produces keeps the pre-normalisation raw at flight points only (240) and adds the landing points after normalisation (final cell 835 = 800 + 35, identical on both sides). Witnessed: raw cell 1/1/1/0/48 is 275 in GS's oracle, 240 in the seed-run.",
+      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "raw",
+      "round": 1,
+      "group": 1,
+      "pilotNo": 70,
+      "difference": "Raw score-cell composition: GS's stored RawScore folds the landing points into the pre-normalisation raw (flight 300 s = 300 pts + 5 m landing = 30 pts, stored 330), while the NZ rulebook composition the seed-run produces keeps the pre-normalisation raw at flight points only (300) and adds the landing points after normalisation (final cell 1030 = 1000 + 30, identical on both sides). Witnessed: raw cell 1/1/1/0/70 is 330 in GS's oracle, 300 in the seed-run.",
+      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides."
+    }
+  ]
+}

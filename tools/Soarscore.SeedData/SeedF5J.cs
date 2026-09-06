@@ -16,15 +16,27 @@ public static class SeedF5J
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
+        // flightTime, startHeight and landingDistance are demanded observations
+        // (5.5.11.12 b/d/i) — no assumption; a flight without them is a genuine
+        // await. startHeightRecorded deliberately assumes NOTHING: 5.5.11.7 e
+        // CANCELS a flight whose AMRT records no Start Height data, so an
+        // unrecorded height is not a valid flight and its absence must pend the
+        // flight until the height arrives, never fabricate validity. overflySeconds
+        // and touchedByCompetitor are the rulebook's recorded EXCEPTIONS, so their
+        // absence is informative and resolves to compliance.
         M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.11.12 b truncated to the nearest second
         M.Number("startHeight", "m", RoundingMode.Truncate, 1),                // 5.5.11.12 d truncated to the nearest metre
         M.Flag("startHeightRecorded"),                                         // 5.5.11.7 e "the AMRT does not record any Start Height data"
-                                                                               //   (5.5.11.12 d is the truncation rule, not the zeroing one)
+                                                                                //   (5.5.11.12 d is the truncation rule, not the zeroing one)
+                                                                                //   NO whenNotRecorded: the recorded height is demanded — an
+                                                                                //   uncaptured height pends the flight (WI-4)
         M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 i — the rules state no capture precision, and a
-                                                                               //   MetricDefinition precision is not coverable by a Parameter
-                                                                               //   (F12 residual). Chosen, not cited.
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1),             // 5.5.11.12 g, k — seconds flown past the end of working time
-        M.Flag("touchedByCompetitor"),                                         // 5.5.11.12 j
+                                                                                //   MetricDefinition precision is not coverable by a Parameter
+                                                                                //   (F12 residual). Chosen, not cited.
+        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
+            whenNotRecorded: 0),                                               // 5.5.11.12 g, k — seconds past working time are what the
+                                                                                //   timekeeper records; a flight landing within time has none
+        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j — the touch forfeits the bonus; absence ⇒ no touch
     ];
 
     // The two scoring tables of 5.5.11.12, declared once and used by both phases

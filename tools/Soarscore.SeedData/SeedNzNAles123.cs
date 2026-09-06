@@ -26,9 +26,14 @@ public static class SeedNzNAles123
         [
             M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.13.1 f; no precision stated (F12 residual)
             M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.3.13.1 e; no capture precision stated
-            M.Flag("motorRestarted"),                                          // NZ.3.13.1 g
-            M.Flag("airborneAtRoundEnd"),                                      // NZ.3.13.1 j
-            M.Flag("landedWithin75m"),                                         // NZ.2.4.6
+            // The three flags are the NZMAA observation protocol's recorded
+            // EXCEPTIONS; absence resolves to compliance.
+            M.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.13.1 g — the restart (watch stops, landing points lost) is
+                                                                                //   what is recorded; absence ⇒ no restart
+            M.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.13.1 j — the still-airborne-at-round-end ruling is what is
+                                                                                //   recorded; absence ⇒ landed within the round
+            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
+                                                                                //   absence ⇒ within
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
         Timing = new()

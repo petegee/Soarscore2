@@ -2,7 +2,7 @@
 //
 // Property tests for RecordingCore (internal, Application/Queries/Scoring/
 // TaskRoundRecording.cs), driven directly over hand-built aggregate state —
-// no store, no clock. Two invariants, named up front per CLAUDE.md:
+// no store, no clock. Three invariants, named up front per CLAUDE.md:
 //
 //   P1 — buckets partition expected. For any shape, Expected is exactly the
 //        drawn-and-not-withdrawn field, and NotRecorded ⊎
@@ -15,6 +15,13 @@
 //        expected competitors only, and a flight with every declared metric
 //        captured never appears.
 //
+//   P3 — the awaited distinction (metric-absence-semantics.md WI-3).
+//        AwaitingCapture is exactly the missing metrics the task references
+//        and declares no assumed value for — absence on an assumed metric
+//        resolves to the assumption, absence on an unreferenced one scoring
+//        never reads — while MissingMetrics stays the pure recorded fact, a
+//        superset of AwaitingCapture.
+//
 // This is what no example suite can cover: withdrawal-after-entry,
 // annulled-only entries and the reflight double-entry interact
 // combinatorially. The generator includes them all, plus noise entries at
@@ -23,7 +30,7 @@
 // than edge-case.
 //
 // Non-vacuity: each interesting shape class is counted across the run and
-// asserted to have occurred at least once; weakening either oracle makes this
+// asserted to have occurred at least once; weakening any oracle makes this
 // test fail (checked during this thread).
 
 using System.Collections.Immutable;
@@ -60,7 +67,16 @@ public class TaskRoundRecordingPropertyTests
 
     private sealed record LiveRow(int Index, List<PlacedEntry> Live);
 
-    private sealed record Shape(ImmutableArray<string> Metrics, ImmutableArray<bool> Withdrawn, ImmutableArray<GenEntry> Entries);
+    /// <summary>Referenced and Assumed are masks over Metrics: which names the
+    /// task's predicates/terms read and which declare a whenNotRecorded
+    /// assumed value — the two facts AwaitingCapture's distinction is made
+    /// from (metric-absence-semantics.md WI-3).</summary>
+    private sealed record Shape(
+        ImmutableArray<string> Metrics,
+        ImmutableArray<bool> Referenced,
+        ImmutableArray<bool> Assumed,
+        ImmutableArray<bool> Withdrawn,
+        ImmutableArray<GenEntry> Entries);
 
     private sealed record World(
         Competition Competition,
@@ -97,10 +113,14 @@ public class TaskRoundRecordingPropertyTests
 
     private static readonly Gen<Shape> Shapes =
         from metricCount in Gen.Int[2, 4]
+        from referenced in Gen.Bool.Array[0, metricCount]
+        from assumed in Gen.Bool.Array[0, metricCount]
         from withdrawn in Gen.Bool.Array[1, 8]
         from entries in GenEntryFor(metricCount).Array[0, 12]
         select new Shape(
             [.. Enumerable.Range(0, metricCount).Select(i => $"m{i}")],
+            PaddedMask(referenced, metricCount),
+            PaddedMask(assumed, metricCount),
             [.. withdrawn],
             [.. entries]);
 
@@ -109,6 +129,8 @@ public class TaskRoundRecordingPropertyTests
     {
         var sawUnflownEntry = false;
         var sawMetricGap = false;
+        var sawAwaitedGap = false;
+        var sawAssumedGap = false;
         var sawWithdrawnWithEntries = false;
         var sawSoleAnnulledEntry = false;
         var sawReflightDoubleEntry = false;
@@ -120,6 +142,21 @@ public class TaskRoundRecordingPropertyTests
             var metricNames = shape.Metrics;
             var world = BuildWorld(shape, fieldSize);
             var entriesById = world.EntriesById;
+
+            // The declared metrics as the class would carry them: an assumed
+            // value on the generated assumed subset, none elsewhere — and the
+            // referenced set exactly the handler passes from the Domain's walk.
+            var declaredMetrics = metricNames
+                .Select((name, i) => new MetricDefinition
+                {
+                    Name = name,
+                    Kind = MeasuredKind.Number,
+                    WhenNotRecorded = shape.Assumed[i] ? MeasuredValue.Of(true) : null,
+                })
+                .ToImmutableArray();
+            var referencedMetrics = metricNames
+                .Where((_, i) => shape.Referenced[i])
+                .ToImmutableHashSet(StringComparer.Ordinal);
 
             // ---- oracle: the bucketing rules restated independently ----------
             var expectedIndexes = Enumerable.Range(0, fieldSize).Where(i => !shape.Withdrawn[i]).ToList();
@@ -174,8 +211,10 @@ public class TaskRoundRecordingPropertyTests
                 .Where(i => recordedOracle.Contains(i) && !flownOracle.Contains(i))
                 .ToList();
 
-            // The gap oracle: declared-minus-captured per flight of every live entry.
-            var expectedGaps = new Dictionary<(EntryId, int), string[]>();
+            // The gap oracle: declared-minus-captured per flight of every live
+            // entry, plus the awaited subset — referenced by the task and
+            // declared without an assumption (P3).
+            var expectedGaps = new Dictionary<(EntryId, int), (string[] Missing, string[] Awaiting)>();
             foreach (var row in liveRows.Where(x => !shape.Withdrawn[x.Index]))
             {
                 foreach (var placed in row.Live)
@@ -188,15 +227,25 @@ public class TaskRoundRecordingPropertyTests
                             .ToArray();
                         if (missing.Length > 0)
                         {
-                            expectedGaps[(placed.Entry.Id, flight.Sequence)] = missing;
+                            var awaiting = missing
+                                .Where(name => shape.Referenced[metricNames.IndexOf(name)]
+                                            && !shape.Assumed[metricNames.IndexOf(name)])
+                                .ToArray();
+                            expectedGaps[(placed.Entry.Id, flight.Sequence)] = (missing, awaiting);
+                            sawMetricGap = true;
+
+                            if (awaiting.Length > 0)
+                            {
+                                sawAwaitedGap = true;
+                            }
+
+                            if (missing.Any(name => shape.Assumed[metricNames.IndexOf(name)]))
+                            {
+                                sawAssumedGap = true;
+                            }
                         }
                     }
                 }
-            }
-
-            if (expectedGaps.Count > 0)
-            {
-                sawMetricGap = true;
             }
 
             foreach (var placed in world.Entries)
@@ -210,7 +259,7 @@ public class TaskRoundRecordingPropertyTests
             // ---- act ---------------------------------------------------------
             var view = RecordingCore.ComputeGroupViews(
                 world.Competition, PhaseOrdinal, RoundOrdinal, TaskRoundOrdinal,
-                [world.Group], entriesById, metricNames);
+                [world.Group], entriesById, declaredMetrics, referencedMetrics);
 
             // ---- P1: buckets partition expected ------------------------------
             view.Should().ContainSingle();
@@ -230,27 +279,30 @@ public class TaskRoundRecordingPropertyTests
             g.NotRecordedCompetitorRefs.Should().OnlyHaveUniqueItems();
             g.RecordedWithoutFlightCompetitorRefs.Should().OnlyHaveUniqueItems();
 
-            // ---- P2: gap soundness -------------------------------------------
+            // ---- P2/P3: gap soundness and the awaited distinction ------------
             var expectedIds = g.ExpectedCompetitorRefs.ToHashSet();
-            var actualGaps = new Dictionary<(EntryId, int), ImmutableArray<string>>();
+            var actualGaps = new Dictionary<(EntryId, int), FlightGapsView>();
             foreach (var entryGaps in g.MetricGaps)
             {
                 expectedIds.Should().Contain(entryGaps.CompetitorRef);
                 foreach (var flightGaps in entryGaps.Flights)
                 {
-                    actualGaps[(entryGaps.EntryRef, flightGaps.Sequence)] = flightGaps.MissingMetrics;
+                    actualGaps[(entryGaps.EntryRef, flightGaps.Sequence)] = flightGaps;
                 }
             }
 
             actualGaps.Should().HaveSameCount(expectedGaps);
-            foreach (var (key, missing) in expectedGaps)
+            foreach (var (key, expected) in expectedGaps)
             {
-                actualGaps[key].Should().Equal(missing); // exact set AND declared order
+                actualGaps[key].MissingMetrics.Should().Equal(expected.Missing); // exact set AND declared order
+                actualGaps[key].AwaitingCapture.Should().Equal(expected.Awaiting);
             }
         });
 
         sawUnflownEntry.Should().BeTrue("the generator should produce recorded-but-unflown entries");
         sawMetricGap.Should().BeTrue("the generator should produce flights with missing metrics");
+        sawAwaitedGap.Should().BeTrue("the generator should produce flights missing referenced unassumed metrics");
+        sawAssumedGap.Should().BeTrue("the generator should produce flights missing assumed metrics");
         sawWithdrawnWithEntries.Should().BeTrue("the generator should produce withdrawals after entries were opened");
         sawSoleAnnulledEntry.Should().BeTrue("the generator should produce competitors whose only entry is annulled");
         sawReflightDoubleEntry.Should().BeTrue("the generator should produce competitors holding two live entries");

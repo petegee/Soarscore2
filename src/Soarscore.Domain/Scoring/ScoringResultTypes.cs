@@ -35,12 +35,40 @@ public sealed record TermContribution(
     decimal Points            // the points this term contributed
 );
 
-public enum FlightResultState { Valid, NoResult }
+/// <summary>
+/// Pending is kanban/in-progress/metric-absence-semantics.md WI-1 (additive —
+/// NFR-2): the flight awaits a declared metric no assumption covers. It is
+/// arithmetically identical to NoResult (contributes nothing — FlightSelector
+/// never selects it), but carries a distinct identity so reporting and
+/// data-quality views can say "awaiting capture" rather than mistake it for a
+/// genuine no-result.
+/// </summary>
+public enum FlightResultState { Valid, NoResult, Pending }
 
-/// <summary>One flight's effective measurements, with amendments resolved.</summary>
+/// <summary>
+/// The awaited-metric diagnostic for one pending flight — names the flight
+/// sequence and the declared metric whose capture the result is waiting for
+/// (kanban/in-progress/metric-absence-semantics.md WI-1). Carried on the
+/// FlightResult via <see cref="FlightResult.Awaited"/> and aggregated onto the
+/// TaskResult via <see cref="TaskResult.AwaitingCapture"/>.
+/// </summary>
+public sealed record PendingFlightDiagnostic(
+    int FlightSequence,
+    string AwaitedMetric
+);
+
+/// <summary>
+/// One flight's effective measurements, with amendments resolved. A Pending
+/// flight additionally carries <see cref="Awaited"/>.
+/// </summary>
 public sealed record FlightResult(
     FlightResultState State,
-    ResolvedMeasurements Measurements
+    ResolvedMeasurements Measurements,
+    /// <summary>
+    /// Set only when State is Pending: the metric this flight awaits
+    /// (kanban/in-progress/metric-absence-semantics.md WI-1).
+    /// </summary>
+    PendingFlightDiagnostic? Awaited = null
 );
 
 /// <summary>
@@ -89,7 +117,19 @@ public sealed record TaskResult(
     /// (kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md#wi-2,
     /// D-B2). RankingEngine excludes flagged competitors from placings.
     /// </summary>
-    bool Disqualified = false
+    bool Disqualified = false,
+    /// <summary>
+    /// The pending flights' awaited-metric diagnostics
+    /// (kanban/in-progress/metric-absence-semantics.md WI-1): carried on the
+    /// task result so read models can surface "awaiting capture" without
+    /// re-deriving it. NoResult and Valid TaskResults may both carry it — an
+    /// entry whose every flight is pending yields NoResult arithmetically but
+    /// keeps the diagnostics, so reporting distinguishes "awaiting capture"
+    /// from a genuine no-result. default IS the empty array for a
+    /// ImmutableArray (IsEmpty is true) — `[]` is not a compile-time
+    /// parameter default.
+    /// </summary>
+    ImmutableArray<PendingFlightDiagnostic> AwaitingCapture = default
 );
 
 // --------------------------------------------------------------- normalisation

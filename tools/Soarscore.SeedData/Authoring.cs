@@ -99,23 +99,32 @@ public sealed class Rows
 
 // --------------------------------------------------------------------- metrics
 
-/// <summary>One <c>metric</c> line of notation §5, one call.</summary>
+/// <summary>
+/// One <c>metric</c> line of notation §5, one call. The optional
+/// <c>whenNotRecorded</c> argument is the notation §5.1's
+/// <c>whenNotRecorded &lt;literal&gt;</c> attribute — the assumption declared
+/// beside the metric and always kind-matched by construction: a Number metric
+/// can only assume a decimal, a Flag metric a bool.
+/// </summary>
 public static class M
 {
     public static MetricDefinition Number(
-        string name, string unit, RoundingMode mode, decimal precision, bool declared = false) => new()
+        string name, string unit, RoundingMode mode, decimal precision, bool declared = false,
+        decimal? whenNotRecorded = null) => new()
     {
         Name = name,
         Kind = MeasuredKind.Number,
         Unit = unit,
         Precision = new Rounding(mode, precision),
         DeclaredBeforeLaunch = declared,
+        WhenNotRecorded = whenNotRecorded is null ? null : MeasuredValue.Of(whenNotRecorded.Value),
     };
 
-    public static MetricDefinition Flag(string name) => new()
+    public static MetricDefinition Flag(string name, bool? whenNotRecorded = null) => new()
     {
         Name = name,
         Kind = MeasuredKind.Flag,
+        WhenNotRecorded = whenNotRecorded is null ? null : MeasuredValue.Of(whenNotRecorded.Value),
     };
 }
 

@@ -38,6 +38,12 @@ public static class SeedF5kNdc
 {
     // ---- metricSet nzF5kFlight ---------------------------------------------
 
+    // flightTime and launchAltitude are the demanded observations — flightTime
+    // per NZ.3.16.37 d, launchAltitude per NZ.3.16.29 c ("recorded and captured
+    // in the AMRT", feeding the NZ.3.16.29 e-g adjustment every task scores) —
+    // no assumption on either; a flight without them is a genuine await. The
+    // four flags are the rulebook's recorded EXCEPTIONS, so absence resolves to
+    // compliance.
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
         // NZ.3.16.37 d "Timing to be to 1/10th of a second" — 0.1 s precision.
@@ -46,13 +52,17 @@ public static class SeedF5kNdc
         // is recorded at 59.9 seconds").
         M.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),              // NZ.3.16.37 d
         M.Number("launchAltitude", "m", RoundingMode.Truncate, 1),             // NZ.3.16.29 c: recorded in the AMRT, measured during the
-                                                                               //   10 s after motor stop; whole metres (the worked table)
-        M.Flag("landedInLandingArea"),                                         // NZ.3.16.10 c/d; e: any part inside the boundary = inside
-        M.Flag("overflewLandingWindow"),                                       // NZ.3.16.21 b: landing after the 15 s window zeroes the flight
-        M.Flag("launchedInWindow"),                                            // NZ.3.16.17 d for the self-paced Task A; the 3 s mass-launch
-                                                                               //   window for B/C/E — one flag, per-task citations on the tasks
-        M.Flag("touchedBeforeStop"),                                           // NZ.3.16.10 b: the flight continues until grounded and
-                                                                               //   stopped, then scores zero for the flight
+                                                                                //   10 s after motor stop; whole metres (the worked table)
+        M.Flag("landedInLandingArea", whenNotRecorded: true),                  // NZ.3.16.10 c/d; e — landing outside the Launch and Landing
+                                                                                //   Area ⇒ the flight zero is what is recorded; absence ⇒ inside
+        M.Flag("overflewLandingWindow", whenNotRecorded: false),               // NZ.3.16.21 b — landing after the 15 s window ⇒ the flight
+                                                                                //   zero is what is recorded; absence ⇒ within it
+        M.Flag("launchedInWindow", whenNotRecorded: true),                     // NZ.3.16.17 d — the before-working-time launch zero is what is
+                                                                                //   recorded; absence ⇒ in window. For the self-paced Task A;
+                                                                                //   the 3 s mass-launch window for B/C/E — one flag, per-task
+                                                                                //   citations on the tasks
+        M.Flag("touchedBeforeStop", whenNotRecorded: false),                   // NZ.3.16.10 b — the touch (flight continues until grounded and
+                                                                                //   stopped, then zero) is what is recorded; absence ⇒ no touch
     ];
 
     // The flight-validity conjunction shared by all four tasks. NZ.3.16.21 b

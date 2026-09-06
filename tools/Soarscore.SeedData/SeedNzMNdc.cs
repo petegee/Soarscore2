@@ -27,9 +27,12 @@ public static class SeedNzMNdc
         [
             M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.12.3 a
             M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5
-            M.Flag("damagedAndNotSafelyFlyable"),                              // NZ.3.12.2 d — conjunctive; see the parent for the full clause
-            M.Flag("touchedByCompetitor"),                                     // NZ.3.12.2 e "touches either the pilot or his helper"
-            M.Flag("landedWithin75m"),                                         // NZ.2.4.6
+            // The three flags are the NZMAA observation protocol's recorded
+            // EXCEPTIONS (NZ.2.4.6, NZ.3.12.2 d/e — see the parent class for the
+            // full protocol reading); absence resolves to compliance.
+            M.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — conjunctive; see the parent for the full clause
+            M.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches either the pilot or his helper"
+            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6
         ],
         Flights = new LastFlight(),                                            // NZ.1.6
         Timing = new()

@@ -1,6 +1,7 @@
-// Validate() — the twenty adoption checks (17–19: tie-break ladder,
+// Validate() — the twenty-two adoption checks (17–19: tie-break ladder,
 // kanban/in-progress/tie-break-policy-in-class-definition.md WI-2; 20:
-// kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-2).
+// kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-2; 22:
+// kanban/in-progress/metric-absence-semantics.md#wi-2).
 // kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-2, LADR-0002 §4 ("deserialise -> Validate -> canonicalise+hash -> append"),
 // docs/high-level-architecture.md "Validated at adoption" (the numbered, canonical
@@ -71,6 +72,7 @@ public static class ClassDefinitionValidation
         CheckUndefinedRequiresRulingStandsAlone(definition, defects);
         CheckEqualPlacesStandsAlone(definition, defects);
         CheckBestDroppedScoreRequiresDropPolicy(definition, defects);
+        CheckWhenNotRecordedKindMatches(definition, defects);
 
         return defects;
     }
@@ -562,6 +564,32 @@ public static class ClassDefinitionValidation
                     defects.Add(new Defect("class-definition.check-19.best-dropped-score-without-drop-policy",
                         $"$.phases[{p}].tieBreaks[{i}]",
                         "bestDroppedScore requires the phase to declare at least one drop policy."));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 22 — a metric's whenNotRecorded assumed value carries the metric's
+    /// own MeasuredKind — Flag on a Flag metric, Number on a Number metric
+    /// (kanban/in-progress/metric-absence-semantics.md#wi-2). Kind is the ONLY
+    /// adoption restriction on an assumption: a whenNotRecorded on a metric no
+    /// term or predicate reads is harmless — the class author owns the
+    /// semantics — so the walk is over the declared metrics, not the
+    /// references.
+    /// </summary>
+    private static void CheckWhenNotRecordedKindMatches(ClassDefinition definition, List<Defect> defects)
+    {
+        foreach (var (taskPath, _, task) in AllTasks(definition))
+        {
+            for (var m = 0; m < task.Metrics.Length; m++)
+            {
+                var metric = task.Metrics[m];
+                if (metric.WhenNotRecorded is { } assumed && assumed.Kind != metric.Kind)
+                {
+                    defects.Add(new Defect("class-definition.check-22.when-not-recorded-kind-mismatch",
+                        $"{taskPath}.metrics[{m}].whenNotRecorded",
+                        $"Metric '{metric.Name}' on task '{task.Code}' declares a whenNotRecorded assumption of kind '{assumed.Kind}', but the metric's kind is '{metric.Kind}'."));
                 }
             }
         }

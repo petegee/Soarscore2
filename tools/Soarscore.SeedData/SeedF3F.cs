@@ -24,16 +24,20 @@ public static class SeedF3F
         Name = "Speed",                                                        // F3F.1.8 ten (10) legs of a 100 m closed course
         Metrics =
         [
-            M.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3F.1.12 "the time in seconds and hundredths of seconds"
-            M.Flag("courseCompleted"),                                         // F3F.1.6 e "the flight is not carried through"
-            M.Flag("landedInDefinedArea"),                                     // F3F.1.6 f
-            M.Flag("launchedWithin30s"),                                       // F3F.1.6 g "not launched within 30 seconds from the moment the starting order is given"
-            M.Flag("modelIntact"),                                             // F3F.1.6 b "the model loses any part while airborne"
-            M.Flag("clearedPlaneWithin5s"),                                    // F3F.1.6 h
-            M.Flag("seenEnteringCourse"),                                      // F3F.1.6 i "not seen entering the course by the Judge at Base A"
-            M.Flag("flownWithinRules"),                                        // F3F.1.6 a, c, d — non-conforming model, helper advice during the
-                                                                               //   timed flight, control by anyone other than the competitor:
-                                                                               //   three officials' rulings, one recorded observation
+        // courseTime is the demanded observation (F3F.1.12) — no assumption. Every
+        // flag below is one limb of F3F.1.6's "A flight is official but gets a zero
+        // score if" schedule — the recorded EXCEPTIONS — so absence of each flag
+        // resolves to the compliant limb value and the flight scores its time.
+        M.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3F.1.12 "the time in seconds and hundredths of seconds"
+        M.Flag("courseCompleted", whenNotRecorded: true),                  // F3F.1.6 e "the flight is not carried through" is recorded; absence ⇒ carried through
+        M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3F.1.6 f — landing outside the assigned area is recorded; absence ⇒ inside
+        M.Flag("launchedWithin30s", whenNotRecorded: true),                // F3F.1.6 g — the late launch is recorded; absence ⇒ within 30 s
+        M.Flag("modelIntact", whenNotRecorded: true),                      // F3F.1.6 b — losing a part while airborne is recorded; absence ⇒ intact
+        M.Flag("clearedPlaneWithin5s", whenNotRecorded: true),             // F3F.1.6 h — the failure to clear is recorded; absence ⇒ cleared
+        M.Flag("seenEnteringCourse", whenNotRecorded: true),               // F3F.1.6 i — the judge's "not seen entering" is recorded; absence ⇒ seen
+        M.Flag("flownWithinRules", whenNotRecorded: true),                 // F3F.1.6 a, c, d — non-conforming model, helper advice during the
+                                                                            //   timed flight, control by anyone other than the competitor:
+                                                                            //   three officials' rulings, one recorded observation
         ],
         Flights = new LastFlight(),                                            // F3F.1.5 "the competitor has one (1) attempt on each flight"
         Timing = new()

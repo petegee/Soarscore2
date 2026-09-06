@@ -79,6 +79,17 @@
 //
 //   • ConservationBreak / ComparisonReport.ConservationTable surface the
 //     conservation verdict in the same diff-table spirit as the grains.
+//
+// seed-definition-parallel-run.md WI-2 adds a COMPANION compare surface beside
+// this one: ParallelRunComparator.cs (same folder) runs the seed-run's
+// difference set through the SAME three-grain machinery — the normalised and
+// ranking walks below are reused as-is (widened private → internal, behaviour
+// untouched) — but NOT through this file's ledger subtraction: the parallel-run
+// ledger is a different contract (distinct schema, never merged, story law),
+// and its raw grain compares the seed-run's pre-normalisation score AS
+// PRODUCED, where grain 1 here composes ScoreNormalised terms so both sides
+// speak GS's composition (D1 — the parity engine-equivalence arrangement).
+// The parity path itself is byte-identical in behaviour.
 
 using System.Collections.Immutable;
 using Soarscore.Application;
@@ -587,7 +598,10 @@ public static class Comparator
 
     // ------------------------------------------------------------- grain 2
 
-    private static async Task CompareNormalisedGrainAsync(
+    // internal (not private) — seed-definition-parallel-run.md WI-2's
+    // ParallelRunComparator reuses this walk verbatim for the seed-run's
+    // normalised grain (the parity behaviour is unchanged).
+    internal static async Task CompareNormalisedGrainAsync(
         GliderscoreFixture fixture,
         ReplayOutcome outcome,
         HttpClient client,
@@ -669,7 +683,8 @@ public static class Comparator
 
     // ------------------------------------------------------------- grain 3
 
-    private static void CompareRankingGrain(
+    // internal — reused verbatim by ParallelRunComparator (WI-2, see header).
+    internal static void CompareRankingGrain(
         GliderscoreFixture fixture,
         ReplayOutcome outcome,
         CompetitionScoreView finalScores,
@@ -1357,8 +1372,12 @@ public static class Comparator
             && (d.PilotNo is null || d.Covers(m.PilotNo))));
 
     // ------------------------------------------------------------ plumbing
+    // The plumbing helpers are internal (not private): ParallelRunComparator
+    // (seed-definition-parallel-run.md WI-2) shares the cell bookkeeping, the
+    // oracle lookup, the coverage discipline and the aggregate loaders — one
+    // comparison vocabulary across both harness modes.
 
-    private static void RecordCell(
+    internal static void RecordCell(
         string grain, long pilotNo, int roundNo, int groupNo, int taskNo,
         HashSet<string> compared, List<GrainMismatch> mismatches)
     {
@@ -1369,7 +1388,7 @@ public static class Comparator
         }
     }
 
-    private static void AddIfDifferent(
+    internal static void AddIfDifferent(
         List<GrainMismatch> mismatches,
         string grain, long pilotNo, int roundNo, int groupNo, decimal ours, decimal? expected)
     {
@@ -1385,7 +1404,7 @@ public static class Comparator
     }
 
     /// <summary>Every oracle cell must have been compared by EVERY grain — absence is a harness bug, surfaced as a mismatch.</summary>
-    private static void EnsureOracleCoverage(
+    internal static void EnsureOracleCoverage(
         Dictionary<string, ExpectedCell>.KeyCollection oracleKeys, HashSet<string> compared, string grain, List<GrainMismatch> mismatches)
     {
         foreach (var key in oracleKeys)
@@ -1400,10 +1419,10 @@ public static class Comparator
         }
     }
 
-    private static ExpectedCell? OracleCell(GliderscoreFixture fixture, int taskNo, int roundNo, int groupNo, long pilotNo) =>
+    internal static ExpectedCell? OracleCell(GliderscoreFixture fixture, int taskNo, int roundNo, int groupNo, long pilotNo) =>
         fixture.ExpectedScores.Scores.GetValueOrDefault($"{taskNo}/{roundNo}/{groupNo}/0/{pilotNo}");
 
-    private static async Task<Competition> LoadCompetitionAsync(IEventStore eventStore, ReplayOutcome outcome)
+    internal static async Task<Competition> LoadCompetitionAsync(IEventStore eventStore, ReplayOutcome outcome)
     {
         var read = await eventStore.ReadStreamAsync(outcome.CompetitionId.Value, 0);
 
@@ -1416,7 +1435,7 @@ public static class Comparator
             (Competition?)null, (current, e) => Competition.Apply(current, (CompetitionEvent)e))!;
     }
 
-    private static async Task<IReadOnlyDictionary<EntryId, Entry>> LoadEntriesAsync(IEventStore eventStore, ReplayOutcome outcome)
+    internal static async Task<IReadOnlyDictionary<EntryId, Entry>> LoadEntriesAsync(IEventStore eventStore, ReplayOutcome outcome)
     {
         var entries = new Dictionary<EntryId, Entry>();
 
@@ -1436,7 +1455,7 @@ public static class Comparator
         return entries;
     }
 
-    private static async Task<T> GetAsync<T>(HttpClient client, string url)
+    internal static async Task<T> GetAsync<T>(HttpClient client, string url)
     {
         using var response = await client.GetAsync(url);
         var body = await response.Content.ReadAsStringAsync();

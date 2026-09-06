@@ -18,17 +18,26 @@ public static class SeedF5L
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
+        // flightTime and landingDistance are the demanded observations (5.5.12.11.1,
+        // 5.5.12.11.2) — no assumption. Every flag here is a recorded EXCEPTION of
+        // 5.5.12.11.2 ("zero points ... will be recorded for the competitor, if")
+        // or 5.5.12.4 d / 5.5.12.7, so absence resolves to compliance.
         M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.12.11.1 recorded in full seconds
         M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.12.11.2 — no capture precision stated (F12 residual)
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1),             // 5.5.12.11.2
-        M.Flag("landedInLandingArea"),                                         // 5.5.12.11.2 (zero for the entire task); stated twice — also
-                                                                               //   5.5.12.5 d "Landing outside the boundary shall result in a
-                                                                               //   zero score for that flight"
-        M.Flag("lostPart"),                                                    // 5.5.12.11.2 a
-        M.Flag("touchedByCompetitor"),                                         // 5.5.12.11.2 c
-        M.Flag("touchedBeforeMeasuring"),                                      // 5.5.12.11.2 d
-        M.Flag("amrtPresetsCorrect"),                                          // 5.5.12.4 flight = 0 if the AMRT settings differ from the presets (30 s / 90 m)
-        M.Flag("timingDeviationInFavour"),                                     // 5.5.12.4 d helper-timed flight out by > 3 s in the competitor's favour = zero
+        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
+            whenNotRecorded: 0),                                               // 5.5.12.11.2 b — overfly is the recorded exception; a flight
+                                                                                //   landing within working time has none
+        M.Flag("landedInLandingArea", whenNotRecorded: true),                  // 5.5.12.11.2 — resting OUTSIDE the landing area is the recorded
+                                                                                //   task-zero exception; absence ⇒ inside (also 5.5.12.5 d)
+        M.Flag("lostPart", whenNotRecorded: false),                            // 5.5.12.11.2 a — "the model loses any part" is recorded; absence ⇒ intact
+        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.12.11.2 c — the touch is recorded; absence ⇒ no touch
+        M.Flag("touchedBeforeMeasuring", whenNotRecorded: false),              // 5.5.12.11.2 d — the touch before measuring is recorded; absence ⇒ none
+        M.Flag("amrtPresetsCorrect", whenNotRecorded: true),                   // 5.5.12.7 — the organiser checks AMRT settings (30 s / 90 m presets)
+                                                                                //   before the competition; a zero is RECORDED when they differ.
+                                                                                //   (Citation corrected from 5.5.12.4, where the clause does not
+                                                                                //   live — flagged in the WI-4 report.)
+        M.Flag("timingDeviationInFavour", whenNotRecorded: false),             // 5.5.12.4 d — a sampled deviation > 3 s in the competitor's favour
+                                                                                //   is what is recorded; absence ⇒ no such deviation
     ];
 
     // ---- the task ----------------------------------------------------------

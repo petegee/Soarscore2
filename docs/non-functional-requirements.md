@@ -109,6 +109,15 @@ Two consequences bind the design:
   task-round is absent from the result, not scored as a zero and not an error.
   Partial data yields a partial standing, so a leaderboard is readable at any
   moment of the day without anyone having to be up to date.
+  *(Amended 2026-09-06, owner-approved: this tolerance holds at every grain —
+  competition, task-round, entry, flight, metric. A missing measurement is
+  never a system error: where the class declares a `whenNotRecorded`
+  assumption the absence resolves to that value; otherwise the flight result
+  is **pending** — contributing nothing at that point in time and scoring in
+  full once the capture arrives. System errors are reserved for configuration
+  and definition integrity, refused at adoption or binding time — never for
+  data still to come. See
+  `kanban/in-progress/metric-absence-semantics.md`.)*
 
 **The one exception, and why it is not a contradiction.** A Contest Director may
 mark a task-round complete, which does close capture for it. That is the CD

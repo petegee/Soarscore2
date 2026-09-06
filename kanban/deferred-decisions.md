@@ -242,6 +242,17 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   future fixture ever witnesses a negative pass-through raw, that is a new
   triaged divergence, not a reason to floor here.
 
+- **The parallel-run comparator runs the ranking and score-cell grains only;
+  the parity comparator's conservation and team grains are deliberately not
+  run there.** **Decided 2026-09-06**
+  (`kanban/completed/seed-definition-parallel-run.md` WI-2). The parallel
+  claim is stated at the grains the ledger triages — the ranking grain
+  against the GS oracle plus the raw/normalised cells — and the landed ales
+  pair is `UseTeams=false` anyway, so neither unrun grain is exercised by it.
+  Add them when a pair actually needs them, not before; the comparator was
+  widened private→internal only (`Comparator.cs`), so this is a scope
+  decision, not a structural limitation.
+
 ## Teams
 
 - **The teams-MVP standing exclusions stay out — each is an Option-3 upgrade

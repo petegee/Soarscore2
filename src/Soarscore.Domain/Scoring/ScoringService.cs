@@ -665,19 +665,14 @@ public static class ScoringService
     /// <summary>
     /// Resolve the effective measurements for every Flight in an Entry, in
     /// sequence order, and interpret each through the task's raw score terms.
+    /// Delegates to <see cref="FlightMetricResolution.InterpretAllFlights"/>
+    /// (kanban/in-progress/metric-absence-semantics.md WI-1): this is the
+    /// single measurement-resolution point, where the task's declared absence
+    /// semantics (assumed values, pending flights) are applied before any
+    /// interpretation.
     /// </summary>
-    private static ImmutableArray<InterpretedFlight> InterpretAllFlights(Entry entry, ResolvedTask task)
-    {
-        var builder = ImmutableArray.CreateBuilder<InterpretedFlight>(entry.Flights.Length);
-
-        foreach (var flight in entry.Flights)
-        {
-            var resolved = MeasurementDigest.Resolve(flight);
-            builder.Add(FlightInterpreter.Interpret(task, flight.Sequence, resolved.Metrics));
-        }
-
-        return builder.ToImmutable();
-    }
+    private static ImmutableArray<InterpretedFlight> InterpretAllFlights(Entry entry, ResolvedTask task) =>
+        FlightMetricResolution.InterpretAllFlights(entry, task);
 
     // ---------------------------------------------------- penalty routing
 

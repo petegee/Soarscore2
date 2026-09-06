@@ -16,14 +16,23 @@ public static class SeedF5K
 {
     // ---- metricSet f5kFlight -----------------------------------------------
 
+    // flightTime and launchAltitude are the demanded observations — flightTime
+    // per 5.5.10.6 f, launchAltitude per 5.5.10.5 b (every model MUST carry an
+    // approved AMRT and the launch points of 5.5.10.4 are computed from what it
+    // records) — no assumption on either; a flight without them is a genuine
+    // await. The three flags are the rulebook's recorded EXCEPTIONS, so absence
+    // resolves to compliance.
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
         M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.10.6 f whole seconds, tenths not rounded
         M.Number("launchAltitude", "m", RoundingMode.Truncate, 1),             // 5.5.10.4 "the highest altitude reached from launch until 10 seconds
-                                                                               //   after the motor is stopped" (also 5.5.10.5 b)
-        M.Flag("landedInPilotArea"),                                           // 5.5.10.6 h
-        M.Flag("landedOnField"),                                               // 5.5.10.12 flight penalty b — landing off the field = 0 for that flight
-        M.Flag("overflewLandingWindow"),                                       // 5.5.10.12 flight penalty a
+                                                                                //   after the motor is stopped" (also 5.5.10.5 b)
+        M.Flag("landedInPilotArea", whenNotRecorded: true),                    // 5.5.10.6 h — the outside-the-Pilot-Area −10 is what is recorded;
+                                                                                //   absence ⇒ inside it
+        M.Flag("landedOnField", whenNotRecorded: true),                        // 5.5.10.12 flight penalty b — the off-field flight zero is what is
+                                                                                //   recorded; absence ⇒ on the field
+        M.Flag("overflewLandingWindow", whenNotRecorded: false),               // 5.5.10.12 flight penalty a — the overfly −100 is what is recorded;
+                                                                                //   absence ⇒ no overfly
     ];
 
     // Launch points relative to the announced NLH. 5.5.10.4 is one clause and one

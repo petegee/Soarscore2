@@ -250,6 +250,10 @@ the combinations absence makes incoherent.
     notation §4, diagram §2. "Ties are never broken" stated beside any rung
     that could separate is a self-contradiction (the check-18 shape; Pete's
     2026-09-04 NZ ruling, which introduced the directive).
+22. A `MetricDefinition.whenNotRecorded` assumed value carries the metric's
+    own kind — `Flag`/`Flag`, `Number`/`Number` — notation §5. An assumption
+    on a metric no term reads is harmless; kind is the only adoption
+    restriction on it.
 
 One candidate is deliberately **not** here: `zeroFlight` and `zeroRound` are
 unusable in a `LowerIsBetter` task, because a raw zero is the fastest time in

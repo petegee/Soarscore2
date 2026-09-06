@@ -41,6 +41,33 @@ internal static class ClassDefinitionFixtures
     public static ClassDefinition WithSingleTask(ClassDefinition definition, TaskDefinition task) =>
         definition with { Phases = [definition.Phases[0] with { Tasks = [task] }] };
 
+    /// <summary>Minimal's task plus a flag metric the flight-validity predicate
+    /// reads: the class declares the assumption landedOut ⇒ false (officials
+    /// record the exception, not compliance), while flightTime stays unassumed —
+    /// the two absence shapes the views must distinguish
+    /// (kanban/in-progress/metric-absence-semantics.md WI-3).</summary>
+    public static ClassDefinition AbsenceSemantics() => WithSingleTask(
+        Minimal(),
+        new TaskDefinition
+        {
+            Code = "A",
+            Name = "Task A",
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" },
+                new MetricDefinition { Name = "landedOut", Kind = MeasuredKind.Flag, WhenNotRecorded = MeasuredValue.Of(false) },
+            ],
+            Flights = new LastFlight(),
+            Timing = new TaskTiming { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
+            FlightValidWhen = new Comparison
+            {
+                LeftMetricRef = "landedOut",
+                Op = Comparator.EqualTo,
+                RightValue = MeasuredValue.Of(false),
+            },
+            Score = [new RateTerm { MetricRef = "flightTime", Rate = 1 }],
+        });
+
     /// <summary>N copies of the baseline's single phase, ordinals 1..count — generalises the old fixed TwoPhases() helper.</summary>
     public static ClassDefinition NPhases(int count)
     {

@@ -29,12 +29,19 @@ namespace Soarscore.Application.Queries.Scoring;
 /// score for this row — the value <see cref="RawScore"/> held entering
 /// Normalise, preserved through the overwrite
 /// (kanban/in-progress/pre-normalisation-score-view-field.md#WI-2).</param>
+/// <param name="AwaitingCapture">The row's pending flights' awaited-metric
+/// diagnostics, carried on the engine's TaskResult and surfaced here rather
+/// than re-derived (kanban/in-progress/metric-absence-semantics.md#WI-3) — so
+/// the field readout distinguishes "awaiting capture" from a genuine
+/// no-result. Diagnostics are per TaskResult and rows are per Entry, so a
+/// competitor with two live entries sees each entry's on its own row.</param>
 public sealed record CompetitorTaskResultView(
     CompetitorId CompetitorRef,
     ReflightRole Role,
     TaskResultState State,
     decimal RawScore,
-    decimal PreNormalisationScore);
+    decimal PreNormalisationScore,
+    ImmutableArray<PendingFlightDiagnostic> AwaitingCapture);
 
 /// <summary>One group's scored result — the GET /task-round-result response shape.</summary>
 public sealed record GroupScoreView(
@@ -173,13 +180,24 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
         GroupResult result,
         IReadOnlyDictionary<string, Entry> entriesByKey)
     {
+        // The engine's uninitialised AwaitingCapture (a default ImmutableArray —
+        // TaskResult's own doc) must cross the Api boundary as a real empty
+        // array, or response serialisation dies mid-stream on exactly those
+        // rows: on this runtime even IsEmpty throws on a default instance, so
+        // the guard is IsDefaultOrEmpty (found by the Gliderscore parity
+        // harness, metric-absence-semantics.md#WI-3).
+        static ImmutableArray<PendingFlightDiagnostic> BoundaryEmpty(
+            ImmutableArray<PendingFlightDiagnostic> awaiting) =>
+            awaiting.IsDefaultOrEmpty ? ImmutableArray<PendingFlightDiagnostic>.Empty : awaiting;
+
         var results = result.Results
             .Select(kv => new CompetitorTaskResultView(
                 entriesByKey[kv.Key].CompetitorRef,
                 entriesByKey[kv.Key].Role,
                 kv.Value.State,
                 kv.Value.RawScore,
-                result.PreNormalisationScores[kv.Key]))
+                result.PreNormalisationScores[kv.Key],
+                BoundaryEmpty(kv.Value.AwaitingCapture)))
             .ToImmutableArray();
 
         return new GroupScoreView(
