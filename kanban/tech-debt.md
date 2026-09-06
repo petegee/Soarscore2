@@ -161,7 +161,7 @@ See CLAUDE.md house-keeping rule 5.
   between the engine fix and the seed flip, as designed. The failing-test-first
   prescription was followed: the two new `FlightInterpreterTests` below-origin
   cases went red before the engine change.
-- [ ] `SeedF5K.cs` / `40-f5k.json` tasks A and D lack `RankByMetric = "flightTime"`.
+- [x] `SeedF5K.cs` / `40-f5k.json` tasks A and D lack `RankByMetric = "flightTime"`.
   `BestNFlights` with `targets: AnyOrder` ranks candidates by SCORE when
   `RankByMetric` is null (Poker semantics, F3K.11.5) and by the named metric when
   set (longest-flights semantics, F3K.11.8). GS pairs any-order targets with the
@@ -176,6 +176,17 @@ See CLAUDE.md house-keeping rule 5.
   carries the gap — `SeedF5K.cs` TaskA/TaskD need `RankByMetric = "flightTime"`
   and `40-f5k.json` regenerating, plus a domain test pinning desc-time pairing
   on a score/time-reordered row.
+  **Discharged 2026-09-06.** `SeedF5K.cs` TaskA and TaskD now carry
+  `RankByMetric = "flightTime"` (D restates it because `with` replaces the
+  whole `Flights` object); `40-f5k.json` regenerated via the SeedData tool,
+  all four ADR-0002 integrity checks passing. Pinned by
+  `FlightSelectorTests.F5K_TaskA_any_order_targets_pair_by_longest_flight_not_best_score`,
+  written failing-first against the real seed Task A: a 240 s flight at
+  NLH+50 (score 110, below a clean 180 s flight's 180) selects and pairs
+  first under desc-time ranking (raw 465) but drops to third and takes the
+  120 target under the old score ranking (raw 345). Fast loop green (Domain
+  691, Application 276, Architecture 7, Infrastructure non-Storage 72); BDD
+  acceptance green on both stores (73/73 each).
 - [ ] `FlightSelector`'s validWhen gate vs `FlightInterpreter`'s per-flight
   zeroing — conflicting semantics, unwitnessed. `FlightInterpreter.Interpret`
   zeroes a flight failing `flightValidWhen` but leaves it selected and counted

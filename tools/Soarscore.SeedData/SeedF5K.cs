@@ -83,6 +83,12 @@ public static class SeedF5K
         Flights = new BestNFlights
         {
             Count = 4,
+            // GS pairs any-order targets with the LONGEST flights (desc-time ↔
+            // desc-target, cell-exact on f5k-ni-round-2), so ranking is by
+            // flightTime — not by per-flight score, which a launch penalty can
+            // reorder. Without it the selector falls back to Poker score
+            // ranking (F3K.11.5) and mis-pairs exactly there.
+            RankByMetric = "flightTime",
             Targets = TargetAssignment.AnyOrder,
             TargetValues = [60, 120, 180, 240],                                // 5.5.10.2
         },
@@ -204,6 +210,10 @@ public static class SeedF5K
         Flights = new BestNFlights
         {
             Count = 3,
+            // Restated, not inherited: `with` replaces the whole Flights object
+            // (README's §7.2 edge — a restated block omits the keyword and
+            // takes the default), and the default is the Poker mis-pairing.
+            RankByMetric = "flightTime",
             Targets = TargetAssignment.AnyOrder,
             TargetValues = [180, 180, 240],                                    // 5.5.10.2
         },

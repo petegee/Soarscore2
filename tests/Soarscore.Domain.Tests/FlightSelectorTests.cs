@@ -81,6 +81,40 @@ public class FlightSelectorTests
         result.RawScore.Should().Be(450m);
     }
 
+    // ------------------------------------------------------ F5K Task A/D any-order pairing
+
+    [Fact]
+    public void F5K_TaskA_any_order_targets_pair_by_longest_flight_not_best_score()
+    {
+        // GS pairs any-order targets with the LONGEST flights (desc-time ↔
+        // desc-target, cell-exact on f5k-ni-round-2), so ranking for Task A/D
+        // must be by flightTime, not by per-flight score — a launch penalty
+        // can push a long flight's score below a short flight's. Without
+        // RankByMetric the selector falls back to score ranking and mis-pairs
+        // exactly there.
+        var task = ResolveF5KTaskA();
+
+        var flights = new List<InterpretedFlight>
+        {
+            // 240 s at NLH+50: 10 × 1.0 + 40 × 3.0 = 130 deduction → 110,
+            // below the clean 180 s flight's score though the longest flight.
+            InterpretFlight(task, 1, flightTime: 240m, launchAltitude: 110m),
+            InterpretFlight(task, 2, flightTime: 180m, launchAltitude: 60m),
+            InterpretFlight(task, 3, flightTime: 120m, launchAltitude: 60m),
+            InterpretFlight(task, 4, flightTime: 55m, launchAltitude: 60m),
+        };
+
+        var result = FlightSelector.SelectAndScore(
+            null, task, new Dictionary<string, MeasuredValue>(), flights.ToImmutableArray());
+
+        result.State.Should().Be(TaskResultState.Valid);
+        // Longest first: 240→240 target (110), 180→180 (180), 120→120 (120),
+        // 55→60 (55); sum 595 stays under the 599 per-task cap. Score-ranked,
+        // the long flight drops to third, takes the 120 target and lands on −10.
+        result.Selection!.Flights.Select(f => f.Score).Should().Equal([110m, 180m, 120m, 55m]);
+        result.RawScore.Should().Be(465m);
+    }
+
     // ------------------------------------------------------ F3K Task E Poker
 
     [Fact]
