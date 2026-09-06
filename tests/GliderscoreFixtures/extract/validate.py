@@ -30,7 +30,7 @@ DEFERRAL_FLAG = "expectedResultDeferred"
 CANONICAL_KEY_FORMAT = "{TaskNo}/{RoundNo}/{GroupNo}/{ReFlightNo}/{PilotNo}"
 SERIES_OFF = {"", "0"}
 PRELIM_OFF = {-1, 0}
-JUSTIFIABLE_CONCEPTS = {"teams", "series"}
+JUSTIFIABLE_CONCEPTS = {"series"}
 
 
 def fail(errors, message):
@@ -140,8 +140,6 @@ def check_rule_4(competition, entries, scores_raw, errors):
 def gap_flags(competition):
     triage = competition.get("triage") or {}
     flags = []
-    if triage.get("UseTeams") is True:
-        flags.append(("teams", "UseTeams=true (team scoring concept gap)"))
     series = triage.get("CompSeriesNo")
     if isinstance(series, str) and series.strip() not in SERIES_OFF:
         flags.append(("series", f"CompSeriesNo={series!r} (comp-series concept gap)"))
@@ -156,7 +154,7 @@ def gap_flags(competition):
     return flags
 
 
-def justification_problem(concept, competition, scores_raw):
+def justification_problem(concept, competition):
     just = (competition.get("triage") or {}).get("triageJustification")
     entry = just.get(concept) if isinstance(just, dict) else None
     if not isinstance(entry, dict):
@@ -164,14 +162,6 @@ def justification_problem(concept, competition, scores_raw):
     evidence = entry.get("evidence")
     if not isinstance(evidence, str) or not evidence.strip():
         return f"triageJustification.{concept}.evidence must be a non-empty string"
-    if concept == "teams":
-        columns = [name for name in (scores_raw.get("schema") or {}) if "team" in str(name).lower()]
-        if columns:
-            return (
-                f"triageJustification.teams claims no team data but scores-raw.json "
-                f"declares column(s) {columns}"
-            )
-        return None
     count = entry.get("deadLinkCount")
     if isinstance(count, bool) or not isinstance(count, int):
         return "triageJustification.series.deadLinkCount must be an integer"
@@ -196,7 +186,7 @@ def index_skips(index_path, slug, errors):
     return False
 
 
-def check_rule_5(competition, scores_raw, slug, index_path, warnings, errors):
+def check_rule_5(competition, slug, index_path, warnings, errors):
     flags = gap_flags(competition)
     if not flags:
         return
@@ -205,7 +195,7 @@ def check_rule_5(competition, scores_raw, slug, index_path, warnings, errors):
         if concept not in JUSTIFIABLE_CONCEPTS:
             open_flags.append(label)
             continue
-        problem = justification_problem(concept, competition, scores_raw)
+        problem = justification_problem(concept, competition)
         if problem is None:
             continue
         open_flags.append(f"{label}; justification unsound ({problem})")
@@ -216,11 +206,86 @@ def check_rule_5(competition, scores_raw, slug, index_path, warnings, errors):
         warnings.append(
             f"rule 5 WARNING: {slug} trips a concept-gap flag ({reason}); "
             f"it MUST be skip-listed in tests/GliderscoreFixtures/index.md before activation "
-            f"(only team/series flags can be excused by a sound competition.json triageJustification)"
+            f"(only a series flag can be excused by a sound competition.json triageJustification)"
         )
         return
     if not index_skips(index_path, slug, errors):
         fail(errors, f"rule 5: {slug} trips a concept-gap flag ({reason}) but is not skip-listed in {index_path}")
+
+
+def _as_int(value):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def check_team_expectations(competition, entries, fixture_dir, errors):
+    """Rule 5's team framing (grow-corpus-team-parity-fixtures.md Move 3).
+
+    Team scoring is not a concept gap — teams-mvp landed it — so UseTeams=true
+    no longer forces skip-listing nor a no-effect triageJustification. What a
+    team-bearing fixture must carry instead is its DECLARED TEAM-GRAIN
+    EXPECTATION, mirroring the harness (Comparator.TeamGrainOverlap and the
+    ladder grain's guard, teams-mvp.md decision 8):
+
+    - UseTeams=true with populated CompPilots.Team (any Team > 0) and
+      NbrForTeamScore == 3: expected-teams.json must exist (the GS team-ladder
+      oracle the harness guard throws without);
+    - UseTeams=true with populated teams and any other NbrForTeamScore: a
+      documentary T1 entry (grain "team") must exist in divergences.json —
+      the MVP classification method is fixed at three and is never emulated,
+      so the team grain will not run and the incomparability is pinned;
+    - team knobs without populated teams stay unflagged (no team grain can
+      run), as does UseTeams=false (GS computes no team scores either).
+    """
+    triage = competition.get("triage") or {}
+    if triage.get("UseTeams") is not True:
+        return
+    populated = False
+    for row in (entries.get("compPilots") or {}).get("rows") or []:
+        team = _as_int(row.get("Team"))
+        if team is not None and team > 0:
+            populated = True
+            break
+    if not populated:
+        return
+    if _as_int(triage.get("NbrForTeamScore")) == 3:
+        if not (fixture_dir / "expected-teams.json").is_file():
+            fail(
+                errors,
+                f"rule 5: team-bearing overlap fixture (UseTeams=true, NbrForTeamScore=3, "
+                f"populated CompPilots.Team) requires expected-teams.json \u2014 author the GS "
+                f"team-ladder oracle (grow-corpus-team-parity-fixtures.md WI-1C); the harness "
+                f"ladder grain throws without it",
+            )
+        return
+    path = fixture_dir / "divergences.json"
+    cited = False
+    if path.is_file():
+        try:
+            ledger = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            fail(errors, f"rule 5: divergences.json is not valid JSON: {exc}")
+            return
+        if not isinstance(ledger, list):
+            fail(errors, "rule 5: divergences.json must hold a JSON array of ledger entries")
+            return
+        cited = any(
+            isinstance(entry, dict)
+            and entry.get("grain") == "team"
+            and "T1" in str(entry.get("reason") or "")
+            for entry in ledger
+        )
+    if not cited:
+        fail(
+            errors,
+            f"rule 5: team-bearing fixture (UseTeams=true, populated CompPilots.Team, "
+            f"NbrForTeamScore={triage.get('NbrForTeamScore')!r}) declares a classification "
+            f"method the MVP never emulates \u2014 pin the incomparability with a documentary "
+            f"T1 entry (grain \u201cteam\u201d) in divergences.json (teams-mvp.md decision 8); "
+            f"the harness team grain does not run for it",
+        )
 
 
 def composite_key(row):
@@ -260,7 +325,6 @@ def check_integrity(expected_scores, scores_raw, entries, errors):
 
 
 TRIAGE_OFF = {"UseTeams": False, "CompSeriesNo": "0", "PrelimCompNo": -1, "MergedComps": ""}
-SOUND_TEAMS = {"teams": {"evidence": "Scores carries no team columns; team standings are report-time aggregations"}}
 SOUND_SERIES = {"series": {"deadLinkCount": 0, "evidence": "CompSeries table is empty; every series link is dead"}}
 
 
@@ -275,7 +339,8 @@ def base_competition(triage):
 
 
 def write_fixture(root, slug, triage, justification=None, extra_score_columns=None,
-                  omit_oracle=False, provenance_extra=None):
+                  omit_oracle=False, provenance_extra=None, pilot_teams=(),
+                  divergences=None, with_expected_teams=False):
     fixture = root / slug
     fixture.mkdir(parents=True)
     if justification is not None:
@@ -285,12 +350,23 @@ def write_fixture(root, slug, triage, justification=None, extra_score_columns=No
     documents = {
         "provenance.json": {**(provenance_extra or {})},
         "competition.json": base_competition(triage),
-        "entries.json": {"compPilots": {"rows": []}},
+        "entries.json": {
+            "compPilots": {
+                "rows": [
+                    {"CompNo": 1, "PilotNo": pilot_no, "Team": team}
+                    for pilot_no, team in enumerate(pilot_teams, start=1)
+                ]
+            }
+        },
         "scores-raw.json": {"schema": schema, "rows": []},
         "expected-scores.json": {"keyFormat": CANONICAL_KEY_FORMAT, "scores": {}},
     }
     if not omit_oracle:
         documents["expected-result.json"] = {}
+    if with_expected_teams:
+        documents["expected-teams.json"] = {"source": "reconstructed-gs-team-ladder", "standings": []}
+    if divergences is not None:
+        documents["divergences.json"] = divergences
     for name, document in documents.items():
         (fixture / name).write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     return fixture
@@ -320,15 +396,10 @@ def self_test():
         unflagged = write_fixture(root, "unflagged", TRIAGE_OFF)
         run("unflagged fixture passes untouched", [str(unflagged)], 0, ("PASS",), ("rule 5",))
 
-        bare_teams = write_fixture(root, "bare-teams", {**TRIAGE_OFF, "UseTeams": True})
+        teamless_knobs = write_fixture(root, "teamless-knobs", {**TRIAGE_OFF, "UseTeams": True})
         run(
-            "flagged without justification warns when --index absent",
-            [str(bare_teams)], 0, ("rule 5 WARNING", "triageJustification"),
-        )
-        run(
-            "flagged without justification fails under --index",
-            [str(bare_teams), "--index", str(index_path)], 1,
-            ("rule 5", "triageJustification"),
+            "team knobs without populated teams need no expectation and no skip-listing",
+            [str(teamless_knobs), "--index", str(index_path)], 0, ("PASS",), ("rule 5",),
         )
 
         series_no_count = write_fixture(
@@ -351,41 +422,74 @@ def self_test():
             ("non-zero",),
         )
 
-        teams_empty_evidence = write_fixture(
-            root, "teams-empty-evidence", {**TRIAGE_OFF, "UseTeams": True},
-            justification={"teams": {"evidence": "   "}},
-        )
-        run(
-            "teams justification empty evidence fails",
-            [str(teams_empty_evidence), "--index", str(index_path)], 1,
-            ("evidence must be a non-empty string",),
-        )
-
-        teams_column = write_fixture(
-            root, "teams-column", {**TRIAGE_OFF, "UseTeams": True},
-            justification=SOUND_TEAMS, extra_score_columns={"TeamNo": "Long"},
-        )
-        run(
-            "team column in scores-raw defeats clean-teams claim",
-            [str(teams_column), "--index", str(index_path)], 1,
-            ("TeamNo",),
-        )
-
-        comp_one_shape = {**TRIAGE_OFF, "UseTeams": True, "CompSeriesNo": "1"}
         fully_sound = write_fixture(
-            root, "fully-sound", comp_one_shape,
-            justification={**SOUND_TEAMS, **SOUND_SERIES},
+            root, "fully-sound", {**TRIAGE_OFF, "CompSeriesNo": "1"},
+            justification=dict(SOUND_SERIES),
         )
         run(
-            "sound justifications for every flag activate without skip-listing",
+            "sound series justification activates without skip-listing",
             [str(fully_sound), "--index", str(index_path)], 0, ("PASS",), ("rule 5",),
         )
 
-        half_sound = write_fixture(root, "half-sound", comp_one_shape, justification=dict(SOUND_TEAMS))
+        stale_teams_excuse = write_fixture(
+            root, "stale-teams-excuse", {**TRIAGE_OFF, "CompSeriesNo": "1"},
+            justification={"teams": {"evidence": "legacy no-effect excuse, no longer a flag"}},
+        )
         run(
-            "sound teams does not excuse flagged series",
-            [str(half_sound), "--index", str(index_path)], 1,
+            "a stale teams justification does not excuse flagged series",
+            [str(stale_teams_excuse), "--index", str(index_path)], 1,
             ("triageJustification.series",),
+        )
+
+        series_warn = write_fixture(root, "series-warn", {**TRIAGE_OFF, "CompSeriesNo": "1"})
+        run(
+            "flagged series without --index warns instead of failing",
+            [str(series_warn)], 0, ("rule 5 WARNING",), ("FAIL",),
+        )
+
+        overlap = {**TRIAGE_OFF, "UseTeams": True, "NbrForTeamScore": 3}
+        overlap_ok = write_fixture(
+            root, "team-overlap-ok", overlap, pilot_teams=(4, 4, 4), with_expected_teams=True,
+        )
+        run(
+            "team-bearing overlap fixture with the ladder oracle activates",
+            [str(overlap_ok), "--index", str(index_path)], 0, ("PASS",), ("rule 5",),
+        )
+
+        overlap_bare = write_fixture(root, "team-overlap-bare", overlap, pilot_teams=(4, 4, 4))
+        run(
+            "team-bearing overlap fixture without expected-teams.json fails",
+            [str(overlap_bare), "--index", str(index_path)], 1,
+            ("expected-teams.json",),
+        )
+
+        nbr_two = {**TRIAGE_OFF, "UseTeams": True, "NbrForTeamScore": 2}
+        t1_ledger = [{
+            "grain": "team", "round": None, "group": None, "pilotNo": None,
+            "reason": "T1: NbrForTeamScore=2 declares a method the MVP never emulates",
+        }]
+        t1_ok = write_fixture(
+            root, "team-t1-ok", nbr_two, pilot_teams=(4, 4, 4), divergences=t1_ledger,
+        )
+        run(
+            "Nbr\u22603 team-bearing fixture with a T1 ledger entry activates",
+            [str(t1_ok), "--index", str(index_path)], 0, ("PASS",), ("rule 5",),
+        )
+
+        t1_missing = write_fixture(root, "team-t1-missing", nbr_two, pilot_teams=(4, 4, 4))
+        run(
+            "Nbr\u22603 team-bearing fixture without a T1 ledger entry fails",
+            [str(t1_missing), "--index", str(index_path)], 1,
+            ("T1",),
+        )
+
+        inert_by_knob = write_fixture(
+            root, "team-inert-by-knob", {**TRIAGE_OFF, "NbrForTeamScore": 3},
+            pilot_teams=(4, 4, 4),
+        )
+        run(
+            "UseTeams=false with populated teams stays inert (no expectation demanded)",
+            [str(inert_by_knob), "--index", str(index_path)], 0, ("PASS",), ("rule 5",),
         )
 
         dur_less_landing = write_fixture(root, "dur-less-landing", TRIAGE_OFF)
@@ -560,7 +664,8 @@ def main(argv=None):
     check_rule_2(competition, scores_raw, errors)
     check_rule_3(competition, errors, warnings)
     check_rule_4(competition, entries, scores_raw, errors)
-    check_rule_5(competition, scores_raw, slug, index_path, warnings, errors)
+    check_rule_5(competition, slug, index_path, warnings, errors)
+    check_team_expectations(competition, entries, fixture_dir, errors)
     check_integrity(expected_scores, scores_raw, entries, errors)
 
     for warning in warnings:

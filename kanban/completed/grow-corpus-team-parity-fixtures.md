@@ -1,6 +1,7 @@
 # Story — Team-parity fixtures: validate team results against GliderScore
 
-**Status:** In progress · **Raised:** 2026-09-03 (teams-mvp WI-9 landed 2026-09-02;
+**Status:** Completed 2026-09-07 (Moves 1–3; Move 2 closed hunt-recorded,
+acquisition-pending per its terminal state) · **Raised:** 2026-09-03 (teams-mvp WI-9 landed 2026-09-02;
 this story was opened the moment its own corpus facts made the gap explicit)
 
 ## What
@@ -73,9 +74,13 @@ witness. Sourcing reality to plan against:
       **Settled in the Refined plan (WI-1B/WI-1C): transcript preferred but
       non-blocking; the recomputed ladder is the required artifact and is
       verified against the transcript when one exists.**
-- [ ] Rule-5 amendment touches the `extract/` tooling contract — update
+- [x] Rule-5 amendment touches the `extract/` tooling contract — update
       `tests/GliderscoreFixtures/extract/README.md` in the same change; the
       amendment must not weaken the series/prelim/merged guards. (Move 3.)
+      — **Done 2026-09-07 (Move 3 outcome below): README rewritten in the
+      same change; the self-test proves the series/prelim/merged guards
+      still fire, including that a stale teams justification no longer
+      excuses a flagged series.**
 - [x] If any live webmine call is needed (catalogue hunting for team-bearing
       candidates, even though downloads lack team fields), check the
       permission-email gate first (`gliderscore-webmine-tool.md` Before
@@ -807,3 +812,57 @@ the one Nbr=3 witness (f3j-international) that Move 1 delivered.
 WI-1F already extended `GOLDEN-COMPARISON-STATE.md` with the witness claim
 (team results now carry a GS-derived oracle witness on f3j-international,
 ladder grain, exact-decimal; protection-only arm restated as unwitnessed).
+
+### Move 3 (2026-09-07) — rule-5 team framing amendment
+
+Completed as written, with the "declared team-grain expectations" framing
+made mechanical rather than documentary. Three files, all inside the move's
+named scope:
+
+- `tests/GliderscoreFixtures/extract/validate.py` — `gap_flags` no longer
+  flags `UseTeams=true` and the "teams" arm of `triageJustification` (the
+  no-effect excuse, including its no-team-columns-in-scores check) is
+  deleted; `JUSTIFIABLE_CONCEPTS` is series-only. In its place rule 5 gained
+  `check_team_expectations`, mirroring the harness exactly
+  (`Comparator.cs` `TeamGrainOverlap` + the ladder grain's missing-oracle
+  guard, teams-mvp decision 8 / the T1 deferred decision): UseTeams=true
+  with populated `CompPilots.Team` (any Team > 0) and `NbrForTeamScore == 3`
+  requires `expected-teams.json`; with any other Nbr it requires a
+  documentary `T1` entry (`grain: "team"`) in `divergences.json`; team
+  knobs without populated teams and `UseTeams=false` stay unflagged. The
+  rule-5 WARNING text now says only a series flag is excusable. Existing
+  `triageJustification.teams` entries in fixture `competition.json` files
+  are inert data — fixture files untouched.
+- `tests/GliderscoreFixtures/index.md` — §Standing skip reasons drops
+  "team scoring" from the §6 concept gaps and records the 2026-09-07
+  amendment (declared team-grain expectations, both arms, validator- and
+  harness-enforced).
+- `tests/GliderscoreFixtures/extract/README.md` — rule 5 rewritten, the
+  `--self-test` description and the index-contract example updated (the
+  skip example is now a series gap), and "Adding a fixture" step 1 names
+  the team-expectation artifact.
+
+Series, prelim and merged-prelim guards untouched, and proven so: the
+self-test keeps the series deadLinkCount and unconditional-prelim cases and
+adds a case asserting a stale teams justification does NOT excuse a flagged
+series.
+
+**Verification:** `python3 extract/validate.py --self-test` — 20/20 cases
+passed (8 new: team knobs teamless; stale-teams excuse; overlap with oracle
+activates; overlap without oracle fails; Nbr≠3 with T1 activates; Nbr≠3
+without T1 fails; UseTeams=false-with-teams stays inert; series without
+--index warns instead of failing; plus reworked fully-sound/stale-teams
+cases). All 11 fixture directories PASS under
+`--index index.md`, unchanged — the corpus already satisfied the new rule
+(f3j-international via its oracle; f3k-sample-comp and jerilderie-2010 via
+their T1 entries; every other fixture out of the check's scope). The
+missing-oracle failure proven against a scratch copy of f3j-international
+with `expected-teams.json` removed (exit 1 naming the file and WI-1C). No
+dotnet code touched — build and harness unaffected.
+
+**Reconciliation:** the pending second-Nbr=3 acquisition is now open work
+with this story closed, so `kanban/backlog/second-nbr3-team-witness.md`
+carries it (the omit arm already had its stub); `deferred-decisions.md`'s
+T1 entry stands unchanged — still binding, Nbr≠3 unlocks only via a future
+classification-policy story; `kanban/tech-debt.md` has no team-parity
+items.

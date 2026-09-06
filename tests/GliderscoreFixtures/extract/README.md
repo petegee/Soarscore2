@@ -217,8 +217,9 @@ python3 validate.py --self-test
   rule 5 for a fixture that trips a concept-gap triage flag.
 - `--self-test` — builds throwaway minimal fixtures in a temp directory and
   asserts rule 5 in both directions (flagged without/with unsound/sound
-  `triageJustification`, plus the `ales-sample-comp` regression); exits
-  non-zero if any case fails.
+  `triageJustification`; the team-grain expectation requirement with and
+  without its oracle / T1 ledger; plus the `ales-sample-comp` regression);
+  exits non-zero if any case fails.
 
 Enforced rules (story WI-2):
 
@@ -245,19 +246,28 @@ a missing oracle remains a hard failure.
    curation.
 4. exactly one competition per fixture: a single distinct CompNo across
    competition identity, entries and `scores-raw`, matching `competition.json`.
-5. concept-gap triage flags (`UseTeams=true`, set series link `CompSeriesNo`,
-   preliminary link `PrelimCompNo`, non-empty `MergedComps`) require the fixture
-   to be skip-listed in `index.md`: with `--index` given the run fails unless the
+5. concept-gap triage flags (set series link `CompSeriesNo`, preliminary link
+   `PrelimCompNo`, non-empty `MergedComps`) require the fixture to be
+   skip-listed in `index.md`: with `--index` given the run fails unless the
    index marks the slug skipped; without `--index` it prints a warning naming the
-   requirement. Refinement (2026-08-26): a team or series flag alone no longer
-   forces the skip if `competition.json` records a sound `triageJustification`
-   inside its `triage` object —
-   `{"series": {"deadLinkCount": 0, "evidence": "<non-empty string>"},
-   "teams": {"evidence": "<non-empty string>"}}`. The validator mechanically
-   checks that series `deadLinkCount` is an integer equal to 0 and that no
-   `scores-raw.json` column name contains "team" (case-insensitive); each
-   flagged concept needs its own sound justification, and preliminary /
-   merged-comp gaps are never excusable.
+   requirement. A series flag alone does not force the skip if `competition.json`
+   records a sound `triageJustification` inside its `triage` object —
+   `{"series": {"deadLinkCount": 0, "evidence": "<non-empty string>"}}`. The
+   validator mechanically checks that series `deadLinkCount` is an integer equal
+   to 0; preliminary / merged-comp gaps are never excusable.
+   Amendment (2026-09-07, team-parity story Move 3): **`UseTeams=true` is no
+   longer a concept-gap flag** — team scoring landed with teams-mvp, so a
+   team-bearing fixture (UseTeams=true with populated `CompPilots.Team`, i.e.
+   any Team > 0) activates with DECLARED TEAM-GRAIN EXPECTATIONS instead:
+   `NbrForTeamScore == 3` requires `expected-teams.json` (the GS team-ladder
+   oracle the harness ladder grain throws without), and any other
+   `NbrForTeamScore` requires a documentary `T1` entry (`grain: "team"`) in
+   `divergences.json` (teams-mvp.md decision 8 — the MVP classification method
+   is fixed at three and is never emulated, so the team grain does not run and
+   the incomparability is pinned). Team knobs without populated teams stay
+   unflagged (no team grain can run), as does `UseTeams=false` (GS computes no
+   team scores either). This mirrors the harness's `TeamGrainOverlap`
+   predicate and its missing-oracle guard.
 6. integrity (beyond the five): `expected-scores.json` keys correspond 1:1 with
    `scores-raw` rows on the composite key `{TaskNo}/{RoundNo}/{GroupNo}/
    {ReFlightNo}/{PilotNo}`, every key's pilot is among the entries members, and
@@ -273,7 +283,7 @@ as skip-listed when a line starts with that slug token and contains the word
 "skipped" (case-insensitive), e.g.:
 
 ```
-- some-comp — skipped — team scoring (concept gap)
+- some-comp — skipped — set series link (concept gap)
 ```
 
 ## Replay-and-compare harness
@@ -343,6 +353,10 @@ Drop the filter to run the rest of the acceptance suite alongside.
 
 1. **Curate** through this directory's pipeline as documented above:
    `extract.py`, hand-curation of the six JSON files, `validate.py` passes.
+   A team-bearing fixture (UseTeams=true, populated `CompPilots.Team`) also
+   carries its declared team-grain expectation per rule 5: `expected-teams.json`
+   when `NbrForTeamScore == 3`, a documentary `T1` `divergences.json` entry
+   otherwise.
 2. **Author `<slug>/class-definition.json` by hand**, following story decision
    D3. The mapping rules from `competition.json`:
    - Normalisation arrangement follows `GroupScoreOption`: option 2 (time

@@ -162,13 +162,18 @@ line starts with the slug token and contains "skipped".
 A competition matching either of these is indexed as `- <slug> — skipped —
 <reason>` and never activated silently:
 
-- §6 concept gaps — team scoring, series, merged/prelim. Amendment
-  (2026-08-26): a team or series gap forces skip-listing UNLESS the fixture's
-  `competition.json` records a sound `triageJustification` — series:
-  `CompSeries` dead-link count 0; teams: no team columns in `Scores`, with any
-  populated `CompPilots.Team` assignments noted honestly. Preliminary /
+- §6 concept gaps — series, merged/prelim. Amendment (2026-08-26): a series
+  gap forces skip-listing UNLESS the fixture's `competition.json` records a
+  sound `triageJustification` — `CompSeries` dead-link count 0. Preliminary /
   merged-prelim gaps remain unconditional skips. A harness mismatch backstops
-  any wrongly justified activation.
+  any wrongly justified activation. Amendment (2026-09-07, team-parity story
+  Move 3): **team scoring is no longer a concept gap** — teams-mvp landed it,
+  so a team-bearing fixture activates with declared team-grain expectations
+  instead of a no-effect excuse: `NbrForTeamScore == 3` with populated
+  `CompPilots.Team` requires `expected-teams.json` (the ladder grain's
+  oracle); any other Nbr requires a documentary `T1` entry (`grain: "team"`)
+  in `divergences.json`. `extract/validate.py` enforces both arms (rule 5);
+  the harness guard backstops the Nbr=3 arm at replay time.
 - Multi-task-per-round comps (F3B-style), until multi-task rounds exist — they
   hit the deferred `unsupportedRoundComposition` draw rejection today.
 

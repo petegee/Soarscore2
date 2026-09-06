@@ -6,7 +6,7 @@
 
 Source a real event that used GliderScore's `OmitFromTeamScore=true` — a team
 member drawn alongside countrymen who never contributes — and curate it per
-`kanban/in-progress/grow-corpus-team-parity-fixtures.md` WI-2C/WI-2D so the
+`kanban/completed/grow-corpus-team-parity-fixtures.md` WI-2C/WI-2D so the
 ladder grain proves the non-contributor is excluded on BOTH sides. GS filters
 omit rows out of the team table entirely
 (`Rpt_Results_TeamResults_MOD.vb:341-346`, per the WI-1A transcription — the
@@ -28,7 +28,7 @@ unexercised, and `GOLDEN-COMPARISON-STATE.md` must keep saying so.
 ## Before starting
 
 - The hunt trail lives in
-  `kanban/in-progress/grow-corpus-team-parity-fixtures.md` WI-2A/WI-2D
+  `kanban/completed/grow-corpus-team-parity-fixtures.md` WI-2A/WI-2D
   records — read it first (permission-gate state, Pete's asks, and the
   constraint that the `OmitFromTeamScore` flag is only visible at
   export/triage, never in the catalogue or the download CSV).
