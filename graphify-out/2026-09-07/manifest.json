@@ -942,9 +942,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/validate.py": {
-    "mtime": 1787818963.6778512,
-    "seen": 1788135308.1715236,
-    "ast_hash": "825ae68ff0b23819b1fb3858c3e8b600",
+    "mtime": 1788726794.2491238,
+    "seen": 1788726864.4651272,
+    "ast_hash": "3b9c1290273d23fadd2fd1d0b722a513",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj": {
@@ -2310,15 +2310,15 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/README.md": {
-    "mtime": 1788490970.2137196,
-    "seen": 1788496598.3985784,
-    "ast_hash": "7f7a7a318a274ef7a11aa9de35081ca1",
+    "mtime": 1788726518.7015178,
+    "seen": 1788726864.4741616,
+    "ast_hash": "e628b23c7ac3f40e53be59045fdae3b4",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/index.md": {
-    "mtime": 1788496260.7781668,
-    "seen": 1788496598.3985813,
-    "ast_hash": "d983c8477bb26db19294abc7ce3be5b6",
+    "mtime": 1788726464.2253244,
+    "seen": 1788726864.474163,
+    "ast_hash": "c0c215fab2ebb99a48357143d7a7c02f",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/README.md": {
@@ -3714,15 +3714,9 @@
     "semantic_hash": ""
   },
   "kanban/backlog/omit-from-teamscore-witness.md": {
-    "mtime": 1788404638.6084225,
-    "seen": 1788405176.408319,
-    "ast_hash": "dc4420d58d9de828ecb287c170cb3cfd",
-    "semantic_hash": ""
-  },
-  "kanban/in-progress/grow-corpus-team-parity-fixtures.md": {
-    "mtime": 1788404921.2404597,
-    "seen": 1788405176.4091089,
-    "ast_hash": "ae12d5d079738f6ca691baffdb622ec8",
+    "mtime": 1788726699.9463546,
+    "seen": 1788726864.473198,
+    "ast_hash": "5715ba3f75023fbb76150151d8ea90d7",
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/NzNdcSeedArithmeticTests.cs": {
@@ -3933,6 +3927,18 @@
     "mtime": 1788688826.7201798,
     "seen": 1788688990.199446,
     "ast_hash": "e59542dd12739868872968ba16a2c190",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/second-nbr3-team-witness.md": {
+    "mtime": 1788726683.6174185,
+    "seen": 1788726864.4732184,
+    "ast_hash": "7fb4ea079bff1d00903be38a0399fd51",
+    "semantic_hash": ""
+  },
+  "kanban/completed/grow-corpus-team-parity-fixtures.md": {
+    "mtime": 1788726830.7063558,
+    "seen": 1788726864.4735467,
+    "ast_hash": "a69a4917e9eb914c056c704aaafd1844",
     "semantic_hash": ""
   }
 }

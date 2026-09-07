@@ -2700,9 +2700,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs": {
-    "mtime": 1788684154.89373,
-    "seen": 1788684245.211471,
-    "ast_hash": "ff5f1d43f756a2afe662c6d93add0233",
+    "mtime": 1788755160.58767,
+    "seen": 1788757024.2372584,
+    "ast_hash": "ca15f26a84929e3aa7f47aa3a42104ca",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international-flyoff/class-definition.json": {
@@ -3833,12 +3833,6 @@
     "ast_hash": "5db5ab5ebd9629a6834711ee36c57c3c",
     "semantic_hash": ""
   },
-  "kanban/backlog/literal-record-replay-scenarios.md": {
-    "mtime": 1788493807.839735,
-    "seen": 1788496598.396688,
-    "ast_hash": "f6fe0aff4cfa748c2899eb9e914c90eb",
-    "semantic_hash": ""
-  },
   "kanban/completed/f5k-fixture-from-server-db.md": {
     "mtime": 1788497296.189364,
     "seen": 1788497328.1537492,
@@ -3905,12 +3899,6 @@
     "ast_hash": "ec56ac8fcde3794496707a962060c51f",
     "semantic_hash": ""
   },
-  "kanban/backlog/corpus-parallel-run-mapping-table.md": {
-    "mtime": 1788688794.5253608,
-    "seen": 1788688990.198601,
-    "ast_hash": "632050da44794790a7b7283bcaff6601",
-    "semantic_hash": ""
-  },
   "kanban/backlog/f3j-international-parallel-run-retriage.md": {
     "mtime": 1788688794.5253608,
     "seen": 1788688990.1986024,
@@ -3939,6 +3927,42 @@
     "mtime": 1788726830.7063558,
     "seen": 1788726864.4735467,
     "ast_hash": "a69a4917e9eb914c056c704aaafd1844",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Steps/RecordingAGliderscoreFixtureSteps.cs": {
+    "mtime": 1788755800.9744983,
+    "seen": 1788757024.236845,
+    "ast_hash": "3b4f11ac7c5bb1b52792e4a573edb86f",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/literal-record-f3k-sample-comp.md": {
+    "mtime": 1788757007.673038,
+    "seen": 1788757024.2429,
+    "ast_hash": "b59dd7dc46b2b9d15d9a3331ce41b0ae",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/tape-points-landing-seeds.md": {
+    "mtime": 1788746739.5360525,
+    "seen": 1788757024.2429948,
+    "ast_hash": "0e7bc2af8a344ffd2e75f6116c81d5f8",
+    "semantic_hash": ""
+  },
+  "kanban/completed/corpus-parallel-run-mapping-table.md": {
+    "mtime": 1788731572.6370986,
+    "seen": 1788757024.2432141,
+    "ast_hash": "8fd699ca8bfdcb24c376462cb366bcce",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/literal-record-replay-scenarios.md": {
+    "mtime": 1788756771.9063425,
+    "seen": 1788757024.2443473,
+    "ast_hash": "f7e19543930ae30fa4de87abaef16200",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/parallel-run-mapping.md": {
+    "mtime": 1788746722.7940094,
+    "seen": 1788757024.2444453,
+    "ast_hash": "b1c9f00e7d43728d568bbc111eb84988",
     "semantic_hash": ""
   }
 }

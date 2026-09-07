@@ -1335,7 +1335,8 @@ public sealed class ReplayDriver(HttpClient client)
     /// (Scoring_MOD.vb GetTimeInSeconds via arithmetic story Handoff §3):
     /// seconds = Fix(v/100)·60 + (v − 100·Fix(v/100)). "500.0" → 300 s.
     /// </summary>
-    private static decimal DecodePackedMinutesSeconds(decimal packed)
+    // kanban/in-progress/literal-record-replay-scenarios.md WI-1 — widened private → internal so the literal-record steps share the one decode.
+    internal static decimal DecodePackedMinutesSeconds(decimal packed)
     {
         var minutes = Math.Truncate(packed / 100m);
 
