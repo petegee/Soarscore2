@@ -154,7 +154,7 @@ public static class PhaseAggregator
                     continue;
 
                 // Both gates hold → apply ByRound drop.
-                return ApplyByRoundDrop(scores, policy.DropCount);
+                return ApplyByRoundDrop(scores, policy.DropCount, policy.TieBreak);
             }
             else // ByTask
             {
@@ -173,12 +173,12 @@ public static class PhaseAggregator
                 if (policy.ApplyWhenResultsAtLeast.HasValue)
                 {
                     return ApplyByTaskDrop(scores, policy.DropCount,
-                        policy.ApplyWhenResultsAtLeast.Value);
+                        policy.ApplyWhenResultsAtLeast.Value, policy.TieBreak);
                 }
                 else
                 {
                     return ApplyByTaskDrop(scores, policy.DropCount,
-                        minResults: 0);
+                        minResults: 0, policy.TieBreak);
                 }
             }
         }
@@ -189,13 +189,15 @@ public static class PhaseAggregator
     }
 
     private static (decimal aggregate, ImmutableArray<TaskRoundScore> dropped)
-        ApplyByRoundDrop(List<TaskRoundScore> scores, int dropCount)
+        ApplyByRoundDrop(List<TaskRoundScore> scores, int dropCount, DropTieBreak tieBreak)
     {
-        // Compute per-round totals, sort ascending, drop lowest N.
+        // Compute per-round totals, sort ascending, drop lowest N. Equally-bad
+        // rounds break per the policy's tie-break (literal-record-f3k-sample-comp.md WI-4b).
         var roundTotals = scores
             .GroupBy(s => s.RoundOrdinal)
             .Select(g => (Round: g.Key, Total: g.Sum(s => s.Score)))
             .OrderBy(x => x.Total)
+            .ThenBy(x => tieBreak == DropTieBreak.Latest ? -x.Round : x.Round)
             .ToList();
 
         var droppedRounds = roundTotals.Take(dropCount)
@@ -217,7 +219,8 @@ public static class PhaseAggregator
         ApplyByTaskDrop(
             List<TaskRoundScore> scores,
             int dropCount,
-            int minResults)
+            int minResults,
+            DropTieBreak tieBreak)
     {
         // Group scores by task code.
         var byTask = scores.GroupBy(s => s.TaskCode).ToList();
@@ -227,7 +230,12 @@ public static class PhaseAggregator
 
         foreach (var group in byTask)
         {
-            var taskScores = group.OrderBy(s => s.Score).ToList();
+            // Value ASC, then latest-round-first for Latest — GliderScore parity
+            // (literal-record-f3k-sample-comp.md WI-4b).
+            var taskScores = group
+                .OrderBy(s => s.Score)
+                .ThenBy(s => tieBreak == DropTieBreak.Latest ? -s.RoundOrdinal : s.RoundOrdinal)
+                .ToList();
 
             // Only drop if this task code meets the results gate.
             if (taskScores.Count >= minResults)

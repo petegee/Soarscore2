@@ -117,6 +117,12 @@ public sealed record RoundComposition
 }
 
 /// <summary>
+/// How equally-bad (tied) drop candidates break. Latest drops the LAST of the
+/// tied rounds; Earliest the FIRST.
+/// </summary>
+public enum DropTieBreak { Latest, Earliest }
+
+/// <summary>
 /// Both gates are nullable and CONJUNCTIVE: a drop applies only when every
 /// populated gate holds (F18). A phase holds an ORDERED list and the first whose
 /// gates all hold applies; adoption rejects a list whose gates are not strictly
@@ -131,6 +137,14 @@ public sealed record DropPolicy
     public int? ApplyWhenRoundsCompletedAtLeast { get; init; }
 
     public int? ApplyWhenResultsAtLeast { get; init; }
+
+    /// <summary>
+    /// Tie-break among equally-bad drop candidates. Default Latest matches
+    /// GliderScore (value ASC then RoundNo DESC) — literal-record-f3k-sample-comp.md
+    /// WI-4b, owner decision 2026-09-08 (Pete): GS-parity semantics for the
+    /// drop rule generally, not per-fixture.
+    /// </summary>
+    public DropTieBreak TieBreak { get; init; } = DropTieBreak.Latest;
 }
 
 public sealed record ValidityRule

@@ -943,7 +943,8 @@ public sealed class ReplayDriver(HttpClient client)
 
     // WI-4 — the infraction type f3k-sample-comp's class definition declares
     // for its Scores.Penalty column (post-sum per-pilot competition penalty).
-    private const string CompetitionPenaltyInfractionType = "competitionPenalty";
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-1 — widened private → internal so the literal-record steps can record penalties.
+    internal const string CompetitionPenaltyInfractionType = "competitionPenalty";
 
     /// <summary>
     /// One decoded slot value: the metric it is captured under, its value in
@@ -1096,7 +1097,8 @@ public sealed class ReplayDriver(HttpClient client)
     /// silent mis-score — the NLH is the origin of every launch band in the
     /// class, so a divergent round would re-price every flight in it.
     /// </summary>
-    private static IReadOnlyDictionary<int, string> TaskByRound(GliderscoreFixture fixture)
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-1 — widened private → internal so the literal-record Given prescribes the same schedule.
+    internal static IReadOnlyDictionary<int, string> TaskByRound(GliderscoreFixture fixture)
     {
         if (IsF5KFamily(fixture))
         {
@@ -1175,7 +1177,8 @@ public sealed class ReplayDriver(HttpClient client)
     /// never bite this fixture's recorded data: every recorded slot set fits
     /// inside its reduced window with margin, so no cell needs ledgering.
     /// </summary>
-    private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> F3KSlotMap =
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-1 — widened private → internal so the literal-record steps resolve the same slot columns.
+    internal static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> F3KSlotMap =
         new Dictionary<string, IReadOnlyList<string>>
         {
             ["G"] = ["Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs"],
@@ -1318,7 +1321,11 @@ public sealed class ReplayDriver(HttpClient client)
         return captures.Count == 0 ? null : captures;
     }
 
-    private static decimal ColumnValue(ScoresRow row, string column) => column switch
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-3 — widened
+    // private → internal so the literal-record self-check reads the same slot
+    // columns as the driver's capture maps (the DecodePackedMinutesSeconds
+    // precedent): one name → ScoresRow column mapping, never a second copy.
+    internal static decimal ColumnValue(ScoresRow row, string column) => column switch
     {
         "Laps" => row.Laps,
         "Time1Mins" => row.Time1Mins,

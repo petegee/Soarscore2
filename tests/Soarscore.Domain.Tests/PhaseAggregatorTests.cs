@@ -168,6 +168,104 @@ public class PhaseAggregatorTests
         result.Aggregate.Should().Be(900m); // 500 + 0 + 400
     }
 
+    // ------------------------------------------------------ Drop tie-break (WI-4b)
+
+    [Fact]
+    public void ByTask_tied_candidates_latest_round_dropped_by_default()
+    {
+        var phase = MakePhase(drops: [ByTaskDrop(count: 1, completedAtLeast: 0, resultsAtLeast: 0)]);
+        var rounds = MakeRounds(5, taskCode: "A");
+        var allScores = MakeScores(rounds, new[] { 100m, 300m, 500m, 0m, 0m });
+
+        var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
+
+        result.DroppedScores.Should().ContainSingle();
+        result.DroppedScores[0].RoundOrdinal.Should().Be(5);
+        result.Aggregate.Should().Be(900m);
+    }
+
+    [Fact]
+    public void ByTask_tied_candidates_earliest_round_dropped_when_configured()
+    {
+        var phase = MakePhase(drops: [ByTaskDrop(count: 1, completedAtLeast: 0, resultsAtLeast: 0,
+            tieBreak: DropTieBreak.Earliest)]);
+        var rounds = MakeRounds(5, taskCode: "A");
+        var allScores = MakeScores(rounds, new[] { 100m, 300m, 500m, 0m, 0m });
+
+        var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
+
+        result.DroppedScores.Should().ContainSingle();
+        result.DroppedScores[0].RoundOrdinal.Should().Be(4);
+        result.Aggregate.Should().Be(900m);
+    }
+
+    [Fact]
+    public void ByTask_non_tied_candidates_drop_by_value_regardless_of_tie_break()
+    {
+        var scores = new[] { 500m, 100m, 400m, 300m, 200m };
+
+        var latest = PhaseAggregator.Aggregate("C1",
+            MakePhase(drops: [ByTaskDrop(count: 1, completedAtLeast: 0, resultsAtLeast: 0)]),
+            MakeRounds(5, taskCode: "A"), MakeScores(MakeRounds(5, taskCode: "A"), scores));
+        var earliest = PhaseAggregator.Aggregate("C1",
+            MakePhase(drops: [ByTaskDrop(count: 1, completedAtLeast: 0, resultsAtLeast: 0,
+                tieBreak: DropTieBreak.Earliest)]),
+            MakeRounds(5, taskCode: "A"), MakeScores(MakeRounds(5, taskCode: "A"), scores));
+
+        latest.DroppedScores[0].RoundOrdinal.Should().Be(2);
+        earliest.DroppedScores[0].RoundOrdinal.Should().Be(2);
+        latest.Aggregate.Should().Be(1400m);
+        earliest.Aggregate.Should().Be(1400m);
+    }
+
+    [Fact]
+    public void ByRound_tied_candidates_latest_round_dropped_by_default()
+    {
+        var phase = MakePhase(drops: [ByRoundDrop(count: 1, completedAtLeast: 0)]);
+        var rounds = MakeRounds(4, taskCode: "A");
+        var allScores = MakeScores(rounds, new[] { 100m, 200m, 0m, 0m });
+
+        var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
+
+        result.DroppedScores.Should().ContainSingle();
+        result.DroppedScores[0].RoundOrdinal.Should().Be(4);
+        result.Aggregate.Should().Be(300m);
+    }
+
+    [Fact]
+    public void ByRound_tied_candidates_earliest_round_dropped_when_configured()
+    {
+        var phase = MakePhase(drops: [ByRoundDrop(count: 1, completedAtLeast: 0,
+            tieBreak: DropTieBreak.Earliest)]);
+        var rounds = MakeRounds(4, taskCode: "A");
+        var allScores = MakeScores(rounds, new[] { 100m, 200m, 0m, 0m });
+
+        var result = PhaseAggregator.Aggregate("C1", phase, rounds, allScores);
+
+        result.DroppedScores.Should().ContainSingle();
+        result.DroppedScores[0].RoundOrdinal.Should().Be(3);
+        result.Aggregate.Should().Be(300m);
+    }
+
+    [Fact]
+    public void ByRound_non_tied_candidates_drop_by_value_regardless_of_tie_break()
+    {
+        var scores = new[] { 300m, 100m, 200m, 400m };
+
+        var latest = PhaseAggregator.Aggregate("C1",
+            MakePhase(drops: [ByRoundDrop(count: 1, completedAtLeast: 0)]),
+            MakeRounds(4, taskCode: "A"), MakeScores(MakeRounds(4, taskCode: "A"), scores));
+        var earliest = PhaseAggregator.Aggregate("C1",
+            MakePhase(drops: [ByRoundDrop(count: 1, completedAtLeast: 0,
+                tieBreak: DropTieBreak.Earliest)]),
+            MakeRounds(4, taskCode: "A"), MakeScores(MakeRounds(4, taskCode: "A"), scores));
+
+        latest.DroppedScores[0].RoundOrdinal.Should().Be(2);
+        earliest.DroppedScores[0].RoundOrdinal.Should().Be(2);
+        latest.Aggregate.Should().Be(900m);
+        earliest.Aggregate.Should().Be(900m);
+    }
+
     // ------------------------------------------------------ helpers
 
     private static PhaseDefinition MakePhase(ImmutableArray<DropPolicy> drops) => new()
@@ -184,19 +282,23 @@ public class PhaseAggregatorTests
         Tasks = ImmutableArray<TaskDefinition>.Empty,
     };
 
-    private static DropPolicy ByRoundDrop(int count, int? completedAtLeast) => new()
+    private static DropPolicy ByRoundDrop(int count, int? completedAtLeast,
+        DropTieBreak tieBreak = DropTieBreak.Latest) => new()
     {
         Dimension = DropDimension.ByRound,
         DropCount = count,
         ApplyWhenRoundsCompletedAtLeast = completedAtLeast,
+        TieBreak = tieBreak,
     };
 
-    private static DropPolicy ByTaskDrop(int count, int? completedAtLeast, int? resultsAtLeast) => new()
+    private static DropPolicy ByTaskDrop(int count, int? completedAtLeast, int? resultsAtLeast,
+        DropTieBreak tieBreak = DropTieBreak.Latest) => new()
     {
         Dimension = DropDimension.ByTask,
         DropCount = count,
         ApplyWhenRoundsCompletedAtLeast = completedAtLeast,
         ApplyWhenResultsAtLeast = resultsAtLeast,
+        TieBreak = tieBreak,
     };
 
     private static ImmutableArray<RoundData> MakeRounds(int count, string taskCode)
