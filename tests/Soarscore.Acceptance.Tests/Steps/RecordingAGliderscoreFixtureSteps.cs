@@ -48,6 +48,14 @@ public sealed class RecordingAGliderscoreFixtureSteps
     private const string MarkerNoFlight = "no flight";
     private const string MarkerZeroUnrecorded = "zero (unrecorded)";
 
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-3 — the seven raw
+    // columns GS packs per Scores row, in slot order; ReplayDriver.F3KSlotMap's
+    // slot lists name these.
+    private static readonly string[] RawSlotColumns =
+    [
+        "Laps", "Time1Mins", "Time1Secs", "Time2Mins", "Time2Secs", "Landing", "FlightScoreDeduction",
+    ];
+
     private GliderscoreFixture _fixture = null!;
     private CompetitionId _competitionId;
     private int _phaseOrdinal;
@@ -63,11 +71,8 @@ public sealed class RecordingAGliderscoreFixtureSteps
     private HashSet<string> _enteredTableColumns = [];             // union of the tables' headers
 
     // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — set by the
-    // slot entry arm; the self-check's slot arm (WI-3) consumes it. Unread
-    // until then, hence the pragma.
-#pragma warning disable CS0414
+    // slot entry arm; the self-check's slot arm (WI-3) branches on it.
     private bool _slotFamilyTables;
-#pragma warning restore CS0414
     private int _commandsIssued;                                   // honesty only, unasserted
     private ReplayOutcome _outcome = null!;
 
@@ -513,98 +518,337 @@ public sealed class RecordingAGliderscoreFixtureSteps
                 $"scores-raw mismatch — round {fixtureRow.RoundNo}, {PilotName(fixtureRow.PilotNo)}: no row entered but the fixture has one");
         }
 
-        foreach (var entered in _enteredRows.Where(e => fixtureKeys.Contains((e.RoundNo, e.PilotNo))))
+        if (_slotFamilyTables)
         {
-            var fixtureRow = rows.Single(f => f.RoundNo == entered.RoundNo && f.PilotNo == entered.PilotNo);
-
-            // Flown ⇔ marker: a fixture row is unflown iff Time1Mins <= 0 (the
-            // CaptureDurationInputs rule) — a discrepancy is named both ways.
-            var fixtureFlown = fixtureRow.Time1Mins > 0m;
-            var enteredFlown = entered.Time is not null;
-
-            if (fixtureFlown != enteredFlown)
-            {
-                mismatches.Add(fixtureFlown
-                    ? $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered 'no flight' but fixture says Time1Mins {fixtureRow.Time1Mins} (a flight)"
-                    : $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Time '{entered.Time}' but fixture says Time1Mins {fixtureRow.Time1Mins} (no flight)");
-                continue;
-            }
-
-            if (!enteredFlown)
-            {
-                if (entered.Landing != "—")
-                {
-                    mismatches.Add(
-                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Landing '{entered.Landing ?? "<none>"}' but fixture says '—' (no flight, fixture Landing is 0)");
-                }
-
-                continue;
-            }
-
-            // Flown rows: authored seconds == the packed-mmss decode, and the
-            // authored Landing == the fixture value exactly (invariant decimal).
-            var decodedSeconds = ReplayDriver.DecodePackedMinutesSeconds(fixtureRow.Time1Mins);
-            var authoredSeconds = ParseMmss(entered.Time!);
-
-            if (authoredSeconds != decodedSeconds)
-            {
-                mismatches.Add(
-                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Time '{entered.Time}' but fixture says '{FormatMmss(decodedSeconds)}'");
-            }
-
-            if (!decimal.TryParse(
-                    entered.Landing, NumberStyles.Number, CultureInfo.InvariantCulture, out var authoredLanding))
-            {
-                mismatches.Add(
-                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Landing '{entered.Landing ?? "<none>"}' but fixture says '{fixtureRow.Landing}'");
-            }
-            else if (authoredLanding != fixtureRow.Landing)
-            {
-                mismatches.Add(
-                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Landing '{entered.Landing}' but fixture says '{fixtureRow.Landing}'");
-            }
+            // kanban/in-progress/literal-record-f3k-sample-comp.md WI-3 — the
+            // slot family's arm. The duration checks below must NOT run here:
+            // their Time1Mins flown-rule and Time1Secs/Time2Mins/Time2Secs
+            // neutrality would fire on this fixture's real slot values (§4
+            // Then 6).
+            SlotArmSelfCheck(rows, mismatches);
         }
-
-        // Omitted-column honesty: the m:ss format packs its own seconds, so
-        // Time1Secs is unexpressible in any table here, as are the second-
-        // timekeeper columns (trap 5); Laps, the deduction payload (Height
-        // absent) and Penalty are checked only while their union columns are
-        // absent from the fixture's tables. A non-zero value behind an omitted
-        // column is a named mismatch, never a silent pass.
-        foreach (var fixtureRow in rows)
+        else
         {
-            void Neutral(decimal value, string column)
+            foreach (var entered in _enteredRows.Where(e => fixtureKeys.Contains((e.RoundNo, e.PilotNo))))
             {
-                if (value != 0m)
+                var fixtureRow = rows.Single(f => f.RoundNo == entered.RoundNo && f.PilotNo == entered.PilotNo);
+
+                // Flown ⇔ marker: a fixture row is unflown iff Time1Mins <= 0 (the
+                // CaptureDurationInputs rule) — a discrepancy is named both ways.
+                var fixtureFlown = fixtureRow.Time1Mins > 0m;
+                var enteredFlown = entered.Time is not null;
+
+                if (fixtureFlown != enteredFlown)
+                {
+                    mismatches.Add(fixtureFlown
+                        ? $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered 'no flight' but fixture says Time1Mins {fixtureRow.Time1Mins} (a flight)"
+                        : $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Time '{entered.Time}' but fixture says Time1Mins {fixtureRow.Time1Mins} (no flight)");
+                    continue;
+                }
+
+                if (!enteredFlown)
+                {
+                    if (entered.Landing != "—")
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Landing '{entered.Landing ?? "<none>"}' but fixture says '—' (no flight, fixture Landing is 0)");
+                    }
+
+                    continue;
+                }
+
+                // Flown rows: authored seconds == the packed-mmss decode, and the
+                // authored Landing == the fixture value exactly (invariant decimal).
+                var decodedSeconds = ReplayDriver.DecodePackedMinutesSeconds(fixtureRow.Time1Mins);
+                var authoredSeconds = ParseMmss(entered.Time!);
+
+                if (authoredSeconds != decodedSeconds)
                 {
                     mismatches.Add(
-                        $"scores-raw mismatch — round {fixtureRow.RoundNo}, {PilotName(fixtureRow.PilotNo)}: fixture carries {column} {value} but the tables have no {column} column");
+                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Time '{entered.Time}' but fixture says '{FormatMmss(decodedSeconds)}'");
+                }
+
+                if (!decimal.TryParse(
+                        entered.Landing, NumberStyles.Number, CultureInfo.InvariantCulture, out var authoredLanding))
+                {
+                    mismatches.Add(
+                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Landing '{entered.Landing ?? "<none>"}' but fixture says '{fixtureRow.Landing}'");
+                }
+                else if (authoredLanding != fixtureRow.Landing)
+                {
+                    mismatches.Add(
+                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Landing '{entered.Landing}' but fixture says '{fixtureRow.Landing}'");
                 }
             }
 
-            if (!_enteredTableColumns.Contains("Laps"))
+            // Omitted-column honesty: the m:ss format packs its own seconds, so
+            // Time1Secs is unexpressible in any table here, as are the second-
+            // timekeeper columns (trap 5); Laps, the deduction payload (Height
+            // absent) and Penalty are checked only while their union columns are
+            // absent from the fixture's tables. A non-zero value behind an omitted
+            // column is a named mismatch, never a silent pass.
+            foreach (var fixtureRow in rows)
             {
-                Neutral(fixtureRow.Laps, "Laps");
-            }
+                void Neutral(decimal value, string column)
+                {
+                    if (value != 0m)
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {fixtureRow.RoundNo}, {PilotName(fixtureRow.PilotNo)}: fixture carries {column} {value} but the tables have no {column} column");
+                    }
+                }
 
-            if (!_enteredTableColumns.Contains("Height"))
-            {
-                Neutral(fixtureRow.FlightScoreDeduction, "FlightScoreDeduction");
-            }
+                if (!_enteredTableColumns.Contains("Laps"))
+                {
+                    Neutral(fixtureRow.Laps, "Laps");
+                }
 
-            if (!_enteredTableColumns.Contains("Penalty"))
-            {
-                Neutral(fixtureRow.Penalty, "Penalty");
-            }
+                if (!_enteredTableColumns.Contains("Height"))
+                {
+                    Neutral(fixtureRow.FlightScoreDeduction, "FlightScoreDeduction");
+                }
 
-            Neutral(fixtureRow.Time1Secs, "Time1Secs");
-            Neutral(fixtureRow.Time2Mins, "Time2Mins");
-            Neutral(fixtureRow.Time2Secs, "Time2Secs");
+                if (!_enteredTableColumns.Contains("Penalty"))
+                {
+                    Neutral(fixtureRow.Penalty, "Penalty");
+                }
+
+                Neutral(fixtureRow.Time1Secs, "Time1Secs");
+                Neutral(fixtureRow.Time2Mins, "Time2Mins");
+                Neutral(fixtureRow.Time2Secs, "Time2Secs");
+            }
         }
 
         mismatches.Should().BeEmpty(
             "the hand-authored tables must reproduce scores-raw.json cell for cell — authoring errors surface HERE, never as comparator failures (story decision 3)"
             + $"{Environment.NewLine}{string.Join(Environment.NewLine, mismatches)}");
+    }
+
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-3 — the slot
+    // family's self-check (§4 Then 6): the authored Task/Slot/Penalty cells are
+    // diffed against scores-raw.json through the fixture's own task schedule
+    // and slot map (the cells never drive behaviour), every mismatch collected
+    // with its cell named. A row is FLOWN on the authored side iff it carries
+    // m:ss flight cells; marker rows record unflown rows, and an unflown row
+    // without a marker is honest only when every slot cell is '—'.
+    private void SlotArmSelfCheck(ScoresRow[] rows, List<string> mismatches)
+    {
+        var schedule = ReplayDriver.TaskByRound(_fixture);
+
+        foreach (var entered in _enteredRows.Where(e => rows.Any(f => f.RoundNo == e.RoundNo && f.PilotNo == e.PilotNo)))
+        {
+            var fixtureRow = rows.Single(f => f.RoundNo == entered.RoundNo && f.PilotNo == entered.PilotNo);
+
+            if (entered.SlotCells.Count != 7)
+            {
+                mismatches.Add(
+                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: the row was entered with {entered.SlotCells.Count} slot cells — a slot-family scenario's tables must all carry Slot 1..Slot 7");
+                continue;
+            }
+
+            // Task cell: authored == the fixture schedule's code for the round —
+            // a wrong Task cell surfaces only here.
+            if (!schedule.TryGetValue(entered.RoundNo, out var taskCode))
+            {
+                mismatches.Add(
+                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Task '{entered.Task ?? "<none>"}' but the fixture's schedule names no task for the round");
+                continue;
+            }
+
+            if (entered.Task != taskCode)
+            {
+                mismatches.Add(
+                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered Task '{entered.Task ?? "<none>"}' but fixture schedule says '{taskCode}'");
+            }
+
+            if (!ReplayDriver.F3KSlotMap.TryGetValue(taskCode, out var slots))
+            {
+                mismatches.Add(
+                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: fixture schedule names GS task '{taskCode}', which is not in the F3K slot-column capture map — widen F3KSlotMap with its CalcRawScoreF3K semantics first");
+                continue;
+            }
+
+            var decodedSlots = slots
+                .Select(column => ReplayDriver.DecodePackedMinutesSeconds(ReplayDriver.ColumnValue(fixtureRow, column)))
+                .ToList();
+
+            var marker = entered.SlotCells
+                .Select((cell, index) => (cell, index))
+                .FirstOrDefault(p => p.cell is MarkerNoFlight or MarkerZeroUnrecorded);
+
+            var fixtureFlown = decodedSlots.Any(value => value != 0m);
+            var enteredFlown = entered.SlotCells.Any(cell => cell is not null && MmssPattern.IsMatch(cell));
+
+            // Flown ⇔ marker, slot edition: a fixture row is unflown iff ALL its
+            // task's slots decode to 0 (X rows always are) — a discrepancy is
+            // named both ways.
+            if (fixtureFlown != enteredFlown)
+            {
+                mismatches.Add(fixtureFlown
+                    ? $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered {(marker.cell is null ? "no flight values" : $"'{marker.cell}'")} but fixture says task '{taskCode}' slots decode non-zero ({string.Join(", ", decodedSlots.Select(FormatMmss))}) (a flight)"
+                    : $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: entered flight values ({string.Join(", ", entered.SlotCells.Where(cell => cell is not null && MmssPattern.IsMatch(cell)))}) but fixture says task '{taskCode}' slots all decode zero (no flight)");
+                continue;
+            }
+
+            if (enteredFlown)
+            {
+                // Flown rows carry no markers — markers record unflown rows only.
+                if (marker.cell is not null)
+                {
+                    mismatches.Add(
+                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {marker.index + 1} marker '{marker.cell}' on a flown row — markers record unflown rows only");
+                }
+
+                for (var i = 0; i < 7; i++)
+                {
+                    var cell = entered.SlotCells[i];
+
+                    if (i == marker.index)
+                    {
+                        continue;
+                    }
+
+                    if (i >= slots.Count)
+                    {
+                        if (cell is not (null or "—"))
+                        {
+                            mismatches.Add(
+                                $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {i + 1} cell '{cell}' names a slot task '{taskCode}' does not read (it reads {slots.Count} slot(s)) — must be '—'");
+                        }
+
+                        continue;
+                    }
+
+                    var fixtureDecoded = decodedSlots[i];
+                    var fixturePacked = ReplayDriver.ColumnValue(fixtureRow, slots[i]);
+
+                    if (cell is null or "—")
+                    {
+                        if (fixtureDecoded != 0m)
+                        {
+                            mismatches.Add(
+                                $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {i + 1} cell '—' but fixture says '{FormatMmss(fixtureDecoded)}' (packed {fixturePacked})");
+                        }
+
+                        continue;
+                    }
+
+                    var mmss = MmssPattern.Match(cell);
+
+                    if (!mmss.Success)
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {i + 1} cell '{cell}' is neither '—' nor m:ss");
+                        continue;
+                    }
+
+                    if (fixtureDecoded == 0m)
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {i + 1} cell '{cell}' but fixture says '—' (packed {fixturePacked})");
+                    }
+                    else if (ParseMmss(cell) != fixtureDecoded)
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {i + 1} cell '{cell}' but fixture says '{FormatMmss(fixtureDecoded)}' (packed {fixturePacked})");
+                    }
+                }
+            }
+            else
+            {
+                // Marker discipline (decision 2, machine-checked —
+                // literal-record-f3k-sample-comp.md WI-3): 'no flight' is the
+                // provenance-attested NoTaskSet arm, valid only on a row whose
+                // task code is 'X'; 'zero (unrecorded)' is the undecidable arm,
+                // valid only on an unflown row whose task is NOT 'X' (here
+                // exactly one — R4 / pilot 42). A marker on the wrong arm is a
+                // named mismatch.
+                if (marker.cell is not null)
+                {
+                    var markerOnRightArm = marker.cell == MarkerNoFlight
+                        ? taskCode == "X"
+                        : taskCode != "X";
+
+                    if (!markerOnRightArm)
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: marker '{marker.cell}' on task '{taskCode}' — '{MarkerNoFlight}' is valid only on 'X' rows, '{MarkerZeroUnrecorded}' only on unflown non-'X' rows");
+                    }
+                }
+
+                // Unflown rows record no flights: every slot cell beyond the
+                // marker must be '—' (markerless unflown rows included).
+                for (var i = 0; i < 7; i++)
+                {
+                    if (i == marker.index)
+                    {
+                        continue;
+                    }
+
+                    if (entered.SlotCells[i] is not (null or "—"))
+                    {
+                        mismatches.Add(
+                            $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Slot {i + 1} cell '{entered.SlotCells[i]}' on an unflown row must be '—'");
+                    }
+                }
+            }
+
+            // Penalty: authored '—' ⇔ 0, integer otherwise, and it must equal
+            // the fixture row's Penalty exactly.
+            if (entered.Penalty is null or "—")
+            {
+                if (fixtureRow.Penalty != 0)
+                {
+                    mismatches.Add(
+                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Penalty cell '—' but fixture says {fixtureRow.Penalty}");
+                }
+            }
+            else if (int.TryParse(entered.Penalty, NumberStyles.Integer, CultureInfo.InvariantCulture, out var authoredPenalty))
+            {
+                if (authoredPenalty != fixtureRow.Penalty)
+                {
+                    mismatches.Add(
+                        $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Penalty cell '{entered.Penalty}' but fixture says {fixtureRow.Penalty}");
+                }
+            }
+            else
+            {
+                mismatches.Add(
+                    $"scores-raw mismatch — round {entered.RoundNo}, {entered.PilotName}: Penalty cell '{entered.Penalty}' is neither '—' nor an integer");
+            }
+        }
+
+        // Omitted-column honesty, slot edition: all seven raw columns are
+        // potentially slots, so the neutrality question is which columns the
+        // fixture's OWN schedule maps — every column no task maps must be
+        // all-zero in scores-raw. Generic, never fixture-named (here the set is
+        // empty — task D maps all seven).
+        var mappedColumns = new HashSet<string>();
+
+        foreach (var code in schedule.Values)
+        {
+            if (ReplayDriver.F3KSlotMap.TryGetValue(code, out var slotList))
+            {
+                foreach (var column in slotList)
+                {
+                    mappedColumns.Add(column);
+                }
+            }
+        }
+
+        foreach (var column in RawSlotColumns.Where(c => !mappedColumns.Contains(c)))
+        {
+            foreach (var fixtureRow in rows)
+            {
+                var value = ReplayDriver.ColumnValue(fixtureRow, column);
+
+                if (value != 0m)
+                {
+                    mismatches.Add(
+                        $"scores-raw mismatch — round {fixtureRow.RoundNo}, {PilotName(fixtureRow.PilotNo)}: fixture carries {column} {value} but no task in the fixture's schedule maps {column}");
+                }
+            }
+        }
     }
 
     [Then(@"^round (\d+) is completed and scored$")]

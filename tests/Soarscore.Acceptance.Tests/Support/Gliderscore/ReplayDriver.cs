@@ -1321,7 +1321,11 @@ public sealed class ReplayDriver(HttpClient client)
         return captures.Count == 0 ? null : captures;
     }
 
-    private static decimal ColumnValue(ScoresRow row, string column) => column switch
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-3 — widened
+    // private → internal so the literal-record self-check reads the same slot
+    // columns as the driver's capture maps (the DecodePackedMinutesSeconds
+    // precedent): one name → ScoresRow column mapping, never a second copy.
+    internal static decimal ColumnValue(ScoresRow row, string column) => column switch
     {
         "Laps" => row.Laps,
         "Time1Mins" => row.Time1Mins,
