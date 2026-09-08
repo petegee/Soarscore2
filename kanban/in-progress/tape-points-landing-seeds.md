@@ -103,6 +103,283 @@ both distance scoring and the exact set of acceptable supplied points.
   the importer actually submitted. Membership validation is not a claim that
   a physical tape's bands match the rulebook.
 
+## WI-0 contract — structural capture agreement (resolved 2026-09-08)
+
+All seven code anchors re-verified as stated; the relevant details are cited
+below where the contract leans on them. Owner decisions 1-7 are settled and are
+not re-argued here. This section records the structural contract WI-1-WI-3
+implement; no `/docs` change is required — `Unit` already exists on
+`MetricDefinition` (ScoringVocabulary.cs:45), so this adds an attribute to
+existing concepts, not a new concept.
+
+### Corpus survey (evidence for the shape)
+
+Sixteen `LookupTerm` sites across the twelve seed files:
+
+- `landingDistance` — 12 sites over 11 classes (F3B; F3J preliminary and
+  fly-off; F5J preliminary and fly-off; F5jNdc; F5L; X5j; NzMAles200;
+  NzNAles123; NzPRadian; NzMNdc). Declared unit `m` everywhere. Every site is
+  the `Then` of a `ConditionalTerm` (`T.When(...)`), in `Score` except
+  SeedNzMAles200, whose landing lookup sits in `ScoreNormalised` (NZ.3.12.1 e
+  — landing added after normalising). No `RateTerm`, `PiecewiseTerm` or
+  `Comparison` operand anywhere in the corpus references `landingDistance`.
+  Per *adopted task* there is exactly one lookup over it: F3J's and F5J's two
+  tasks share their `LandingRows` declarations, but an Entry flies one task,
+  so capture-time resolution is single.
+- `flight.sequence` — 4 sites (F5K Tasks B and E, F5kNdc ×2, negative
+  launch-cost rows). It is the intrinsic FlightInterpreter synthesises
+  (FlightInterpreter.cs:37), never a declared metric: capture already refuses
+  it (`captureMeasurement.metricNotDeclared`), so the points contract never
+  engages for it. The walk must not mistake these sites for capturable
+  lookup metrics.
+- No metric is consumed by two lookups, or by a lookup plus any distance
+  consumer. The remaining unit-declared metrics are all lookup-free:
+  `flightTime` (rate, piecewise, comparison operands, `RankByMetric`),
+  `startHeight` (piecewise), `launchAltitude` (piecewise), `legs` (rate, unit
+  `legs`), `courseTime`/`glideTime`/`motorRestartRunTime` (rates),
+  `targetTime` (rate + comparison right side), `overflySeconds` (comparison
+  operands only — `P.Le`/`P.Gt`/`P.Eq`). Flag metrics (unit null:
+  `touchedByCompetitor`, `restedWithin75m`, `startHeightRecorded`,
+  `landedInDefinedArea`, `landedWithin75m`, `landedInLandingArea`,
+  `amrtPresetsCorrect`, `timingDeviationInFavour`, `lostPart`,
+  `touchedBeforeMeasuring`, `damagedAndNotSafelyFlyable`, ...) are comparison
+  operands only (`P.Is`).
+- Every landing table in the corpus closes `.Rest(0)` — `0` is an award in
+  every shipped table (F3J.10.5's "over 15 → 0" row; verified against the
+  verbatim source via the fai-rules script). No shipped table repeats a
+  `Points` value across rows.
+
+**Finding: no current seed hits the refusal case.** No shipped metric is a
+multi-lookup or dual-consumer consumer. The ambiguous-lookup and
+distance-consumer refusals below are structural guards for shapes no shipped
+class exhibits; every declared metric is either exactly-one-lookup
+(`landingDistance`) or lookup-free.
+
+### C1 — the input unit is explicit on the value, and atomic with it
+
+`MeasuredValue` gains one optional property:
+
+```csharp
+public sealed record MeasuredValue
+{
+    public required MeasuredKind Kind { get; init; }
+    public decimal? Number { get; init; }
+    public bool? Flag { get; init; }
+    /// <summary>The supplied input unit on a captured observation ("m", "pts");
+    /// null on definition-side literals and flag captures.</summary>
+    public string? Unit { get; init; }
+    public static MeasuredValue Of(decimal n) => ...;            // unchanged
+    public static MeasuredValue Of(decimal n, string unit);      // new overload
+    public static MeasuredValue Of(bool f) => ...;               // unchanged — no unit
+}
+```
+
+Rationale: owner decision 3 ("store the value and unit together") is then
+structural, not a merge performed by the decide — the caller's value object is
+the stored value object. The command records keep their exact shapes
+(`CaptureMeasurement(EntryRef, FlightSequence, Metric, Value)`; `AmendMeasurement(..., NewValue, Reason, By)`); the unit travels inside
+`Value`/`NewValue`, so there is one source of truth for it and no
+reconciliation step. A top-level command `Unit` field was considered and
+rejected: it duplicates the fact the stored record must carry anyway.
+
+- Wire shape: `"value": { "kind": "number", "number": 85, "unit": "pts" }` —
+  additive `unit` key inside the existing value object. `MeasuredValue`
+  serialises as a plain record exactly as `WhenNotRecorded` already does (the
+  ScoringVocabulary comment's "nothing polymorphic, no `$kind` of its own"
+  law). Absent/`null` unit serialises as today.
+- Validation rules (both capture and amendment, in the decide functions —
+  handlers already hold the resolved task):
+  - Number metric with a declared unit: `Unit` is **required**; it must equal
+    the declared unit or `pts`. Missing → refused (never defaulted to the
+    declared unit); any other string → refused.
+  - Number metric with `Unit == null` (unitless; latent in the corpus — no
+    seed declares one, the model allows it): `Unit` must be absent. This
+    preserves the existing unitless capture contract unchanged.
+  - Flag metric: `Unit` must be absent. `MeasuredValue.Of(bool)` keeps no
+    unit, so existing flag call sites compile and behave unchanged.
+- Definition-side literals — `MetricDefinition.WhenNotRecorded`,
+  `Comparison.RightValue` — stay `Unit == null`. They are the class's own
+  numbers, not supplied observations; no capture-path rule reaches them and
+  adoption is untouched.
+
+### C2 — which metrics may accept `pts` (the structural walk)
+
+`pts` is accepted for a metric if and only if, resolved against the **adopted
+task's** shape:
+
+1. the metric is the `MetricRef` of **exactly one** `LookupTerm` reachable from
+   `Score` or `ScoreNormalised`, including `ConditionalTerm.Then`/`Else`
+   nesting (both lists — NzMAles200 proves the `ScoreNormalised` arm is live);
+2. the metric is **not consumed as actual distance**: no `RateTerm.MetricRef`
+   or `PiecewiseTerm.MetricRef` equals it, and it appears as no `Comparison`
+   `LeftMetricRef`/`RightMetricRef` in the same reachable surface — score-term
+   `When` predicates, `ValidWhen` and `FlightValidWhen` all included.
+
+The walk is the structural mirror of
+`FlightMetricResolution.ReferencedMetrics`/`CollectTermRefs` (same four
+inputs: score, scoreNormalised, validWhen, flightValidWhen — the same overload
+idiom over `ResolvedTask`/`TaskDefinition`), collecting lookup sites and
+distance-consumer flags for one metric instead of bare references.
+`BestNFlights.RankByMetric` stays outside the walk, as the existing
+referenced-set finding already decides (F16) — it is a ranking key, not a
+distance predicate, and no corpus case exercises it on a lookup metric.
+
+Violations refuse the `pts` form only; the declared-unit distance form remains
+valid in every case (owner decision 2 — "keep existing definitions and their
+distance path valid"):
+
+- metric has no applicable lookup, or also has a distance consumer → refuse
+  `pts` with `pointsNotApplicable`;
+- metric has two or more applicable lookups → refuse `pts` with
+  `ambiguousLookup`. Never select a first match or a union of award sets.
+
+Duplicate `Points` values *within* one lookup's rows are not an ambiguity:
+membership is a set test and the contribution equals the supplied value
+either way. Only multiple `LookupTerm` sites refuse.
+
+The handler supplies the new context from what it already loads:
+`ResolvedTask` (ScoringResultTypes.cs:290) carries `Metrics`, `Score`,
+`ScoreNormalised`, `ValidWhen`, `FlightValidWhen`, so both handlers pass one
+extra argument — no second load, no re-derivation:
+
+```csharp
+// Domain (namespace Soarscore.Domain.Scoring) — the structural surface the
+// capture contract reads; both ResolvedTask and TaskDefinition project onto it.
+public sealed record TaskScoringShape(
+    ImmutableArray<ScoreTerm> Score,
+    ImmutableArray<ScoreTerm> ScoreNormalised,
+    Predicate? ValidWhen,
+    Predicate? FlightValidWhen);
+
+public Result<MeasurementCaptured> Entry.CaptureMeasurement(
+    int flightSequence, string metric, MeasuredValue value,
+    DateTimeOffset capturedAt,
+    ImmutableArray<MetricDefinition> metrics,
+    TaskScoringShape scoringShape);                       // new parameter
+
+public Result<MeasurementAmended> Entry.AmendMeasurement(
+    int flightSequence, string metric, MeasuredValue newValue,
+    string reason, string by, DateTimeOffset at,
+    ImmutableArray<MetricDefinition> metrics,
+    TaskScoringShape scoringShape);                       // new parameter
+```
+
+`Entry` still learns nothing class-specific: `TaskScoringShape` is task data,
+the same discipline as the existing `metrics` and `penaltyDefinitions`
+parameters. Existing decide callers keep passing what they have; test callers
+with unitless synthetic metrics pass their task's term lists unchanged.
+
+### C3 — exact-award validation for `pts`; distance untouched
+
+- A `pts` capture is validated against the supplied value **with no rounding
+  applied** — the metric's `Precision` does not reach a pts input (F3J's
+  `Truncate 0.1 m` is a distance rule, not an award rule). The value must
+  equal some `LookupRow.Points` of the single applicable lookup exactly
+  (decimal equality, no epsilon, no clamp, no snap). Any other decimal →
+  refuse with `pointsNotAnAward`. `0` is accepted when the table carries it —
+  every shipped table does (`.Rest(0)`); F3J accepts `85 pts`, refuses
+  `86 pts` and `85.1 pts`.
+- A declared-unit capture keeps today's path bit-for-bit: `Precision`
+  rounds the stored value, the lookup's `metricValue <= UpTo` boundary walk
+  (FlightInterpreter.cs:129-136) is unchanged, and no membership check
+  applies — any metres are capturable, the table decides the award.
+- Validate-then-store order in both decides: existing gates first
+  (annulled, flight, declared, kind, duplicate/`notCaptured`), then unit gates
+  (C1), then pts gates (C2, C3) — with `pointsNotApplicable` /
+  `ambiguousLookup` before `pointsNotAnAward` — then the store step, which
+  rounds a distance value per declared precision and stores a pts value
+  verbatim. No refusal appends an event.
+
+### C4 — error-code set
+
+Mirrored prefixes `captureMeasurement.` / `amendMeasurement.`; existing codes
+unchanged (`entry.annulled`, `flightNotFound`, `metricNotDeclared`,
+`kindMismatch`, `alreadyCaptured` / `notCaptured`, `reasonRequired`,
+`byRequired`). New codes:
+
+| Code | Condition |
+|---|---|
+| `unitRequired` | Number metric declares a unit and the capture carries none. Never defaulted. |
+| `unitUnsupported` | Unit supplied but neither the metric's declared unit nor `pts` (e.g. `cm` on an `m` metric). |
+| `unitNotAllowed` | Unit supplied on a Flag-kind or unitless (`Unit == null`) metric. |
+| `pointsNotApplicable` | `pts` supplied but the metric has no applicable lookup, or is also a distance consumer (rate, piecewise, comparison operand). Distance capture stays valid. |
+| `ambiguousLookup` | `pts` supplied but two or more applicable `LookupTerm`s reference the metric. |
+| `pointsNotAnAward` | `pts` supplied, lookup unambiguous, but the value does not exactly equal any `LookupRow.Points` (including gaps like 85.1 and out-of-range values). |
+
+Changing unit through amendment is legal (owner decision 5) and runs the
+identical gate set: `m`→`pts`, `pts`→`m`, `pts`→`pts` and `m`→`m` are all
+amendments carrying reason, author and time; the gate validates the *new*
+value+unit against the same declared unit / applicable-lookup rules.
+
+### C5 — storage, digest, projections, reporting
+
+- Events: `MeasurementCaptured` / `MeasurementAmended` payloads carry the
+  unit inside their existing `MeasuredValue` — no event-shape change beyond
+  the additive optional key, so both stores (Marten/PostgreSQL, Fisher/SQLite)
+  round-trip it by their existing JSON serialisation. Green-field: no
+  migration, and the project holds no shipped data.
+- `MeasurementDigest` needs no code change: it already resolves and returns
+  whole `MeasuredValue`s, so the effective value+unit travels together,
+  latest-by-`At` with log-order tiebreak unchanged (MeasurementDigest.cs:33-48).
+- `ResolvedMeasurements`/`FlightResult.Measurements` therefore surface the
+  supplied unit verbatim — reporting shows what was observed, never a
+  reverse-computed distance (owner decision 3). `TermContribution.MetricConsumed`
+  for a pts lookup contribution is the award value the term consumed.
+- `DeclaredMetricView` (TaskRoundRecording.cs:112) gains the declared
+  `string? Unit` so recording consumers know what may be supplied; null on
+  flag and unitless metrics. `MissingMetrics`/`AwaitingCapture` logic itself
+  is unchanged — it reasons on presence (C6/INV-5).
+- Scope guard: `BindParameter` and `Parameter.Unit` are out of scope — the
+  parameter-binding contract is separate and untouched. The unit contract
+  governs `Measurement` capture and amendment only.
+
+### C6 — engine and completeness invariants (owner decisions 4, 5, 6 as testable statements)
+
+- **INV-1 (D4, eligibility unchanged).** For a flight with fixed non-landing
+  observations and eligibility inputs, `FlightResultState` and every
+  non-landing term contribution are identical whether the landing metric
+  carries metres or the equivalent award in `pts`. The landing term's
+  enclosing conditional reads only its own metrics (`F3J.10.8`
+  `touchedByCompetitor`, `F3J.10.9` `overflySeconds`, `F3J.10.4`
+  flight-validity gate) — a pts input cannot bypass, satisfy or weaken any of
+  them, and selection, normalisation, penalties and drop rules are untouched.
+- **INV-2 (D4, no distance leakage).** A pts-valued resolved value never
+  enters a `RateTerm`, `PiecewiseTerm` or `Comparison`, and never enters a
+  lookup's `UpTo` boundary walk. `FlightInterpreter.EvaluateLookup` branches
+  on the value's unit: `pts` → the contribution is the award the capture
+  validated (no row walk); declared unit → the existing walk. The pts branch
+  occupies the same stage the lookup occupies (`Score` or `ScoreNormalised`).
+- **INV-3 (D5, one active measurement).** A second capture of the same metric
+  is refused (`alreadyCaptured`) regardless of the units involved —
+  `85 pts` after `3.5 m` is refused as today. The only route to a different
+  value or unit is an amendment; after any number of amendments exactly one
+  effective value+unit resolves per metric.
+- **INV-4 (D5, unit change is an amendment).** Amending between metres and
+  points (either direction) appends `MeasurementAmended` retaining
+  reason/author/time; the original capture stays in the log; nothing
+  double-contributes.
+- **INV-5 (D6, completeness follows the alternative).** A flight whose landing
+  metric carries a valid pts capture is not pending on that metric:
+  `MissingMetrics` and `AwaitingCapture` do not name it, the resolved flight
+  is not `Pending` for landing, and `GET /task-round-recording` agrees with
+  score resolution. `0 pts` (award 0 — over-15 row), `0 m` (the ≤ 0.2 m
+  spot-distance award, 100 in F3J/F5L) and no measurement (pending/assumed)
+  are three distinct observable outcomes.
+- **INV-6 (NFR-4, no imposed order).** The two forms arrive in any order
+  across a competition — points here, metres there, either amended later —
+  with no capture-order gate and no competition-wide capture-mode switch.
+
+### C7 — properties WI-3 must hold (named invariants)
+
+- **Representation equivalence:** for a valid distance `d` with declared
+  precision `p(d)`, the lookup award `A(p(d))` captured as `pts` produces the
+  same landing contribution and score as `d` captured in metres — for every
+  generated supported shape and every canonical seed.
+- **Refusal totality:** every value that is not an award of the applicable
+  table is refused; every unit other than {declared, `pts`} is refused; a
+  flag/unitless metric refuses any unit; a non-lookup or distance-consumed
+  metric refuses `pts` while accepting metres.
+
 ## Requirements cross-check
 
 - `docs/users.md`, Scorer: record what was observed, including the tape
