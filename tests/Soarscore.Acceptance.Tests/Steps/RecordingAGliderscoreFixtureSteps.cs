@@ -168,12 +168,30 @@ public sealed class RecordingAGliderscoreFixtureSteps
                 $"the feature text omits draw tables on the claim that the flying order never varies; round {roundNo} breaks it");
         }
 
+        // The fixture's per-round task schedule, derived exactly as the driver
+        // does (literal-record-f3k-sample-comp.md §4 Given 4) — empty for the
+        // duration family, one row per prescribed round for a schedule-bearing one.
+        var schedule = ReplayDriver.TaskByRound(_fixture);
+
+        if (schedule.Count > 0)
+        {
+            schedule.Keys.Should().BeEquivalentTo(roundNos,
+                "every prescribed round must have a task-schedule row, and vice versa");
+
+            var declaredCodes = _fixture.Definition.Phases.Single()
+                .Tasks.Select(t => t.Code)
+                .ToHashSet();
+            var unknownCodes = schedule.Values.Distinct().Where(code => !declaredCodes.Contains(code)).ToList();
+            unknownCodes.Should().BeEmpty(
+                $"the fixture's task schedule names task code(s) [{string.Join(", ", unknownCodes)}] that the published definition's phase tasks do not declare — prescribing a task the catalogue does not carry is an authoring error");
+        }
+
         // Duration family: TaskByRound is empty, so every prescribed round
         // carries a null TaskRef — exactly as the driver prescribes
         // (ReplayDriver.cs:472-490). List order IS the flying order.
         var prescribedRounds = roundNos
             .Select(roundNo => new PrescribedRound(
-                TaskRef: null,
+                TaskRef: schedule.GetValueOrDefault(roundNo),
                 Groups:
                 [
                     new PrescribedGroup(
@@ -205,6 +223,23 @@ public sealed class RecordingAGliderscoreFixtureSteps
             var taskRound = roundsAscending[_roundOrdinalByRoundNo[roundNo] - 1].TaskRounds.Single();
             _taskCodeByRoundNo[roundNo] = taskRound.TaskRef;
             _groupIdByRoundAndGroup[(roundNo, 1)] = taskRound.Groups.OrderBy(g => g.Ordinal).Single().Id;
+        }
+
+        if (schedule.Count > 0)
+        {
+            var taskMismatches = schedule
+                .Where(kv => _taskCodeByRoundNo.GetValueOrDefault(kv.Key) != kv.Value)
+                .Select(kv =>
+                    $"round {kv.Key}: drawn '{_taskCodeByRoundNo.GetValueOrDefault(kv.Key) ?? "<none>"}' vs prescribed '{kv.Value}'")
+                .Concat(_taskCodeByRoundNo.Keys.Except(schedule.Keys)
+                    .Select(roundNo => $"round {roundNo}: drawn '{_taskCodeByRoundNo[roundNo]}' but no task prescribed"))
+                .ToList();
+
+            taskMismatches.Should().BeEmpty(
+                "the drawn task-rounds must carry the prescribed TaskRefs — _taskCodeByRoundNo must equal the schedule exactly (round → task code)"
+                + (taskMismatches.Count > 0
+                    ? $":{Environment.NewLine}{string.Join(Environment.NewLine, taskMismatches)}"
+                    : string.Empty));
         }
     }
 
