@@ -1,6 +1,6 @@
 # Story — Literal record scenario: f3k-sample-comp (task columns, penalties, real drops)
 
-**Status:** In progress · **Raised:** 2026-09-07 (identified during the closing review of
+**Status:** Completed 2026-09-08 · **Raised:** 2026-09-07 (identified during the closing review of
 `literal-record-replay-scenarios.md`: a corpus survey of all ten active fixtures ranked
 this #1 on new-behaviour-per-widening-cost) ·
 **Planned:** 2026-09-07 (plan below is implementation-ready: fixture data verified
@@ -41,7 +41,7 @@ widens the recorded form at five points at once:
 10 compact 9-row blocks, ZZ names (no PII), no per-fixture step
 special-handling — every widening is data-driven off the fixture files.
 
-### Settled design decisions (2026-09-07, Pete)
+### Settled design decisions (2026-09-07, Pete; decision 4 added 2026-09-08)
 
 1. **Slot cells are authored decoded m:ss** (`2:43`), not packed GS literals
    (`243`) — the ales record's human convention; the step decodes with the
@@ -60,6 +60,12 @@ special-handling — every widening is data-driven off the fixture files.
    GS's round naming** — `| Place | Name | Score | Dropped | Penalty |`,
    Dropped cell `Rnd9` (empty → `—`), Penalty the transcript's integer total
    (0 printed as `0`).
+4. **Drop ties break latest-round-first, matching GS** (**2026-09-08**, Pete,
+   during WI-4 verification). Match GS; dropping a placeholder zero is
+   arithmetically dropping nothing, so placeholder-zero rounds remain
+   droppable candidates; excluding never-flown placeholder rounds from
+   candidacy was rejected because it changes every pilot's total away from
+   GS's transcript. Implemented as WI-4b (see §5).
 
 ## Why it matters
 
@@ -208,12 +214,19 @@ the manifest (the JSON harness replays it today).
 | File | Action |
 |---|---|
 | `tests/Soarscore.Acceptance.Tests/Features/RecordingAGliderscoreFixture.feature` | **Append** the second scenario (§3, verbatim). The ales scenario is untouched. |
-| `tests/Soarscore.Acceptance.Tests/Steps/RecordingAGliderscoreFixtureSteps.cs` | **Widen** — the six step definitions grow data-driven arms (§4). No new step regexes, no second binding class. |
-| `tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs` | **Three one-line widenings** — `TaskByRound`, `F3KSlotMap`, `CompetitionPenaltyInfractionType` `private` → `internal` (same single-source-of-truth precedent as `DecodePackedMinutesSeconds`). Cite this story at each site. |
-| `tests/Soarscore.Acceptance.Tests/Support/Gliderscore/Comparator.cs` | **One new internal helper** + refactor — `ConservationByCompetitor(...)` returning the per-competitor conservation row (§4 step 9); `CheckConservation` refactored to consume it, behaviour unchanged (the referee's own `Conserves` assertion proves the refactor). |
+| `tests/Soarscore.Acceptance.Tests/Steps/RecordingAGliderscoreFixtureSteps.cs` | **Widen** — the six step definitions grow data-driven arms (§4). No new step regexes, no second binding class. **As built:** step 10's ledgered-set assertion gained a TIGHTNESS arm beyond the plan — every non-documentary ledger entry must excuse a real divergence, proven via a mirror re-run of the comparison with an empty ledger (a form-only check passed a bogus injected entry; the arm makes the relaxation un-weakening). The transient CS0414 pragma from WI-2 was removed at WI-3. |
+| `tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs` | **Three one-line widenings** — `TaskByRound`, `F3KSlotMap`, `CompetitionPenaltyInfractionType` `private` → `internal` (same single-source-of-truth precedent as `DecodePackedMinutesSeconds`). Cite this story at each site. **As built:** a FOURTH widening joined them — `ColumnValue` `private` → `internal` (WI-3: the self-check resolves raw columns by name through the driver's map). |
+| `tests/Soarscore.Acceptance.Tests/Support/Gliderscore/Comparator.cs` | **One new internal helper** + refactor — `ConservationByCompetitor(...)` returning the per-competitor conservation row (§4 step 9); `CheckConservation` refactored to consume it, behaviour unchanged (the referee's own `Conserves` assertion proves the refactor). **As built:** the helper returns a `ConservationRow` record, richer than planned — it also carries `AggregateAfterDeduction`, `ExpectedFinal` and disqualified fields, in a D6-collision-guarded arrangement. |
+| `tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ParallelRunComparator.cs` | **As built:** comment-only truth fix — its comment claimed the collected cells feed the parity conservation check, false after the WI-4 refactor. |
+| `src/Soarscore.Domain/PublishedClassDefinition/ClassDefinition.cs` | **As built (WI-4b):** `DropTieBreak { Latest, Earliest }` enum + `DropPolicy.TieBreak` (default Latest, serialised as a camelCase string, absent-field ⇒ Latest). |
+| `src/Soarscore.Domain/Scoring/PhaseAggregator.cs` | **As built (WI-4b):** both drop paths (`ApplyByTaskDrop` ~line 220, `ApplyByRoundDrop` ~line 194) honour `DropPolicy.TieBreak`. |
+| `tests/Soarscore.Domain.Tests/PhaseAggregatorTests.cs` | **As built (WI-4b):** six new example-based facts pin both dimensions × {latest default, earliest preserved, non-tied by value}. |
 
 Nothing else changes. `ReplayingAGliderscoreFixture.feature` and its steps are
 untouched; **everything under `tests/GliderscoreFixtures/` is read-only**.
+**As built:** the table above grew the WI-4b domain rows and the
+ParallelRunComparator comment fix — those are the only changes beyond the
+planned four files.
 
 ## 3. The feature file, verbatim
 
@@ -593,6 +606,25 @@ moves — cite the filename).
   + `CheckConservation` refactor; step 9's Dropped/Penalty/witness
   generalisation per §4. Verify: ales scenario green (generalised checks
   reduce to the old ones); f3k scenario fails only at the referee step.
+- **WI-4b — Drop tie-break matches GS (owner decision, 2026-09-08).** Added
+  during WI-4 verification: the new Dropped witness exposed that the engine
+  broke drop ties earliest-first (stable sort in `PhaseAggregator`) while
+  GS — and the fixture's expected results ("exactly one '*' per pilot, on
+  Rnd9") — break them LATEST-round-first. Owner chose: match GS —
+  placeholder-zero rounds remain droppable candidates (dropping a
+  placeholder zero is arithmetically dropping nothing); excluding
+  never-flown placeholder rounds from candidacy was rejected because it
+  changes every pilot's total away from GS's transcript. Implemented:
+  `DropTieBreak { Latest, Earliest }` + `DropPolicy.TieBreak` (default
+  Latest, serialised as a camelCase string, absent-field ⇒ Latest) in
+  `src/Soarscore.Domain/PublishedClassDefinition/ClassDefinition.cs`; both
+  drop paths (`ApplyByTaskDrop` ~line 220, `ApplyByRoundDrop` ~line 194) in
+  `src/Soarscore.Domain/Scoring/PhaseAggregator.cs` honour it; six new
+  example-based facts in
+  `tests/Soarscore.Domain.Tests/PhaseAggregatorTests.cs` pin both
+  dimensions × {latest default, earliest preserved, non-tied by value}.
+  Verify: full ten-fixture JSON-harness corpus replay green after the
+  change (no regression).
 - **WI-5 — Referee relaxation.** Step 10's ledgered-set assertion per §4.
   Verify: the whole f3k scenario green; ales scenario green.
 - **WI-6 — Full verification, both stores.** Fast loop:
@@ -618,7 +650,9 @@ moves — cite the filename).
   penalty cell → the self-check (step 6) names the cell; a typo'd pilot or
   task name → step 5 or 9 names it; a wrong-round drop → step 9's Dropped
   arm names the engine's dropped rounds vs the literal cell (conservation
-  alone CANNOT catch this — every dropped candidate is a zero); an engine
+  alone CANNOT catch this — every dropped candidate is a zero). **As
+  built:** that Dropped arm FIRED in practice — this story's WI-4 —
+  validating the parent's design; an engine
   regression → the literal placings step names the competitor AND the
   referee's `DiffTable()` names the grain and cell.
 
