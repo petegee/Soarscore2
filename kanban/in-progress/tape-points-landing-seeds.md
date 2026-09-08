@@ -1,6 +1,6 @@
 # Story - Unit-aware landing capture (distance or points)
 
-**Status:** In progress (WI-0..WI-3; WI-4 parked at its mapping gate)
+**Status:** Backlog
 **Raised:** 2026-09-07 - club landing tapes record points rather than metres;
 the jerilderie-2010 parallel-run refusal exposed the input mismatch.
 **Replanned:** 2026-09-08 - owner-approved replacement of the tape-seed plan.
