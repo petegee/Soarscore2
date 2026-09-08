@@ -286,8 +286,10 @@ public static class Comparator
         var comparedRaw = new HashSet<string>();
         var comparedNormalised = new HashSet<string>();
 
-        // WI-5 — grain 2's cells are collected as they are compared, so the
-        // conservation self-check folds exactly what the read path published.
+        // WI-5 — grain 2's cells are collected as they are compared; the
+        // collection carries grain 2's own destination-collision guard, and
+        // the conservation self-check re-arranges the same read path through
+        // ConservationByCompetitor (literal-record-f3k-sample-comp.md WI-4).
         var cellsByCompetitor = new Dictionary<CompetitorId, List<TaskRoundScore>>();
 
         // WI-2 (http-grain-one-metric-bridge.md D5): the classification split
@@ -326,7 +328,7 @@ public static class Comparator
         // WI-5 — conservation runs over OUR cells and the PUBLISHED finals,
         // independent of whether any grain matched: a break is evidence in its
         // own right, not a consequence of a grain mismatch.
-        var conservationBreaks = CheckConservation(outcome, competition, finalScores, cellsByCompetitor);
+        var conservationBreaks = await CheckConservation(outcome, eventStore, client);
 
         return BuildReport(
             fixture,
@@ -767,13 +769,133 @@ public static class Comparator
     /// with the Disqualified flags agreeing. See this file's header for why it
     /// is stated purely over our data (ledgered phantom cells stand on neither
     /// side) and what it catches.
+    ///
+    /// literal-record-f3k-sample-comp.md WI-4 — the literal-record placings
+    /// step derives the same identity per competitor from
+    /// <see cref="ConservationByCompetitor"/>; this referee asserts it
+    /// independently.
     /// </summary>
-    private static IReadOnlyList<ConservationBreak> CheckConservation(
+    private static async Task<IReadOnlyList<ConservationBreak>> CheckConservation(
         ReplayOutcome outcome,
-        Competition competition,
-        CompetitionScoreView finalScores,
-        IReadOnlyDictionary<CompetitorId, List<TaskRoundScore>> cellsByCompetitor)
+        IEventStore eventStore,
+        HttpClient client)
     {
+        var rows = await ConservationByCompetitor(outcome, eventStore, client);
+
+        return rows
+            .Where(row => row.ExpectedFinal != row.FinalScore
+                || row.ExpectedDisqualified != row.ActualDisqualified)
+            .Select(row => new ConservationBreak(
+                row.CompetitorRef,
+                row.CellSum,
+                row.DroppedSum,
+                row.AggregateAfterDrops,
+                row.PenaltyDeduction,
+                row.ExpectedFinal,
+                row.FinalScore,
+                row.ExpectedDisqualified,
+                row.ActualDisqualified))
+            .ToList();
+    }
+
+    /// <summary>
+    /// One competitor's conservation figures — the same state collapse
+    /// <see cref="CheckConservation"/> performs (competition loaded from the
+    /// event store, the /task-round-result rows arranged destination-aware
+    /// into <see cref="TaskRoundScore"/>s exactly as ScoreCompetition
+    /// arranges them, folded through ScoringService.Aggregate's PhaseScores),
+    /// exposed per competitor for the literal-record placings step's
+    /// Dropped/Penalty/witness arms
+    /// (kanban/in-progress/literal-record-f3k-sample-comp.md WI-4).
+    ///
+    /// DroppedRoundOrdinals are the engine's dropped cells' round ordinals
+    /// mapped to fixture RoundNos through the outcome's RoundOrdinalByRoundNo
+    /// inverse — ascending, distinct. They are the wrong-round-drop witness
+    /// the sum identity cannot give: every dropped candidate in
+    /// f3k-sample-comp is a zero cell, so a wrong-round zero drop still
+    /// conserves.
+    /// </summary>
+    internal sealed record ConservationRow(
+        CompetitorId Competitor,
+        string CompetitorRef,
+        decimal CellSum,
+        decimal DroppedSum,
+        IReadOnlyList<int> DroppedRoundOrdinals,
+        decimal AggregateAfterDrops,
+        decimal PenaltyDeduction,
+        decimal ExpectedFinal,
+        decimal FinalScore,
+        bool ExpectedDisqualified,
+        bool ActualDisqualified);
+
+    /// <summary>
+    /// kanban/in-progress/literal-record-f3k-sample-comp.md WI-4 — the
+    /// per-competitor state collapse behind <see cref="CheckConservation"/>
+    /// and the literal-record placings step: load the competition from the
+    /// event store, arrange the /task-round-result rows into
+    /// destination-keyed TaskRoundScores (the entry's CountsFor ?? own round,
+    /// the same arrangement and destination-collision guard as
+    /// <see cref="CompareNormalisedGrainAsync"/>), fold
+    /// ScoringService.Aggregate per competitor, mirror
+    /// GetAggregatePenalties, and read the /competition-result final.
+    /// </summary>
+    internal static async Task<IReadOnlyList<ConservationRow>> ConservationByCompetitor(
+        ReplayOutcome outcome,
+        IEventStore eventStore,
+        HttpClient client)
+    {
+        var competition = await LoadCompetitionAsync(eventStore, outcome);
+        var entries = await LoadEntriesAsync(eventStore, outcome);
+
+        var finalScores = await GetAsync<CompetitionScoreView>(
+            client, $"/competition-result?competitionRef={outcome.CompetitionId.Value}");
+
+        var cellsByCompetitor = new Dictionary<CompetitorId, List<TaskRoundScore>>();
+        var groupByGroupId = outcome.GroupIdByRoundAndGroup.ToDictionary(kv => kv.Value, kv => kv.Key);
+        var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+        foreach (var roundNo in outcome.RoundOrdinalByRoundNo.Keys.OrderBy(n => n))
+        {
+            var views = await GetAsync<IReadOnlyList<GroupScoreView>>(
+                client,
+                $"/task-round-result?competitionRef={outcome.CompetitionId.Value}"
+                + $"&phaseOrdinal={outcome.PhaseOrdinal}"
+                + $"&roundOrdinal={outcome.RoundOrdinalByRoundNo[roundNo]}"
+                + "&taskRoundOrdinal=1");
+
+            foreach (var view in views)
+            {
+                var (roundOfView, groupNo) = groupByGroupId[view.GroupRef];
+
+                foreach (var result in view.Results)
+                {
+                    var pilotNo = pilotByCompetitor[result.CompetitorRef];
+                    var entry = entries[outcome.EntryIdBySlot[(roundOfView, groupNo, pilotNo)]];
+
+                    var cell = new TaskRoundScore(
+                        outcome.TaskCodeByRoundNo[roundOfView],
+                        entry.CountsForRoundOrdinal ?? outcome.RoundOrdinalByRoundNo[roundOfView],
+                        TaskOrdinal: 1,
+                        result.RawScore);
+
+                    if (!cellsByCompetitor.TryGetValue(result.CompetitorRef, out var cells))
+                    {
+                        cellsByCompetitor[result.CompetitorRef] = cells = [];
+                    }
+
+                    if (cells.Any(c => c.RoundOrdinal == cell.RoundOrdinal && c.TaskOrdinal == cell.TaskOrdinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"Competition {outcome.CompetitionId.Value}: pilot {pilotNo} has two normalised cells for "
+                            + $"destination round {cell.RoundOrdinal} (hosting round {roundOfView}) — the "
+                            + "destination-aware law (D6) should have refused or collapsed that shape.");
+                    }
+
+                    cells.Add(cell);
+                }
+            }
+        }
+
         if (cellsByCompetitor.Count == 0)
         {
             return [];
@@ -805,8 +927,10 @@ public static class Comparator
                     .ToImmutableArray()))
             .ToImmutableArray();
 
-        var breaks = new List<ConservationBreak>();
+        var roundNoByOrdinal = outcome.RoundOrdinalByRoundNo.ToDictionary(kv => kv.Value, kv => kv.Key);
         var finalByCompetitor = finalScores.Scores.ToDictionary(s => s.CompetitorRef, s => s);
+
+        var rows = new List<ConservationRow>();
 
         foreach (var (competitorId, cells) in cellsByCompetitor)
         {
@@ -839,35 +963,38 @@ public static class Comparator
             var droppedSum = phaseScores.DroppedScores.Sum(s => s.Score);
             var expectedFinal = phaseScores.Aggregate - applied.Deduction;
 
-            if (!finalByCompetitor.TryGetValue(competitorId, out var final))
+            var droppedRoundNos = new List<int>();
+
+            foreach (var dropped in phaseScores.DroppedScores)
             {
-                breaks.Add(new ConservationBreak(
-                    competitorRef,
-                    cells.Sum(c => c.Score),
-                    droppedSum,
-                    phaseScores.Aggregate,
-                    applied.Deduction,
-                    expectedFinal,
-                    ActualFinal: 0m,
-                    ExpectedDisqualified: applied.Disqualified,
-                    ActualDisqualified: false));
+                if (!roundNoByOrdinal.TryGetValue(dropped.RoundOrdinal, out var droppedRoundNo))
+                {
+                    throw new InvalidOperationException(
+                        $"Competition {outcome.CompetitionId.Value}: the engine dropped a cell of round ordinal "
+                        + $"{dropped.RoundOrdinal}, which maps to no fixture round — the outcome's round ordinals "
+                        + "and the engine's dropped cells disagree.");
+                }
+
+                droppedRoundNos.Add(droppedRoundNo);
             }
-            else if (expectedFinal != final.Score || applied.Disqualified != final.Disqualified)
-            {
-                breaks.Add(new ConservationBreak(
-                    competitorRef,
-                    cells.Sum(c => c.Score),
-                    droppedSum,
-                    phaseScores.Aggregate,
-                    applied.Deduction,
-                    expectedFinal,
-                    final.Score,
-                    applied.Disqualified,
-                    final.Disqualified));
-            }
+
+            var final = finalByCompetitor.GetValueOrDefault(competitorId);
+
+            rows.Add(new ConservationRow(
+                competitorId,
+                competitorRef,
+                cells.Sum(c => c.Score),
+                droppedSum,
+                droppedRoundNos.Distinct().OrderBy(n => n).ToList(),
+                phaseScores.Aggregate,
+                applied.Deduction,
+                expectedFinal,
+                final?.Score ?? 0m,
+                applied.Disqualified,
+                final?.Disqualified ?? false));
         }
 
-        return breaks;
+        return rows;
     }
 
     // ------------------------------------------------------------- team grain

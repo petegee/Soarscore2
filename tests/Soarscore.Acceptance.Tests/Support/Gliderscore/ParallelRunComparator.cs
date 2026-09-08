@@ -210,9 +210,12 @@ public static class ParallelRunComparator
         await CompareRawGrainAsProducedAsync(
             fixture, outcome, client, taskNos[0], comparedRaw, rawMismatches);
 
-        // The normalised walk's conservation bookkeeping is the parity
-        // self-check's input; here the walk runs for the grain and its
-        // destination-collision guard alone, so the collected cells are
+        // The normalised walk's destination-collision guard rides the
+        // collected cells (the parity conservation check re-arranges the same
+        // read path through Comparator.ConservationByCompetitor —
+        // literal-record-f3k-sample-comp.md WI-4); here the walk runs for the
+        // grain and its destination-collision guard alone, so the collected
+        // cells are
         // discarded.
         var discardedCells = new Dictionary<CompetitorId, List<TaskRoundScore>>();
         await Comparator.CompareNormalisedGrainAsync(

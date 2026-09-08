@@ -888,19 +888,27 @@ public sealed class RecordingAGliderscoreFixtureSteps
 
     /// <summary>
     /// literal-record-replay-scenarios.md WI-4 — decision 6's literal table:
-    /// place, name, score and the dropped column pinned exactly as GS
-    /// displayed them. The nothing-dropped witness (Σ of each competitor's
-    /// per-round normalised cells == the engine's final Score) holds only
-    /// because ales configures no drops and no penalties; a drop-bearing
-    /// fixture widens this check to the engine's own dropped-cell
-    /// contributions — the conservation machinery already knows them
-    /// (Comparator.CheckConservation).
+    /// place, name, score, the dropped witness and the penalty column pinned
+    /// exactly as GS displayed them. The Dropped cell is the load-bearing
+    /// check — where every dropped candidate is a zero cell, conservation
+    /// alone cannot catch a wrong-round drop, so the cell must be the
+    /// engine's own dropped rounds
+    /// (kanban/in-progress/literal-record-f3k-sample-comp.md WI-4); the
+    /// witness CellSum − DroppedSum − PenaltyDeduction == FinalScore is the
+    /// identity Comparator.CheckConservation asserts independently as the
+    /// referee. All arms are data-driven off the table's columns and the
+    /// engine — an ales table (no Penalty column, '—' drops) reduces to the
+    /// original nothing-dropped form.
     /// </summary>
     [Then(@"^the final placings are$")]
     public async Task ThenTheFinalPlacingsAre(Table table)
     {
         var finalScores = await ApiClient.GetAsync<CompetitionScoreView>(
             AcceptanceFixture.Client, $"/competition-result?competitionRef={_competitionId.Value}");
+
+        var conservationRows = await Comparator.ConservationByCompetitor(
+            _outcome, AcceptanceFixture.EventStore, AcceptanceFixture.Client);
+        var conservationByCompetitor = conservationRows.ToDictionary(r => r.Competitor);
 
         // Name → PilotNo → CompetitorId. The full universe must be covered so
         // the tie-group checks below are complete.
@@ -930,12 +938,23 @@ public sealed class RecordingAGliderscoreFixtureSteps
 
             atPlace.Add(name);
 
-            row["Dropped"].Should().Be("—",
-                "ales configures no drops (Drop1AtRound..Drop5AtRound all 99)");
+            var conservationRow = conservationByCompetitor.GetValueOrDefault(competitorId);
+            conservationRow.Should().NotBeNull(
+                $"{name} must carry a conservation row — every competitor in the universe is scored");
+
+            var expectedDroppedCell = conservationRow!.DroppedRoundOrdinals.Count == 0
+                ? "—"
+                : "Rnd" + string.Join(", ", conservationRow.DroppedRoundOrdinals);
+
+            row["Dropped"].Should().Be(expectedDroppedCell,
+                $"{name}: the Dropped cell must be the engine's own dropped rounds "
+                + $"(engine dropped [{string.Join(", ", conservationRow.DroppedRoundOrdinals)}]) — conservation "
+                + "alone cannot catch a wrong-round zero drop");
         }
 
         var scoreByCompetitor = finalScores.Scores.ToDictionary(s => s.CompetitorRef);
         var pilotNoByCompetitor = _competitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+        var hasPenaltyColumn = table.Header.Contains("Penalty");
 
         string CompetitorName(CompetitorId competitorId) =>
             pilotNoByCompetitor.TryGetValue(competitorId, out var pilotNo) ? PilotName(pilotNo) : competitorId.ToString();
@@ -950,6 +969,21 @@ public sealed class RecordingAGliderscoreFixtureSteps
                 $"{row["Name"]}: the engine's placing must match the literal table");
             final.Score.Should().Be(decimal.Parse(row["Score"], CultureInfo.InvariantCulture),
                 $"{row["Name"]}: the engine's final score must match the literal table EXACTLY");
+
+            if (!hasPenaltyColumn)
+            {
+                continue;
+            }
+
+            int.TryParse(row["Penalty"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var penalty).Should()
+                .BeTrue($"{row["Name"]}: Penalty cell '{row["Penalty"]}' must be an invariant integer");
+
+            conservationByCompetitor[competitorId].PenaltyDeduction.Should().Be(penalty,
+                $"{row["Name"]}: the engine's aggregate-penalty deduction must match the literal Penalty cell");
+
+            penalty.Should().Be(
+                _fixture.ScoresRaw.Rows.Where(r => r.PilotNo == pilotNoByCompetitor[competitorId]).Sum(r => r.Penalty),
+                $"{row["Name"]}: the literal Penalty cell must equal the fixture's Σ Penalty for the pilot");
         }
 
         // Tie integrity: the names the table shows at each place must be
@@ -968,42 +1002,24 @@ public sealed class RecordingAGliderscoreFixtureSteps
                 + $"table [{string.Join(", ", tableNames)}] vs engine [{string.Join(", ", engineNames.Order())}]");
         }
 
-        // The nothing-dropped witness: Σ of each competitor's per-round
-        // post-normalisation RawScore (ScoreTaskRound.cs:26-27 — the view's
-        // RawScore carries the post-normalisation value) across rounds must
-        // equal the engine's final Score exactly.
-        _fixture.ScoresRaw.Rows.Where(r => r.Penalty != 0).Should().BeEmpty(
-            "ales records no penalties — a penalty-bearing fixture widens the nothing-dropped witness");
-
-        var cellSums = new Dictionary<CompetitorId, decimal>();
-
-        foreach (var roundNo in _roundOrdinalByRoundNo.Keys.OrderBy(n => n))
-        {
-            var views = await ApiClient.GetAsync<IReadOnlyList<GroupScoreView>>(
-                AcceptanceFixture.Client,
-                $"/task-round-result?competitionRef={_competitionId.Value}"
-                + $"&phaseOrdinal={_phaseOrdinal}"
-                + $"&roundOrdinal={_roundOrdinalByRoundNo[roundNo]}"
-                + "&taskRoundOrdinal=1");
-
-            foreach (var view in views)
-            {
-                foreach (var result in view.Results)
-                {
-                    cellSums[result.CompetitorRef] = cellSums.GetValueOrDefault(result.CompetitorRef) + result.RawScore;
-                }
-            }
-        }
-
+        // The conservation witness, per competitor: Σ post-normalisation
+        // per-round cells (ScoreTaskRound.cs:26-27 — the view's RawScore
+        // carries the post-normalisation value) − the dropped cells'
+        // contributions − aggregate penalties == the engine's final Score
+        // exactly (Comparator.CheckConservation asserts the same identity
+        // independently); the ales nothing-dropped, no-penalty tables reduce
+        // it to the original Σ cells == Score.
         foreach (var competitorId in _competitorByPilotNo.Values)
         {
             var name = CompetitorName(competitorId);
+            var conservationRow = conservationByCompetitor.GetValueOrDefault(competitorId);
+            conservationRow.Should().NotBeNull(
+                $"{name} must carry a conservation row — the competitor must appear in the scored task-rounds");
 
-            cellSums.TryGetValue(competitorId, out var cellSum).Should().BeTrue(
-                $"{name} must appear in every scored task-round");
-
-            cellSum.Should().Be(scoreByCompetitor[competitorId].Score,
-                $"{name}: Σ of the per-round normalised cells must equal the engine's final Score exactly (nothing dropped, nothing penalised)");
+            (conservationRow!.CellSum - conservationRow.DroppedSum - conservationRow.PenaltyDeduction)
+                .Should().Be(conservationRow.FinalScore,
+                $"{name}: Σ cells {conservationRow.CellSum} − dropped {conservationRow.DroppedSum} − penalties "
+                + $"{conservationRow.PenaltyDeduction} must equal the engine's final Score exactly");
         }
     }
 
