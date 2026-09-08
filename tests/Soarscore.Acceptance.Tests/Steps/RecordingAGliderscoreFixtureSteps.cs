@@ -14,6 +14,7 @@
 // fields below are scenario-scoped — the same discipline as ReplaySteps.cs.
 
 using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Reqnroll;
@@ -42,6 +43,11 @@ public sealed class RecordingAGliderscoreFixtureSteps
     private const string CdName = "Gliderscore literal record";
 
     private static readonly Regex MmssPattern = new(@"^(\d+):(\d{1,2})$", RegexOptions.Compiled);
+
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-5 — the citation
+    // discipline ReplaySteps.enforces over the committed ledger (D6).
+    private static readonly Regex TriageCitationPattern =
+        new(@"\bD[1-6]\b|\btrap\s*3\b|\bR1\b|\bT1\b", RegexOptions.Compiled);
 
     // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — the slot
     // family's two zero-row markers (story decisions 1 and 2).
@@ -1041,13 +1047,183 @@ public sealed class RecordingAGliderscoreFixtureSteps
             "score conservation must hold for every competitor"
             + $"{Environment.NewLine}{report.ConservationTable()}");
 
-        _fixture.Divergences.Should().BeEmpty(
-            "ales's ledger must stay so — a populated ledger means the referee was excused a real mismatch");
+        // kanban/in-progress/literal-record-f3k-sample-comp.md WI-5 — the
+        // referee may be excused exactly the committed ledger: _fixture
+        // .Divergences (the fixture's triaged divergences.json) is compared
+        // against the excused set the run carries on SubtractLedger's own
+        // identity (grain case-insensitive; round, group and pilotNo
+        // null-or-covers — Comparator.SubtractLedger), so no extra divergence
+        // rides beyond the committed entries and none is missing: every entry
+        // must excuse a real divergence the unledgered run carried (a
+        // ledger-free mirror re-run through SubtractLedger's rule), a T1 entry
+        // excuses its documentary non-run instead. For ales the ledger is
+        // empty and every arm runs over nothing — the old empty-ledger
+        // behaviour.
+        var committed = _fixture.Divergences;
+        var triage = _fixture.Competition.Triage;
+        var violations = new List<string>();
+
+        for (var i = 0; i < committed.Count; i++)
+        {
+            var entry = committed[i];
+            var excerpt = entry.Reason is { } reasonText && reasonText.Length > 60
+                ? reasonText[..60] + "…"
+                : entry.Reason ?? "";
+            var named = $"entry {i} (grain '{entry.Grain}', reason '{excerpt}')";
+
+            if (string.IsNullOrWhiteSpace(entry.Grain))
+            {
+                violations.Add(
+                    $"{named}: expected a non-empty grain SubtractLedger can match, found '{entry.Grain}'");
+            }
+
+            var pilotFormed = entry.PilotNo is not { } pilot
+                || pilot.ValueKind == JsonValueKind.Number && pilot.TryGetInt64(out _)
+                || pilot.ValueKind == JsonValueKind.String && pilot.GetString() == "*";
+
+            if (!pilotFormed)
+            {
+                violations.Add(
+                    $"{named}: expected PilotNo to be a pilot number or \"*\" (SubtractLedger's Covers), "
+                    + $"found {entry.PilotNo?.GetRawText() ?? "null"}");
+            }
+
+            if (string.IsNullOrWhiteSpace(entry.Reason))
+            {
+                violations.Add(
+                    $"{named}: expected a triage-cited reason (an entry lands only after human triage), found none");
+            }
+            else
+            {
+                if (!TriageCitationPattern.IsMatch(entry.Reason))
+                {
+                    violations.Add(
+                        $"{named}: expected the reason to cite a triage decision (D1..D6 / trap 3 / R1 / T1), found '{entry.Reason}'");
+                }
+
+                var t1Cited = Regex.IsMatch(entry.Reason, @"\bT1\b", RegexOptions.IgnoreCase);
+
+                if (t1Cited)
+                {
+                    if (triage?.UseTeams != true)
+                    {
+                        violations.Add(
+                            $"{named}: expected the fixture's triage block to declare UseTeams=true for a T1-cited entry, "
+                            + $"found {(triage is null ? "no triage block" : triage.UseTeams?.ToString() ?? "null")}");
+                    }
+
+                    if (triage?.NbrForTeamScore is not { } declaredTeam)
+                    {
+                        violations.Add(
+                            $"{named}: expected the fixture's triage block to declare NbrForTeamScore for a T1-cited entry, found none");
+                    }
+                    else
+                    {
+                        if (!entry.Reason.Contains("teams-mvp.md", StringComparison.OrdinalIgnoreCase)
+                            || !entry.Reason.Contains("decision 8", StringComparison.OrdinalIgnoreCase))
+                        {
+                            violations.Add(
+                                $"{named}: expected the T1 reason to cite teams-mvp.md owner decision 8, found '{entry.Reason}'");
+                        }
+
+                        if (!entry.Reason.Contains($"NbrForTeamScore={declaredTeam}", StringComparison.OrdinalIgnoreCase))
+                        {
+                            violations.Add(
+                                $"{named}: expected the T1 reason to name the declared NbrForTeamScore={declaredTeam}, found '{entry.Reason}'");
+                        }
+
+                        if (report.TeamsCompared != 0)
+                        {
+                            violations.Add(
+                                $"{named}: expected the team grain not to have run (T1: the declared method is never emulated), "
+                                + $"found {report.TeamsCompared} standing(s) compared");
+                        }
+                    }
+                }
+            }
+        }
+
+        violations.AddRange(committed
+            .GroupBy(entry => (
+                Grain: entry.Grain.Trim().ToLowerInvariant(),
+                entry.Round,
+                entry.Group,
+                Pilot: IdentityPilotNo(entry)))
+            .Where(group => group.Count() > 1)
+            .Select(group =>
+                $"grain '{group.Key.Grain}' (round {group.Key.Round?.ToString(CultureInfo.InvariantCulture) ?? "any"}, "
+                + $"group {group.Key.Group?.ToString(CultureInfo.InvariantCulture) ?? "any"}, pilot {group.Key.Pilot}): "
+                + $"expected one committed entry per SubtractLedger identity, found {group.Count()}"));
+
+        if (triage?.UseTeams == true && triage.NbrForTeamScore is { } declaredMethod && declaredMethod != 3)
+        {
+            var t1Count = committed
+                .Count(entry => entry.Reason is { } citedReason
+                    && Regex.IsMatch(citedReason, @"\bT1\b", RegexOptions.IgnoreCase));
+
+            if (t1Count != 1)
+            {
+                violations.Add(
+                    $"expected exactly one documentary T1 entry excusing the declared team method "
+                    + $"(UseTeams=true, NbrForTeamScore={declaredMethod} — the grain does not run; "
+                    + $"teams-mvp.md owner decision 8), found {t1Count}");
+            }
+        }
+
+        if (committed.Count > 0)
+        {
+            var unledgeredFixture = _fixture with { Divergences = [] };
+            var unledgeredReport = await Comparator.CompareAsync(
+                unledgeredFixture, _outcome, AcceptanceFixture.EventStore, AcceptanceFixture.Client);
+            var unledgeredMismatches = unledgeredReport.RawMismatches
+                .Concat(unledgeredReport.NormalisedMismatches)
+                .Concat(unledgeredReport.RankingMismatches)
+                .ToList();
+
+            foreach (var entry in committed)
+            {
+                if (entry.Reason is { } citedReason
+                    && Regex.IsMatch(citedReason, @"\bT1\b", RegexOptions.IgnoreCase))
+                {
+                    continue;
+                }
+
+                var excusedCount = unledgeredMismatches.Count(mismatch =>
+                    entry.Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
+                    && (entry.Round is null || entry.Round == mismatch.RoundNo)
+                    && (entry.Group is null || entry.Group == mismatch.GroupNo)
+                    && (entry.PilotNo is null || entry.Covers(mismatch.PilotNo)));
+
+                if (excusedCount == 0)
+                {
+                    violations.Add(
+                        $"grain '{entry.Grain}' (round {entry.Round?.ToString(CultureInfo.InvariantCulture) ?? "any"}, "
+                        + $"group {entry.Group?.ToString(CultureInfo.InvariantCulture) ?? "any"}, pilot {IdentityPilotNo(entry)}): "
+                        + $"expected the committed entry to excuse a real divergence of the unledgered run "
+                        + $"({unledgeredMismatches.Count} mismatch(es) carried), found none — "
+                        + "an extra divergence beyond the excused set");
+                }
+            }
+        }
+
+        violations.Should().BeEmpty(
+            "the referee may be excused exactly the committed ledger — no extra divergence beyond the committed entries, none missing:"
+            + $"{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
     // ----------------------------------------------------------------- helpers
 
     private string PilotName(long pilotNo) => _pilotNameByNo.GetValueOrDefault(pilotNo, $"pilot {pilotNo}");
+
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-5 — a committed
+    // ledger entry's SubtractLedger identity, rendered for the excused-set
+    // comparison (pilot as Covers sees it: number or "*").
+    private static string IdentityPilotNo(DivergenceEntry entry) =>
+        entry.PilotNo is not { } pilot ? "any"
+        : pilot.ValueKind == JsonValueKind.Number && pilot.TryGetInt64(out var number)
+            ? number.ToString(CultureInfo.InvariantCulture)
+        : pilot.ValueKind == JsonValueKind.String ? pilot.GetString() ?? "any"
+        : pilot.GetRawText();
 
     private static decimal ParseMmss(string cell)
     {
