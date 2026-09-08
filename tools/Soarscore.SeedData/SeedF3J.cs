@@ -26,8 +26,7 @@ public static class SeedF3J
                                                                                 //   stated. F3K states truncation explicitly, which suggests
                                                                                 //   F3J is not truncated. Chosen, not cited (F12 residual).
         M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // F3J.10.6 — no capture precision stated (F12 residual)
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
-            whenNotRecorded: 0),                                               // F3J.10.3, 10.4 — seconds past working time are what the
+        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1, whenNotRecorded: 0),  // F3J.10.3, 10.4 — seconds past working time are what the
                                                                                 //   timekeeper records; a flight landing within time has none
         M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // F3J.10.8 — the touch forfeits the bonus; absence ⇒ no touch
         M.Flag("restedWithin75m", whenNotRecorded: true),                      // F3J.5.1 e — the outside-75m cancellation is what is recorded;
