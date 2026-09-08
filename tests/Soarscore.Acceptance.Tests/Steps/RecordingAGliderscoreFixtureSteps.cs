@@ -25,6 +25,7 @@ using Soarscore.Application.Commands.Entries;
 using Soarscore.Application.Commands.People;
 using Soarscore.Application.Queries.Competitions;
 using Soarscore.Application.Queries.Scoring;
+using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
@@ -42,6 +43,11 @@ public sealed class RecordingAGliderscoreFixtureSteps
 
     private static readonly Regex MmssPattern = new(@"^(\d+):(\d{1,2})$", RegexOptions.Compiled);
 
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — the slot
+    // family's two zero-row markers (story decisions 1 and 2).
+    private const string MarkerNoFlight = "no flight";
+    private const string MarkerZeroUnrecorded = "zero (unrecorded)";
+
     private GliderscoreFixture _fixture = null!;
     private CompetitionId _competitionId;
     private int _phaseOrdinal;
@@ -55,6 +61,13 @@ public sealed class RecordingAGliderscoreFixtureSteps
     private Dictionary<int, int> _roundOrdinalByRoundNo = [];
     private List<EnteredRow> _enteredRows = [];                    // tables as entered
     private HashSet<string> _enteredTableColumns = [];             // union of the tables' headers
+
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — set by the
+    // slot entry arm; the self-check's slot arm (WI-3) consumes it. Unread
+    // until then, hence the pragma.
+#pragma warning disable CS0414
+    private bool _slotFamilyTables;
+#pragma warning restore CS0414
     private int _commandsIssued;                                   // honesty only, unasserted
     private ReplayOutcome _outcome = null!;
 
@@ -64,7 +77,8 @@ public sealed class RecordingAGliderscoreFixtureSteps
     // fixture's tables.
     private sealed record EnteredRow(
         long PilotNo, string PilotName, int RoundNo,
-        string? Time, string? Landing, string? Laps, string? Height, string? Penalty);
+        string? Time, string? Landing, string? Laps, string? Height, string? Penalty,
+        string? Task, IReadOnlyList<string?> SlotCells);
 
     // ----------------------------------------------------------------- Given
 
@@ -253,6 +267,25 @@ public sealed class RecordingAGliderscoreFixtureSteps
             $"unknown pilot name '{pilotName}' — the fixture's pilots are [{string.Join(", ", _pilotNameByNo.Values.Order())}]");
         var pilotNo = matches.Single().Key;
 
+        // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — the
+        // entry blocks branch on table shape: the duration family carries a
+        // Time column, the slot family Slot 1..7. A table carrying both or
+        // neither is an authoring error, never a silent guess.
+        var hasTime = table.Header.Contains("Time");
+        var hasSlots = table.Header.Contains("Slot 1");
+
+        (hasTime || hasSlots).Should().BeTrue(
+            $"round table for {pilotName} carries neither a Time nor a Slot 1 column — the entry form is one family per table (duration: Time/Landing; slot: Task/Slot 1..Slot 7/Penalty)");
+
+        (hasTime && hasSlots).Should().BeFalse(
+            $"round table for {pilotName} carries BOTH a Time and a Slot 1 column — the entry form is one family per table (duration: Time/Landing; slot: Task/Slot 1..Slot 7/Penalty)");
+
+        if (hasSlots)
+        {
+            await WhenEntersSlotFamilyScores(pilotName, pilotNo, table);
+            return;
+        }
+
         // The union column set is story decision 4: one family-agnostic step
         // definition, each fixture's table showing only the columns it uses.
         // Task is accepted-and-ignored for now (single-task fixtures carry no
@@ -318,7 +351,138 @@ public sealed class RecordingAGliderscoreFixtureSteps
                 Landing: landing,
                 Laps: table.Header.Contains("Laps") ? row["Laps"] : null,
                 Height: table.Header.Contains("Height") ? row["Height"] : null,
-                Penalty: table.Header.Contains("Penalty") ? row["Penalty"] : null));
+                Penalty: table.Header.Contains("Penalty") ? row["Penalty"] : null,
+                Task: null,
+                SlotCells: []));
+        }
+    }
+
+    // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — the slot
+    // family's entry arm. The authored m:ss slot cells are decoded with the
+    // same mmss rule as the duration arm; WHICH slots a round reads comes
+    // from the fixture's prescribed schedule via ReplayDriver.F3KSlotMap —
+    // the Task cells never drive behaviour (the self-check pins them).
+    private async Task WhenEntersSlotFamilyScores(string pilotName, long pilotNo, Table table)
+    {
+        string[] unionColumns =
+        [
+            "Round", "Task", "Time", "Landing", "Laps", "Height", "Penalty",
+            "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6", "Slot 7",
+        ];
+
+        var unknownColumns = table.Header.Where(h => !unionColumns.Contains(h)).ToList();
+        unknownColumns.Should().BeEmpty(
+            $"unknown column(s) [{string.Join(", ", unknownColumns)}] — the slot-table union column set is [{string.Join(", ", unionColumns)}]");
+
+        table.Header.Should().Contain("Task",
+            "the Task column is live for slot tables — the per-round task schedule prescribes what each round reads");
+
+        _enteredTableColumns.UnionWith(table.Header);
+        _slotFamilyTables = true;
+
+        string? SlotCell(Reqnroll.DataTableRow row, int i) =>
+            table.Header.Contains($"Slot {i + 1}") ? row[$"Slot {i + 1}"] : null;
+
+        foreach (var row in table.Rows)
+        {
+            var roundNo = int.Parse(row["Round"], CultureInfo.InvariantCulture);
+
+            _taskCodeByRoundNo.TryGetValue(roundNo, out var taskCode).Should().BeTrue(
+                $"round {roundNo} has no drawn task round — a slot table can only enter prescribed rounds");
+
+            if (!ReplayDriver.F3KSlotMap.TryGetValue(taskCode!, out var slots))
+            {
+                throw new NotSupportedException(
+                    $"Fixture '{_fixture.Slug}': round {roundNo} names GS task '{taskCode}', which is not in "
+                    + "the F3K slot-column capture map — widen F3KSlotMap with its CalcRawScoreF3K semantics first.");
+            }
+
+            var captures = new List<decimal>();
+            var unflown = false;
+
+            for (var i = 0; i < 7; i++)
+            {
+                var header = $"Slot {i + 1}";
+                var cell = SlotCell(row, i);
+
+                if (cell is null || cell == "—")
+                {
+                    continue;
+                }
+
+                var mmss = MmssPattern.Match(cell);
+
+                if (mmss.Success)
+                {
+                    (i < slots.Count).Should().BeTrue(
+                        $"round {roundNo}, {pilotName}: {header} cell '{cell}' names a slot task '{taskCode}' does not read (it reads {slots.Count} slot(s)) — such cells must be '—'");
+
+                    captures.Add(ParseMmss(cell));
+                    continue;
+                }
+
+                (cell == MarkerNoFlight || cell == MarkerZeroUnrecorded).Should().BeTrue(
+                    $"round {roundNo}, {pilotName}: {header} cell '{cell}' is neither '—', m:ss, '{MarkerNoFlight}' nor '{MarkerZeroUnrecorded}'");
+
+                (i == 0 && !unflown).Should().BeTrue(
+                    $"round {roundNo}, {pilotName}: marker '{cell}' is only legal in Slot 1 of an unflown row");
+
+                unflown = true;
+            }
+
+            if (unflown)
+            {
+                captures.Should().BeEmpty(
+                    $"round {roundNo}, {pilotName}: a '{MarkerNoFlight}'/'{MarkerZeroUnrecorded}' row must carry no flight slot values");
+            }
+
+            var groupId = _groupIdByRoundAndGroup[(roundNo, 1)];
+            var entryId = await PostAsync<EntryId>(
+                "/open-entry",
+                new OpenEntry(
+                    _competitionId, _phaseOrdinal, _roundOrdinalByRoundNo[roundNo], 1,
+                    groupId, _competitorByPilotNo[pilotNo]));
+
+            _entryIdBySlot[(roundNo, 1, pilotNo)] = entryId;
+
+            // kanban/in-progress/literal-record-f3k-sample-comp.md WI-2 — the
+            // penalty arm: one POST per occurrence row (pilot 56's two rows →
+            // two occurrences → one 200 deduction via PerOccurrence accrual),
+            // exactly ReplayDriver.cs:741-748's payload.
+            var penaltyCell = table.Header.Contains("Penalty") ? row["Penalty"] : null;
+
+            if (penaltyCell is not null && penaltyCell != "—")
+            {
+                var parsed = int.TryParse(penaltyCell, NumberStyles.Integer, CultureInfo.InvariantCulture, out var penalty)
+                             && penalty > 0;
+
+                parsed.Should().BeTrue(
+                    $"round {roundNo}, {pilotName}: Penalty cell '{penaltyCell}' is neither '—' nor a positive integer");
+
+                await PostAsync<CompetitionId>(
+                    "/record-competition-penalty",
+                    new RecordCompetitionPenalty(
+                        _competitionId, ReplayDriver.CompetitionPenaltyInfractionType, PenaltyScope.Competition,
+                        _competitorByPilotNo[pilotNo], TaskRound: null, By: CdName));
+            }
+
+            for (var i = 0; i < captures.Count; i++)
+            {
+                await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
+                await PostAsync<EntryId>(
+                    "/capture-measurement",
+                    new CaptureMeasurement(entryId, i + 1, "flightTime", MeasuredValue.Of(captures[i])));
+            }
+
+            _enteredRows.Add(new EnteredRow(
+                pilotNo, pilotName, roundNo,
+                Time: null,
+                Landing: table.Header.Contains("Landing") ? row["Landing"] : null,
+                Laps: table.Header.Contains("Laps") ? row["Laps"] : null,
+                Height: table.Header.Contains("Height") ? row["Height"] : null,
+                Penalty: penaltyCell,
+                Task: row["Task"],
+                SlotCells: [.. Enumerable.Range(0, 7).Select(i => SlotCell(row, i))]));
         }
     }
 
