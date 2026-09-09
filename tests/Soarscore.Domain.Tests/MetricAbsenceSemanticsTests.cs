@@ -7,6 +7,8 @@ using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 using Xunit;
+using Predicate = Soarscore.SeedData.Predicate;
+using ScoreTerm = Soarscore.SeedData.ScoreTerm;
 
 namespace Soarscore.Domain.Tests;
 
@@ -272,9 +274,9 @@ public class MetricAbsenceSemanticsTests
         {
             Score =
             [
-                T.Rate("flightTime", 1, cap: NumberOrParam.Param("cap")),
-                T.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0)),
-                T.When(P.Gt("overflySeconds", 0), T.Constant(-30)),
+                ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("cap")),
+                ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0)),
+                ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),
             ],
         };
         var parameterClass = MetricAbsenceFixtures.SyntheticClass(parameterised) with
@@ -303,7 +305,7 @@ public class MetricAbsenceSemanticsTests
     [Fact]
     public void A_referenced_but_undeclared_metric_still_throws_loudly_at_resolution()
     {
-        var task = MetricAbsenceFixtures.SyntheticTask with { Score = [T.Rate("bogus", 1)] };
+        var task = MetricAbsenceFixtures.SyntheticTask with { Score = [ScoreTerm.Rate("bogus", 1)] };
         var classDef = MetricAbsenceFixtures.SyntheticClass(task);
 
         FluentActions.Invoking(() => MetricAbsenceFixtures.Score(
@@ -350,19 +352,19 @@ internal static class MetricAbsenceFixtures
         Name = "Absence semantics synthetic",
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),                          // demanded observation — no assumption
-            M.Number("landingDistance", "m", RoundingMode.Truncate, 1),                     // demanded observation — no assumption
-            M.Flag("landedOut", whenNotRecorded: false),                                    // Flag assumption
-            M.Number("overflySeconds", "s", RoundingMode.Truncate, 1, whenNotRecorded: 10), // Number assumption, deliberately non-zero
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),                          // demanded observation — no assumption
+            Metric.Number("landingDistance", "m", RoundingMode.Truncate, 1),                     // demanded observation — no assumption
+            Metric.Flag("landedOut", whenNotRecorded: false),                                    // Flag assumption
+            Metric.Number("overflySeconds", "s", RoundingMode.Truncate, 1, whenNotRecorded: 10), // Number assumption, deliberately non-zero
         ],
         Flights = new LastFlight(),
         Timing = new TaskTiming { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        FlightValidWhen = P.All(P.Le("overflySeconds", 60), P.Is("landedOut", false)),
+        FlightValidWhen = Predicate.All(Predicate.LessThanOrEqual("overflySeconds", 60), Predicate.Is("landedOut", false)),
         Score =
         [
-            T.Rate("flightTime", 1),
-            T.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0)),
-            T.When(P.Gt("overflySeconds", 0), T.Constant(-30)),
+            ScoreTerm.Rate("flightTime", 1),
+            ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0)),
+            ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),
         ],
     };
 

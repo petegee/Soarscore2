@@ -24,14 +24,14 @@ public static class SeedF5K
     // resolves to compliance.
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
-        M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.10.6 f whole seconds, tenths not rounded
-        M.Number("launchAltitude", "m", RoundingMode.Truncate, 1),             // 5.5.10.4 "the highest altitude reached from launch until 10 seconds
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.10.6 f whole seconds, tenths not rounded
+        Metric.Number("launchAltitude", "m", RoundingMode.Truncate, 1),             // 5.5.10.4 "the highest altitude reached from launch until 10 seconds
                                                                                 //   after the motor is stopped" (also 5.5.10.5 b)
-        M.Flag("landedInPilotArea", whenNotRecorded: true),                    // 5.5.10.6 h — the outside-the-Pilot-Area −10 is what is recorded;
+        Metric.Flag("landedInPilotArea", whenNotRecorded: true),                    // 5.5.10.6 h — the outside-the-Pilot-Area −10 is what is recorded;
                                                                                 //   absence ⇒ inside it
-        M.Flag("landedOnField", whenNotRecorded: true),                        // 5.5.10.12 flight penalty b — the off-field flight zero is what is
+        Metric.Flag("landedOnField", whenNotRecorded: true),                        // 5.5.10.12 flight penalty b — the off-field flight zero is what is
                                                                                 //   recorded; absence ⇒ on the field
-        M.Flag("overflewLandingWindow", whenNotRecorded: false),               // 5.5.10.12 flight penalty a — the overfly −100 is what is recorded;
+        Metric.Flag("overflewLandingWindow", whenNotRecorded: false),               // 5.5.10.12 flight penalty a — the overfly −100 is what is recorded;
                                                                                 //   absence ⇒ no overfly
     ];
 
@@ -67,18 +67,18 @@ public static class SeedF5K
 
     /// <summary>The launch-altitude conditional shared by Tasks A, B and C, guard included.</summary>
     private static ConditionalTerm LaunchAltitude =>
-        T.When(P.Ge("flightTime", 30),                                         // 5.5.10.4 no bonus for flights shorter than 30 s
-               T.Piecewise("launchAltitude", LaunchBands, NumberOrParam.Param("nlh")),
+        ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", 30),                                         // 5.5.10.4 no bonus for flights shorter than 30 s
+               ScoreTerm.Piecewise("launchAltitude", LaunchBands, NumberOrParam.Param("nlh")),
                // Load-bearing `else`: under 30 s the height PENALTIES still apply
                // while the bonus does not (5.5.10.4). It must never be dropped.
-               T.Piecewise("launchAltitude", LaunchPenaltyOnlyBands, NumberOrParam.Param("nlh")));
+               ScoreTerm.Piecewise("launchAltitude", LaunchPenaltyOnlyBands, NumberOrParam.Param("nlh")));
 
     private static ConditionalTerm PilotAreaDeduction =>
-        T.When(P.Is("landedInPilotArea", false), T.Constant(-10));             // 5.5.10.6 h "Landing outside the Pilot Area but within the flying
+        ScoreTerm.When(Predicate.Is("landedInPilotArea", false), ScoreTerm.Constant(-10));             // 5.5.10.6 h "Landing outside the Pilot Area but within the flying
                                                                                //   field results in a 10 points penalty PER LANDING"
 
     private static ConditionalTerm OverflyDeduction =>
-        T.When(P.Is("overflewLandingWindow", true), T.Constant(-100));         // 5.5.10.12 flight penalty a
+        ScoreTerm.When(Predicate.Is("overflewLandingWindow", true), ScoreTerm.Constant(-100));         // 5.5.10.12 flight penalty a
 
     // ---- A, the task every other one derives from --------------------------
     // Four targets in any order; every flight counts whether or not its target is
@@ -122,14 +122,14 @@ public static class SeedF5K
         // and its −10/−100 deductions. Here it zeroes every term at once and still
         // leaves the flight selected — "zero points for that flight only", so Task
         // B's last flight stays last. Inherited by B, C, D and E through `like`.
-        FlightValidWhen = P.Is("landedOnField", true),                          // 5.5.10.12 flight penalty b
+        FlightValidWhen = Predicate.Is("landedOnField", true),                          // 5.5.10.12 flight penalty b
         Score =
         [
             // 5.5.10.15 1 pt/s; the assigned target caps each flight, and
             // 5.5.10.2's "maximum total flight time used for scoring: 9.59 min"
             // caps the SUM (F4a). Not a cap on the raw score: the launch bonus is
             // added after it.
-            T.Rate("flightTime", 1, cap: 599, capScope: CapScope.PerTask),
+            ScoreTerm.Rate("flightTime", 1, cap: 599, capScope: CapScope.PerTask),
 
             // Cumulative bands read from an origin (F5): at NLH+15 the deduction
             // is 10x1.0 + 5x3.0 = 25.
@@ -160,13 +160,13 @@ public static class SeedF5K
         },
         Score =
         [
-            T.Rate("flightTime", 1, cap: 300),                                 // 5.5.10.2 maximum flight time 5 minutes
+            ScoreTerm.Rate("flightTime", 1, cap: 300),                                 // 5.5.10.2 maximum flight time 5 minutes
             LaunchAltitude,
 
             // 5.5.10.2 Task B launch penalties: CUMULATIVE on the last flight,
             // −20 total over three launches. Character-identical to Task E's rows
             // and deliberately not one shared list — see the note there.
-            T.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
+            ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
                 Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),
 
             PilotAreaDeduction,                                                // 5.5.10.6 h
@@ -197,7 +197,7 @@ public static class SeedF5K
         },
         Score =
         [
-            T.Rate("flightTime", 1, cap: 240),                                 // 5.5.10.2 maximum measured flight time 4 minutes
+            ScoreTerm.Rate("flightTime", 1, cap: 240),                                 // 5.5.10.2 maximum measured flight time 4 minutes
             LaunchAltitude,
             PilotAreaDeduction,
             OverflyDeduction,
@@ -245,7 +245,7 @@ public static class SeedF5K
         Code = "E",
         Name = "Poker",                                                        // 5.5.10.2
         Metrics = [.. FlightMetrics,
-                   M.Number("targetTime", "s", RoundingMode.Truncate, 1, declared: true)],  // 5.5.10.2 announced to, and recorded by, the timekeeper
+                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 1, declared: true)],  // 5.5.10.2 announced to, and recorded by, the timekeeper
         Flights = new AllFlights(),
         Timing = new()
         {
@@ -258,8 +258,8 @@ public static class SeedF5K
         [
             // 5.5.10.2 marked "Y" — the pilot is credited with the target time;
             // landedOnField now gates the whole flight, not this term.
-            T.When(P.Ge("flightTime", "targetTime"),
-                   T.Rate("targetTime", 1, cap: 599)),                         // "any time over the target time is not counted";
+            ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", "targetTime"),
+                   ScoreTerm.Rate("targetTime", 1, cap: 599)),                         // "any time over the target time is not counted";
                                                                                // 5.5.10.2 "the target and maximum allowable flight time is
                                                                                //   9 minutes and 59 seconds" — per flight, not per task
 
@@ -281,7 +281,7 @@ public static class SeedF5K
             // penalty entirely — at a 20 s target launched at NLH+40 that is
             // 10x1.0 + 30x3.0 = 100 points not deducted. Nothing in 5.5.10.2 puts
             // a floor under a self-nominated target.
-            T.When(P.Ge("flightTime", "targetTime"), LaunchAltitude),
+            ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", "targetTime"), LaunchAltitude),
 
             // These three rows are character-identical to Task B's and are
             // deliberately NOT declared as one shared list. They are two different
@@ -291,7 +291,7 @@ public static class SeedF5K
             // so its rows are the per-launch INCREMENT and come to −30. The rule
             // states the two totals separately, and naming them one table would
             // assert an agreement the rulebook does not make.
-            T.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
+            ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
                 Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),                       // 5.5.10.2 Task E: 2nd launch −10, 3rd a further −20,
                                                                                //   −30 total over three launches
             PilotAreaDeduction,

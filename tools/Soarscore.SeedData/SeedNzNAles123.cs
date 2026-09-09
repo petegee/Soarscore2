@@ -24,15 +24,15 @@ public static class SeedNzNAles123
         Name = "Duration",
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.13.1 f; no precision stated (F12 residual)
-            M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.3.13.1 e; no capture precision stated
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.13.1 f; no precision stated (F12 residual)
+            Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.3.13.1 e; no capture precision stated
             // The three flags are the NZMAA observation protocol's recorded
             // EXCEPTIONS; absence resolves to compliance.
-            M.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.13.1 g — the restart (watch stops, landing points lost) is
+            Metric.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.13.1 g — the restart (watch stops, landing points lost) is
                                                                                 //   what is recorded; absence ⇒ no restart
-            M.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.13.1 j — the still-airborne-at-round-end ruling is what is
+            Metric.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.13.1 j — the still-airborne-at-round-end ruling is what is
                                                                                 //   recorded; absence ⇒ landed within the round
-            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
+            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
                                                                                 //   absence ⇒ within
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
@@ -48,11 +48,11 @@ public static class SeedNzNAles123
         // NO normalise (F25): the raw score below IS the task result, and rounds
         //   aggregate raw points.
 
-        FlightValidWhen = P.Is("landedWithin75m", true),                       // NZ.2.4.6 "the flight is cancelled and recorded as a zero score"
+        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6 "the flight is cancelled and recorded as a zero score"
         Score =
         [
             // Cumulative bands: 400 s scores 360x1 + 40x(−1) = 320.
-            T.Piecewise("flightTime",                                          // NZ.3.13.1 c
+            ScoreTerm.Piecewise("flightTime",                                          // NZ.3.13.1 c
                 Bands.From(0)
                      .UpTo(360, 1)                                             // NZ.3.13.1 c "one point for each second flown up to 6 minutes
                                                                                //   (i.e. 360 points)"
@@ -62,9 +62,9 @@ public static class SeedNzNAles123
             // Two ways to lose the landing bonus. NZ.3.13.1 g also stops the watch
             // at the restart, which is a measurement rule the timekeeper applies —
             // only the bonus forfeit is scoring data.
-            T.When(P.All(P.Is("motorRestarted", false),                        // NZ.3.13.1 g "landing points will be lost"
-                         P.Is("airborneAtRoundEnd", false)),                   // NZ.3.13.1 j "as well as no landing points awarded"
-                   T.Lookup("landingDistance",                                 // NZ.3.13.1 e
+            ScoreTerm.When(Predicate.All(Predicate.Is("motorRestarted", false),                        // NZ.3.13.1 g "landing points will be lost"
+                         Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.3.13.1 j "as well as no landing points awarded"
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.13.1 e
                        Rows.UpTo(7, 50).Then(15, 25).Rest(0))),
         ],
     };

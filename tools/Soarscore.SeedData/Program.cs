@@ -33,6 +33,7 @@ using System.Text;
 using System.Text.Json;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
+using ScoreTerm = Soarscore.Domain.PublishedClassDefinition.ScoreTerm;
 
 var repoRoot = args.Length > 0 ? args[0] : FindRepoRoot();
 var outputDirectory = Path.Combine(repoRoot, "tools", "Soarscore.SeedData", "json");

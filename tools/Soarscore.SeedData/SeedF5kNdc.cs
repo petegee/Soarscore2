@@ -50,18 +50,18 @@ public static class SeedF5kNdc
         // The ROUNDING MODE is unstated (F12 residual); Truncate follows the
         // FAI 5.5.10.6 f culture and the SeedNzF3kNdc precedent ("59.99 seconds
         // is recorded at 59.9 seconds").
-        M.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),              // NZ.3.16.37 d
-        M.Number("launchAltitude", "m", RoundingMode.Truncate, 1),             // NZ.3.16.29 c: recorded in the AMRT, measured during the
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),              // NZ.3.16.37 d
+        Metric.Number("launchAltitude", "m", RoundingMode.Truncate, 1),             // NZ.3.16.29 c: recorded in the AMRT, measured during the
                                                                                 //   10 s after motor stop; whole metres (the worked table)
-        M.Flag("landedInLandingArea", whenNotRecorded: true),                  // NZ.3.16.10 c/d; e — landing outside the Launch and Landing
+        Metric.Flag("landedInLandingArea", whenNotRecorded: true),                  // NZ.3.16.10 c/d; e — landing outside the Launch and Landing
                                                                                 //   Area ⇒ the flight zero is what is recorded; absence ⇒ inside
-        M.Flag("overflewLandingWindow", whenNotRecorded: false),               // NZ.3.16.21 b — landing after the 15 s window ⇒ the flight
+        Metric.Flag("overflewLandingWindow", whenNotRecorded: false),               // NZ.3.16.21 b — landing after the 15 s window ⇒ the flight
                                                                                 //   zero is what is recorded; absence ⇒ within it
-        M.Flag("launchedInWindow", whenNotRecorded: true),                     // NZ.3.16.17 d — the before-working-time launch zero is what is
+        Metric.Flag("launchedInWindow", whenNotRecorded: true),                     // NZ.3.16.17 d — the before-working-time launch zero is what is
                                                                                 //   recorded; absence ⇒ in window. For the self-paced Task A;
                                                                                 //   the 3 s mass-launch window for B/C/E — one flag, per-task
                                                                                 //   citations on the tasks
-        M.Flag("touchedBeforeStop", whenNotRecorded: false),                   // NZ.3.16.10 b — the touch (flight continues until grounded and
+        Metric.Flag("touchedBeforeStop", whenNotRecorded: false),                   // NZ.3.16.10 b — the touch (flight continues until grounded and
                                                                                 //   stopped, then zero) is what is recorded; absence ⇒ no touch
     ];
 
@@ -72,11 +72,11 @@ public static class SeedF5kNdc
     // Area is a flight zero via landedInLandingArea (NZ.3.16.10 d), and the
     // FAI −10 tier does not carry.
     private static AllOf FlightValidWhen =>
-        P.All(
-            P.Is("landedInLandingArea", true),                                 // NZ.3.16.10 c/d
-            P.Is("overflewLandingWindow", false),                              // NZ.3.16.21 b
-            P.Is("launchedInWindow", true),                                    // NZ.3.16.17 d (Task A); 3 s mass-launch window (B/C/E)
-            P.Is("touchedBeforeStop", false));                                 // NZ.3.16.10 b
+        Predicate.All(
+            Predicate.Is("landedInLandingArea", true),                                 // NZ.3.16.10 c/d
+            Predicate.Is("overflewLandingWindow", false),                              // NZ.3.16.21 b
+            Predicate.Is("launchedInWindow", true),                                    // NZ.3.16.17 d (Task A); 3 s mass-launch window (B/C/E)
+            Predicate.Is("touchedBeforeStop", false));                                 // NZ.3.16.10 b
 
     // ---- the NZ launch adjustment (NZ.3.16.29 e-g) -------------------------
     // One PiecewiseTerm, declared once and reused by all four tasks (notation
@@ -120,7 +120,7 @@ public static class SeedF5kNdc
     //   68 →  +8:  −4 + 2×(−2) = −8       69 →  +9: −4 + 3×(−2) = −10
     //   70 → +10:  −4 + 4×(−2) = −12
     private static PiecewiseTerm LaunchAdjustment =>                       // NZ.3.16.29 e-g
-        T.Piecewise("launchAltitude",
+        ScoreTerm.Piecewise("launchAltitude",
             Bands.Below(-6, -2).UpTo(-2, -1).UpTo(2, 0).UpTo(6, -1).Rest(-2),
             60);                                                           // NLH fixed 60 — NZ.3.16.29 b
 
@@ -172,7 +172,7 @@ public static class SeedF5kNdc
             // turnarounds (NZ.3.16.31: minimum 5 s between landing and start)
             // = 585. Flag: a-vi's notation is ambiguous exactly where FAI's
             // is; here the arithmetic corroborates the m.ss reading.
-            T.Rate("flightTime", 1, cap: 585, capScope: CapScope.PerTask),     // NZ.3.16.31 a-vi
+            ScoreTerm.Rate("flightTime", 1, cap: 585, capScope: CapScope.PerTask),     // NZ.3.16.31 a-vi
 
             LaunchAdjustment,                                                  // NZ.3.16.29 e-g
         ],
@@ -199,7 +199,7 @@ public static class SeedF5kNdc
         },
         Score =
         [
-            T.Rate("flightTime", 1, cap: 300),                                 // NZ.3.16.32 b: max flight 5 minutes
+            ScoreTerm.Rate("flightTime", 1, cap: 300),                                 // NZ.3.16.32 b: max flight 5 minutes
 
             // NZ.3.16.32 e: start penalties CUMULATIVE at the last flight's
             // own start number — 1st 0, 2nd −10, 3rd −20 (the worked example
@@ -207,7 +207,7 @@ public static class SeedF5kNdc
             // flight, so the rows are the cumulative cost at that flight's
             // sequence number. Character-identical to Task E's rows and
             // deliberately not one shared list — see the note there.
-            T.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
+            ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
                 Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),                       // NZ.3.16.32 e
 
             LaunchAdjustment,                                                  // NZ.3.16.29 e-g
@@ -237,7 +237,7 @@ public static class SeedF5kNdc
         [
             // Max measured flight time 240 s; the time stops at landing or at
             // the 4-minute acoustic signal (NZ.3.16.33 i).
-            T.Rate("flightTime", 1, cap: 240),                                 // NZ.3.16.33 d
+            ScoreTerm.Rate("flightTime", 1, cap: 240),                                 // NZ.3.16.33 d
 
             LaunchAdjustment,                                                  // NZ.3.16.29 e-g
         ],
@@ -257,7 +257,7 @@ public static class SeedF5kNdc
         Code = "E",
         Name = "Poker",                                                        // NZ.3.16.35
         Metrics = [.. FlightMetrics,
-                   M.Number("targetTime", "s", RoundingMode.Truncate, 0.1m,
+                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 0.1m,
                        declared: true)],                                       // NZ.3.16.35 d: the target is announced before each launch
         Flights = new AllFlights(),                                            // NZ.3.16.35: max 3 flights to achieve up to three targets
         Timing = new()
@@ -280,15 +280,15 @@ public static class SeedF5kNdc
             // contradicts its own subtotals (95 + 197 + 205 = 497). Neither
             // 9:50 nor 9:55 is encoded: l's 9:59 is the only self-consistent
             // number in the clause.
-            T.When(P.Ge("flightTime", "targetTime"),
-                   T.Rate("targetTime", 1, cap: 599)),                         // NZ.3.16.35 f/l
+            ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", "targetTime"),
+                   ScoreTerm.Rate("targetTime", 1, cap: 599)),                         // NZ.3.16.35 f/l
 
             // NZ.3.16.35 m: the launch adjustment attaches to ACHIEVED targets
             // only — the same guard wraps the whole shared PiecewiseTerm.
             // Nested rather than conjoined with the term above: both clauses
             // share one condition, and the guard's meaning is "the adjustment
             // exists only on a target-achieved flight".
-            T.When(P.Ge("flightTime", "targetTime"), LaunchAdjustment),        // NZ.3.16.35 m
+            ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", "targetTime"), LaunchAdjustment),        // NZ.3.16.35 m
 
             // NZ.3.16.35 o: start penalties on EVERY launch — 1st 0, 2nd −10,
             // 3rd −20 as per-flight increments (the worked example shows them
@@ -300,7 +300,7 @@ public static class SeedF5kNdc
             // three launches); E selects every flight, so its rows are the
             // per-launch INCREMENT (−30 total). Same pattern as SeedF5K
             // Tasks B/E.
-            T.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
+            ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
                 Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),                       // NZ.3.16.35 o
         ],
     };

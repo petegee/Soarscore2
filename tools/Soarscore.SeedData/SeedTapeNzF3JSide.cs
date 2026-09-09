@@ -47,12 +47,30 @@ public static class SeedTapeNzF3JSide
     private const decimal OffTape = 0;
 
     private static ImmutableArray<TapeMark> Marks =>
-        TapeMarks.UpTo(0.2m, 100).Then(0.4m, 99).Then(0.6m, 98).Then(0.8m, 97)
-            .Then(1.0m, 96).Then(1.2m, 95).Then(1.4m, 94).Then(1.6m, 93)
-            .Then(1.8m, 92).Then(2.0m, 91).Then(3.0m, 90).Then(4.0m, 85)
-            .Then(5, 80).Then(6, 75).Then(7, 70).Then(8, 65)
-            .Then(9, 60).Then(10, 55).Then(11, 50).Then(12, 45)
-            .Then(13, 40).Then(14, 35).Then(15, 30)
+        TapeMarks
+            .UpTo(0.2m, 100)
+            .Then(0.4m, 99)
+            .Then(0.6m, 98)
+            .Then(0.8m, 97)
+            .Then(1.0m, 96)
+            .Then(1.2m, 95)
+            .Then(1.4m, 94)
+            .Then(1.6m, 93)
+            .Then(1.8m, 92)
+            .Then(2.0m, 91)
+            .Then(3.0m, 90)
+            .Then(4.0m, 85)
+            .Then(5, 80)
+            .Then(6, 75)
+            .Then(7, 70)
+            .Then(8, 65)
+            .Then(9, 60)
+            .Then(10, 55)
+            .Then(11, 50)
+            .Then(12, 45)
+            .Then(13, 40)
+            .Then(14, 35)
+            .Then(15, 30)
             .OffTape(OffTape);
 
     public static TapeDefinition Definition => new()

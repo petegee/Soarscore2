@@ -32,7 +32,7 @@ public static class SeedAggregate
         Name = "Aggregate",
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),  // NZFF.1.7 "recorded to the nearest whole second below";
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),  // NZFF.1.7 "recorded to the nearest whole second below";
                                                                     //   the precision is the granularity step, so 1 = whole seconds
         ],
         Flights = new AllFlights(),  // NZFF.4.3 f — every flight in the window accrues toward the total (4.3 j)
@@ -48,13 +48,13 @@ public static class SeedAggregate
         //   flies the one window and placings come from total flying time (NZFF.4.3 j)
         // NO normalise (F25): the score is raw seconds; nothing is scaled (NZFF.4.3 j)
 
-        FlightValidWhen = P.Ge("flightTime", 20),  // NZFF.4.3 d "flights of less than 20 seconds are not recorded";
+        FlightValidWhen = Predicate.GreaterThanOrEqual("flightTime", 20),  // NZFF.4.3 d "flights of less than 20 seconds are not recorded";
                                                    //   the same threshold the general no-flight rule states (NZFF.1.4.1 a)
         Score =
         [
             // PerFlight scope is the default: 4.3 e caps EACH flight. At 1 pt/s the
             // cap on the metric consumed and the cap on the points produced coincide.
-            T.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight")),  // NZFF.4.3 e "180 seconds maximum per flight"
+            ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight")),  // NZFF.4.3 e "180 seconds maximum per flight"
         ],
     };
 

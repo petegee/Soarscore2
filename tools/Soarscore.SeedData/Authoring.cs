@@ -106,7 +106,7 @@ public sealed class Rows
 /// beside the metric and always kind-matched by construction: a Number metric
 /// can only assume a decimal, a Flag metric a bool.
 /// </summary>
-public static class M
+public static class Metric
 {
     public static MetricDefinition Number(
         string name, string unit, RoundingMode mode, decimal precision, bool declared = false,
@@ -164,17 +164,17 @@ public static class Params
 // ------------------------------------------------------------------ predicates
 
 /// <summary>The notation's predicate grammar: a comparison, or <c>all(…)</c>.</summary>
-public static class P
+public static class Predicate
 {
-    public static Comparison Lt(string metric, decimal value) => Cmp(metric, Comparator.LessThan, value);
+    public static Comparison LessThan(string metric, decimal value) => Cmp(metric, Comparator.LessThan, value);
 
-    public static Comparison Le(string metric, decimal value) => Cmp(metric, Comparator.LessOrEqual, value);
+    public static Comparison LessThanOrEqual(string metric, decimal value) => Cmp(metric, Comparator.LessOrEqual, value);
 
-    public static Comparison Gt(string metric, decimal value) => Cmp(metric, Comparator.GreaterThan, value);
+    public static Comparison GreaterThan(string metric, decimal value) => Cmp(metric, Comparator.GreaterThan, value);
 
-    public static Comparison Ge(string metric, decimal value) => Cmp(metric, Comparator.GreaterOrEqual, value);
+    public static Comparison GreaterThanOrEqual(string metric, decimal value) => Cmp(metric, Comparator.GreaterOrEqual, value);
 
-    public static Comparison Eq(string metric, decimal value) => Cmp(metric, Comparator.EqualTo, value);
+    public static Comparison Equal(string metric, decimal value) => Cmp(metric, Comparator.EqualTo, value);
 
     /// <summary>A flag comparison — <c>&lt;metric&gt; == true|false</c>.</summary>
     public static Comparison Is(string metric, bool value) => new()
@@ -185,7 +185,7 @@ public static class P
     };
 
     /// <summary>A comparison whose right-hand side is another metric.</summary>
-    public static Comparison Ge(string metric, string otherMetric) => new()
+    public static Comparison GreaterThanOrEqual(string metric, string otherMetric) => new()
     {
         LeftMetricRef = metric,
         Op = Comparator.GreaterOrEqual,
@@ -193,7 +193,7 @@ public static class P
     };
 
     /// <summary>AllOf is 2..*; the signature is what says so.</summary>
-    public static AllOf All(Predicate first, Predicate second, params Predicate[] rest) =>
+    public static AllOf All(Domain.PublishedClassDefinition.Predicate first, Domain.PublishedClassDefinition.Predicate second, params Domain.PublishedClassDefinition.Predicate[] rest) =>
         new() { Children = [first, second, .. rest] };
 
     private static Comparison Cmp(string metric, Comparator op, decimal value) => new()
@@ -207,7 +207,7 @@ public static class P
 // ----------------------------------------------------------------- score terms
 
 /// <summary>The notation's five score terms, one call each.</summary>
-public static class T
+public static class ScoreTerm
 {
     public static RateTerm Rate(
         string metric, decimal rate, NumberOrParam? cap = null, CapScope capScope = CapScope.PerFlight) =>
@@ -223,7 +223,7 @@ public static class T
         new() { MetricRef = metric, Origin = origin, Bands = bands };
 
     /// <summary>An omitted <c>else</c> contributes 0 to the sum (notation §7.2).</summary>
-    public static ConditionalTerm When(Predicate when, ScoreTerm then, ScoreTerm? otherwise = null) =>
+    public static ConditionalTerm When(Domain.PublishedClassDefinition.Predicate when, Domain.PublishedClassDefinition.ScoreTerm then, Domain.PublishedClassDefinition.ScoreTerm? otherwise = null) =>
         new() { When = when, Then = then, Else = otherwise };
 }
 

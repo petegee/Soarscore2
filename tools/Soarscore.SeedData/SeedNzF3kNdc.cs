@@ -30,10 +30,10 @@ public static class SeedNzF3kNdc
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
-        M.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7; NZ.0.2.1 a recorded to 0.1 s, truncated
-        M.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 (carried by NZ.0.2) — "lands later ⇒ that flight will
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7; NZ.0.2.1 a recorded to 0.1 s, truncated
+        Metric.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 (carried by NZ.0.2) — "lands later ⇒ that flight will
                                                                     //   score zero" is what is recorded; absence ⇒ within the window
-        M.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 (carried by NZ.0.2) — the early-launch zero is what is
+        Metric.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 (carried by NZ.0.2) — the early-launch zero is what is
                                                                     //   recorded; absence ⇒ in time
     ];
 
@@ -51,10 +51,10 @@ public static class SeedNzF3kNdc
                                                                                //   NZ.0.2.1 a's raw-sum total
         // NO normalise (F25): NZ.0.2.1 a "Total is sum of raw scores" — there is no
         //   normalisation scale anywhere in this class.
-        FlightValidWhen = P.All(
-            P.Is("landedWithinWindow", true),                                  // F3K.9.3
-            P.Is("launchedInWorkingTime", true)),                              // F3K.7
-        Score = [T.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.B"))],  // F3K.11.2; NZ.0.2.1 b worked example 55 + 85 = 140
+        FlightValidWhen = Predicate.All(
+            Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3
+            Predicate.Is("launchedInWorkingTime", true)),                              // F3K.7
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.B"))],  // F3K.11.2; NZ.0.2.1 b worked example 55 + 85 = 140
     };
 
     // SeedF3K's D inherits A's score term through `like`; this definition
@@ -68,10 +68,10 @@ public static class SeedNzF3kNdc
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600, MaxLaunches = 2 },
         Group = new() { MinPerGroup = 5 },                                     // F3K.9.1 carries (ruling); see TaskB
         // NO normalise (F25) — see TaskB
-        FlightValidWhen = P.All(
-            P.Is("landedWithinWindow", true),                                  // F3K.9.3
-            P.Is("launchedInWorkingTime", true)),                              // F3K.7
-        Score = [T.Rate("flightTime", 1, cap: 300)],                           // F3K.11.4 "300 s each, both flights summed"
+        FlightValidWhen = Predicate.All(
+            Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3
+            Predicate.Is("launchedInWorkingTime", true)),                              // F3K.7
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 300)],                           // F3K.11.4 "300 s each, both flights summed"
     };
 
     private static TaskDefinition TaskG => new()
@@ -83,10 +83,10 @@ public static class SeedNzF3kNdc
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
         Group = new() { MinPerGroup = 5 },                                     // F3K.9.1 carries (ruling); see TaskB
         // NO normalise (F25) — see TaskB
-        FlightValidWhen = P.All(
-            P.Is("landedWithinWindow", true),                                  // F3K.9.3
-            P.Is("launchedInWorkingTime", true)),                              // F3K.7
-        Score = [T.Rate("flightTime", 1, cap: 120)],                           // F3K.11.7
+        FlightValidWhen = Predicate.All(
+            Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3
+            Predicate.Is("launchedInWorkingTime", true)),                              // F3K.7
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 120)],                           // F3K.11.7
     };
 
     // No cap on the term: the assigned target IS the cap. `rankBy flightTime`
@@ -109,10 +109,10 @@ public static class SeedNzF3kNdc
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
         Group = new() { MinPerGroup = 5 },                                     // F3K.9.1 carries (ruling); see TaskB
         // NO normalise (F25) — see TaskB
-        FlightValidWhen = P.All(
-            P.Is("landedWithinWindow", true),                                  // F3K.9.3
-            P.Is("launchedInWorkingTime", true)),                              // F3K.7
-        Score = [T.Rate("flightTime", 1)],                                     // F3K.11.8
+        FlightValidWhen = Predicate.All(
+            Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3
+            Predicate.Is("launchedInWorkingTime", true)),                              // F3K.7
+        Score = [ScoreTerm.Rate("flightTime", 1)],                                     // F3K.11.8
     };
 
     // ---- the definition ----------------------------------------------------

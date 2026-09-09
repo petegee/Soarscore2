@@ -39,22 +39,22 @@ public static class SeedF5jNdc
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
-        M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.11.12 b truncated to the nearest second
-        M.Number("startHeight", "m", RoundingMode.Truncate, 1),                // 5.5.11.12 d truncated to the nearest metre
-        M.Flag("startHeightRecorded"),                                         // 5.5.11.7 e "the AMRT does not record any Start Height data"
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.11.12 b truncated to the nearest second
+        Metric.Number("startHeight", "m", RoundingMode.Truncate, 1),                // 5.5.11.12 d truncated to the nearest metre
+        Metric.Flag("startHeightRecorded"),                                         // 5.5.11.7 e "the AMRT does not record any Start Height data"
                                                                                 //   (5.5.11.12 d is the truncation rule, not the zeroing one)
                                                                                 //   NO whenNotRecorded: the recorded height is demanded — an
                                                                                 //   uncaptured height pends the flight (WI-4)
-        M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 i — the rules state no capture precision, and a
+        Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 i — the rules state no capture precision, and a
                                                                                 //   MetricDefinition precision is not coverable by a Parameter
                                                                                 //   (F12 residual). Chosen, not cited.
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
+        Metric.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
             whenNotRecorded: 0),                                               // 5.5.11.12 g, k (carried by NZ.0.3 c) — seconds past working
                                                                                 //   time are what the timekeeper records; a flight landing
                                                                                 //   within time has none
-        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j (carried by NZ.0.3 c) — the touch forfeits the
+        Metric.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j (carried by NZ.0.3 c) — the touch forfeits the
                                                                                 //   bonus; absence ⇒ no touch
-        M.Flag("landedWithin75m", whenNotRecorded: true),                      // NZ.0.3 h "No points if landing more than 75m from the
+        Metric.Flag("landedWithin75m", whenNotRecorded: true),                      // NZ.0.3 h "No points if landing more than 75m from the
                                                                                 //   landing spot"; FAI 5.5.11.7 d — the FAI seed omits it
                                                                                 //   (0.3 h restates 5.5.11.7 d for the NDC, so it is
                                                                                 //   encoded here); the outside-75m zero is what is recorded,
@@ -71,9 +71,16 @@ public static class SeedF5jNdc
              .Rest(-3);
 
     private static ImmutableArray<LookupRow> LandingRows =>                    // 5.5.11.12 h
-        Rows.UpTo(1, 50).Then(2, 45).Then(3, 40).Then(4, 35)
-            .Then(5, 30).Then(6, 25).Then(7, 20).Then(8, 15)
-            .Then(9, 10).Then(10, 5)
+        Rows.UpTo(1, 50)
+            .Then(2, 45)
+            .Then(3, 40)
+            .Then(4, 35)
+            .Then(5, 30)
+            .Then(6, 25)
+            .Then(7, 20)
+            .Then(8, 15)
+            .Then(9, 10)
+            .Then(10, 5)
             .Rest(0);
 
     // ---- the preliminary task ----------------------------------------------
@@ -101,22 +108,22 @@ public static class SeedF5jNdc
         // start-height deduction below is negative — so a long overfly scored 0
         // flight points, 0 landing bonus and a NEGATIVE height deduction, where
         // 5.5.11.12 g says "a zero score will be recorded".
-        FlightValidWhen = P.All(
-            P.Le("overflySeconds", 60),                                        // 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
-            P.Is("startHeightRecorded", true),                                 // 5.5.11.7 e
-            P.Is("landedWithin75m", true)),                                    // NZ.0.3 h; FAI 5.5.11.7 d
+        FlightValidWhen = Predicate.All(
+            Predicate.LessThanOrEqual("overflySeconds", 60),                                        // 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
+            Predicate.Is("startHeightRecorded", true),                                 // 5.5.11.7 e
+            Predicate.Is("landedWithin75m", true)),                                    // NZ.0.3 h; FAI 5.5.11.7 d
         Score =
         [
-            T.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points
+            ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points
 
             // Start-height deduction. Cumulative bands: 0.5/m for the first 200 m
             // and 3/m thereafter, so 220 m deducts 100 + 60 = 160, not 660.
-            T.Piecewise("startHeight", StartHeightBands),
+            ScoreTerm.Piecewise("startHeight", StartHeightBands),
 
             // Landing bonus — the coarser 50->0 table, forfeited two ways.
-            T.When(P.All(P.Eq("overflySeconds", 0),                            // 5.5.11.12 k
-                         P.Is("touchedByCompetitor", false)),                  // 5.5.11.12 j
-                   T.Lookup("landingDistance", LandingRows)),
+            ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),                            // 5.5.11.12 k
+                         Predicate.Is("touchedByCompetitor", false)),                  // 5.5.11.12 j
+                   ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };
 

@@ -20,10 +20,10 @@ public static class SeedF3K
     // and F3K.7), so absence resolves to compliance.
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
-        M.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7 recorded to 0.1 s, truncated
-        M.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 the 30 s landing window — "lands later ⇒ that flight will
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7 recorded to 0.1 s, truncated
+        Metric.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 the 30 s landing window — "lands later ⇒ that flight will
                                                                     //   score zero" is what is recorded; absence ⇒ within the window
-        M.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 — the early-launch zero is what is recorded; absence ⇒ in time
+        Metric.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 — the early-launch zero is what is recorded; absence ⇒ in time
     ];
 
     // ---- A, the task every other one derives from --------------------------
@@ -46,10 +46,10 @@ public static class SeedF3K
         // WITHOUT deselecting it, which is what F3K.11.1 needs: a late-landing
         // last flight must score zero, not promote its predecessor. Every task
         // below inherits this through `like`.
-        FlightValidWhen = P.All(
-            P.Is("landedWithinWindow", true),                                  // F3K.9.3 "if a model glider lands later, that flight will score zero"
-            P.Is("launchedInWorkingTime", true)),                              // F3K.7
-        Score = [T.Rate("flightTime", 1, cap: 300)],                           // F3K.11.1
+        FlightValidWhen = Predicate.All(
+            Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3 "if a model glider lands later, that flight will score zero"
+            Predicate.Is("launchedInWorkingTime", true)),                              // F3K.7
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 300)],                           // F3K.11.1
     };
 
     private static TaskDefinition TaskB => TaskA with
@@ -58,7 +58,7 @@ public static class SeedF3K
         Name = "Next to last and last flight",                                 // F3K.11.2
         Flights = new LastNFlights(2),
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = NumberOrParam.Param("workingTime.B") },
-        Score = [T.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.B"))],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.B"))],
     };
 
     // The only UntilAllFlightsComplete task in the corpus: the working time IS
@@ -68,7 +68,7 @@ public static class SeedF3K
     {
         Code = "C",
         Name = "All up, last down",                                            // F3K.11.3
-        Metrics = [.. FlightMetrics, M.Flag("launchedOnSignal", whenNotRecorded: true)],  // F3K.11.3 — the early/>3 s-late launch zero is what is
+        Metrics = [.. FlightMetrics, Metric.Flag("launchedOnSignal", whenNotRecorded: true)],  // F3K.11.3 — the early/>3 s-late launch zero is what is
                                                                                             //   recorded; absence ⇒ launched on the signal
         Flights = new AllFlights(),
         Timing = new()
@@ -84,11 +84,11 @@ public static class SeedF3K
         // still airborne during the 60 s preparation time zeroes the NEXT attempt
         // — is recorded by the timekeeper as the next attempt's landedWithinWindow
         // flag; the notation sees one flight at a time.
-        FlightValidWhen = P.All(
-            P.Is("landedWithinWindow", true),                                  // F3K.9.3 3:03-3:33 window for Task C
-            P.Is("launchedInWorkingTime", true),                               // F3K.7
-            P.Is("launchedOnSignal", true)),                                   // F3K.11.3 early or >3 s late = zero for the flight
-        Score = [T.Rate("flightTime", 1, cap: 180)],                           // F3K.11.3 "the maximum measured flight time is 180 seconds"
+        FlightValidWhen = Predicate.All(
+            Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3 3:03-3:33 window for Task C
+            Predicate.Is("launchedInWorkingTime", true),                               // F3K.7
+            Predicate.Is("launchedOnSignal", true)),                                   // F3K.11.3 early or >3 s late = zero for the flight
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 180)],                           // F3K.11.3 "the maximum measured flight time is 180 seconds"
     };
 
     // D restates no `score`, so A's whole term list comes with `like`:
@@ -111,11 +111,11 @@ public static class SeedF3K
         Code = "E",
         Name = "Poker — variable target time",                                 // F3K.11.5
         Metrics = [.. FlightMetrics,
-                   M.Number("targetTime", "s", RoundingMode.Truncate, 1, declared: true)],  // F3K.11.5 announced before release
+                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 1, declared: true)],  // F3K.11.5 announced before release
         Flights = new BestNFlights { Count = 3 },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = NumberOrParam.Param("workingTime.E") },
-        Score = [T.When(P.Ge("flightTime", "targetTime"),
-                        T.Rate("targetTime", 1))],                             // F3K.11.5 "the target time is credited"
+        Score = [ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", "targetTime"),
+                        ScoreTerm.Rate("targetTime", 1))],                             // F3K.11.5 "the target time is credited"
     };
 
     private static TaskDefinition TaskF => TaskA with
@@ -124,7 +124,7 @@ public static class SeedF3K
         Name = "3 out of 6",                                                   // F3K.11.6
         Flights = new BestNFlights { Count = 3 },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600, MaxLaunches = 6 },
-        Score = [T.Rate("flightTime", 1, cap: 180)],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 180)],
     };
 
     private static TaskDefinition TaskG => TaskA with
@@ -133,7 +133,7 @@ public static class SeedF3K
         Name = "Five longest flights",                                         // F3K.11.7
         Flights = new BestNFlights { Count = 5 },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        Score = [T.Rate("flightTime", 1, cap: 120)],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 120)],
     };
 
     // No cap on the term: the assigned target IS the cap. `rankBy flightTime`
@@ -154,7 +154,7 @@ public static class SeedF3K
             TargetValues = [60, 120, 180, 240],
         },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        Score = [T.Rate("flightTime", 1)],
+        Score = [ScoreTerm.Rate("flightTime", 1)],
     };
 
     private static TaskDefinition TaskI => TaskA with
@@ -163,7 +163,7 @@ public static class SeedF3K
         Name = "Three longest flights",                                        // F3K.11.9
         Flights = new BestNFlights { Count = 3 },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        Score = [T.Rate("flightTime", 1, cap: 200)],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 200)],
     };
 
     private static TaskDefinition TaskJ => TaskA with
@@ -172,7 +172,7 @@ public static class SeedF3K
         Name = "Three last flights",                                           // F3K.11.10
         Flights = new LastNFlights(3),
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        Score = [T.Rate("flightTime", 1, cap: 180)],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 180)],
     };
 
     // "The competitors do not have to reach or exceed the target times to count
@@ -183,7 +183,7 @@ public static class SeedF3K
         Name = "Big Ladder — increasing by 30 s",                              // F3K.11.11
         Flights = new ExactlyNInOrder { Count = 5, TargetValues = [60, 90, 120, 150, 180] },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600, MaxLaunches = 5 },
-        Score = [T.Rate("flightTime", 1)],
+        Score = [ScoreTerm.Rate("flightTime", 1)],
     };
 
     private static TaskDefinition TaskL => TaskA with
@@ -197,7 +197,7 @@ public static class SeedF3K
             WorkingTime = NumberOrParam.Param("workingTime.L"),
             MaxLaunches = 1,                                                   // F3K.11.12 one launch
         },
-        Score = [T.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.L"))],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.L"))],
     };
 
     private static TaskDefinition TaskN => TaskA with
@@ -206,7 +206,7 @@ public static class SeedF3K
         Name = "Best flight",                                                  // F3K.11.14
         Flights = new BestNFlights { Count = 1 },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
-        Score = [T.Rate("flightTime", 1, cap: 599)],
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: 599)],
     };
 
     // Fly-off only. Only the ladder and the working time differ from K; the

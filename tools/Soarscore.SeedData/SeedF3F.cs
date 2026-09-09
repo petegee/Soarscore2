@@ -28,14 +28,14 @@ public static class SeedF3F
         // flag below is one limb of F3F.1.6's "A flight is official but gets a zero
         // score if" schedule — the recorded EXCEPTIONS — so absence of each flag
         // resolves to the compliant limb value and the flight scores its time.
-        M.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3F.1.12 "the time in seconds and hundredths of seconds"
-        M.Flag("courseCompleted", whenNotRecorded: true),                  // F3F.1.6 e "the flight is not carried through" is recorded; absence ⇒ carried through
-        M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3F.1.6 f — landing outside the assigned area is recorded; absence ⇒ inside
-        M.Flag("launchedWithin30s", whenNotRecorded: true),                // F3F.1.6 g — the late launch is recorded; absence ⇒ within 30 s
-        M.Flag("modelIntact", whenNotRecorded: true),                      // F3F.1.6 b — losing a part while airborne is recorded; absence ⇒ intact
-        M.Flag("clearedPlaneWithin5s", whenNotRecorded: true),             // F3F.1.6 h — the failure to clear is recorded; absence ⇒ cleared
-        M.Flag("seenEnteringCourse", whenNotRecorded: true),               // F3F.1.6 i — the judge's "not seen entering" is recorded; absence ⇒ seen
-        M.Flag("flownWithinRules", whenNotRecorded: true),                 // F3F.1.6 a, c, d — non-conforming model, helper advice during the
+        Metric.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3F.1.12 "the time in seconds and hundredths of seconds"
+        Metric.Flag("courseCompleted", whenNotRecorded: true),                  // F3F.1.6 e "the flight is not carried through" is recorded; absence ⇒ carried through
+        Metric.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3F.1.6 f — landing outside the assigned area is recorded; absence ⇒ inside
+        Metric.Flag("launchedWithin30s", whenNotRecorded: true),                // F3F.1.6 g — the late launch is recorded; absence ⇒ within 30 s
+        Metric.Flag("modelIntact", whenNotRecorded: true),                      // F3F.1.6 b — losing a part while airborne is recorded; absence ⇒ intact
+        Metric.Flag("clearedPlaneWithin5s", whenNotRecorded: true),             // F3F.1.6 h — the failure to clear is recorded; absence ⇒ cleared
+        Metric.Flag("seenEnteringCourse", whenNotRecorded: true),               // F3F.1.6 i — the judge's "not seen entering" is recorded; absence ⇒ seen
+        Metric.Flag("flownWithinRules", whenNotRecorded: true),                 // F3F.1.6 a, c, d — non-conforming model, helper advice during the
                                                                             //   timed flight, control by anyone other than the competitor:
                                                                             //   three officials' rulings, one recorded observation
         ],
@@ -53,19 +53,19 @@ public static class SeedF3F
             Direction = NormalisationDirection.LowerIsBetter,
             WinnerScore = 1000,                                                // F3F.1.12 Ri = 1000 x Tw / Ti; no precision stated (F12)
         },
-        ValidWhen = P.All(                                                     // F3F.1.6 — "official but gets a zero score" means NO RESULT here
-            P.Is("courseCompleted", true),
-            P.Is("landedInDefinedArea", true),
-            P.Is("launchedWithin30s", true),
-            P.Is("modelIntact", true),
-            P.Is("clearedPlaneWithin5s", true),
-            P.Is("seenEnteringCourse", true),
-            P.Is("flownWithinRules", true),
-            P.Gt("courseTime", 0)),                                           // a captured 0 is a mis-capture, not a course flown in zero
+        ValidWhen = Predicate.All(                                                     // F3F.1.6 — "official but gets a zero score" means NO RESULT here
+            Predicate.Is("courseCompleted", true),
+            Predicate.Is("landedInDefinedArea", true),
+            Predicate.Is("launchedWithin30s", true),
+            Predicate.Is("modelIntact", true),
+            Predicate.Is("clearedPlaneWithin5s", true),
+            Predicate.Is("seenEnteringCourse", true),
+            Predicate.Is("flownWithinRules", true),
+            Predicate.GreaterThan("courseTime", 0)),                                           // a captured 0 is a mis-capture, not a course flown in zero
                                                                                //   time — courseCompleted=true alone does not rule that out,
                                                                                //   and a raw 0 would otherwise be crowned the group's winner
                                                                                //   (this file's own header note on the inverted task)
-        Score = [T.Rate("courseTime", 1)],                                     // the raw result IS the elapsed time; the direction inverts it
+        Score = [ScoreTerm.Rate("courseTime", 1)],                                     // the raw result IS the elapsed time; the direction inverts it
     };
 
     // ---- the definition ----------------------------------------------------

@@ -25,8 +25,8 @@ public static class SeedNzMAles200
         Name = "Thermal Duration",
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.12.3 a "truncated for scoring purposes"
-            M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5 "rounded to the next full metre"
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.12.3 a "truncated for scoring purposes"
+            Metric.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5 "rounded to the next full metre"
             // The metric name carries the WHOLE of NZ.3.12.2 d, which is
             // conjunctive: "No landing points will be given if the plane sustains
             // significant damage during the landing AND, IN THE OPINION OF THE
@@ -42,9 +42,9 @@ public static class SeedNzMAles200
             // points" rulings when the model is damaged-and-not-flyable or
             // touched. A compliant flight is recorded as its measurements only,
             // so each flag's absence resolves to compliance.
-            M.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — recorded exception; absence ⇒ no such damage
-            M.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches EITHER THE PILOT OR HIS HELPER"; absence ⇒ no touch
-            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded; absence ⇒ within
+            Metric.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — recorded exception; absence ⇒ no such damage
+            Metric.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches EITHER THE PILOT OR HIS HELPER"; absence ⇒ no touch
+            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded; absence ⇒ within
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
         Timing = new()
@@ -59,7 +59,7 @@ public static class SeedNzMAles200
             WinnerScore = 1000,                                                // NZ.3.12.3 c "the ratio of the contestants score to that of the
         },                                                                     //   highest score for that flight group and multiplying by
                                                                                //   1000"; no precision stated (F12)
-        FlightValidWhen = P.Is("landedWithin75m", true),                       // NZ.2.4.6 "the flight is cancelled and recorded as a zero score"
+        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6 "the flight is cancelled and recorded as a zero score"
 
         // Raw score — flight points only. Cumulative bands, F3B Task A's shape at a
         // parameterised turning point (F27): at target 600 a 700 s flight scores
@@ -67,7 +67,7 @@ public static class SeedNzMAles200
         // parameter, which the band list carries rather than restates (check 8).
         Score =
         [
-            T.Piecewise("flightTime",                                          // NZ.3.12.3 b
+            ScoreTerm.Piecewise("flightTime",                                          // NZ.3.12.3 b
                 Bands.From(0)
                      .UpTo(NumberOrParam.Param("targetTime"), 1)               // NZ.3.12.1 m "1 point/second for each second up to and
                                                                                //   including the target time"
@@ -81,12 +81,19 @@ public static class SeedNzMAles200
         // normalized flight score and the landing score".
         ScoreNormalised =
         [
-            T.When(P.All(P.Is("damagedAndNotSafelyFlyable", false),            // NZ.3.12.2 d
-                         P.Is("touchedByCompetitor", false)),                  // NZ.3.12.2 e
-                   T.Lookup("landingDistance",                                 // NZ.3.12.2 b, table at NZ.2.4.5
-                       Rows.UpTo(1, 50).Then(2, 45).Then(3, 40).Then(4, 35)
-                           .Then(5, 30).Then(6, 25).Then(7, 20).Then(8, 15)
-                           .Then(9, 10).Then(10, 5)
+            ScoreTerm.When(Predicate.All(Predicate.Is("damagedAndNotSafelyFlyable", false),            // NZ.3.12.2 d
+                         Predicate.Is("touchedByCompetitor", false)),                  // NZ.3.12.2 e
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.12.2 b, table at NZ.2.4.5
+                       Rows.UpTo(1, 50)
+                           .Then(2, 45)
+                           .Then(3, 40)
+                           .Then(4, 35)
+                           .Then(5, 30)
+                           .Then(6, 25)
+                           .Then(7, 20)
+                           .Then(8, 15)
+                           .Then(9, 10)
+                           .Then(10, 5)
                            .Rest(0))),
         ],
     };

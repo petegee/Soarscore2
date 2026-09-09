@@ -25,14 +25,14 @@ public static class SeedNzMNdc
         Name = "Thermal Duration (NDC)",
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.12.3 a
-            M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.12.3 a
+            Metric.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5
             // The three flags are the NZMAA observation protocol's recorded
             // EXCEPTIONS (NZ.2.4.6, NZ.3.12.2 d/e — see the parent class for the
             // full protocol reading); absence resolves to compliance.
-            M.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — conjunctive; see the parent for the full clause
-            M.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches either the pilot or his helper"
-            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6
+            Metric.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — conjunctive; see the parent for the full clause
+            Metric.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches either the pilot or his helper"
+            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6
         ],
         Flights = new LastFlight(),                                            // NZ.1.6
         Timing = new()
@@ -49,21 +49,28 @@ public static class SeedNzMNdc
         //   would have no stage to land at, and adoption rejects it (check 14).
         //   Same rulebook class, opposite answer to F24's question.
 
-        FlightValidWhen = P.Is("landedWithin75m", true),                       // NZ.2.4.6
+        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6
         Score =
         [
-            T.Piecewise("flightTime",                                          // NZ.3.12.3 b
+            ScoreTerm.Piecewise("flightTime",                                          // NZ.3.12.3 b
                 Bands.From(0)
                      .UpTo(600, 1)                                             // NZ.3.12.7 a 10 minute target;
                                                                                //   NZ.3.12.7 c i "flight time max is 10min (600 points)"
                      .Rest(-1)),                                               // NZ.3.12.1 n
 
-            T.When(P.All(P.Is("damagedAndNotSafelyFlyable", false),            // NZ.3.12.2 d
-                         P.Is("touchedByCompetitor", false)),                  // NZ.3.12.2 e
-                   T.Lookup("landingDistance",                                 // NZ.3.12.2 b, table at NZ.2.4.5
-                       Rows.UpTo(1, 50).Then(2, 45).Then(3, 40).Then(4, 35)
-                           .Then(5, 30).Then(6, 25).Then(7, 20).Then(8, 15)
-                           .Then(9, 10).Then(10, 5)
+            ScoreTerm.When(Predicate.All(Predicate.Is("damagedAndNotSafelyFlyable", false),            // NZ.3.12.2 d
+                         Predicate.Is("touchedByCompetitor", false)),                  // NZ.3.12.2 e
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.12.2 b, table at NZ.2.4.5
+                       Rows.UpTo(1, 50)
+                           .Then(2, 45)
+                           .Then(3, 40)
+                           .Then(4, 35)
+                           .Then(5, 30)
+                           .Then(6, 25)
+                           .Then(7, 20)
+                           .Then(8, 15)
+                           .Then(9, 10)
+                           .Then(10, 5)
                            .Rest(0))),
         ],
     };

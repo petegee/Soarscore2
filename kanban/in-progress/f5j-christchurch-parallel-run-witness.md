@@ -1,11 +1,19 @@
 # Story — F5J Christchurch parallel-run witness (the guaranteed divergence)
 
-**Status:** Backlog — plan written 2026-09-07 (fixture
+**Status:** In-progress — plan written 2026-09-07 (fixture
 data measured, GS arithmetic and engine mechanics checked during planning;
 decisions 1 and 3–8 owner-confirmed same day; **decision 2 rewritten
 2026-09-08 (second revision)** when the owner supplied the actual NZ landing-tape
-practice — the earlier "importer decodes the scheme" route is superseded;
-implementation awaits the parent prerequisite in WI-0) · **Raised:** 2026-09-06
+practice — the earlier "importer decodes the scheme" route is superseded) ·
+**Re-verified and citation-corrected 2026-09-09:** the parent prerequisite's
+WI-1–WI-5 code is landed and green (commit `68c3cd1` — declaration, capture,
+composition, tape seeds, both BDD scenarios; Domain 758 / Application 305 /
+Architecture 7 / Infrastructure non-Storage 76 / Acceptance 78 on sqlite,
+build clean, zero skips), every code and seed citation below was re-checked
+against the tree and corrected, and this story's WI-0 is a verification, not a
+wait. The parent's outstanding WI-0 paperwork (owner-approved
+glossary/class-diagram wording, two owner questions) is owner-gated and gates
+the parent's completion, not this story's WI-1. · **Raised:** 2026-09-06
 (decision 2 of
 `kanban/completed/seed-definition-parallel-run.md`: the guaranteed-divergence
 witness role moved here from the withdrawn f3j-international claim)
@@ -14,7 +22,7 @@ witness role moved here from the withdrawn f3j-international claim)
 
 Run `f5j-christchurch-2019` under **canonical `30-f5j.json`**, with its landing
 definition unchanged, through the parallel-run harness and ledger the
-differences against the triaged set. First, `kanban/backlog/tape-points-landing-seeds.md`
+differences against the triaged set. First, `kanban/in-progress/tape-points-landing-seeds.md`
 WI-0 through WI-5 must deliver the landing-tape model: the tape as a declared
 reading scale, and the composition of that scale with the class's own rulebook
 landing table. This story then owns only the canonical 75 m seed fix and the
@@ -58,7 +66,8 @@ Two planning findings reshaped the stub, both verified against the tree:
   placeholder rows — and the engine's `PhaseAggregator` treats a round with no
   score as **0** and pools it into the ByRound drop candidates
   (`PhaseAggregator.cs:83-92` "No score recorded — treat as 0";
-  `ApplyByRoundDrop` `:191-214`). A full-fixture run lets the drop eat a
+     `ApplyByRoundDrop` `:191-216`, ordering candidates by total then the
+   `DropTieBreak` — Latest default, owner decision 2026-09-08). A full-fixture run lets the drop eat a
   phantom zero and the aggregate split vanishes. The run therefore replays the
   comp GS actually scored: **rounds 1–11** (the rollup window,
   `ladder.py:201` `TaskLastRound = MAX(RoundNo where Updated='True')` = 11).
@@ -147,7 +156,7 @@ verification, not new machinery (decision 6).
    `5.5.11.7 d` ("nose not at rest within 75 m of the designated landing spot"
    → flight = 0, `docs/rules/f5j.md:37`): it declares no within-75 m flag and
    its `flightValidWhen` gates only overfly ≤ 60 s and `startHeightRecorded`
-   (`30-f5j.json:240-262`). Add a `landedWithin75m` Flag metric with
+   (`30-f5j.json:241-263`). Add a `landedWithin75m` Flag metric with
    `whenNotRecorded: true` (the exception-recording policy P1 — the club
    records the exception; GS's own `LandingOver75m` column is the same shape)
    plus the `flightValidWhen` gate, to **both** of `SeedF5J`'s tasks, justified
@@ -179,11 +188,13 @@ verification, not new machinery (decision 6).
    row, so no flight runs Pending.
 6. **The fly-off/promotion spike resolves as dormancy, with existing acceptance
    coverage; this pair still needs its run.** The engine
-   scores only **drawn** phases (`ScoringService.cs:213` iterates
-   `competition.Phases`; `Finalise` iterates drawn phases —
-   `Competition.cs:1964`, cited by tape-points' ground truth); a second phase
-   cannot be drawn today (`Competition.DrawPhase` refuses on `!Phases.IsEmpty`,
-   `kanban/deferred-decisions.md` §Draw); `RankingEngine.Rank` receives
+    scores only **drawn** phases (`ScoringService.cs:226` iterates
+    `competition.Phases`; `Finalise` iterates drawn phases —
+    `Competition.cs:2192`, drawn-phase loop `:2250`); a second phase
+    cannot be drawn today (the `!Phases.IsEmpty` refusal lives in the shared
+    `ResolveSchedule`, `Competition.cs:1430`, reached by both `DrawPhase`
+    (`:1212`) and `PrescribeDraw`; `kanban/deferred-decisions.md` §Draw);
+    `RankingEngine.Rank` receives
    `promotion`/`finalRanking` but never reads them (params
    `RankingEngine.cs:62-63`, absent from the body) — the qualifying-only
    ranking is the dormant path. `ClosingACompetitionSteps` uses canonical
@@ -199,7 +210,7 @@ verification, not new machinery (decision 6).
    The data corroborates: max decoded flight 599 s — nobody overflew the 600 s
    working time, so the assumption is also what the foil's data implies.
    `ParallelRunComparator.CheckProvenance` currently verifies **Flag** metric
-   mappings only (`ParallelRunComparator.cs:413-423`) — the number-valued
+   mappings only (`ParallelRunComparator.cs:416-425`) — the number-valued
    assumption needs the widening in WI-2, additive, with the ales ledger
    untouched (its `true` deserialises into the widened type unchanged).
 8. **No parameter bindings.** The seed's two parameters (`flyoffMaxGroup` 14,
@@ -222,13 +233,13 @@ verification, not new machinery (decision 6).
   66–271 m, every row carries one; packed-mmss flight times decode to
   ≤ 599 s (nobody overflew); landing values ∈ scheme-11 rows ∪ {0} — i.e.
   every one is a mark on the F3J side of the tape or the off-tape reading (24
-  rows recorded 0 — no bonus, GS's exact-match short-circuit `ladder.py:144-145`);
+  rows recorded 0 — no bonus, GS's exact-match short-circuit `ladder.py:142-145`);
   `Penalty` all 0 (G4 moot — the harness's loud infraction-mapping refusal at
   `ReplayDriver.cs:724-739` never fires); `F5JMotorReStarted` true on 22 rows
   (see Before-starting); `LandingOver75m` true only on the two cancelled rows.
 - Two rule-driven cancelled flights — R8/G3 P82, R11/G1 P104 (time 0, height 0,
   `LandingOver75m: true`): GS persisted 0.0 cells; the harness's zero-row rule
-  (`Time1Mins <= 0` → flight-less, `ReplayDriver.cs:1034-1037`) makes them
+  (`Time1Mins <= 0` → flight-less, `ReplayDriver.cs:1035-1038`) makes them
   flight-less in the seed-run too → cell 0 both sides. Equivalent; a provenance
   note.
 - Teams: `UseTeams=true`/`UseTeamProtection=true` are app defaults — **all 18
@@ -273,18 +284,23 @@ prescription.
 - Naming (`ReplayDriver.cs:383-390`): the competition carries canonical
   `30-f5j`'s own name/version automatically.
 - Comparator (`Comparator.cs`): `RecordCell`/`AddIfDifferent`/
-  `EnsureOracleCoverage` (`:1380/:1391/:1407`) are internal and shared;
-  `CompareRankingGrain` (`:687`) compares engine placings against the oracle's
+  `EnsureOracleCoverage` (`:1507/:1518/:1534`) are internal and shared;
+  `CompareRankingGrain` (`:689`) compares engine placings against the oracle's
   `=n` ranks **and** tie-group membership. Ledger `Covers` supports
   `pilotNo: "*"` and null round/group scope (`ParallelRunLedger.cs:98-104`).
 
 **Seed class** (`30-f5j.json`): drops `applyWhenRoundsCompletedAtLeast: 5`,
-dropCount 1, ByRound (`:153-159`); phase-2 fly-off (`TopPercent` 30,
-`qualifyingPosition` tie-breaks, `:366-398`) never drawn; both parameters
-defaulted (`:6-36`); `startHeightRecorded` has no `whenNotRecorded`
-(`:187-190`); `overflySeconds` → 0 and `touchedByCompetitor` → false declared
-(`:210-223`); landing lookup conditional on overfly == 0 ∧ !touched, table
-≤ 1 m → 50 … > 10 m → 0 (`:312-359`).
+dropCount 1, ByRound, `tieBreak: "Latest"` (`:153-160` — `DropPolicy.TieBreak`,
+owner decision 2026-09-08 in
+`kanban/completed/literal-record-f3k-sample-comp.md` WI-4b: equally-lowest
+rounds drop latest-first; it names WHICH round drops when a pilot's minimum
+ties, relevant to the ledger's per-pilot ranking citations); phase-2 fly-off
+(`TopPercent` 30, `qualifyingPosition` tie-breaks, `:366-398`) never drawn;
+both parameters defaulted (`:6-36`); `startHeightRecorded` has no
+`whenNotRecorded` (`:187-191`); `overflySeconds` → 0 and
+`touchedByCompetitor` → false declared (`:211-223`); landing lookup
+conditional on overfly == 0 ∧ !touched, table ≤ 1 m → 50 … > 10 m → 0
+(`:312-360`).
 
 **Raw-grain exactness claim** (the declared-scale run's testable spine):
 both sides compute min(t, 600)·1 + the landing award − two-rate height, identical band
@@ -294,7 +310,7 @@ window must compare exact (162 flown + 34 flight-less 0.0 + the 2 cancelled
 derivation**, not by adapter examples: GS scheme 11 and the composed
 `5.5.11.12 h` are the same function (decision 2).
 
-## Cross-story contract — `kanban/backlog/tape-points-landing-seeds.md`
+## Cross-story contract — `kanban/in-progress/tape-points-landing-seeds.md`
 (owner decision 2026-09-08, second revision; supersedes both the shared-variant
 plan and the importer-decoding plan)
 
@@ -305,7 +321,8 @@ plan and the importer-decoding plan)
   refusal, reading-set validation, capture/amendment naming a declared
   instrument or none, the unchanged distance path and mixed-instrument
   equivalence, and the retained eligibility gates. This F5J story starts its code
-  work only after that prerequisite, and owns only seed75m + harness/ledger.
+  work only after that prerequisite — landed and verified 2026-09-09 (commit
+   `68c3cd1`; see WI-0) — and owns only seed75m + harness/ledger.
 - **Declare the scale, submit the reading.** Consume the parent's declaration
   and capture contract with the NZ F3J-side tape and canonical
   `landingDistance`. No new landing metric, class variant, shared-seed lift,
@@ -326,11 +343,13 @@ plan and the importer-decoding plan)
 
 ## Before starting
 
-- **Check the board first:** has `tape-points-landing-seeds.md` WI-0 through
-  WI-5 landed? Read its landed declaration, capture and composition contract,
-  and the approved glossary wording for the tape concept, before WI-1; update
-  this story's citations to the moved completed path when applicable, without
-  editing the completed story.
+- **Check the board first — ANSWERED 2026-09-09:** `tape-points-landing-seeds.md`
+  WI-1 through WI-5 are landed and green (commit `68c3cd1`); read the landed
+  contract as recorded in this story's WI-0 before WI-1. The parent's approved
+  glossary/class-diagram wording does not exist yet (its WI-0 paperwork is
+  owner-gated); it does not gate this story's code work, and nothing here
+  changes when it lands. Update this story's citations to the parent's
+  completed path when it completes, without editing the completed story.
 - **Motor-restart semantics (`fai-rules` question):** 22 flown rows carry
   `F5JMotorReStarted=true`; GS applies no scoring effect
   (`F5JMotorRestartOption` null, `ladder.py:35`), the seed declares no such
@@ -345,46 +364,82 @@ plan and the importer-decoding plan)
   prose refs here (`docs/rules/f5j.md:36-40`); resolve the exact `5.5.11.x`
   numbers with the skill before they go into the ledger's citations.
 - **Pairing:** owner-confirmed (parent story decision 2; the mapping table's
-  row `tests/GliderscoreFixtures/parallel-run-mapping.md:91`). The row's
+  row `tests/GliderscoreFixtures/parallel-run-mapping.md:98`). The row's
   **seed remains `30-f5j.json`**; WI-1 updates its rationale for the declared
   tape scale and the drop/rounding witness, per the table's update contract.
-  The parent's WI-5 owns rewriting the table's G5 gate wording and the stale
-  Jerilderie row `:94`; do not duplicate that curation here.
+  The parent's WI-5 already rewrote the table's G5 gate and the Jerilderie row
+  (now `:101`) for the declared-instrument model — discharged, do not
+  duplicate.
 
 ## Plan
 
-### WI-0 — Landing-tape prerequisite (blocks WI-1)
+### WI-0 — Landing-tape prerequisite (verified 2026-09-09; blocks WI-1)
 
-1. **Verify parent WI-0 through WI-5 has landed.** Consume its contract:
-   declare the NZ F3J-side tape for `landingDistance` on this competition;
-   capture readings verbatim with their scale; readings off the declared tape
-   are rejected; the composition of the scale with `5.5.11.12 h` supplies the
-   award; eligibility gates are retained. Do not implement, duplicate or
-   shortcut any of that here.
-2. **Pin the landed contract and the declared scale.** Cite the parent's actual
-   path, switching to `kanban/completed/tape-points-landing-seeds.md` when
-   moved, without editing that completed story. Re-verify that every one of the
-   fixture's recorded landing values is a mark on the declared tape (or the
-   off-tape reading), and that the parent's composition reproduces GS scheme 11
-   row for row. The decision-2 route and the decision-3 seed fix need no
-   reconfirmation; physical tape calibration is not a gate.
+1. **Parent WI-1 through WI-5 verified landed** (commit `68c3cd1`; Domain 758 /
+   Application 305 / Architecture 7 / Infrastructure non-Storage 76 /
+   Acceptance 78 on sqlite, build clean, zero skips). The landed contract this
+   story consumes — do not implement, duplicate or shortcut any of it:
+   - **Declare:** `POST /declare-instruments` — `DeclareInstruments(
+     CompetitionRef, ImmutableArray<DeclaredInstrument>, By)` where
+     `DeclaredInstrument` is `{ Instrument, Metric, Scale }` with the full
+     `ReadingScale` inlined; `Instrument` is a caller-chosen name (no catalogue
+     slug field — the harness picks one, e.g. `nz-f3j-side`, and records it in
+     provenance). Correction path: `POST /correct-instrument-declaration`.
+     Events `InstrumentsDeclared` / `InstrumentDeclarationCorrected`, store
+     aliases `instrumentsDeclared` / `instrumentDeclarationCorrected`.
+   - **Capture:** `CaptureMeasurement(EntryRef, FlightSequence, Metric, Value,
+     string? Instrument = null)`; `AmendMeasurement(..., string? Instrument,
+     bool ChangeInstrument)` — `ChangeInstrument` is the switch/clear
+     discriminator; default retains the effective instrument.
+   - **Refusals this story's tests name:**
+     `captureMeasurement.readingNotOnScale`,
+     `captureMeasurement.instrumentNotDeclared`,
+     `tapeComposition.straddledBand` (surfaced at declaration time as a
+     pass-through code under the `declareInstruments.` message wrapper).
+   - **Composition:** `TapeComposition.Compose`
+     (`src/Soarscore.Domain/PublishedClassDefinition/ReadingScale.cs:131`),
+     declaration-time gate `Competition.ValidateInstrumentSet`
+     (`Competition.cs:1147`), scoring-time
+     `FlightInterpreter.EvaluateComposedLookup` (`FlightInterpreter.cs:203`).
+   - **The tape:** `tape-nz-f3j-side` (`SeedTapeNzF3JSide.cs`, scale
+     `NZ.2.4.4` — 23 marks `0.2→100 … 15→30`, off-tape reading `0`). In the
+     harness, build the scale via
+     `TapeCorpus.All.First(t => t.FileName == "tape-nz-f3j-side").Tape.ToReadingScale()`
+     (the acceptance project already references `Soarscore.SeedData`; `src/`
+     does not, and needs nothing here).
+   Cite the parent's actual path (`kanban/in-progress/`), switching to
+   `kanban/completed/tape-points-landing-seeds.md` when it completes, without
+   editing a completed story.
+2. **Verified against the fixture.** All 18 distinct recorded landing values
+   are marks on `tape-nz-f3j-side` or the off-tape `0` ({60, 65, 70, 75, 80,
+   85, 90, 91–100} ∪ {0}); the parent's composition reproduces GS scheme 11
+   row for row — pinned by
+   `TapeCompositionTests.F3J_side_tape_reproduces_F5J_enter_landing_row_for_row`
+   and the parent's BDD composed-award assertions on canonical F5J. Decision
+   2's route and decision 3's seed fix stand without reconfirmation; physical
+   tape calibration is not a gate.
 
 ### WI-1 — Seed work (`tools/Soarscore.SeedData`)
 
 1. **The 75 m fix** (decision 3): add `landedWithin75m` (Flag,
    `whenNotRecorded: true`) to both `SeedF5J` tasks and extend both tasks'
    `flightValidWhen` with the `== true` gate; header comment cites
-   `5.5.11.7 d` and this story. Domain test first if a test seam exists for
-   `flightValidWhen` gates (the metric-absence-semantics property tests are
-   the precedent); otherwise pin via the seed-arithmetic/ingestion suites.
+   `5.5.11.7 d` and this story. Copy the in-tree precedent:
+   `SeedF5jNdc.cs:57` declares the Flag (`M.Flag("landedWithin75m",
+   whenNotRecorded: true)`) and `:107` the gate (`P.Is("landedWithin75m",
+   true)`), cited `NZ.0.3 h; FAI 5.5.11.7 d`. Domain test first if a test seam
+   exists for `flightValidWhen` gates (the metric-absence-semantics property
+   tests are the precedent); otherwise pin via the
+   seed-arithmetic/ingestion suites.
 2. **Keep canonical landing unchanged.** No landing metric/table/identity
    changes, new seed, shared-seed lifting or `Corpus.All` count changes.
    Preserve all other canonical parameters, reflight, penalties, phases,
    drops, promotion, timing, group and normalisation data.
 3. Regenerate: `dotnet run --project tools/Soarscore.SeedData` — all integrity
-   checks pass; `git diff tools/Soarscore.SeedData/json/30-f5j.json` shows
-   **exactly** the 75 m delta (metric + gate, both tasks) and nothing else.
-4. **Update the mapping-table row** (`parallel-run-mapping.md:91`): seed stays
+   checks pass; the emitted `json/30-f5j.json` shows **exactly** the 75 m delta
+   (metric + gate, both tasks) and nothing else (`tools/Soarscore.SeedData/json/`
+   is untracked — diff the regenerated file, not git).
+4. **Update the mapping-table row** (`parallel-run-mapping.md:98`): seed stays
    `30-f5j.json`, `why` → the drop split + rounding grid, landing read on the
    declared NZ F3J-side tape and composed with canonical `landingDistance`
    (cite this story); status stays `stubbed` until WI-5.
@@ -403,36 +458,57 @@ All cited to this story; the parity path and the ales pair are inert proofs
    `MAX(RoundNo where Updated=='True')` equals the declared window. A fixture
    in parallel-run mode with no map entry behaves exactly as today (ales
    untouched).
-2. **P2 height arm** in `CaptureDurationInputs`, beside the `launchHeight` arm:
+2. **Oracle-coverage universe scoped to the window.** `ParallelRunComparator`'s
+   `EnsureOracleCoverage` walk currently runs over ALL of
+   `fixture.ExpectedScores.Scores.Keys` (`ParallelRunComparator.cs:231-234`;
+   324 cells here). Under decision 1's window it must scope the coverage
+   universe to `scoredWindowRounds`: oracle cells outside the window are
+   deliberately uncompared (a declared scope, recorded in the ledger, never a
+   silent shrink), and decision 1's check that the run's prescribed round
+   count equals the declared window lives here. Without this the 11-round
+   window produces 126 spurious "never compared" mismatches per grain (252
+   total).
+3. **P2 height arm** in `CaptureDurationInputs`
+   (`ReplayDriver.cs:1021-1082`; the `launchHeight` arm is `:1076`), beside it:
    `declared.Contains("startHeight")` → capture `startHeight`
    (`row.FlightScoreDeduction`) and `startHeightRecorded` (Flag true) for every
    flown row with a positive payload; a flown row with a zero payload captures
    `startHeightRecorded` = false (decision 5's rule — never exercised here).
-3. **Tape declaration and verbatim reading capture, parallel-run only:** for
+4. **Tape declaration and verbatim reading capture, parallel-run only:** for
    this fixture, declare the NZ F3J-side tape for `landingDistance` through the
-   parent's declaration contract, then capture `row.Landing` **as recorded and
-   naming that tape**, including 0 for off-the-tape, with no decoding, mapping,
-   interpolation, fallback, fabricated metres or second conversion. Every one of
-   this fixture's landing rows is a tape reading, so it needs no mixed-instrument
-   arm; a reading the declared tape has no mark for fails loudly. Preserve the
-   readings and the declared instrument in ledger provenance. Keep parity
-   numerically unchanged.
-4. **Ledger schema widening** (`ParallelRunLedger.cs`):
+   parent's landed declaration contract (WI-0: `POST /declare-instruments`,
+   scale built via `TapeCorpus…ToReadingScale()`, harness-chosen instrument
+   name), then capture `row.Landing` **as recorded and naming that tape** via
+   `CaptureMeasurement`'s optional `Instrument` parameter, including 0 for
+   off-the-tape, with no decoding, mapping, interpolation, fallback, fabricated
+   metres or second conversion. Today `ReplayDriver`'s capture call passes no
+   instrument and `SlotCapture` carries none (`ReplayDriver.cs:634-638`) — the
+   widening is the `SlotCapture` field, the capture arm, and the declaration
+   POST in parallel-run mode. Every one of this fixture's landing rows is a
+   tape reading, so it needs no mixed-instrument arm; a reading the declared
+   tape has no mark for fails loudly. Preserve the readings and the declared
+   instrument in ledger provenance. Keep parity numerically unchanged.
+5. **Ledger schema widening** (`ParallelRunLedger.cs` — `Resolved` is still
+   `bool` at `:75-79`, and `ParallelRunProvenance` still carries only
+   `ParameterBindings`/`MetricMappings`/`Notes` at `:60-63`):
    `ParallelRunMetricMapping.Resolved`: `bool` → `JsonElement` — Flag (bool)
    and Number (decimal) `whenNotRecorded` values both expressible; the ales
    ledger deserialises unchanged. `ParallelRunProvenance` gains
    `ScoredWindowRounds` (`int?`, null-tolerant — the ales ledger carries none),
    `DerivedMetrics` (`IReadOnlyList<ParallelRunDerivedMetric>?` — `Metric`,
-   `Source`, `Derivation`, `Justification`; null-tolerant empty) and the
-   declared reading scales in whatever shape the parent's declaration lands
-   (null-tolerant; the ales pair declares none).
-5. **`CheckProvenance` widening** (`ParallelRunComparator.cs`): verify
+   `Source`, `Derivation`, `Justification`; null-tolerant empty) and
+   `DeclaredInstruments` (`IReadOnlyList<ParallelRunDeclaredInstrument>?` —
+   `Instrument` (the harness-chosen name), `Metric`, `TapeSlug`, `Clause`;
+   here `nz-f3j-side` / `landingDistance` / `tape-nz-f3j-side` / `NZ.2.4.4`;
+   null-tolerant empty — the ales pair declares none). The parent's
+   declaration shape is landed (WI-0), so "whatever shape" is resolved.
+6. **`CheckProvenance` widening** (`ParallelRunComparator.cs`): verify
    number-valued metric mappings against the adopted seed's `whenNotRecorded`
    number; verify each derived metric is declared by the adopted seed (name
    match, exactly once across phases); verify `ScoredWindowRounds` (when set)
    equals the outcome's prescribed round count; verify a declared reading scale
    matches the competition's actual declaration.
-6. **Fixture example tests:** assert every recorded landing value in the
+7. **Fixture example tests:** assert every recorded landing value in the
    fixture is a mark on the declared tape (or the off-tape reading), that the
    submitted measurement is the reading verbatim with its scale, and that the
    composed award equals GS's scheme-11 cell for each of them — every mark
@@ -469,7 +545,9 @@ grains the ales scenario exercises.
    the drop rule + the unset-threshold config and, where the rounding cascade
    contributed, the rounding citation); pin the measured normalised count;
    confirm the raw grain was exact; confirm the drop fired on real rounds
-   (a pilot's seed-run aggregate = his Σ11 minus his lowest cell). Re-run to
+   (a pilot's seed-run aggregate = his Σ11 minus his lowest cell; where a
+   pilot's minimum ties across rounds, the dropped round is the LATEST such
+   round — `tieBreak: "Latest"`, `30-f5j.json:158`). Re-run to
    green. **Escalation law:** a computed difference outside the triaged set
    after curation, or a triaged difference that fails to appear, is triaged
    kind 1/2 with citations or escalated kind 3 as a defect — never a ledger
@@ -500,10 +578,12 @@ grains the ales scenario exercises.
   (`pilotNo: "*"`, kind 1: GS HalfUp-1dp grid vs the seed's exact values;
   citation: `configProvenance.knobs.GroupScoreDecimals` basis vs the rulebook's
   silence on normalised rounding precision, the f3j re-triage framing). The
-  **ranking**-grain entries (per-pilot, kind 1: the drop split — Σ best-10 vs
-  Σ 11, the seed's `applyWhenRoundsCompletedAtLeast: 5` vs the club's unset
-  thresholds, plus the rounding cascade) are **enumerated from the measured
-  run** in step 3.
+   **ranking**-grain entries (per-pilot, kind 1: the drop split — Σ best-10 vs
+   Σ 11, the seed's `applyWhenRoundsCompletedAtLeast: 5` vs the club's unset
+   thresholds, plus the rounding cascade; where a pilot's minimum ties across
+   rounds, also cite the seed's `tieBreak: "Latest"` (`30-f5j.json:158`),
+   which selects which equally-lowest round drops) are **enumerated from the
+   measured run** in step 3.
 
 **Scenario (step 2):**
 
@@ -530,11 +610,15 @@ ledger); the raw grain exact; ranking mismatches witnessed per pilot.
    story touches no `src/` code).
 3. Corpus discipline: **no corpus file changes** — the ledger and scenario are
    additions beside the fixture; `validate.py --index` untouched (11/11);
-   the mapping-table row is a curation edit, not a corpus file.
+   `Corpus.ExpectedCount` stays 16 (`tools/Soarscore.SeedData/Corpus.cs:25`)
+   and `TapeCorpus.ExpectedCount` stays 2 (counted separately — no tape work
+   in this story); the mapping-table row is a curation edit, not a corpus
+   file.
 4. Fixture examples from WI-2 green, including every recorded mark, the
    off-tape reading, loud rejection cases, reading/scale preservation and
    retained eligibility. Cite the parent's declaration, capture and
-   composition-fidelity coverage rather than moving that responsibility into
+   composition-fidelity coverage (its properties 1–2; see the Testing-approach
+   caveat on 3–4) rather than moving that responsibility into
    this story. Verify canonical landing data and the class corpus count remain
    unchanged.
 
@@ -559,12 +643,18 @@ ledger); the raw grain exact; ranking mismatches witnessed per pilot.
   between a computed difference set and a curated triaged set, per hand-curated
   pair; the invariant ("the report is exactly the triaged differences") is
   structural and example-asserted per pair, not a new property test here.
-- **Generic property testing belongs to the parent.** For any tape whose bands
-  refine a class's landing table, composing the scale with that table must
-  award, for every reading, exactly what the table awards for any distance in
-  that reading's band; a straddled band must refuse; and changing the input
-  scale must not gain points for an ineligible landing or flight. That is
-  composition fidelity, not evidence about the physical tape's calibration.
+- **Generic property testing belongs to the parent — with a recorded caveat.**
+  The parent's landed properties 1–2 (composition fidelity; refinement is
+  exactly the condition) are genuine CsCheck over corpus and generated tapes
+  (`TapeCompositionPropertyTests.cs`, `TapeLandingScaleProofTests.cs`
+  properties a/b). Properties 3–4 as built are weaker than the parent's plan
+  words them: instrument equivalence is example-based and asserted at
+  flight-interpretation grain, and the eligibility-invariance property never
+  varies the instrument. Strengthening those two stays the parent's work
+  (`kanban/in-progress/tape-points-landing-seeds.md` WI-5); until it lands,
+  this story's per-mark fixture examples (WI-2) are the scoring-grain witness
+  for this pair, and this story must not cite the parent's fairness proof as
+  generic.
 - **Fixture examples enforce the declaration, not a mapping.** Assert every
   recorded landing value is a mark on the declared tape (each 91–100
   individually, plus the off-tape 0), that capture stores the reading verbatim

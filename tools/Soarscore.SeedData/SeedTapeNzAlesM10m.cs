@@ -50,8 +50,17 @@ namespace Soarscore.SeedData;
 public static class SeedTapeNzAlesM10m
 {
     private static ImmutableArray<TapeMark> Marks =>
-        TapeMarks.UpTo(1, 1).Then(2, 2).Then(3, 3).Then(4, 4).Then(5, 5)
-            .Then(6, 6).Then(7, 7).Then(8, 8).Then(9, 9).Then(10, 10)
+        TapeMarks
+            .UpTo(1, 1)
+            .Then(2, 2)
+            .Then(3, 3)
+            .Then(4, 4)
+            .Then(5, 5)
+            .Then(6, 6)
+            .Then(7, 7)
+            .Then(8, 8)
+            .Then(9, 9)
+            .Then(10, 10)
             .End();
 
     public static TapeDefinition Definition => new()

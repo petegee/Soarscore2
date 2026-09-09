@@ -24,13 +24,13 @@ public static class SeedF3B
         // flightTime and landingDistance are the demanded observations (F3B.2.3
         // b/d) — no assumption. The three flags are the rulebook's recorded
         // EXCEPTIONS, so absence resolves to compliance.
-        M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // F3B.2.3 b "each full second"
-        M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // F3B.2.3 d "rounded to the nearest higher metre"
-        M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.3 b — "does not land on the defined landing area ⇒ the whole
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // F3B.2.3 b "each full second"
+        Metric.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // F3B.2.3 d "rounded to the nearest higher metre"
+        Metric.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.3 b — "does not land on the defined landing area ⇒ the whole
                                                                             //   flight is zero" is what is recorded; absence ⇒ on the area
-        M.Flag("atRestBy12Min", whenNotRecorded: true),                    // F3B.2.3 e — not at rest at 12 min ⇒ time-only scoring, no bonus;
+        Metric.Flag("atRestBy12Min", whenNotRecorded: true),                    // F3B.2.3 e — not at rest at 12 min ⇒ time-only scoring, no bonus;
                                                                             //   that ruling is what is recorded; absence ⇒ at rest in time
-        M.Flag("touchedByCompetitor", whenNotRecorded: false),             // F3B.1.7 d — the touch forfeiting landing points is what is
+        Metric.Flag("touchedByCompetitor", whenNotRecorded: false),             // F3B.1.7 d — the touch forfeiting landing points is what is
                                                                             //   recorded; absence ⇒ no touch
         ],
         Flights = new LastFlight(),                                            // F3B.1.5 unlimited attempts; the last is the attempt
@@ -45,8 +45,8 @@ public static class SeedF3B
         [
             // Flight points and the overtime deduction are ONE cumulative
             // piecewise term over one metric, not two terms. 601 s scores 599.
-            T.When(P.Is("landedInDefinedArea", true),                          // F3B.2.3 b "if the model does not land on the defined landing area, the whole flight is zero"
-                   T.Piecewise("flightTime",
+            ScoreTerm.When(Predicate.Is("landedInDefinedArea", true),                          // F3B.2.3 b "if the model does not land on the defined landing area, the whole flight is zero"
+                   ScoreTerm.Piecewise("flightTime",
                        Bands.From(0)
                             .UpTo(600, 1)                                      // F3B.2.3 b max 600 points
                             .Rest(-1))),                                       // F3B.2.3 c one point deducted per full second over 600
@@ -55,16 +55,27 @@ public static class SeedF3B
             // outside F3B.2.3, in the general flight rules, which is why it is
             // easy to miss — F3J states the identical rule inside its own
             // scoring clause (F3J.10.8).
-            T.When(P.All(P.Is("landedInDefinedArea", true),                    // F3B.2.3 b
-                         P.Le("flightTime", 630),                              // F3B.2.3 d "no landing bonus if the flight time exceeds 630 seconds"
-                         P.Is("atRestBy12Min", true),                          // F3B.2.3 e
-                         P.Is("touchedByCompetitor", false)),                  // F3B.1.7 d "touches either the competitor or his helper during
+            ScoreTerm.When(Predicate.All(Predicate.Is("landedInDefinedArea", true),                    // F3B.2.3 b
+                         Predicate.LessThanOrEqual("flightTime", 630),                              // F3B.2.3 d "no landing bonus if the flight time exceeds 630 seconds"
+                         Predicate.Is("atRestBy12Min", true),                          // F3B.2.3 e
+                         Predicate.Is("touchedByCompetitor", false)),                  // F3B.1.7 d "touches either the competitor or his helper during
                                                                                //   landing manoeuvres of task A, no landing points will be given"
-                   T.Lookup("landingDistance",                                 // F3B.2.3 d
-                       Rows.UpTo(1, 100).Then(2, 95).Then(3, 90).Then(4, 85)
-                           .Then(5, 80).Then(6, 75).Then(7, 70).Then(8, 65)
-                           .Then(9, 60).Then(10, 55).Then(11, 50).Then(12, 45)
-                           .Then(13, 40).Then(14, 35).Then(15, 30)
+                   ScoreTerm.Lookup("landingDistance",                                 // F3B.2.3 d
+                       Rows.UpTo(1, 100)
+                           .Then(2, 95)
+                           .Then(3, 90)
+                           .Then(4, 85)
+                           .Then(5, 80)
+                           .Then(6, 75)
+                           .Then(7, 70)
+                           .Then(8, 65)
+                           .Then(9, 60)
+                           .Then(10, 55)
+                           .Then(11, 50)
+                           .Then(12, 45)
+                           .Then(13, 40)
+                           .Then(14, 35)
+                           .Then(15, 30)
                            .Rest(0))),
         ],
     };
@@ -77,8 +88,8 @@ public static class SeedF3B
         Name = "Distance",                                                     // F3B.2.4
         Metrics =
         [
-            M.Number("legs", "legs", RoundingMode.Truncate, 1),                // F3B.2.4 e only full 150 m legs are counted
-            M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.4 f — landing off the defined area ⇒ the flight is zero;
+            Metric.Number("legs", "legs", RoundingMode.Truncate, 1),                // F3B.2.4 e only full 150 m legs are counted
+            Metric.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.4 f — landing off the defined area ⇒ the flight is zero;
                                                                                 //   that ruling is what is recorded; absence ⇒ on the area
         ],
         Flights = new LastFlight(),
@@ -91,8 +102,8 @@ public static class SeedF3B
         },
         Score =
         [
-            T.When(P.Is("landedInDefinedArea", true),                          // F3B.2.4 f
-                   T.Rate("legs", 1)),                                         // F3B.2.6 partial B is the leg count normalised
+            ScoreTerm.When(Predicate.Is("landedInDefinedArea", true),                          // F3B.2.4 f
+                   ScoreTerm.Rate("legs", 1)),                                         // F3B.2.6 partial B is the leg count normalised
         ],
     };
 
@@ -106,10 +117,10 @@ public static class SeedF3B
         Name = "Speed",                                                        // F3B.2.5
         Metrics =
         [
-            M.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3B.2.5 c "recorded to at least 1/100 sec"
-            M.Flag("courseCompleted", whenNotRecorded: true),                  // F3B.2.5 g — resting before completing the task ⇒ zero is what
+            Metric.Number("courseTime", "s", RoundingMode.Truncate, 0.01m),         // F3B.2.5 c "recorded to at least 1/100 sec"
+            Metric.Flag("courseCompleted", whenNotRecorded: true),                  // F3B.2.5 g — resting before completing the task ⇒ zero is what
                                                                                 //   is recorded; absence ⇒ completed
-            M.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.5 f — landing off the defined area ⇒ zero is what is
+            Metric.Flag("landedInDefinedArea", whenNotRecorded: true),              // F3B.2.5 f — landing off the defined area ⇒ zero is what is
                                                                                 //   recorded; absence ⇒ on the area
         ],
         Flights = new LastFlight(),                                            // F3B.2.5 i re-launch permitted only before Base A is first crossed
@@ -129,13 +140,13 @@ public static class SeedF3B
             OthersScore = ReflightSelection.UndefinedRequiresRuling,            // F3B.1.5 e
             MinNewGroupSize = NumberOrParam.Param("minNewGroup"),
         },
-        ValidWhen = P.All(P.Is("courseCompleted", true),                       // F2 + F3
-                          P.Is("landedInDefinedArea", true),
-                          P.Gt("courseTime", 0)),                              // a captured 0 is a mis-capture, not a course flown in zero
+        ValidWhen = Predicate.All(Predicate.Is("courseCompleted", true),                       // F2 + F3
+                          Predicate.Is("landedInDefinedArea", true),
+                          Predicate.GreaterThan("courseTime", 0)),                              // a captured 0 is a mis-capture, not a course flown in zero
                                                                                //   time — courseCompleted=true alone does not rule that out,
                                                                                //   and a raw 0 would otherwise be crowned the group's winner
                                                                                //   (this file's own header note on the inverted task)
-        Score = [T.Rate("courseTime", 1)],                                     // the raw result IS the elapsed time; the direction inverts it
+        Score = [ScoreTerm.Rate("courseTime", 1)],                                     // the raw result IS the elapsed time; the direction inverts it
     };
 
     // ---- the definition ----------------------------------------------------

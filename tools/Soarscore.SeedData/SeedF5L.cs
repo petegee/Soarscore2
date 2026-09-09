@@ -22,21 +22,21 @@ public static class SeedF5L
         // 5.5.12.11.2) — no assumption. Every flag here is a recorded EXCEPTION of
         // 5.5.12.11.2 ("zero points ... will be recorded for the competitor, if")
         // or 5.5.12.4 d / 5.5.12.7, so absence resolves to compliance.
-        M.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.12.11.1 recorded in full seconds
-        M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.12.11.2 — no capture precision stated (F12 residual)
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.12.11.1 recorded in full seconds
+        Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.12.11.2 — no capture precision stated (F12 residual)
+        Metric.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
             whenNotRecorded: 0),                                               // 5.5.12.11.2 b — overfly is the recorded exception; a flight
                                                                                 //   landing within working time has none
-        M.Flag("landedInLandingArea", whenNotRecorded: true),                  // 5.5.12.11.2 — resting OUTSIDE the landing area is the recorded
+        Metric.Flag("landedInLandingArea", whenNotRecorded: true),                  // 5.5.12.11.2 — resting OUTSIDE the landing area is the recorded
                                                                                 //   task-zero exception; absence ⇒ inside (also 5.5.12.5 d)
-        M.Flag("lostPart", whenNotRecorded: false),                            // 5.5.12.11.2 a — "the model loses any part" is recorded; absence ⇒ intact
-        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.12.11.2 c — the touch is recorded; absence ⇒ no touch
-        M.Flag("touchedBeforeMeasuring", whenNotRecorded: false),              // 5.5.12.11.2 d — the touch before measuring is recorded; absence ⇒ none
-        M.Flag("amrtPresetsCorrect", whenNotRecorded: true),                   // 5.5.12.7 — the organiser checks AMRT settings (30 s / 90 m presets)
+        Metric.Flag("lostPart", whenNotRecorded: false),                            // 5.5.12.11.2 a — "the model loses any part" is recorded; absence ⇒ intact
+        Metric.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.12.11.2 c — the touch is recorded; absence ⇒ no touch
+        Metric.Flag("touchedBeforeMeasuring", whenNotRecorded: false),              // 5.5.12.11.2 d — the touch before measuring is recorded; absence ⇒ none
+        Metric.Flag("amrtPresetsCorrect", whenNotRecorded: true),                   // 5.5.12.7 — the organiser checks AMRT settings (30 s / 90 m presets)
                                                                                 //   before the competition; a zero is RECORDED when they differ.
                                                                                 //   (Citation corrected from 5.5.12.4, where the clause does not
                                                                                 //   live — flagged in the WI-4 report.)
-        M.Flag("timingDeviationInFavour", whenNotRecorded: false),             // 5.5.12.4 d — a sampled deviation > 3 s in the competitor's favour
+        Metric.Flag("timingDeviationInFavour", whenNotRecorded: false),             // 5.5.12.4 d — a sampled deviation > 3 s in the competitor's favour
                                                                                 //   is what is recorded; absence ⇒ no such deviation
     ];
 
@@ -62,11 +62,11 @@ public static class SeedF5L
             // 2 pt/s to 390 s, then the overflying time is "deducted from 390 s" —
             // F3B Task A's shape at a different rate. 400 s scores
             // 390x2 + 10x(−2) = 760, i.e. 380 scored seconds.
-            T.When(P.All(P.Is("landedInLandingArea", true),                    // 5.5.12.11.2 zero for the entire task
-                         P.Le("overflySeconds", 30),                           // 5.5.12.11.2 b
-                         P.Is("amrtPresetsCorrect", true),                     // 5.5.12.4
-                         P.Is("timingDeviationInFavour", false)),              // 5.5.12.4 d
-                   T.Piecewise("flightTime",
+            ScoreTerm.When(Predicate.All(Predicate.Is("landedInLandingArea", true),                    // 5.5.12.11.2 zero for the entire task
+                         Predicate.LessThanOrEqual("overflySeconds", 30),                           // 5.5.12.11.2 b
+                         Predicate.Is("amrtPresetsCorrect", true),                     // 5.5.12.4
+                         Predicate.Is("timingDeviationInFavour", false)),              // 5.5.12.4 d
+                   ScoreTerm.Piecewise("flightTime",
                        Bands.From(0)
                             .UpTo(390, 2)                                      // 5.5.12.11.1 two points per second, max 6:30
                             .Rest(-2))),                                       // 5.5.12.11.1 "the overflying time will be deducted from 390 s"
@@ -74,25 +74,42 @@ public static class SeedF5L
             // Five separate ways to lose the landing bonus, plus the two that zero
             // the whole task. Seven conditions on one term — the clearest case in
             // the corpus for finding F3.
-            T.When(P.All(P.Is("landedInLandingArea", true),                    // 5.5.12.11.2 (entire task)
-                         P.Is("amrtPresetsCorrect", true),                     // 5.5.12.4
-                         P.Is("timingDeviationInFavour", false),               // 5.5.12.4 d
-                         P.Eq("overflySeconds", 0),                            // 5.5.12.11.2 b
-                         P.Is("lostPart", false),                              // 5.5.12.11.2 a
-                         P.Is("touchedByCompetitor", false),                   // 5.5.12.11.2 c
-                         P.Is("touchedBeforeMeasuring", false)),               // 5.5.12.11.2 d
-                   T.Lookup("landingDistance",                                 // 5.5.12.11.2
+            ScoreTerm.When(Predicate.All(Predicate.Is("landedInLandingArea", true),                    // 5.5.12.11.2 (entire task)
+                         Predicate.Is("amrtPresetsCorrect", true),                     // 5.5.12.4
+                         Predicate.Is("timingDeviationInFavour", false),               // 5.5.12.4 d
+                         Predicate.Equal("overflySeconds", 0),                            // 5.5.12.11.2 b
+                         Predicate.Is("lostPart", false),                              // 5.5.12.11.2 a
+                         Predicate.Is("touchedByCompetitor", false),                   // 5.5.12.11.2 c
+                         Predicate.Is("touchedBeforeMeasuring", false)),               // 5.5.12.11.2 d
+                   ScoreTerm.Lookup("landingDistance",                                 // 5.5.12.11.2
                        // The same twenty-four rows F3J.10.5 states, and
                        // deliberately written out again: a fragment is scoped to
                        // one class definition, so the duplication BETWEEN
                        // definitions stays on the page as an honest record of what
                        // that discipline costs (notation §7.1).
-                       Rows.UpTo(0.2m, 100).Then(0.4m, 99).Then(0.6m, 98).Then(0.8m, 97)
-                           .Then(1.0m, 96).Then(1.2m, 95).Then(1.4m, 94).Then(1.6m, 93)
-                           .Then(1.8m, 92).Then(2.0m, 91).Then(3.0m, 90).Then(4.0m, 85)
-                           .Then(5, 80).Then(6, 75).Then(7, 70).Then(8, 65)
-                           .Then(9, 60).Then(10, 55).Then(11, 50).Then(12, 45)
-                           .Then(13, 40).Then(14, 35).Then(15, 30)
+                       Rows.UpTo(0.2m, 100)
+                           .Then(0.4m, 99)
+                           .Then(0.6m, 98)
+                           .Then(0.8m, 97)
+                           .Then(1.0m, 96)
+                           .Then(1.2m, 95)
+                           .Then(1.4m, 94)
+                           .Then(1.6m, 93)
+                           .Then(1.8m, 92)
+                           .Then(2.0m, 91)
+                           .Then(3.0m, 90)
+                           .Then(4.0m, 85)
+                           .Then(5, 80)
+                           .Then(6, 75)
+                           .Then(7, 70)
+                           .Then(8, 65)
+                           .Then(9, 60)
+                           .Then(10, 55)
+                           .Then(11, 50)
+                           .Then(12, 45)
+                           .Then(13, 40)
+                           .Then(14, 35)
+                           .Then(15, 30)
                            .Rest(0))),
         ],
     };

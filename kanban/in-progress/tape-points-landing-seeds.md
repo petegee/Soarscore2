@@ -8,8 +8,8 @@ landing input the system cannot express.
 practice and the GliderScore landing tables it is scored with. **Both earlier
 plans rested on a false premise** and are superseded, not implementation work.
 The filename stays stable for its two live citations
-(`kanban/backlog/f5j-christchurch-parallel-run-witness.md` and
-`tests/GliderscoreFixtures/parallel-run-mapping.md:94`).
+(`kanban/in-progress/f5j-christchurch-parallel-run-witness.md` and
+`tests/GliderscoreFixtures/parallel-run-mapping.md:101`).
 
 **Superseded and not to be revived:** direct-points capture; `pts` as an input
 unit; exact `LookupTerm.Rows.Points` membership as the validator; a per-capture
@@ -52,7 +52,7 @@ Three things already in the tree say this is the intended model:
   and an award table read the other. The tape needs no new structural shape.
 
 WI-0 through WI-5 deliver and verify the capability.
-`kanban/backlog/f5j-christchurch-parallel-run-witness.md` consumes them and
+`kanban/in-progress/f5j-christchurch-parallel-run-witness.md` consumes them and
 owns only its seed fix and its own witness pair; it must not decode a landing
 scale in harness code. WI-6 retains the Jerilderie witness behind its separate,
 unrelated penalty-mapping gate.
@@ -583,7 +583,7 @@ scheme and the replay/parallel-run harness.
 
 - This story owns the tape concept, the catalogue, the declaration, the
   composition, the capture contract and the property and BDD proof.
-  `kanban/backlog/f5j-christchurch-parallel-run-witness.md` waits for WI-0
+  `kanban/in-progress/f5j-christchurch-parallel-run-witness.md` waits for WI-0
   through WI-5 and owns only its `30-f5j` 75 m seed fix, its scored-window
   prescription, its provenance and ledger widening, and its measured witness.
 - **The F5J fixture must not decode its landing scheme in harness code.** GS

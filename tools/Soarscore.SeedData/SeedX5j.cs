@@ -26,20 +26,20 @@ public static class SeedX5j
             // content exists ONLY when the NZ.3.14.2 e restart exception occurred
             // (no restart ⇒ no run times to record), so its absence resolves to 0;
             // the other flags are that clause's and NZ.2.4.6's recorded EXCEPTIONS.
-            M.Number("glideTime", "s", RoundingMode.Truncate, 1),              // NZ.3.14.2 c/d — glide only, motor run excluded;
+            Metric.Number("glideTime", "s", RoundingMode.Truncate, 1),              // NZ.3.14.2 c/d — glide only, motor run excluded;
                                                                                 //   no precision stated (F12 residual): Truncate/1 s
                                                                                 //   is CHOSEN here, not cited
-            M.Number("motorRestartRunTime", "s", RoundingMode.Truncate, 1,
+            Metric.Number("motorRestartRunTime", "s", RoundingMode.Truncate, 1,
                 whenNotRecorded: 0),                                           // NZ.3.14.2 e "subsequent run times" — only a restart creates
                                                                                 //   any; absence ⇒ no restart ⇒ nothing to deduct
-            M.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.14.2 e — the restart (and its landing-points forfeit) is
+            Metric.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.14.2 e — the restart (and its landing-points forfeit) is
                                                                                 //   what is recorded; absence ⇒ no restart
-            M.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.14.2 (second d) — the still-airborne-at-round-end ruling
+            Metric.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.14.2 (second d) — the still-airborne-at-round-end ruling
                                                                                 //   (watch stops, no landing points) is what is recorded;
                                                                                 //   absence ⇒ landed within the round. Name matches Class P's idiom
-            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
+            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
                                                                                 //   absence ⇒ within
-            M.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5 "rounded to the next full metre"
+            Metric.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5 "rounded to the next full metre"
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
         Timing = new()
@@ -57,7 +57,7 @@ public static class SeedX5j
         //   contest score" — raw, no normalisation anywhere, so the landing
         //   bonus belongs in the raw score (contrast Class M's normalised parent).
 
-        FlightValidWhen = P.Is("landedWithin75m", true),                       // NZ.2.4.6
+        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6
         Score =
         [
             // No cap and no over-time rest band: NZ.3.14.2 (second d) stops the
@@ -65,19 +65,19 @@ public static class SeedX5j
             //   exceed the window procedurally. Contrast Class M's Rest(-1) —
             //   NZ.3.12.1 n states that deduction; NZ.3.14 states nothing
             //   beyond the watch stop.
-            T.Rate("glideTime", 1),                                            // NZ.3.14.2 d "one point for each second flown on
+            ScoreTerm.Rate("glideTime", 1),                                            // NZ.3.14.2 d "one point for each second flown on
                                                                                //   the glide … up to the end of the 10 minute
                                                                                //   working time"
 
             // Unconditional: the metric is 0 when the motor was never
             //   restarted, so this term only bites on a restart.
-            T.Rate("motorRestartRunTime", -1),                                 // NZ.3.14.2 e "deducted from the glide score at
+            ScoreTerm.Rate("motorRestartRunTime", -1),                                 // NZ.3.14.2 e "deducted from the glide score at
                                                                                //   1 point per second"
 
-            T.When(P.All(P.Is("motorRestarted", false),                        // NZ.3.14.2 e "no landing points are awarded"
-                         P.Is("airborneAtRoundEnd", false)),                   // NZ.3.14.2 (second d) "no landing points are
+            ScoreTerm.When(Predicate.All(Predicate.Is("motorRestarted", false),                        // NZ.3.14.2 e "no landing points are awarded"
+                         Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.3.14.2 (second d) "no landing points are
                                                                                //   awarded"
-                   T.Lookup("landingDistance",                                 // NZ.3.14.2 (second c), table at NZ.2.4.5
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.14.2 (second c), table at NZ.2.4.5
                        Rows.UpTo(1, 50).Then(2, 45).Then(3, 40).Then(4, 35)
                            .Then(5, 30).Then(6, 25).Then(7, 20).Then(8, 15)
                            .Then(9, 10).Then(10, 5)

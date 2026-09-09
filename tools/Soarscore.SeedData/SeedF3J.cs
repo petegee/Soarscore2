@@ -22,14 +22,14 @@ public static class SeedF3J
         // F3J.10.6) — no assumption; a flight without them is a genuine await.
         // The other three are the rulebook's recorded EXCEPTIONS, so absence is
         // informative and resolves to compliance.
-        M.Number("flightTime", "s", RoundingMode.HalfUp, 0.1m),                // F3J.10.2 "recorded to one decimal place" — the MODE is not
+        Metric.Number("flightTime", "s", RoundingMode.HalfUp, 0.1m),                // F3J.10.2 "recorded to one decimal place" — the MODE is not
                                                                                 //   stated. F3K states truncation explicitly, which suggests
                                                                                 //   F3J is not truncated. Chosen, not cited (F12 residual).
-        M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // F3J.10.6 — no capture precision stated (F12 residual)
-        M.Number("overflySeconds", "s", RoundingMode.Truncate, 1, whenNotRecorded: 0),  // F3J.10.3, 10.4 — seconds past working time are what the
+        Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // F3J.10.6 — no capture precision stated (F12 residual)
+        Metric.Number("overflySeconds", "s", RoundingMode.Truncate, 1, whenNotRecorded: 0),  // F3J.10.3, 10.4 — seconds past working time are what the
                                                                                 //   timekeeper records; a flight landing within time has none
-        M.Flag("touchedByCompetitor", whenNotRecorded: false),                 // F3J.10.8 — the touch forfeits the bonus; absence ⇒ no touch
-        M.Flag("restedWithin75m", whenNotRecorded: true),                      // F3J.5.1 e — the outside-75m cancellation is what is recorded;
+        Metric.Flag("touchedByCompetitor", whenNotRecorded: false),                 // F3J.10.8 — the touch forfeits the bonus; absence ⇒ no touch
+        Metric.Flag("restedWithin75m", whenNotRecorded: true),                      // F3J.5.1 e — the outside-75m cancellation is what is recorded;
                                                                                 //   absence ⇒ came to rest within 75 m
     ];
 
@@ -39,13 +39,30 @@ public static class SeedF3J
     // time and the flight-points cap. Written out twice it was a hand-maintained
     // duplicate — the F22/F24 failure shape, where one drifted row still adopts,
     // still runs and still produces a plausible number.
-    private static ImmutableArray<LookupRow> LandingRows =>                    // F3J.10.5
-        Rows.UpTo(0.2m, 100).Then(0.4m, 99).Then(0.6m, 98).Then(0.8m, 97)
-            .Then(1.0m, 96).Then(1.2m, 95).Then(1.4m, 94).Then(1.6m, 93)
-            .Then(1.8m, 92).Then(2.0m, 91).Then(3.0m, 90).Then(4.0m, 85)
-            .Then(5, 80).Then(6, 75).Then(7, 70).Then(8, 65)
-            .Then(9, 60).Then(10, 55).Then(11, 50).Then(12, 45)
-            .Then(13, 40).Then(14, 35).Then(15, 30)
+    private static ImmutableArray<LookupRow> LandingRows => // F3J.10.5
+        Rows.UpTo(0.2m, 100)
+            .Then(0.4m, 99)
+            .Then(0.6m, 98)
+            .Then(0.8m, 97)
+            .Then(1.0m, 96)
+            .Then(1.2m, 95)
+            .Then(1.4m, 94)
+            .Then(1.6m, 93)
+            .Then(1.8m, 92)
+            .Then(2.0m, 91)
+            .Then(3.0m, 90)
+            .Then(4.0m, 85)
+            .Then(5, 80)
+            .Then(6, 75)
+            .Then(7, 70)
+            .Then(8, 65)
+            .Then(9, 60)
+            .Then(10, 55)
+            .Then(11, 50)
+            .Then(12, 45)
+            .Then(13, 40)
+            .Then(14, 35)
+            .Then(15, 30)
             .Rest(0);
 
     // ---- the preliminary task ----------------------------------------------
@@ -74,23 +91,23 @@ public static class SeedF3J
         // missed. FlightValidWhen and not ValidWhen: F3J is HigherIsBetter, so a
         // zero is a truthful worst score, and `Flights = LastFlight` means the
         // flight must stay selected rather than promote its predecessor.
-        FlightValidWhen = P.All(
-            P.Le("overflySeconds", 60),                                        // F3J.10.4 "a zero score will be recorded for overflying … by more than one (1) minute"
-            P.Is("restedWithin75m", true)),                                    // F3J.5.1 e "the flight is cancelled and recorded as a zero score if,
+        FlightValidWhen = Predicate.All(
+            Predicate.LessThanOrEqual("overflySeconds", 60),                                        // F3J.10.4 "a zero score will be recorded for overflying … by more than one (1) minute"
+            Predicate.Is("restedWithin75m", true)),                                    // F3J.5.1 e "the flight is cancelled and recorded as a zero score if,
                                                                                //   during landing, some part of the model aircraft does not come to
                                                                                //   rest within 75 metres of the centre of the competitor's
                                                                                //   designated landing circle"
         Score =
         [
-            T.Rate("flightTime", 1, cap: 600),                                 // F3J.10 1 pt/s; timed to the end of working time (F3J.10.1 c)
+            ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // F3J.10 1 pt/s; timed to the end of working time (F3J.10.1 c)
 
             // A DERIVED deduction, not a Penalty: nobody records an infraction, it
             // falls out of the measured overfly.
-            T.When(P.Gt("overflySeconds", 0), T.Constant(-30)),                // F3J.10.3
+            ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),                // F3J.10.3
 
-            T.When(P.All(P.Eq("overflySeconds", 0),                            // F3J.10.9
-                         P.Is("touchedByCompetitor", false)),                  // F3J.10.8
-                   T.Lookup("landingDistance", LandingRows)),
+            ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),                            // F3J.10.9
+                         Predicate.Is("touchedByCompetitor", false)),                  // F3J.10.8
+                   ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };
 
@@ -105,11 +122,11 @@ public static class SeedF3J
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 900 },    // F3J.11.2 "fifteen (15) minutes duration" for fly-off qualifiers
         Score =
         [
-            T.Rate("flightTime", 1, cap: 900),
-            T.When(P.Gt("overflySeconds", 0), T.Constant(-30)),                // F3J.10.3
-            T.When(P.All(P.Eq("overflySeconds", 0),
-                         P.Is("touchedByCompetitor", false)),
-                   T.Lookup("landingDistance", LandingRows)),
+            ScoreTerm.Rate("flightTime", 1, cap: 900),
+            ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),                // F3J.10.3
+            ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),
+                         Predicate.Is("touchedByCompetitor", false)),
+                   ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };
 

@@ -24,15 +24,15 @@ public static class SeedNzPRadian
         Name = "Duration",
         Metrics =
         [
-            M.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.15.1 f; no precision stated (F12 residual)
-            M.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.3.15.1 e; no capture precision stated
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.15.1 f; no precision stated (F12 residual)
+            Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.3.15.1 e; no capture precision stated
             // The three flags are the NZMAA observation protocol's recorded
             // EXCEPTIONS; absence resolves to compliance.
-            M.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.15.1 g — the restart (watch stops, landing points lost) is
+            Metric.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.15.1 g — the restart (watch stops, landing points lost) is
                                                                                 //   what is recorded; absence ⇒ no restart
-            M.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.15.1 j, read per NZ.3.13.1 j — see below; absence ⇒
+            Metric.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.15.1 j, read per NZ.3.13.1 j — see below; absence ⇒
                                                                                 //   landed within the round
-            M.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
+            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
                                                                                 //   absence ⇒ within
         ],
         Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
@@ -48,21 +48,24 @@ public static class SeedNzPRadian
         // NO normalise (F25). NZ.3.15.1 i: "the final score is the total of all
         //   points over three flights". This is the NDC-eligible form of the class.
 
-        FlightValidWhen = P.Is("landedWithin75m", true),                       // NZ.2.4.6
+        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6
         Score =
         [
             // Cumulative bands: 450 s scores 420x1 + 30x(−1) = 390.
-            T.Piecewise("flightTime",                                          // NZ.3.15.1 c
+            ScoreTerm.Piecewise("flightTime",                                          // NZ.3.15.1 c
                 Bands.From(0)
-                     .UpTo(420, 1)                                             // NZ.3.15.1 c "one point for each second flown up to 7 minutes
-                                                                               //   (i.e. 420 points)"
+                     .UpTo(420, 1)                                             // NZ.3.15.1 c "one point for each second flown up to 7 minutes (i.e. 420 points)"
                      .Rest(-1)),                                               // NZ.3.15.1 c "then one point lost for each second flown over
                                                                                //   this time"
 
-            T.When(P.All(P.Is("motorRestarted", false),                        // NZ.3.15.1 g "landing points will be lost"
-                         P.Is("airborneAtRoundEnd", false)),                   // NZ.3.15.1 j, read per NZ.3.13.1 j — see below
-                   T.Lookup("landingDistance",                                 // NZ.3.15.1 e
-                       Rows.UpTo(7, 50).Then(15, 25).Rest(0))),
+            ScoreTerm.When(
+                Predicate.All(
+                    Predicate.Is("motorRestarted", false),                        // NZ.3.15.1 g "landing points will be lost"
+                    Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.3.15.1 j, read per NZ.3.13.1 j — see below
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.15.1 e
+                       Rows.UpTo(7, 50)
+                           .Then(15, 25)
+                           .Rest(0))),
         ],
     };
 

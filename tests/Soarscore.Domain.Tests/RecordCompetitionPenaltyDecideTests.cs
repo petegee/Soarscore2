@@ -6,6 +6,7 @@ using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
+using ScoreTerm = Soarscore.Domain.PublishedClassDefinition.ScoreTerm;
 
 namespace Soarscore.Domain.Tests;
 
