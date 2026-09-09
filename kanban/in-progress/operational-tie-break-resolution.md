@@ -1,6 +1,6 @@
 # Story — Operational tie-break resolution: record the outcome, re-rank
 
-**Status:** Backlog · **Raised:** 2026-09-04 (from the `nz-ndc-seed-classes` ruling
+**Status:** In Progress · **Raised:** 2026-09-04 (from the `nz-ndc-seed-classes` ruling
 review — Pete story-stubbed the gap: "nothing records or executes a tie-break
 fly-off result") · **Fleshed out:** 2026-09-07 (the stub's "rules first" item
 discharged at source via the fai-rules script — see *Rules verification*; the
