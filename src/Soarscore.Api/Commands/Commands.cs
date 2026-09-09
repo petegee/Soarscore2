@@ -29,6 +29,8 @@ public static class Commands
         app.MapCommand<AcceptDraw, CompetitionId>("/accept-draw");
         app.MapCommand<RejectDraw, CompetitionId>("/reject-draw");
         app.MapCommand<BindParameter, CompetitionId>("/bind-parameter");
+        app.MapCommand<DeclareInstruments, CompetitionId>("/declare-instruments");
+        app.MapCommand<CorrectInstrumentDeclaration, CompetitionId>("/correct-instrument-declaration");
         app.MapCommand<CompleteTaskRound, CompetitionId>("/complete-task-round");
         app.MapCommand<ReopenTaskRound, CompetitionId>("/reopen-task-round");
         app.MapCommand<AnnulTaskRound, CompetitionId>("/annul-task-round");

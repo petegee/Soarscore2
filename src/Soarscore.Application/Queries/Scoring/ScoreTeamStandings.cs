@@ -76,7 +76,10 @@ public sealed class ScoreTeamStandingsHandler(IEventStore eventStore, IEntryQuer
                 entriesLoaded.Code!, entriesLoaded.Message!, entriesLoaded.Defects);
         }
 
-        var scored = ScoringService.ScoreCompetition(competition, entriesLoaded.Value);
+        var scored = ScoringService.ScoreCompetition(
+            competition, entriesLoaded.Value,
+            // WI-4 (tape-points-landing-seeds.md): as ScoreCompetitionHandler.
+            competition.DeclaredInstruments?.Instruments ?? []);
         if (scored.IsFailure)
         {
             return Result<TeamStandingsView>.Failure(scored.Code!, scored.Message!, scored.Defects);

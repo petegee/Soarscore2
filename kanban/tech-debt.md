@@ -230,3 +230,9 @@ See CLAUDE.md house-keeping rule 5.
   `Scores.Penalty` rows), the loud refusal is correct behaviour (mapping gap
   = fail the scenario), and the mapping belongs to the first pair that needs
   it — justified against the rulebook, never against GS.
+- [ ] Declaration validation and TaskResolver both read AdoptedRules.Definition,
+  not the RulesAmendments-effective definition. Consistent today (nothing
+  appends RulesAmended yet), but when rule amendments land both must move to
+  effective together — otherwise a declaration could pass against a table
+  capture never sees. Found 2026-09-09 during
+  `kanban/in-progress/tape-points-landing-seeds.md` WI-3.

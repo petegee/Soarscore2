@@ -21,7 +21,18 @@ namespace Soarscore.Domain.Scoring;
 /// This is what all pipeline stages read — they never see raw Amendment lists.
 /// </summary>
 public sealed record ResolvedMeasurements(
-    IReadOnlyDictionary<string, MeasuredValue> Metrics
+    IReadOnlyDictionary<string, MeasuredValue> Metrics,
+    /// <summary>
+    /// The effective instrument per metric (tape-points-landing-seeds.md WI-4):
+    /// metric name → the declared instrument the observation was read on.
+    /// A metric absent here names no instrument — a distance in the metric's
+    /// declared unit (owner decision 3's base case). Null when no measurement
+    /// on the flight names one, so all-distance flights compare exactly as
+    /// before. Carried alongside the value so scoring composes a reading
+    /// without ever mistaking it for a distance, and so reporting sees what
+    /// was observed and on what scale (owner decision 4).
+    /// </summary>
+    IReadOnlyDictionary<string, string>? Instruments = null
 );
 
 // --------------------------------------------------------------- flight interpretation

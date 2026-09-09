@@ -1,0 +1,86 @@
+{
+  "name": "Aggregate",
+  "faiDesignation": "",
+  "version": "MFNZ Section 2: Free Flight, May 2022",
+  "parameters": [
+    {
+      "name": "maxFlight",
+      "kind": "Number",
+      "unit": "s",
+      "defaultValue": {
+        "kind": "Number",
+        "number": 180
+      },
+      "allowedValues": [],
+      "boundAt": "BeforeFlying"
+    }
+  ],
+  "reflight": {
+    "entitledScores": "NotPermitted",
+    "othersScore": "NotPermitted"
+  },
+  "penalties": [],
+  "phases": [
+    {
+      "ordinal": 1,
+      "type": "Preliminary",
+      "rounds": {
+        "kind": "FixedSequence",
+        "tasksPerRound": 1,
+        "requireDistinctTaskPerRound": false,
+        "maxRounds": 1
+      },
+      "validity": {
+        "minRounds": 1
+      },
+      "drops": [],
+      "tieBreaks": [],
+      "tasks": [
+        {
+          "code": "A",
+          "name": "Aggregate",
+          "metrics": [
+            {
+              "name": "flightTime",
+              "kind": "Number",
+              "unit": "s",
+              "declaredBeforeLaunch": false,
+              "precision": {
+                "mode": "Truncate",
+                "precision": 1
+              }
+            }
+          ],
+          "flights": {
+            "$kind": "all"
+          },
+          "timing": {
+            "kind": "Fixed",
+            "workingTime": 1800
+          },
+          "flightValidWhen": {
+            "$kind": "comparison",
+            "leftMetricRef": "flightTime",
+            "op": "GreaterOrEqual",
+            "rightValue": {
+              "kind": "Number",
+              "number": 20
+            }
+          },
+          "score": [
+            {
+              "$kind": "rate",
+              "metricRef": "flightTime",
+              "rate": 1,
+              "cap": {
+                "param": "maxFlight"
+              },
+              "capScope": "PerFlight"
+            }
+          ],
+          "scoreNormalised": []
+        }
+      ]
+    }
+  ]
+}

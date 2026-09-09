@@ -452,4 +452,62 @@ public class CompetitionEventJsonTests
             }
         }
     }
+
+    private static InstrumentDeclaration SampleDeclaration() =>
+        new()
+        {
+            Instruments =
+            [
+                new DeclaredInstrument
+                {
+                    Instrument = "nz-f3j-side",
+                    Metric = "landingDistance",
+                    Scale = new ReadingScale
+                    {
+                        Unit = "m",
+                        Marks = [new ScaleMark(0.2m, 100m), new ScaleMark(15m, 30m)],
+                        OffScaleReading = 0m,
+                    },
+                },
+            ],
+            By = "CD Jane",
+            At = DateTimeOffset.UtcNow,
+        };
+
+    [Fact]
+    public void InstrumentsDeclared_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent declared = new InstrumentsDeclared(SampleDeclaration());
+
+        var json = JsonSerializer.Serialize(declared, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"instrumentsDeclared\"");
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<InstrumentsDeclared>();
+    }
+
+    [Fact]
+    public void InstrumentDeclarationCorrected_round_trips_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent corrected = new InstrumentDeclarationCorrected(
+            new InstrumentDeclarationCorrection
+            {
+                Instruments = [],
+                Reason = "the tapes never arrived",
+                By = "CD Jane",
+                At = DateTimeOffset.UtcNow,
+            });
+
+        var json = JsonSerializer.Serialize(corrected, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"instrumentDeclarationCorrected\"");
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<InstrumentDeclarationCorrected>();
+    }
 }

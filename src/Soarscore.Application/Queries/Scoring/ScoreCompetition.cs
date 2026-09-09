@@ -46,7 +46,12 @@ public sealed class ScoreCompetitionHandler(IEventStore eventStore, IEntryQuery 
                 entriesLoaded.Code!, entriesLoaded.Message!, entriesLoaded.Defects);
         }
 
-        var scored = ScoringService.ScoreCompetition(competitionLoaded.Value.Competition, entriesLoaded.Value);
+        var scored = ScoringService.ScoreCompetition(
+            competitionLoaded.Value.Competition, entriesLoaded.Value,
+            // WI-4 (tape-points-landing-seeds.md): readings compose with the
+            // class table at resolution; distances naming none take the
+            // existing path. No declaration here means distances only.
+            competitionLoaded.Value.Competition.DeclaredInstruments?.Instruments ?? []);
         if (scored.IsFailure)
         {
             return Result<CompetitionScoreView>.Failure(scored.Code!, scored.Message!, scored.Defects);

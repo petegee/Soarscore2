@@ -17,7 +17,14 @@ using Soarscore.Domain.PublishedClassDefinition;
 namespace Soarscore.Application.Commands.Entries;
 
 public sealed record AmendMeasurement(
-    EntryId EntryRef, int FlightSequence, string Metric, MeasuredValue NewValue, string Reason, string By) : ICommand<EntryId>;
+    EntryId EntryRef,
+    int FlightSequence,
+    string Metric,
+    MeasuredValue NewValue,
+    string Reason,
+    string By,
+    string? Instrument = null,
+    bool ChangeInstrument = false) : ICommand<EntryId>;
 
 public sealed class AmendMeasurementHandler(IEventStore eventStore, IClock clock)
     : ICommandHandler<AmendMeasurement, EntryId>
@@ -46,8 +53,20 @@ public sealed class AmendMeasurementHandler(IEventStore eventStore, IClock clock
             return Result<EntryId>.Failure(resolvedTask.Code!, resolvedTask.Message!, resolvedTask.Defects);
         }
 
+        // The command names an instrument change or omits it: omitted retains
+        // the measurement's current instrument (the ordinary correction), named
+        // restates the effective instrument after this amendment — including
+        // null, which clears back to a distance naming none. The decide
+        // function itself stays total on the effective value: null there
+        // always means none, never "unchanged".
+        var measurement = entry.Flights
+            .FirstOrDefault(f => f.Sequence == command.FlightSequence)?.Measurements
+            .FirstOrDefault(m => m.Metric == command.Metric);
+        var effectiveInstrument = command.ChangeInstrument ? command.Instrument : measurement?.EffectiveInstrument;
+
         var decision = entry.AmendMeasurement(
-            command.FlightSequence, command.Metric, command.NewValue, command.Reason, command.By, clock.UtcNow, resolvedTask.Value.Metrics);
+            command.FlightSequence, command.Metric, command.NewValue, command.Reason, command.By, clock.UtcNow,
+            resolvedTask.Value.Metrics, effectiveInstrument, competition.DeclaredInstruments?.Instruments ?? []);
         if (decision.IsFailure)
         {
             return Result<EntryId>.Failure(decision.Code!, decision.Message!, decision.Defects);

@@ -167,7 +167,11 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
 
             var groupResult = ScoringService.ScoreGroup(
                 group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings,
-                taskRoundZeroPenalties.Value);
+                taskRoundZeroPenalties.Value,
+                // WI-4 (tape-points-landing-seeds.md): readings compose with the
+                // class table at resolution; distances naming none take the
+                // existing path. No declaration here means distances only.
+                competition.DeclaredInstruments?.Instruments ?? []);
 
             views.Add(MapGroupResult(group.Id, groupResult, groupEntries));
         }

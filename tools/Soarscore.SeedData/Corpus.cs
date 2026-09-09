@@ -17,6 +17,14 @@ public sealed record SeedClass(string FileName, ClassDefinition Definition);
 
 public static class Corpus
 {
+    /// <summary>
+    /// The pinned class count (tape-points-landing-seeds.md WI-2: the tape
+    /// catalogue is counted separately and the class corpus shows no delta from
+    /// that story). A new class bumps this literal in the same commit that adds
+    /// its SeedClass — the count moves only by an explicit corpus change.
+    /// </summary>
+    public const int ExpectedCount = 16;
+
     public static ImmutableArray<SeedClass> All =>
     [
         new("10-f3k", SeedF3K.Definition),

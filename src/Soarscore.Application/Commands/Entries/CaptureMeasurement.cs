@@ -14,7 +14,7 @@ using Soarscore.Domain.PublishedClassDefinition;
 namespace Soarscore.Application.Commands.Entries;
 
 public sealed record CaptureMeasurement(
-    EntryId EntryRef, int FlightSequence, string Metric, MeasuredValue Value) : ICommand<EntryId>;
+    EntryId EntryRef, int FlightSequence, string Metric, MeasuredValue Value, string? Instrument = null) : ICommand<EntryId>;
 
 public sealed class CaptureMeasurementHandler(IEventStore eventStore, IClock clock)
     : ICommandHandler<CaptureMeasurement, EntryId>
@@ -44,7 +44,8 @@ public sealed class CaptureMeasurementHandler(IEventStore eventStore, IClock clo
         }
 
         var decision = entry.CaptureMeasurement(
-            command.FlightSequence, command.Metric, command.Value, clock.UtcNow, resolvedTask.Value.Metrics);
+            command.FlightSequence, command.Metric, command.Value, clock.UtcNow, resolvedTask.Value.Metrics,
+            command.Instrument, competition.DeclaredInstruments?.Instruments ?? []);
         if (decision.IsFailure)
         {
             return Result<EntryId>.Failure(decision.Code!, decision.Message!, decision.Defects);

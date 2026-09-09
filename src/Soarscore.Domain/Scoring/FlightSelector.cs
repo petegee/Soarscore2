@@ -7,6 +7,7 @@
 // TargetValues[n-1-i] (Issue #3).
 
 using System.Collections.Immutable;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 
@@ -31,11 +32,19 @@ public static class FlightSelector
     /// The orchestrator resolves amendments and calls FlightInterpreter before
     /// passing results here.
     /// </param>
+    /// <param name="declaredInstruments">
+    /// The competition's declared set (tape-points-landing-seeds.md WI-3),
+    /// for the target-clamp re-score below (WI-4): a clamped re-evaluation
+    /// reads the same instruments the interpretation did, so a reading still
+    /// composes rather than falling back to metres. Default (empty) is the
+    /// competition that declared nothing.
+    /// </param>
     public static TaskResult SelectAndScore(
         Entry? entry,
         ResolvedTask task,
         IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
-        ImmutableArray<InterpretedFlight> interpretedFlights)
+        ImmutableArray<InterpretedFlight> interpretedFlights,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         // 0. Annulled → no result, regardless of what was captured.
         if (entry?.Annulment is not null)
@@ -76,7 +85,7 @@ public static class FlightSelector
             return new TaskResult(TaskResultState.NoResult, null, 0m, AwaitingCapture: awaiting);
 
         // 3. If targets are assigned, clamp and re-score (before validWhen check).
-        var withTargets = ApplyTargets(selected, task.Flights, task.Score);
+        var withTargets = ApplyTargets(selected, task.Flights, task.Score, declaredInstruments, UnitsOf(task));
 
         // 4. Evaluate validWhen against selected flights' measurements (Issue #2, #6).
         if (task.ValidWhen is not null)
@@ -185,7 +194,9 @@ public static class FlightSelector
     private static ImmutableArray<InterpretedFlight> ApplyTargets(
         ImmutableArray<InterpretedFlight> selected,
         FlightSelection selection,
-        ImmutableArray<ScoreTerm> scoreTerms)
+        ImmutableArray<ScoreTerm> scoreTerms,
+        ImmutableArray<DeclaredInstrument> declaredInstruments,
+        IReadOnlyDictionary<string, string?> metricUnits)
     {
         if (selection is BestNFlights bn && bn.Targets != TargetAssignment.None && bn.TargetValues.Length > 0)
         {
@@ -212,7 +223,7 @@ public static class FlightSelector
                     target = bn.TargetValues[i];
                 }
 
-                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms));
+                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms, declaredInstruments, metricUnits));
             }
 
             return result.ToImmutable();
@@ -229,7 +240,7 @@ public static class FlightSelector
             for (int i = 0; i < selected.Length && i < en.TargetValues.Length; i++)
             {
                 decimal target = en.TargetValues[i];
-                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms));
+                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms, declaredInstruments, metricUnits));
             }
 
             return result.ToImmutable();
@@ -264,6 +275,18 @@ public static class FlightSelector
     };
 
     /// <summary>
+    /// The declared unit per metric, for WI-1's unit-match check wherever a
+    /// re-score re-evaluates terms (tape-points-landing-seeds.md WI-4).
+    /// </summary>
+    private static IReadOnlyDictionary<string, string?> UnitsOf(ResolvedTask task)
+    {
+        var units = new Dictionary<string, string?>(task.Metrics.Length, StringComparer.Ordinal);
+        foreach (var metric in task.Metrics)
+            units[metric.Name] = metric.Unit;
+        return units;
+    }
+
+    /// <summary>
     /// Create a copy of the flight's measurements with the target metric clamped,
     /// then re-score all terms.
     /// </summary>
@@ -271,7 +294,9 @@ public static class FlightSelector
         InterpretedFlight flight,
         string targetMetric,
         decimal target,
-        ImmutableArray<ScoreTerm> scoreTerms)
+        ImmutableArray<ScoreTerm> scoreTerms,
+        ImmutableArray<DeclaredInstrument> declaredInstruments,
+        IReadOnlyDictionary<string, string?> metricUnits)
     {
         var metrics = flight.Metrics;
 
@@ -294,13 +319,17 @@ public static class FlightSelector
             [targetMetric] = MeasuredValue.Of(clamped)
         };
 
-        // Re-score all terms.
+        // Re-score all terms — through the same composed evaluation the
+        // interpretation used: the clamp replaces one metric's number, never
+        // its instrument, so a reading on any other metric still composes.
         var contributions = new Dictionary<int, TermContribution>();
         decimal newScore = 0m;
 
         for (int i = 0; i < scoreTerms.Length; i++)
         {
-            var contrib = FlightInterpreter.EvaluateTerm(scoreTerms[i], clampedMetrics);
+            var contrib = FlightInterpreter.EvaluateTerm(
+                scoreTerms[i], clampedMetrics,
+                flight.Result.Measurements.Instruments, declaredInstruments, metricUnits);
             contributions[i] = contrib;
             newScore += contrib.Points;
         }

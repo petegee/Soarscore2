@@ -9,6 +9,7 @@
 // (kanban/in-progress/pre-normalisation-score-view-field.md#WI-1).
 
 using System.Collections.Immutable;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Domain.Scoring;
@@ -29,11 +30,20 @@ public static class NormalisationEngine
     /// <param name="taskResults">CompetitorRef → TaskResult.</param>
     /// <param name="task">The resolved task definition.</param>
     /// <param name="parameterBindings">Parameter bindings (for ScoreNormalised term resolution).</param>
+    /// <param name="declaredInstruments">
+    /// The competition's declared set (tape-points-landing-seeds.md WI-3) for
+    /// ScoreNormalised terms (WI-4): NZ-M ALES lands its landing bonus AFTER
+    /// normalising, so the post-normalisation stage composes a reading through
+    /// the same evaluation the raw stage used — same function, same refusal,
+    /// no second implementation. Default (empty) is the competition that
+    /// declared nothing.
+    /// </param>
     public static GroupResult Normalise(
         string groupRef,
         ImmutableDictionary<string, TaskResult> taskResults,
         ResolvedTask task,
-        IReadOnlyDictionary<string, MeasuredValue> parameterBindings)
+        IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         // 1. Count valid results.
         var validEntries = taskResults
@@ -155,12 +165,14 @@ public static class NormalisationEngine
             if (!task.ScoreNormalised.IsDefaultOrEmpty
                 && taskResult.Selection is not null)
             {
+                var metricUnits = UnitsOf(task);
                 foreach (var flight in taskResult.Selection.Flights)
                 {
                     foreach (var term in task.ScoreNormalised)
                     {
                         var contrib = FlightInterpreter.EvaluateTerm(
-                            term, flight.Metrics);
+                            term, flight.Metrics,
+                            flight.Result.Measurements.Instruments, declaredInstruments, metricUnits);
                         normalised += contrib.Points;
                     }
                 }
@@ -189,6 +201,18 @@ public static class NormalisationEngine
             PreNormalisationScores: preNormalisationScores,
             IsAnnulled: isAnnulled
         );
+    }
+
+    /// <summary>
+    /// The declared unit per metric, for WI-1's unit-match check wherever a
+    /// post-normalisation term is re-evaluated (tape-points-landing-seeds.md WI-4).
+    /// </summary>
+    private static IReadOnlyDictionary<string, string?> UnitsOf(ResolvedTask task)
+    {
+        var units = new Dictionary<string, string?>(task.Metrics.Length, StringComparer.Ordinal);
+        foreach (var metric in task.Metrics)
+            units[metric.Name] = metric.Unit;
+        return units;
     }
 
 }

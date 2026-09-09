@@ -1,0 +1,46 @@
+{
+  "name": "ALES M 10 m tape",
+  "unit": "m",
+  "marks": [
+    {
+      "upTo": 1,
+      "reading": 1
+    },
+    {
+      "upTo": 2,
+      "reading": 2
+    },
+    {
+      "upTo": 3,
+      "reading": 3
+    },
+    {
+      "upTo": 4,
+      "reading": 4
+    },
+    {
+      "upTo": 5,
+      "reading": 5
+    },
+    {
+      "upTo": 6,
+      "reading": 6
+    },
+    {
+      "upTo": 7,
+      "reading": 7
+    },
+    {
+      "upTo": 8,
+      "reading": 8
+    },
+    {
+      "upTo": 9,
+      "reading": 9
+    },
+    {
+      "upTo": 10,
+      "reading": 10
+    }
+  ]
+}

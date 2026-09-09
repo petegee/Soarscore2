@@ -78,6 +78,8 @@ internal static class SoarscoreEventTypes
         (typeof(DrawAccepted), "drawAccepted"),
         (typeof(DrawRejected), "drawRejected"),
         (typeof(GroupSpotsAssigned), "groupSpotsAdded"), // lane-assignment.md WI-4 — a missing line fails at runtime on BOTH backends per LADR-0001 §4.8.
+        (typeof(InstrumentsDeclared), "instrumentsDeclared"),
+        (typeof(InstrumentDeclarationCorrected), "instrumentDeclarationCorrected"), // tape-points-landing-seeds.md WI-3 — same rule.
 
         // teams-mvp.md WI-3 registered the seven team events; as above, a
         // missing line fails at runtime on BOTH backends per LADR-0001 §4.8.

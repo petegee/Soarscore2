@@ -25,6 +25,7 @@
 // (FlightSelector's ranking) and has never been a throw site.
 
 using System.Collections.Immutable;
+using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 
@@ -73,7 +74,15 @@ public static class FlightMetricResolution
     /// flight interpretation through here — after this point no consumer can
     /// observe a declared-but-uncaptured referenced metric as a throw.
     /// </summary>
-    public static ImmutableArray<InterpretedFlight> InterpretAllFlights(Entry entry, ResolvedTask task)
+    /// <param name="declaredInstruments">
+    /// The competition's declared set (tape-points-landing-seeds.md WI-3),
+    /// resolved against at lookup evaluation (WI-4). Default (empty) is the
+    /// competition that declared nothing: the existing path unchanged.
+    /// </param>
+    public static ImmutableArray<InterpretedFlight> InterpretAllFlights(
+        Entry entry,
+        ResolvedTask task,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         var referenced = ReferencedMetrics(task);
         var declaredByName = new Dictionary<string, MetricDefinition>(task.Metrics.Length, StringComparer.Ordinal);
@@ -83,7 +92,7 @@ public static class FlightMetricResolution
         var builder = ImmutableArray.CreateBuilder<InterpretedFlight>(entry.Flights.Length);
 
         foreach (var flight in entry.Flights)
-            builder.Add(ResolveAndInterpret(task, flight, referenced, declaredByName));
+            builder.Add(ResolveAndInterpret(task, flight, referenced, declaredByName, declaredInstruments));
 
         return builder.ToImmutable();
     }
@@ -98,7 +107,8 @@ public static class FlightMetricResolution
         ResolvedTask task,
         Flight flight,
         IReadOnlySet<string> referenced,
-        IReadOnlyDictionary<string, MetricDefinition> declaredByName)
+        IReadOnlyDictionary<string, MetricDefinition> declaredByName,
+        ImmutableArray<DeclaredInstrument> declaredInstruments)
     {
         var resolved = MeasurementDigest.Resolve(flight);
         var metrics = new Dictionary<string, MeasuredValue>(resolved.Metrics);
@@ -139,16 +149,19 @@ public static class FlightMetricResolution
         }
 
         if (awaited is null)
-            return FlightInterpreter.Interpret(task, flight.Sequence, metrics);
+            return FlightInterpreter.Interpret(task, flight.Sequence, metrics, resolved.Instruments, declaredInstruments);
 
         // Tier 2: the awaited metric is declared without an assumption —
         // Pending, never an error. Score 0, no term contributions, and the
         // measurements as resolved (assumptions inserted) so reporting sees
-        // exactly what the flight does carry.
+        // exactly what the flight does carry — readings with their scale
+        // (owner decision 4), never waiting for the other input form (owner
+        // decision 9: either a valid reading or a valid distance fulfils the
+        // input; presence is by metric name either way).
         return new InterpretedFlight(
             Result: new FlightResult(
                 State: FlightResultState.Pending,
-                Measurements: new ResolvedMeasurements(metrics),
+                Measurements: new ResolvedMeasurements(metrics, resolved.Instruments),
                 Awaited: new PendingFlightDiagnostic(flight.Sequence, awaited)
             ),
             Score: 0m,

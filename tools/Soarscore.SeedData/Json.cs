@@ -75,6 +75,8 @@ public static class SoarscoreJson
 // compares its output against reflection byte for byte on all twelve classes.
 [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Metadata)]
 [JsonSerializable(typeof(ClassDefinition))]
+[JsonSerializable(typeof(TapeDefinition))]
+[JsonSerializable(typeof(TapeMark))]
 [JsonSerializable(typeof(ScoreTerm))]
 [JsonSerializable(typeof(RateTerm))]
 [JsonSerializable(typeof(LookupTerm))]

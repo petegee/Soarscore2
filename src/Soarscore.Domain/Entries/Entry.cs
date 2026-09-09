@@ -59,10 +59,22 @@ public sealed record Annulment
 
 /// <summary>
 /// A correction to a Measurement's value, recorded rather than overwriting it.
+/// Carries the measurement's effective instrument after this amendment — every
+/// new amendment restates it, so the latest amendment is always authoritative
+/// (older amendments predate instruments and carry null, as do the
+/// measurements they correct, which never named one).
 /// </summary>
 public sealed record Amendment
 {
     public required MeasuredValue NewValue { get; init; }
+
+    /// <summary>
+    /// The named instrument the measurement reads on after this amendment, or
+    /// null for a distance naming none. Always stated explicitly by new
+    /// amendments — never defaulted — so clearing to none and retaining are
+    /// distinct facts the handler resolves before deciding.
+    /// </summary>
+    public string? Instrument { get; init; }
 
     public required string Reason { get; init; }
 
@@ -87,9 +99,30 @@ public sealed record Measurement
 
     public required MeasuredValue Value { get; init; }
 
+    /// <summary>
+    /// The declared instrument this was read on, or null for a distance
+    /// naming none (owner decision 3). The record is self-describing: an
+    /// audit never depends on the competition's current declaration, and a
+    /// corrected declaration is visible as a difference (owner decision 4).
+    /// A reading is validated as an exact member of this scale's reading set
+    /// — never rounded to the metric's capture precision — while a distance
+    /// keeps the metric's declared precision byte for byte.
+    /// </summary>
+    public string? Instrument { get; init; }
+
     public required DateTimeOffset CapturedAt { get; init; }
 
     public ImmutableArray<Amendment> Amendments { get; init; } = [];
+
+    /// <summary>
+    /// The instrument in force: the latest amendment's restated instrument, or
+    /// the capture's when never amended. Last-appended wins by construction —
+    /// every new amendment restates the effective instrument explicitly, so
+    /// this holds under any At ordering. Either form satisfies the input
+    /// requirement — completeness follows a valid reading or a valid distance
+    /// alike (owner decision 9).
+    /// </summary>
+    public string? EffectiveInstrument => Amendments.IsEmpty ? Instrument : Amendments[^1].Instrument;
 }
 
 /// <summary>
@@ -314,12 +347,23 @@ public sealed record Entry
     // metrics arrives already resolved from the task's declared
     // MetricDefinitions, for the same reason maxLaunches does above: Entry
     // never learns which class it is flying under.
+    //
+    // tape-points-landing-seeds.md WI-3: instrument names a declared
+    // instrument or none; declaredInstruments arrives already resolved from
+    // the competition's declaration, the same already-resolved-inputs
+    // discipline. A reading naming an instrument is validated as an exact
+    // member of that tape's reading set — never rounded to the metric's
+    // capture precision, never guessed — while a measurement naming none is
+    // a distance in the metric's declared unit and takes the existing path
+    // byte for byte. Both forms mix freely in one metric, round and group.
     public Result<MeasurementCaptured> CaptureMeasurement(
         int flightSequence,
         string metric,
         MeasuredValue value,
         DateTimeOffset capturedAt,
-        ImmutableArray<MetricDefinition> metrics)
+        ImmutableArray<MetricDefinition> metrics,
+        string? instrument = null,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         if (Annulment is not null)
         {
@@ -362,6 +406,37 @@ public sealed record Entry
                 "Correcting a captured value is MeasurementAmended's job, not a second capture.");
         }
 
+        // A reading names its instrument and is validated against that scale —
+        // exact membership, no precision inherited, no defaults inferred, no
+        // instrument guessed. An undeclared instrument is refused, as is a
+        // declared one bound to a different metric.
+        if (instrument is not null)
+        {
+            if (ResolveInstrument(instrument, metric, declaredInstruments, "captureMeasurement") is { } defect)
+            {
+                return Result<MeasurementCaptured>.Failure(defect.Code, defect.Message);
+            }
+
+            var scale = declaredInstruments.First(d => d.Instrument == instrument).Scale;
+            if (value.Number is not { } reading || !scale.ContainsReading(reading))
+            {
+                return Result<MeasurementCaptured>.Failure(
+                    "captureMeasurement.readingNotOnScale",
+                    $"'{value.Number?.ToString() ?? "no reading"}' is not a mark on instrument '{instrument}' — " +
+                    "a reading is an exact member of the named tape's reading set.");
+            }
+
+            var read = new Measurement
+            {
+                Metric = metric,
+                Value = value,
+                Instrument = instrument,
+                CapturedAt = capturedAt,
+            };
+
+            return Result<MeasurementCaptured>.Success(new MeasurementCaptured(flightSequence, read));
+        }
+
         // Round per the metric's declared precision (finding 4) — the stored
         // value IS the raw observation, not a derivation from it. A Flag-kind
         // metric has nothing to round and Precision is null there by
@@ -400,7 +475,9 @@ public sealed record Entry
         string reason,
         string by,
         DateTimeOffset at,
-        ImmutableArray<MetricDefinition> metrics)
+        ImmutableArray<MetricDefinition> metrics,
+        string? instrument = null,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         if (Annulment is not null)
         {
@@ -451,6 +528,39 @@ public sealed record Entry
                 "amendMeasurement.byRequired", "By is required — a self-declared corrector's name, not an authorisation claim.");
         }
 
+        // instrument is the measurement's instrument AFTER this amendment —
+        // the handler restates the current one when the command does not name
+        // a change, so retaining, switching and clearing to none are distinct
+        // facts here, never a default. A reading follows capture's rule:
+        // exact membership in the named scale, no precision inherited.
+        if (instrument is not null)
+        {
+            if (ResolveInstrument(instrument, metric, declaredInstruments, "amendMeasurement") is { } defect)
+            {
+                return Result<MeasurementAmended>.Failure(defect.Code, defect.Message);
+            }
+
+            var scale = declaredInstruments.First(d => d.Instrument == instrument).Scale;
+            if (newValue.Number is not { } reading || !scale.ContainsReading(reading))
+            {
+                return Result<MeasurementAmended>.Failure(
+                    "amendMeasurement.readingNotOnScale",
+                    $"'{newValue.Number?.ToString() ?? "no reading"}' is not a mark on instrument '{instrument}' — " +
+                    "a reading is an exact member of the named tape's reading set.");
+            }
+
+            var readAmendment = new Amendment
+            {
+                NewValue = newValue,
+                Instrument = instrument,
+                Reason = reason,
+                By = by,
+                At = at,
+            };
+
+            return Result<MeasurementAmended>.Success(new MeasurementAmended(flightSequence, metric, readAmendment));
+        }
+
         // Round the corrected value per the metric's declared precision,
         // identical to CaptureMeasurement's stored-value rule (finding 5): the
         // stored value IS the raw observation, so a correction carries no
@@ -462,12 +572,43 @@ public sealed record Entry
         var amendment = new Amendment
         {
             NewValue = correctedValue,
+            Instrument = null,
             Reason = reason,
             By = by,
             At = at,
         };
 
         return Result<MeasurementAmended>.Success(new MeasurementAmended(flightSequence, metric, amendment));
+    }
+
+    /// <summary>
+    /// The instrument checks shared by capture and amendment: the named
+    /// instrument must be declared, and bound to the metric being recorded.
+    /// Returns null when the naming is sound; membership of the reading itself
+    /// stays with the caller, whose defect codes differ per command.
+    /// </summary>
+    private static Defect? ResolveInstrument(
+        string instrument, string metric, ImmutableArray<DeclaredInstrument> declaredInstruments, string codePrefix)
+    {
+        var binding = declaredInstruments.FirstOrDefault(d => d.Instrument == instrument);
+        if (binding is null)
+        {
+            return new Defect(
+                $"{codePrefix}.instrumentNotDeclared",
+                "$.instrument",
+                $"Instrument '{instrument}' is not declared by this competition — " +
+                "a measurement names a declared instrument or none, never an arbitrary one.");
+        }
+
+        if (binding.Metric != metric)
+        {
+            return new Defect(
+                $"{codePrefix}.instrumentMetricMismatch",
+                "$.instrument",
+                $"Instrument '{instrument}' is declared for metric '{binding.Metric}', not '{metric}'.");
+        }
+
+        return null;
     }
 
     // Instance decide function — WI-2 (kanban/in-progress/annul-and-penalise-the-second-entry-thread.md).

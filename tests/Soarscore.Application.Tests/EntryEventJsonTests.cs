@@ -47,4 +47,70 @@ public class EntryEventJsonTests
         var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
         reemitted.Should().Be(json);
     }
+
+    [Fact]
+    public void MeasurementCaptured_naming_an_instrument_round_trips_with_it()
+    {
+        EntryEvent captured = new MeasurementCaptured(
+            1,
+            new Measurement
+            {
+                Metric = "landingDistance",
+                Value = MeasuredValue.Of(96m),
+                Instrument = "nz-f3j-side",
+                CapturedAt = DateTimeOffset.UtcNow,
+            });
+
+        var json = JsonSerializer.Serialize(captured, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"instrument\":\"nz-f3j-side\"");
+        var reread = JsonSerializer.Deserialize<EntryEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<MeasurementCaptured>()
+            .Which.Measurement.Instrument.Should().Be("nz-f3j-side");
+    }
+
+    [Fact]
+    public void MeasurementAmended_carrying_an_instrument_round_trips_with_it()
+    {
+        EntryEvent amended = new MeasurementAmended(
+            1,
+            "landingDistance",
+            new Amendment
+            {
+                NewValue = MeasuredValue.Of(91m),
+                Instrument = "nz-f3j-side",
+                Reason = "misread the tape",
+                By = "the scorer",
+                At = DateTimeOffset.UtcNow,
+            });
+
+        var json = JsonSerializer.Serialize(amended, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"instrument\":\"nz-f3j-side\"");
+        var reread = JsonSerializer.Deserialize<EntryEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<MeasurementAmended>()
+            .Which.Amendment.Instrument.Should().Be("nz-f3j-side");
+    }
+
+    [Fact]
+    public void Legacy_Measurement_payload_without_instrument_deserialises_as_a_distance_naming_none()
+    {
+        // Pre-WI-3 payloads carry no instrument property at all (and
+        // WhenWritingNull omits it for distance measurements still): both
+        // shapes read back as a measurement naming none — the distance path.
+        EntryEvent captured = new MeasurementCaptured(
+            1,
+            new Measurement { Metric = "flightTime", Value = MeasuredValue.Of(120m), CapturedAt = DateTimeOffset.UtcNow });
+
+        var json = JsonSerializer.Serialize(captured, SoarscoreEventJson.Options);
+
+        json.Should().NotContain("instrument");
+        var reread = (MeasurementCaptured)JsonSerializer.Deserialize<EntryEvent>(json, SoarscoreEventJson.Options)!;
+        reread.Measurement.Instrument.Should().BeNull();
+        reread.Measurement.EffectiveInstrument.Should().BeNull();
+    }
 }

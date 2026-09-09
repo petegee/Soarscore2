@@ -92,6 +92,8 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<AcceptDraw, CompetitionId>, AcceptDrawHandler>();
         builder.Services.AddScoped<ICommandHandler<RejectDraw, CompetitionId>, RejectDrawHandler>();
         builder.Services.AddScoped<ICommandHandler<BindParameter, CompetitionId>, BindParameterHandler>();
+        builder.Services.AddScoped<ICommandHandler<DeclareInstruments, CompetitionId>, DeclareInstrumentsHandler>();
+        builder.Services.AddScoped<ICommandHandler<CorrectInstrumentDeclaration, CompetitionId>, CorrectInstrumentDeclarationHandler>();
         builder.Services.AddScoped<ICommandHandler<CompleteTaskRound, CompetitionId>, CompleteTaskRoundHandler>();
         builder.Services.AddScoped<ICommandHandler<ReopenTaskRound, CompetitionId>, ReopenTaskRoundHandler>();
         builder.Services.AddScoped<ICommandHandler<AnnulTaskRound, CompetitionId>, AnnulTaskRoundHandler>();

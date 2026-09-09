@@ -31,24 +31,28 @@ public static class ScoringService
     public static InterpretedFlight InterpretFlight(
         ResolvedTask task,
         int flightSequence,
-        IReadOnlyDictionary<string, MeasuredValue> resolvedMetrics) =>
-        FlightInterpreter.Interpret(task, flightSequence, resolvedMetrics);
+        IReadOnlyDictionary<string, MeasuredValue> resolvedMetrics,
+        IReadOnlyDictionary<string, string>? instruments = null,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default) =>
+        FlightInterpreter.Interpret(task, flightSequence, resolvedMetrics, instruments, declaredInstruments);
 
     /// <summary>Select flights from an Entry, apply caps, round.</summary>
     public static TaskResult SelectFlights(
         Entry? entry,
         ResolvedTask task,
         IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
-        ImmutableArray<InterpretedFlight> interpretedFlights) =>
-        FlightSelector.SelectAndScore(entry, task, parameterBindings, interpretedFlights);
+        ImmutableArray<InterpretedFlight> interpretedFlights,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default) =>
+        FlightSelector.SelectAndScore(entry, task, parameterBindings, interpretedFlights, declaredInstruments);
 
     /// <summary>Normalise a group's task results.</summary>
     public static GroupResult NormaliseGroup(
         string groupRef,
         ImmutableDictionary<string, TaskResult> results,
         ResolvedTask task,
-        IReadOnlyDictionary<string, MeasuredValue> parameterBindings) =>
-        NormalisationEngine.Normalise(groupRef, results, task, parameterBindings);
+        IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default) =>
+        NormalisationEngine.Normalise(groupRef, results, task, parameterBindings, declaredInstruments);
 
     /// <summary>Aggregate phase scores for one competitor, applying drops.</summary>
     public static PhaseScores Aggregate(
@@ -106,7 +110,8 @@ public static class ScoringService
         ClassDefinition classDef,
         ImmutableDictionary<string, Entry> entries,
         IReadOnlyDictionary<string, MeasuredValue> parameterBindings,
-        ImmutableDictionary<string, ImmutableArray<RecordedPenalty>>? taskRoundPenalties = null)
+        ImmutableDictionary<string, ImmutableArray<RecordedPenalty>>? taskRoundPenalties = null,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         // 1. Resolve task parameters.
         var resolvedTask = ParameterResolver.ResolveTask(task, parameterBindings, classDef.Parameters);
@@ -118,12 +123,12 @@ public static class ScoringService
         {
             // 2a. Resolve amendments for each flight → ResolvedMeasurements
             //     (issue #4: amendment resolution lives in the orchestrator).
-            var interpretedFlights = InterpretAllFlights(entry, resolvedTask);
+            var interpretedFlights = InterpretAllFlights(entry, resolvedTask, declaredInstruments);
 
             // 2b. Select flights and assemble raw score. Annulment is checked
             //     inside FlightSelector.SelectAndScore.
             var taskResult = FlightSelector.SelectAndScore(
-                entry, resolvedTask, parameterBindings, interpretedFlights);
+                entry, resolvedTask, parameterBindings, interpretedFlights, declaredInstruments);
 
             // 2c. Apply raw penalties scoped to this Entry (Flight/Entry scope),
             //     plus any aggregate-scoped Zero* records routed to this
@@ -167,7 +172,7 @@ public static class ScoringService
 
         // 3. Normalise the group.
         return NormalisationEngine.Normalise(
-            groupRef, taskResults.ToImmutable(), resolvedTask, parameterBindings);
+            groupRef, taskResults.ToImmutable(), resolvedTask, parameterBindings, declaredInstruments);
     }
 
     /// <summary>
@@ -177,9 +182,17 @@ public static class ScoringService
     /// </summary>
     /// <param name="competition">The competition, with its adopted rules and drawn structure.</param>
     /// <param name="entries">Every Entry in the competition, keyed by EntryId (EntryCollector's job to assemble).</param>
+    /// <param name="declaredInstruments">
+    /// The competition's declared set (tape-points-landing-seeds.md WI-3),
+    /// shared across the walk's groups — a declaration binds a tape to a named
+    /// metric competition-wide (owner decision 3). Default (empty) declares
+    /// nothing. Callers holding the Competition pass
+    /// <c>competition.DeclaredInstruments?.Instruments ?? []</c>.
+    /// </param>
     public static Result<CompetitionResult> ScoreCompetition(
         Competition competition,
-        IReadOnlyDictionary<EntryId, Entry> entries)
+        IReadOnlyDictionary<EntryId, Entry> entries,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default)
     {
         var classDef = competition.AdoptedRules.Definition;
 
@@ -369,7 +382,7 @@ public static class ScoringService
 
                         var groupResult = ScoreGroup(
                             group.Id.ToString(), taskDefinition, classDef, groupEntries, bindings,
-                            taskRoundZeroPenalties.Value);
+                            taskRoundZeroPenalties.Value, declaredInstruments);
 
                         foreach (var (entryKey, taskResult) in groupResult.Results)
                         {
@@ -671,8 +684,11 @@ public static class ScoringService
     /// semantics (assumed values, pending flights) are applied before any
     /// interpretation.
     /// </summary>
-    private static ImmutableArray<InterpretedFlight> InterpretAllFlights(Entry entry, ResolvedTask task) =>
-        FlightMetricResolution.InterpretAllFlights(entry, task);
+    private static ImmutableArray<InterpretedFlight> InterpretAllFlights(
+        Entry entry,
+        ResolvedTask task,
+        ImmutableArray<DeclaredInstrument> declaredInstruments = default) =>
+        FlightMetricResolution.InterpretAllFlights(entry, task, declaredInstruments);
 
     // ---------------------------------------------------- penalty routing
 

@@ -177,6 +177,59 @@ public sealed record ParameterBinding
 }
 
 /// <summary>
+/// One instrument in use, binding a reading scale to the named metric it was
+/// read against — kanban/backlog/tape-points-landing-seeds.md WI-3 (owner
+/// decision 3). A competition declares a SET of these (possibly empty);
+/// each measurement names one of them or none. The scale is a snapshot, the
+/// way AdoptedRules snapshots the class definition: an audit of a reading
+/// never depends on the competition's current declaration.
+/// </summary>
+public sealed record DeclaredInstrument
+{
+    /// <summary>Which instrument — the name a measurement cites, unique within the declaration.</summary>
+    public required string Instrument { get; init; }
+
+    /// <summary>The adopted task's metric the tape was read against, e.g. "landingDistance".</summary>
+    public required string Metric { get; init; }
+
+    /// <summary>The scale that side reads in, bands in the metric's declared unit.</summary>
+    public required ReadingScale Scale { get; init; }
+}
+
+/// <summary>
+/// The competition's declared set of instruments — the initial declaration,
+/// carried by <see cref="InstrumentsDeclared"/>. A correction is a
+/// <see cref="InstrumentDeclarationCorrection"/> instead (the capture/amendment
+/// split: a first value is declared, every change after is a correction with
+/// its reason). Empty is valid and is the default: a competition that declares
+/// nothing records distances only, exactly as before.
+/// </summary>
+public sealed record InstrumentDeclaration
+{
+    public ImmutableArray<DeclaredInstrument> Instruments { get; init; } = [];
+
+    public required string By { get; init; }
+
+    public required DateTimeOffset At { get; init; }
+}
+
+/// <summary>
+/// A corrected declaration, replacing the set whole — the RulesAmendment
+/// shape ("because results are derived, that costs nothing but a re-query"):
+/// retroactive by re-derivation, retaining reason, author and time.
+/// </summary>
+public sealed record InstrumentDeclarationCorrection
+{
+    public ImmutableArray<DeclaredInstrument> Instruments { get; init; } = [];
+
+    public required string Reason { get; init; }
+
+    public required string By { get; init; }
+
+    public required DateTimeOffset At { get; init; }
+}
+
+/// <summary>
 /// Freezes results for a phase (naming who was promoted) or the whole
 /// competition. Reopening after an error appends a further revision and
 /// keeps the earlier one — nothing is overwritten.
@@ -447,6 +500,16 @@ public sealed record Competition
 
     public ImmutableArray<ParameterBinding> ParameterBindings { get; init; } = [];
 
+    /// <summary>
+    /// The set of instruments in use, or null when the competition declared
+    /// none — which behaves as the empty set: every measurement names no
+    /// instrument and takes the distance path. Replaced whole by each
+    /// <see cref="InstrumentsDeclared"/> / <see cref="InstrumentDeclarationCorrected"/>;
+    /// the log keeps every declaration, so a corrected declaration is visible
+    /// as a difference (owner decision 4).
+    /// </summary>
+    public InstrumentDeclaration? DeclaredInstruments { get; init; }
+
     public ImmutableArray<Finalisation> Finalisations { get; init; } = [];
 
     /// <summary>TaskRound / Competition scope only — Flight / Entry scoped penalties live on the Entry aggregate.</summary>
@@ -585,6 +648,24 @@ public sealed record Competition
     public Competition Apply(ParameterBound @event) =>
         this with { ParameterBindings = ParameterBindings.Add(@event.Binding) };
 
+    // Whole-replacement semantics: the payload is the complete set and
+    // replaces whatever was there (TeamClassificationConfigured's precedent —
+    // the log is the audit trail). A correction is therefore visible as the
+    // difference between two declarations, never as an edit.
+    public Competition Apply(InstrumentsDeclared @event) =>
+        this with { DeclaredInstruments = @event.Declaration };
+
+    public Competition Apply(InstrumentDeclarationCorrected @event) =>
+        this with
+        {
+            DeclaredInstruments = new InstrumentDeclaration
+            {
+                Instruments = @event.Correction.Instruments,
+                By = @event.Correction.By,
+                At = @event.Correction.At,
+            },
+        };
+
     public Competition Apply(Finalised @event) =>
         this with { Finalisations = Finalisations.Add(@event.Finalisation) };
 
@@ -718,6 +799,8 @@ public sealed record Competition
             DrawRejected e => Require(current, e).Apply(e),
             RulesAmended e => Require(current, e).Apply(e),
             ParameterBound e => Require(current, e).Apply(e),
+            InstrumentsDeclared e => Require(current, e).Apply(e),
+            InstrumentDeclarationCorrected e => Require(current, e).Apply(e),
             Finalised e => Require(current, e).Apply(e),
             PenaltyRecorded e => Require(current, e).Apply(e),
             ReflightRulingRecorded e => Require(current, e).Apply(e),
@@ -915,6 +998,209 @@ public sealed record Competition
                 PhaseOrdinal = phaseOrdinal,
                 RoundOrdinal = roundOrdinal,
             }));
+    }
+
+    // Instance decide functions — kanban/backlog/tape-points-landing-seeds.md
+    // WI-3 (owner decisions 3, 4, 8). The per-competition declaration of the
+    // SET of instruments in use, each binding a tape to a named metric — an
+    // event, like ParameterBinding, precisely because re-scoring must
+    // reproduce the instruments as they were actually declared. The
+    // capture/amendment split holds here too: a first declaration is declared,
+    // every change after is a correction carrying its reason (AmendMeasurement's
+    // precedent — a correction's justification is a substantive record, so
+    // Reason is validated here, while By is the handler's audit breadcrumb,
+    // BindParameter's precedent).
+    //
+    // Every pairing the declaration names is refused unless WI-1's composition
+    // can be built from it: the class table's boundaries must be a subset of
+    // the tape's (TapeComposition), else that side of the tape cannot score
+    // this class — and the declaration is where that is actionable. An empty
+    // set is valid and is the default (DeclaredInstruments null folds as
+    // empty): distances only, the existing path unchanged.
+    //
+    // Metrics and lookup tables resolve against AdoptedRules.Definition — the
+    // same definition TaskResolver hands capture — so a declaration capture
+    // cannot honour is never admitted.
+    public Result<InstrumentsDeclared> DeclareInstruments(
+        ImmutableArray<DeclaredInstrument> instruments, string by, DateTimeOffset at)
+    {
+        if (DeclaredInstruments is not null)
+        {
+            return Result<InstrumentsDeclared>.Failure(
+                "declareInstruments.alreadyDeclared",
+                "Instruments have already been declared for this competition. " +
+                "Changing the set is InstrumentDeclarationCorrected's job, not a second declaration.");
+        }
+
+        var defect = ValidateInstrumentSet(instruments, "declareInstruments");
+        if (defect is not null)
+        {
+            return Result<InstrumentsDeclared>.Failure(defect.Code, defect.Message);
+        }
+
+        return Result<InstrumentsDeclared>.Success(
+            new InstrumentsDeclared(new InstrumentDeclaration { Instruments = instruments, By = by, At = at }));
+    }
+
+    public Result<InstrumentDeclarationCorrected> CorrectInstrumentDeclaration(
+        ImmutableArray<DeclaredInstrument> instruments, string reason, string by, DateTimeOffset at)
+    {
+        if (DeclaredInstruments is null)
+        {
+            return Result<InstrumentDeclarationCorrected>.Failure(
+                "correctInstrumentDeclaration.notDeclared",
+                "No instruments have been declared for this competition yet; there is nothing to correct. " +
+                "A first set is a declaration, not a correction.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result<InstrumentDeclarationCorrected>.Failure(
+                "correctInstrumentDeclaration.reasonRequired",
+                "A reason is required — it is the recorded justification for the correction, not an audit breadcrumb.");
+        }
+
+        var defect = ValidateInstrumentSet(instruments, "correctInstrumentDeclaration");
+        if (defect is not null)
+        {
+            return Result<InstrumentDeclarationCorrected>.Failure(defect.Code, defect.Message);
+        }
+
+        return Result<InstrumentDeclarationCorrected>.Success(
+            new InstrumentDeclarationCorrected(new InstrumentDeclarationCorrection
+            {
+                Instruments = instruments,
+                Reason = reason,
+                By = by,
+                At = at,
+            }));
+    }
+
+    /// <summary>
+    /// The pairing checks shared by declaration and correction: names, metric
+    /// declared and numeric, and every lookup over the metric composable with
+    /// the tape through WI-1's <see cref="TapeComposition.Compose"/> — the
+    /// same function scoring will resolve through (WI-4), so a refused pairing
+    /// can never reach scoring in any form. First defect wins: declaration-time
+    /// refusal is actionable per pairing, not a batch report. A refused
+    /// pairing keeps WI-1's stable <c>tapeComposition.*</c> code — surfaced
+    /// unchanged, the capture-handler precedent — wrapped in the declaration's
+    /// answer: that side of the tape cannot score this class.
+    /// </summary>
+    private Defect? ValidateInstrumentSet(ImmutableArray<DeclaredInstrument> instruments, string codePrefix)
+    {
+        var seen = new HashSet<string>();
+        foreach (var binding in instruments)
+        {
+            if (string.IsNullOrWhiteSpace(binding.Instrument))
+            {
+                return new Defect($"{codePrefix}.instrumentBlank", "$.instruments", "A declared instrument must be named.");
+            }
+
+            if (!seen.Add(binding.Instrument))
+            {
+                return new Defect(
+                    $"{codePrefix}.duplicateInstrument",
+                    "$.instruments",
+                    $"Instrument '{binding.Instrument}' is declared more than once — a measurement names an instrument, so names must resolve uniquely.");
+            }
+
+            if (string.IsNullOrWhiteSpace(binding.Metric))
+            {
+                return new Defect(
+                    $"{codePrefix}.metricBlank",
+                    "$.instruments",
+                    $"Instrument '{binding.Instrument}' names no metric — a declaration binds a tape to a named metric.");
+            }
+
+            var metric = AdoptedRules.Definition.Phases
+                .SelectMany(p => p.Tasks)
+                .SelectMany(t => t.Metrics)
+                .FirstOrDefault(m => m.Name == binding.Metric);
+            if (metric is null)
+            {
+                return new Defect(
+                    $"{codePrefix}.metricNotDeclared",
+                    "$.instruments",
+                    $"Instrument '{binding.Instrument}' names metric '{binding.Metric}', which no adopted task declares.");
+            }
+
+            if (metric.Kind != MeasuredKind.Number)
+            {
+                return new Defect(
+                    $"{codePrefix}.metricNotNumeric",
+                    "$.instruments",
+                    $"Instrument '{binding.Instrument}' names metric '{binding.Metric}', which is a {metric.Kind} metric — a tape reads numbers.");
+            }
+
+            foreach (var lookup in LookupTermsOver(binding.Metric))
+            {
+                var composed = TapeComposition.Compose(binding.Scale, metric, lookup);
+                if (composed.IsFailure)
+                {
+                    return new Defect(
+                        composed.Code!,
+                        "$.instruments",
+                        $"Instrument '{binding.Instrument}' cannot score metric '{binding.Metric}': " +
+                        "that side of the tape cannot score this class — " +
+                        composed.Message);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Every LookupTerm consuming <paramref name="metric"/>, wherever it sits:
+    /// the raw Score list, the post-normalisation ScoreNormalised list, and
+    /// inside any ConditionalTerm's branches. Composition rewrites only what a
+    /// lookup is evaluated against (owner decision 7) — so the declaration
+    /// check must see every lookup it could reach, not just top-level ones. A
+    /// metric no lookup consumes composes vacuously and contributes no check.
+    /// </summary>
+    private IEnumerable<LookupTerm> LookupTermsOver(string metric)
+    {
+        foreach (var task in AdoptedRules.Definition.Phases.SelectMany(p => p.Tasks))
+        {
+            foreach (var term in task.Score.Concat(task.ScoreNormalised))
+            {
+                foreach (var lookup in LookupTermsIn(term))
+                {
+                    if (lookup.MetricRef == metric)
+                    {
+                        yield return lookup;
+                    }
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<LookupTerm> LookupTermsIn(ScoreTerm term)
+    {
+        switch (term)
+        {
+            case LookupTerm lookup:
+                yield return lookup;
+                break;
+            case ConditionalTerm conditional:
+                foreach (var inner in LookupTermsIn(conditional.Then))
+                {
+                    yield return inner;
+                }
+
+                if (conditional.Else is { } otherwise)
+                {
+                    foreach (var inner in LookupTermsIn(otherwise))
+                    {
+                        yield return inner;
+                    }
+                }
+
+                break;
+            default:
+                break;
+        }
     }
 
     // Instance decide function — WI-1 (kanban/completed/phase-drawn-steel-thread-plan.md).

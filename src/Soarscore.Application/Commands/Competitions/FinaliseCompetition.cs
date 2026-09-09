@@ -59,7 +59,11 @@ public sealed class FinaliseCompetitionHandler(IEventStore eventStore, IEntryQue
             return Result<CompetitionId>.Failure(entriesLoaded.Code!, entriesLoaded.Message!, entriesLoaded.Defects);
         }
 
-        var scored = ScoringService.ScoreCompetition(competition, entriesLoaded.Value);
+        var scored = ScoringService.ScoreCompetition(
+            competition, entriesLoaded.Value,
+            // WI-4 (tape-points-landing-seeds.md): as ScoreCompetitionHandler —
+            // the declared result freezes the composed scores, not the raw readings.
+            competition.DeclaredInstruments?.Instruments ?? []);
         if (scored.IsFailure)
         {
             return Result<CompetitionId>.Failure(scored.Code!, scored.Message!, scored.Defects);

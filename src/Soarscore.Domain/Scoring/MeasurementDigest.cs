@@ -17,17 +17,29 @@ namespace Soarscore.Domain.Scoring;
 
 public static class MeasurementDigest
 {
-    /// <summary>The effective, amendment-resolved measurements for one flight.</summary>
+    /// <summary>
+    /// The effective, amendment-resolved measurements for one flight, with
+    /// each measurement's effective instrument alongside (tape-points-
+    /// landing-seeds.md WI-4): the value follows the latest-by-At amendment
+    /// below, the instrument follows <see cref="Measurement.EffectiveInstrument"/>
+    /// (WI-3: every new amendment restates it, last-appended wins). Either
+    /// form — a reading naming a declared tape, or a distance naming none —
+    /// rides the same key; completeness and scoring agree on presence by
+    /// metric name (owner decision 9).
+    /// </summary>
     public static ResolvedMeasurements Resolve(Flight flight)
     {
         var metrics = new Dictionary<string, MeasuredValue>();
+        Dictionary<string, string>? instruments = null;
 
         foreach (var measurement in flight.Measurements)
         {
             metrics[measurement.Metric] = EffectiveValue(measurement);
+            if (measurement.EffectiveInstrument is { } named)
+                (instruments ??= new Dictionary<string, string>())[measurement.Metric] = named;
         }
 
-        return new ResolvedMeasurements(metrics);
+        return new ResolvedMeasurements(metrics, instruments);
     }
 
     private static MeasuredValue EffectiveValue(Measurement measurement)

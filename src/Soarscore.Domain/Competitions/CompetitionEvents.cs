@@ -5,10 +5,12 @@
 // + PhaseDrawn) and only lightly mutated afterwards — register or withdraw a
 // competitor, accept or reject the draw, append a reflight group, assign a
 // group's field spots, complete / annul / reopen a task-round, amend the
-// rules, bind a parameter, finalise, record a penalty, record a reflight
-// ruling, define scoring teams and protection groups with their memberships,
-// configure team classification. Twenty-three events total, mirroring
-// aggregate-roots.md §3's mutation list one-for-one plus teams-mvp.md's seven.
+// rules, bind a parameter, declare or correct the instruments in use,
+// finalise, record a penalty, record a reflight ruling, define scoring teams
+// and protection groups with their memberships, configure team
+// classification. Twenty-five events total, mirroring aggregate-roots.md §3's
+// mutation list one-for-one plus teams-mvp.md's seven plus
+// tape-points-landing-seeds.md WI-3's declaration pair.
 //
 // Event payloads reuse Domain's own value-object records (AdoptedRules,
 // RulesAmendment, ParameterBinding, Finalisation, Competitor, Group, Round,
@@ -35,6 +37,8 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(DrawRejected), "drawRejected")]
 [JsonDerivedType(typeof(RulesAmended), "rulesAmended")]
 [JsonDerivedType(typeof(ParameterBound), "parameterBound")]
+[JsonDerivedType(typeof(InstrumentsDeclared), "instrumentsDeclared")]
+[JsonDerivedType(typeof(InstrumentDeclarationCorrected), "instrumentDeclarationCorrected")]
 [JsonDerivedType(typeof(Finalised), "finalised")]
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
 [JsonDerivedType(typeof(ReflightRulingRecorded), "reflightRulingRecorded")]
@@ -165,6 +169,22 @@ public sealed record RulesAmended(RulesAmendment Amendment) : CompetitionEvent;
 
 /// <summary>Records one choice the class left open, when it was made and by whom.</summary>
 public sealed record ParameterBound(ParameterBinding Binding) : CompetitionEvent;
+
+/// <summary>
+/// The competition's declared set of instruments in use — possibly empty —
+/// each binding a reading scale to a named metric
+/// (kanban/backlog/tape-points-landing-seeds.md WI-3, owner decision 3).
+/// Replaced whole by <see cref="InstrumentDeclarationCorrected"/>; the log
+/// keeps every declaration.
+/// </summary>
+public sealed record InstrumentsDeclared(InstrumentDeclaration Declaration) : CompetitionEvent;
+
+/// <summary>
+/// A corrected declaration, replacing the set whole and applying
+/// retroactively by re-derivation — the RulesAmendment shape, retaining
+/// reason, author and time.
+/// </summary>
+public sealed record InstrumentDeclarationCorrected(InstrumentDeclarationCorrection Correction) : CompetitionEvent;
 
 /// <summary>
 /// Covers both phase- and competition-scope finalisation — Finalisation.Scope
