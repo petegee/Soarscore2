@@ -238,6 +238,28 @@ existing distance path is not legacy and must survive untouched.
     physical tape is printed accurately; the model states which instrument the
     club declared each reading came from.
 
+## Owner follow-ups (2026-09-09, on branch `docs/tape-reading-scale-wording`)
+
+- **Wording approved and landed.** The Reading Scale glossary section and the
+  `Measurement.instrumentRef?` / `ReadingScale` / `TapeMark` /
+  `InstrumentDeclaration` diagram patch are committed on that branch.
+- **Q1 (non-mandated instrument disclosure): log-only interim.** A tape-measure
+  distance for F5J stays merely recorded in the event log; a visible reporting
+  flag is deferred to new stub `kanban/backlog/f5j-non-mandated-instrument-disclosure.md`.
+  A targeted F5J declaration warning is architecturally unavailable (class-specific
+  instrument knowledge in the core); only generic instrument-coverage disclosure
+  is clean, designed in that stub.
+- **Q2 (`SeedF5J.cs:33` re-citation): yes.** The metric comment and the
+  class-diagram `:781` comment now cite `5.5.11.12 h` (comment-only, no numbers).
+- **Q3 (F3B-side graduation): resolved — printed in points.** Owner asserts the
+  physical F3B side is printed in F3B points, corroborated by
+  `gliderscore/f3b-enter-points.png` (identity rows exactly F3B.2.3 d's award
+  set; extra `91-94`/`96-99` rows are the F3J side pre-composed, verified
+  row-for-row) and by the confirmation that at an F3B competition using that
+  table, an F3J-side read still scores correctly — one fused table serving both
+  sides. Seeded as `tape-nz-f3b-side` (`F3B.2.3 d` read backwards, off-tape 0);
+  catalogue count 2 → 3, tests promoted from hypothesis to the shipped tape.
+
 ## New domain concept - approved in principle, wording for review
 
 A reading scale is a new concept and the glossary and class diagram both
@@ -261,6 +283,8 @@ alone:
   `{30, 35 ... 100}`, which is consistent; but its extra `91-94` and `96-99`
   rows only make sense as tolerance for an F3J-side read. Re-verify against the
   physical tape or the fixtures before seeding the F3B side. Do not guess.
+  **Resolved 2026-09-09** — see Owner follow-ups above: yes, printed in points;
+  seeded as `tape-nz-f3b-side`.
 - **Whether a tape reuses `LookupRow`.** A tape is a distance-keyed step
   function to a reading; a landing table is a distance-keyed step function to
   points. Reusing the type is honest and free; the `Points` member name would

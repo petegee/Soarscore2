@@ -35,7 +35,7 @@ public static class SeedF5J
                                                                                 //   (5.5.11.12 d is the truncation rule, not the zeroing one)
                                                                                 //   NO whenNotRecorded: the recorded height is demanded — an
                                                                                 //   uncaptured height pends the flight (WI-4)
-        Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 i — the rules state no capture precision, and a
+        Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 h — the rules state no capture precision, and a
                                                                                 //   MetricDefinition precision is not coverable by a Parameter
                                                                                 //   (F12 residual). Chosen, not cited.
         Metric.Number("overflySeconds", "s", RoundingMode.Truncate, 1,

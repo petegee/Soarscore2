@@ -173,7 +173,29 @@ classDiagram
     class Measurement {
         +string metric
         +MeasuredValue value
+        +string instrumentRef?
         +timestamp capturedAt
+    }
+    %% instrumentRef names the reading scale the measurement was read on, or
+    %% nothing when it was measured directly in the metric's declared unit.
+    %% A reading denotes a distance band, never points; the award is composed
+    %% from the class's own landing table at resolution.
+
+    class ReadingScale {
+        <<value object>>
+        +string id
+        +string unit
+    }
+
+    class TapeMark {
+        <<value object>>
+        +decimal upTo
+        +decimal reading
+    }
+
+    class InstrumentDeclaration {
+        +string scale
+        +string metric
     }
 
     class MeasuredValue {
@@ -280,6 +302,9 @@ classDiagram
     Flight "1" *-- "1..*" Measurement : captures
     Measurement "1" *-- "1" MeasuredValue
     Measurement "1" *-- "0..*" Amendment : corrected by
+    Measurement "..> 0..1" ReadingScale : read on
+    ReadingScale "1" *-- "1..*" TapeMark : graduated in
+    Competition "1" *-- "0..*" InstrumentDeclaration : declares (scale to metric)
     Entry "1" *-- "0..1" Annulment : voided by ruling
     Entry "1" *-- "0..*" Penalty : flight / entry scope
 
@@ -778,7 +803,7 @@ classDiagram
     %% Capture precision is 0..1, not 1: a Flag metric has nothing to round, so
     %% no Flag in tools/Soarscore.SeedData/ writes one. Where a Number metric's rules state no
     %% capture precision the definition still chooses one and says so — that is
-    %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 i).
+    %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 h).
     %% whenNotRecorded is the metric's assumed value: what a flight that
     %% records no measurement for it (and no amendment overrides) resolves it
     %% to. Nullable — absent, absence has no declared meaning and a flight

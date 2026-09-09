@@ -5,7 +5,7 @@
 // contract.
 //
 // Contract posture (read the story first):
-//   WI-1 (TapeComposition + ReadingScale) and WI-2 (TapeCorpus, 2 tapes) are
+//   WI-1 (TapeComposition + ReadingScale) and WI-2 (TapeCorpus, 3 tapes) are
 //   REAL here — properties (a) and (b) target them directly, with class tables
 //   extracted from Corpus.All (never re-transcribed) and scales mapped from
 //   the catalogue (never re-transcribed).
@@ -138,6 +138,21 @@ public class TapeLandingScaleProofTests
         };
     }
 
+    /// <summary>
+    /// The NZ F3B-side snapshot, mapped from the catalogue like the F3J side
+    /// above (seeded since the 2026-09-09 owner evidence: printed in points).
+    /// </summary>
+    private static ReadingScale NzF3BSideScale()
+    {
+        var tape = TapeCorpus.All.First(t => t.FileName == "tape-nz-f3b-side").Tape;
+        return new ReadingScale
+        {
+            Unit = tape.Unit,
+            Marks = tape.Marks.Select(m => new ScaleMark(m.UpTo!.Value, m.Reading)).ToImmutableArray(),
+            OffScaleReading = tape.OffTapeReading,
+        };
+    }
+
     private static ImmutableArray<DeclaredInstrument> DeclaredNzF3JSide() =>
         [new DeclaredInstrument { Instrument = "nz-f3j-side", Metric = "landingDistance", Scale = NzF3JSideScale() }];
 
@@ -210,10 +225,10 @@ public class TapeLandingScaleProofTests
     [Fact]
     public void Tape_catalogue_is_counted_separately_with_no_class_count_delta()
     {
-        TapeCorpus.ExpectedCount.Should().Be(2);
+        TapeCorpus.ExpectedCount.Should().Be(3);
         TapeCorpus.All.Should().HaveCount(TapeCorpus.ExpectedCount);
         TapeCorpus.All.Select(t => t.FileName)
-            .Should().BeEquivalentTo("tape-nz-f3j-side", "tape-nz-ales-m-10m");
+            .Should().BeEquivalentTo("tape-nz-f3j-side", "tape-nz-f3b-side", "tape-nz-ales-m-10m");
         foreach (var tape in TapeCorpus.All)
             TapeIntegrity.Check(tape.FileName, tape.Tape).Should().BeEmpty($"{tape.FileName} must emit clean");
 
@@ -410,14 +425,9 @@ public class TapeLandingScaleProofTests
     public void WI1_refused_pairings_refuse_loudly()
     {
         // Story §"It also correctly fails where it should". The F3B side is
-        // WI-0's open evidence question, so its shape here is structural
-        // ({1..15} boundaries), not a graduation claim.
-        var f3bSide = new ReadingScale
-        {
-            Unit = "m",
-            Marks = Enumerable.Range(1, 15).Select(i => new ScaleMark(i, 100m - (i - 1) * 5m)).ToImmutableArray(),
-            OffScaleReading = 0m,
-        };
+        // the shipped catalogue tape (owner evidence 2026-09-09: printed in
+        // points) — the refusal is asserted against the real scale.
+        var f3bSide = NzF3BSideScale();
         var f3j = LandingTables().First(t => t.FileName == "50-f3j").Lookup.Rows;
         var f5l = LandingTables().First(t => t.FileName == "60-f5l").Lookup.Rows;
         var nzP = LandingTables().First(t => t.FileName == "85-nz-p-radian").Lookup.Rows;
