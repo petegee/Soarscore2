@@ -803,7 +803,7 @@ classDiagram
     %% Capture precision is 0..1, not 1: a Flag metric has nothing to round, so
     %% no Flag in tools/Soarscore.SeedData/ writes one. Where a Number metric's rules state no
     %% capture precision the definition still chooses one and says so — that is
-    %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 i).
+    %% an F12 residual, not an omission (F5J landingDistance, 5.5.11.12 h).
     %% whenNotRecorded is the metric's assumed value: what a flight that
     %% records no measurement for it (and no amendment overrides) resolves it
     %% to. Nullable — absent, absence has no declared meaning and a flight
