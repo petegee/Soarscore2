@@ -70,6 +70,8 @@ public class TapeCompositionTests
 
     private static ReadingScale NzF3JSide() => SeedTapeNzF3JSide.Definition.ToReadingScale();
 
+    private static ReadingScale NzF3BSide() => SeedTapeNzF3BSide.Definition.ToReadingScale();
+
     private static ReadingScale AlesMetreTape() => SeedTapeNzAlesM10m.Definition.ToReadingScale();
 
     // ---------------------------------------------------------------- identity
@@ -108,6 +110,35 @@ public class TapeCompositionTests
             composed.Value.Resolve(award.Reading).Value.Should().Be(award.Reading);
     }
 
+    [Fact]
+    public void F3B_side_tape_is_identity_over_the_F3B_table()
+    {
+        // The F3B side is F3B.2.3 d read backwards (owner-confirmed printed in
+        // points, 2026-09-09), so composing it with its own table is the
+        // identity — the same coincidence that makes F3J readings look like
+        // points, now witnessed for F3B.
+        var (lookup, unit) = LandingLookup("20-f3b");
+        var tape = NzF3BSide();
+
+        var composed = TapeComposition.Compose(tape, unit, lookup.Rows);
+        composed.IsSuccess.Should().BeTrue(composed.Code);
+
+        // 15 marks plus the distinguished off-the-tape reading — derived
+        // counts, not literals.
+        composed.Value.Awards.Should().HaveCount(tape.Marks.Length + 1);
+        foreach (var award in composed.Value.Awards)
+        {
+            var resolved = composed.Value.Resolve(award.Reading);
+            resolved.IsSuccess.Should().BeTrue();
+            resolved.Value.Should().Be(award.Reading, $"reading {award.Reading}");
+        }
+
+        TapeComposition.Resolve(tape, unit, lookup.Rows, 100m).Value.Should().Be(100m);
+        TapeComposition.Resolve(tape, unit, lookup.Rows, 95m).Value.Should().Be(95m);
+        TapeComposition.Resolve(tape, unit, lookup.Rows, 30m).Value.Should().Be(30m);
+        TapeComposition.Resolve(tape, unit, lookup.Rows, 0m).Value.Should().Be(0m);
+    }
+
     // ------------------------------------------------------- owner reproductions
 
     [Fact]
@@ -141,6 +172,9 @@ public class TapeCompositionTests
     [Fact]
     public void F3J_side_tape_reproduces_F3B_enter_points_row_for_row()
     {
+        // Verified row-for-row against gliderscore/f3b-enter-points.png since
+        // 2026-09-09 (previously owner-description-only): 30-90 in fives plus
+        // 91-95 -> 95 and 96-100 -> 100.
         var (lookup, unit) = LandingLookup("20-f3b");
         var tape = NzF3JSide();
 
@@ -165,25 +199,19 @@ public class TapeCompositionTests
     // ---------------------------------------------------------------- refusals
 
     /// <summary>
-    /// The hypothesised F3B side (TapeCorpus deliberately seeds no F3B side
-    /// for lack of evidence). Either hypothesis — printed in points or in
-    /// metres — shares the {1 ... 15} boundaries, and the refusal below is
-    /// boundary-driven, so it holds under both.
+    /// The shipped F3B side (TapeCorpus seeds it since the 2026-09-09 owner
+    /// evidence: printed in points, gliderscore/f3b-enter-points.png). Its
+    /// {1 ... 15} boundaries straddle F3J's 0.2-granular awards — that side of
+    /// the tape cannot score this class.
     /// </summary>
-    private static ReadingScale HypothesisedF3BSide() => new()
-    {
-        Unit = "m",
-        Marks = [.. Enumerable.Range(1, 15)
-            .Select(i => new ScaleMark(i, 100m - ((i - 1) * 5m)))],
-        OffScaleReading = 0m,
-    };
+    private static ReadingScale ShippedF3BSide() => NzF3BSide();
 
     [Fact]
-    public void Hypothesised_F3B_side_cannot_score_F3J_or_F5L()
+    public void Shipped_F3B_side_cannot_score_F3J_or_F5L()
     {
         // Story: a reading of 95 there means (1, 2], which F3J splits five
         // ways — that side of the tape cannot score this class.
-        var tape = HypothesisedF3BSide();
+        var tape = ShippedF3BSide();
         var (f3j, f3jUnit) = LandingLookup("50-f3j");
         var (f5l, f5lUnit) = LandingLookup("60-f5l");
 
