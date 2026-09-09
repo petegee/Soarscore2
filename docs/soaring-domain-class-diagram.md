@@ -173,7 +173,29 @@ classDiagram
     class Measurement {
         +string metric
         +MeasuredValue value
+        +string instrumentRef?
         +timestamp capturedAt
+    }
+    %% instrumentRef names the reading scale the measurement was read on, or
+    %% nothing when it was measured directly in the metric's declared unit.
+    %% A reading denotes a distance band, never points; the award is composed
+    %% from the class's own landing table at resolution.
+
+    class ReadingScale {
+        <<value object>>
+        +string id
+        +string unit
+    }
+
+    class TapeMark {
+        <<value object>>
+        +decimal upTo
+        +decimal reading
+    }
+
+    class InstrumentDeclaration {
+        +string scale
+        +string metric
     }
 
     class MeasuredValue {
@@ -280,6 +302,9 @@ classDiagram
     Flight "1" *-- "1..*" Measurement : captures
     Measurement "1" *-- "1" MeasuredValue
     Measurement "1" *-- "0..*" Amendment : corrected by
+    Measurement "..> 0..1" ReadingScale : read on
+    ReadingScale "1" *-- "1..*" TapeMark : graduated in
+    Competition "1" *-- "0..*" InstrumentDeclaration : declares (scale to metric)
     Entry "1" *-- "0..1" Annulment : voided by ruling
     Entry "1" *-- "0..*" Penalty : flight / entry scope
 
