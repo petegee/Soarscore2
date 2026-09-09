@@ -119,6 +119,7 @@
 // path (no ParallelRunMode) behaves exactly as before.
 
 using System.Net.Http.Json;
+using System.Collections.Immutable;
 using Soarscore.Application.Commands.CompetitionClasses;
 using Soarscore.Application.Commands.Competitions;
 using Soarscore.Application.Commands.Entries;
@@ -129,6 +130,7 @@ using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.SeedData;
 
 namespace Soarscore.Acceptance.Tests.Support.Gliderscore;
 
@@ -262,6 +264,38 @@ public sealed class ReplayDriver(HttpClient client)
         {
             ["f3k-southern-fling"] =
                 [(9, 3, 89), (10, 3, 89), (11, 3, 89), (12, 3, 89), (13, 3, 89), (14, 3, 89), (15, 3, 89)],
+        };
+
+    // f5j-christchurch-parallel-run-witness.md WI-2 — parallel-run-only
+    // per-pair widenings for the f5j-christchurch-2019 witness pair. Both maps
+    // are keyed by fixture slug and consulted ONLY when parallelRun is not
+    // null; a parallel-run pair with no entry behaves exactly as today (the
+    // ales precedent), and the parity path never consults either map.
+    //
+    // ParallelRunScoredWindowRounds — the rollup window GS actually scored:
+    // rounds 1–11 (ladder.py's TaskLastRound = MAX(RoundNo where
+    // Updated='True')). R12–18 are wholly-unflown GS placeholder rows, and a
+    // full-fixture run would let the seed's drop-from-5 eat a phantom zero and
+    // erase the witnessed drop split (story decision 1). Applied to keptRows
+    // before prescription/entry-opening, with a loud assertion that the
+    // fixture's own MAX(RoundNo where Updated=='True') equals the declared
+    // window — a declared scope, recorded in the ledger, never a silent shrink.
+    private static readonly IReadOnlyDictionary<string, int> ParallelRunScoredWindowRounds =
+        new Dictionary<string, int>
+        {
+            ["f5j-christchurch-2019"] = 11,
+        };
+
+    // ParallelRunLandingTapes — the NZ landing tape the fixture's landings
+    // were read on, declared for landingDistance through the parent story's
+    // landed contract (POST /declare-instruments, WI-0) with every reading
+    // capture naming the tape. Instrument is the harness-chosen name recorded
+    // in ledger provenance; TapeFileName is the TapeCorpus stem whose scale is
+    // snapshotted into the declaration via TapeMapping.ToReadingScale.
+    private static readonly IReadOnlyDictionary<string, (string Instrument, string TapeFileName)> ParallelRunLandingTapes =
+        new Dictionary<string, (string Instrument, string TapeFileName)>
+        {
+            ["f5j-christchurch-2019"] = ("nz-f3j-side", "tape-nz-f3j-side"),
         };
 
     // ------------------------------------------- WI-1 item 2 parameter binds
@@ -402,6 +436,36 @@ public sealed class ReplayDriver(HttpClient client)
                 compDate,
                 contentHash));
 
+        // f5j-christchurch-parallel-run-witness.md WI-2 item 4 — parallel-run
+        // only, and only for a fixture naming its tape in
+        // ParallelRunLandingTapes: declare the NZ landing tape the fixture was
+        // read on for landingDistance through the parent's landed contract
+        // (WI-0: POST /declare-instruments, scale snapshotted via
+        // TapeCorpus…ToReadingScale(), harness-chosen instrument name). Right
+        // after creation, so the declaration precedes every capture. Parity
+        // and unmapped parallel-run pairs declare nothing: distances only,
+        // exactly as before.
+        string? landingInstrument = null;
+
+        if (parallelRun is not null && ParallelRunLandingTapes.TryGetValue(fixture.Slug, out var tapeUse))
+        {
+            var tape = TapeCorpus.All.First(t => t.FileName == tapeUse.TapeFileName).Tape;
+
+            await PostAsync<CompetitionId>(
+                "/declare-instruments",
+                new DeclareInstruments(
+                    competitionId,
+                    [new DeclaredInstrument
+                    {
+                        Instrument = tapeUse.Instrument,
+                        Metric = "landingDistance",
+                        Scale = tape.ToReadingScale(),
+                    }],
+                    CdName));
+
+            landingInstrument = tapeUse.Instrument;
+        }
+
         // ----------------------------------------------------------- register
         // D-trap 9: compPilots row order; names joined from the pilots table by
         // PilotNo; emails slug-unique per run (Person.IsPlausibleEmail forbids
@@ -432,6 +496,16 @@ public sealed class ReplayDriver(HttpClient client)
 
         // -------------------------------------------------------------- draw
         var (keptRows, reflightRows) = DeriveDrawRows(fixture);
+
+        // f5j-christchurch-parallel-run-witness.md WI-2 item 1 — the scored
+        // window, parallel-run mode only (the ales pair's shape is untouched).
+        // Applies to keptRows before prescription/entry-opening; the loud
+        // assertion inside proves the declared window still describes the
+        // fixture's own scored rollup.
+        if (parallelRun is not null && ParallelRunScoredWindowRounds.TryGetValue(fixture.Slug, out var scoredWindow))
+        {
+            ApplyParallelRunScoredWindow(fixture, keptRows, scoredWindow);
+        }
 
         // WI-6 — append the fixture's synthetic slots (see the two tables) as
         // all-zero rows: zero time keeps CaptureDurationInputs flight-less
@@ -616,7 +690,7 @@ public sealed class ReplayDriver(HttpClient client)
             // for F3K's packed columns (WI-4); captures carry the
             // flight sequence they belong to. Deliberate zeros inside a
             // flown slot — see CaptureInputs (WI-3 widening).
-            var captures = CaptureInputs(fixture, captureGateDefinition, row);
+            var captures = CaptureInputs(fixture, captureGateDefinition, row, landingInstrument);
 
             if (captures is not null)
             {
@@ -629,13 +703,14 @@ public sealed class ReplayDriver(HttpClient client)
                 {
                     await PostAsync<EntryId>("/open-flight", new OpenFlight(entryId));
 
-                    foreach (var (metric, value, _, flag) in flight)
+                    foreach (var (metric, value, _, flag, instrument) in flight)
                     {
                         await PostAsync<EntryId>(
                             "/capture-measurement",
                             new CaptureMeasurement(
                                 entryId, flight.Key, metric,
-                                flag is { } f ? MeasuredValue.Of(f) : MeasuredValue.Of(value)));
+                                flag is { } f ? MeasuredValue.Of(f) : MeasuredValue.Of(value),
+                                instrument));
                     }
                 }
             }
@@ -869,6 +944,39 @@ public sealed class ReplayDriver(HttpClient client)
     // ------------------------------------------------------------- D5 draw
 
     /// <summary>
+    /// f5j-christchurch-parallel-run-witness.md WI-2 item 1 — restrict the
+    /// realised draw to the fixture's scored rollup window. Fails loudly
+    /// unless the fixture's own MAX(RoundNo where Updated=='True') equals the
+    /// declared window: a window that no longer describes the fixture is a
+    /// re-triage, never a silent shrink.
+    /// </summary>
+    private static void ApplyParallelRunScoredWindow(
+        GliderscoreFixture fixture, List<ScoresRow> keptRows, int scoredWindow)
+    {
+        var maxScored = fixture.ScoresRaw.Rows
+            .Where(r => string.Equals(r.Updated, "True", StringComparison.OrdinalIgnoreCase))
+            .Select(r => (int?)r.RoundNo)
+            .Max();
+
+        if (maxScored is null)
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}' declares scored-window {scoredWindow} but carries no Updated='True' "
+                + "scores-raw row to witness it against — the window names a rollup the fixture never scored.");
+        }
+
+        if (maxScored != scoredWindow)
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}' declares scored-window {scoredWindow} but its MAX(RoundNo where "
+                + $"Updated='True') is {maxScored} — the window no longer describes the fixture's scored rollup; "
+                + "re-triage, never silently shrink.");
+        }
+
+        keptRows.RemoveAll(r => r.RoundNo > scoredWindow);
+    }
+
+    /// <summary>
     /// The scores-raw rows that form the realised draw, after D5's filters —
     /// and the re-flight rows step 1 removes. reflight-aggregate-destination.md
     /// WI-4: those rows are destination-bearing make-ups (every corpus row
@@ -957,8 +1065,12 @@ public sealed class ReplayDriver(HttpClient client)
     /// overflewLandingWindow). Null for the number captures every earlier map
     /// emits; Entry.CaptureMeasurement refuses a Number value on a Flag metric
     /// and vice versa, so the two shapes cannot be confused.
+    /// Instrument — f5j-christchurch-parallel-run-witness.md WI-2: the
+    /// declared tape a reading was read on, carried through to
+    /// CaptureMeasurement's optional Instrument parameter. Null is the
+    /// distance path, exactly as before (parity and unmapped pairs).
     /// </summary>
-    private sealed record SlotCapture(string Metric, decimal Value, int Flight, bool? FlagValue = null)
+    private sealed record SlotCapture(string Metric, decimal Value, int Flight, bool? FlagValue = null, string? Instrument = null)
     {
         /// <summary>A Flag-metric capture; Value is unused and 0.</summary>
         public static SlotCapture Flag(string metric, bool value, int flight) =>
@@ -968,14 +1080,18 @@ public sealed class ReplayDriver(HttpClient client)
     /// <summary>The (metric, value, flight) triples this row contributes, or null.
     /// <paramref name="captureGateDefinition"/> is the PUBLISHED definition whose
     /// declared metrics gate the captures (WI-1 item 3: the seed class in
-    /// parallel-run mode, the fixture's own definition on the parity path).</summary>
+    /// parallel-run mode, the fixture's own definition on the parity path).
+    /// <paramref name="landingInstrument"/> names the declared tape a
+    /// landingDistance reading was read on (f5j-christchurch-parallel-run-
+    /// witness.md WI-2, parallel-run only for the mapped fixture); null keeps
+    /// the distance path.</summary>
     private static List<SlotCapture>? CaptureInputs(
-        GliderscoreFixture fixture, ClassDefinition captureGateDefinition, ScoresRow row) =>
+        GliderscoreFixture fixture, ClassDefinition captureGateDefinition, ScoresRow row, string? landingInstrument = null) =>
         fixture.Competition.Identity.GsCompClass == "F3K"
             ? CaptureF3KInputs(fixture, row)
             : IsF5KFamily(fixture)
                 ? CaptureF5KInputs(fixture, row)
-                : CaptureDurationInputs(fixture, captureGateDefinition, row);
+                : CaptureDurationInputs(fixture, captureGateDefinition, row, landingInstrument);
 
     /// <summary>
     /// The F5K family — GsCompClass "F5K" plus the server-path CompType spellings
@@ -1019,7 +1135,7 @@ public sealed class ReplayDriver(HttpClient client)
     /// harness-fabricated measurement.
     /// </summary>
     private static List<SlotCapture>? CaptureDurationInputs(
-        GliderscoreFixture fixture, ClassDefinition captureGateDefinition, ScoresRow row)
+        GliderscoreFixture fixture, ClassDefinition captureGateDefinition, ScoresRow row, string? landingInstrument = null)
     {
         var dur = DurFamilyRow.Of(fixture.Competition)
             ?? throw new InvalidOperationException(
@@ -1055,7 +1171,13 @@ public sealed class ReplayDriver(HttpClient client)
 
         if (declared.Contains("landingDistance"))
         {
-            captures.Add(new SlotCapture("landingDistance", row.Landing, Flight: 1));
+            // f5j-christchurch-parallel-run-witness.md WI-2 item 4 — where
+            // landingInstrument is set (parallel-run only for the mapped
+            // fixture) row.Landing is submitted AS RECORDED naming that tape,
+            // including 0 for the off-the-tape reading: no decoding, mapping,
+            // interpolation, fallback, fabricated metres or second conversion.
+            // Null keeps the distance path, exactly as before.
+            captures.Add(new SlotCapture("landingDistance", row.Landing, Flight: 1, Instrument: landingInstrument));
         }
 
         if (declared.Contains("lateLandingDeduction"))
@@ -1076,6 +1198,34 @@ public sealed class ReplayDriver(HttpClient client)
         if (declared.Contains("launchHeight"))
         {
             captures.Add(new SlotCapture("launchHeight", row.FlightScoreDeduction, Flight: 1));
+        }
+
+        // f5j-christchurch-parallel-run-witness.md WI-2 item 3 — the P2 height
+        // derivation, beside the parity launchHeight arm above. GS's
+        // FlightScoreDeduction column carries the start height on an F5J
+        // fixture ("misleadingly named", ladder.py:26-27), and the seed reads
+        // it as startHeight/startHeightRecorded: a flown row with a positive
+        // payload captures startHeight = payload and startHeightRecorded =
+        // true; a flown row with a zero payload would capture
+        // startHeightRecorded = false (the rulebook zeroes such a flight —
+        // 5.5.11.7 e — and the seed's flightValidWhen gate implements exactly
+        // that outcome). The zero-payload arm never fires on the witness pair
+        // (all 162 flown non-cancelled rows carry 66–271 m — a provenance
+        // note). The mutual exclusion with the launchHeight arm is by
+        // DEFINITION CONTENT, not driver branching: the F5J seed declares
+        // startHeight, the fixture's own GS-mirrored definition declares
+        // launchHeight — never both — so parity stays numerically unchanged.
+        if (declared.Contains("startHeight"))
+        {
+            if (row.FlightScoreDeduction > 0m)
+            {
+                captures.Add(new SlotCapture("startHeight", row.FlightScoreDeduction, Flight: 1));
+                captures.Add(SlotCapture.Flag("startHeightRecorded", true, 1));
+            }
+            else
+            {
+                captures.Add(SlotCapture.Flag("startHeightRecorded", false, 1));
+            }
         }
 
         return captures;
@@ -1538,6 +1688,16 @@ public sealed class ReplayDriver(HttpClient client)
 
     // ---------------------------------------------------------------- misc
 
+    // should-level-minima-warn-dont-refuse.md WI-4 — every prescribe caller
+    // must handle the WI-2 {value, warnings} envelope: a SHOULD-level minimum
+    // prescribed through returns 200 carrying the value beside the warnings,
+    // while empty advisories return the value bare. Unwrap the envelope here;
+    // warnings on /prescribe-draw are retained in PrescribeWarnings (the
+    // folded phase retains them too — the provenance the witness ledger
+    // cites — but the harness keeps its own copy beside the command count).
+    internal IReadOnlyList<DrawWarning> PrescribeWarnings => _prescribeWarnings;
+    private readonly List<DrawWarning> _prescribeWarnings = [];
+
     private async Task<T> PostAsync<T>(string path, object command)
     {
         _commandsIssued++;
@@ -1549,6 +1709,21 @@ public sealed class ReplayDriver(HttpClient client)
         {
             throw new InvalidOperationException(
                 $"Replay POST {path} returned {(int)response.StatusCode} {response.StatusCode}: {body}");
+        }
+
+        using var document = System.Text.Json.JsonDocument.Parse(body);
+        if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+            && document.RootElement.TryGetProperty("warnings", out var warningsElement))
+        {
+            var warnings = System.Text.Json.JsonSerializer.Deserialize<IReadOnlyList<DrawWarning>>(
+                warningsElement.GetRawText(), ApiClient.Options) ?? [];
+            if (path == "/prescribe-draw" && warnings.Count > 0)
+            {
+                _prescribeWarnings.AddRange(warnings);
+            }
+
+            return System.Text.Json.JsonSerializer.Deserialize<T>(
+                document.RootElement.GetProperty("value").GetRawText(), ApiClient.Options)!;
         }
 
         return System.Text.Json.JsonSerializer.Deserialize<T>(body, ApiClient.Options)!;

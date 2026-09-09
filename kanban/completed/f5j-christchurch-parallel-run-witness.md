@@ -1,6 +1,11 @@
 # Story — F5J Christchurch parallel-run witness (the guaranteed divergence)
 
-**Status:** In-progress — plan written 2026-09-07 (fixture
+**Status:** Completed 2026-09-10 — canonical `30-f5j` witness landed:
+rulebook drop-from-5 moves 7 pilots over R1–11 (p79 12→13, p82 7→6, p83 6→8,
+p94 13→11, p129 8→9, p131 9→7, p133 11→12), raw grain exact on the declared NZ
+F3J-side tape, normalised grid pinned 127 (WI-4: 86/86 acceptance both stores;
+Domain 783, Application 310, Architecture 7).
+**Raised:** 2026-09-06 · **Plan** written 2026-09-07 (fixture
 data measured, GS arithmetic and engine mechanics checked during planning;
 decisions 1 and 3–8 owner-confirmed same day; **decision 2 rewritten
 2026-09-08 (second revision)** when the owner supplied the actual NZ landing-tape
@@ -672,6 +677,57 @@ ledger); the raw grain exact; ranking mismatches witnessed per pilot.
   `Render()`; a provenance break → the run did not run under the disclosed
   window/bindings/derivations.
 
+## Blocker (2026-09-10 — parks the story; WI-3 measured-first run)
+
+**Finding:** the story's verified ground truth ("11 scored rounds × 3 drawn
+groups of 6/6/6") is wrong for R5. Re-verified against
+`tests/GliderscoreFixtures/f5j-christchurch-2019/scores-raw.json`: the drawn
+partition (keptRows, flown + placeholder) is 6/6/6 in R1–R4 and R6–R11 but
+**5/6/7 in R5** (G1: pilots 132/75/86/84/131; G2: 6; G3: 7; all 18 pilots
+exactly once). The seed-run fails at `/prescribe-draw` with
+`prescribeDraw.groupBelowClassMinimum — Round 5, group 1: the group has 5
+member(s), smaller than the class's minimum group size (6)`
+(`Competition.cs:1371`, seed `MinPerGroup = 6`, `SeedF5J.cs:91` citing
+5.5.11.8) — before any grain compares. Parity replay of christchurch passes
+13/13 (that twin's `minPerGroup: 2`), isolating the refusal to the canonical
+seed's minimum.
+
+**Rulebook position (fai-rules, WI-3):** 5.5.11.8.1 a) min-6 is SHOULD-level,
+and 5.5.11.14.1 d)–e) is explicitly "Advisory Information" — worse, for this
+18-pilot (≤30) contest clause e) triggers move-up/cancel-refill only at
+4-or-fewer, which R5's 5-group doesn't trip. So the seed encodes a SHOULD as
+a hard class minimum, the engine enforces it as a hard refusal, and the club
+flew a 5-group nobody had to repair.
+
+**What would unblock it (owner pick):** (1) replan around the draw-grain
+finding (harness has no draw-grain vocabulary — likely a new backlog stub);
+(2) a separate story recalibrating the engine's SHOULD-vs-shall hardness at
+prescription; (3) rule the R5 5-group out of witness scope with a re-triaged
+window (against the current window declaration). Out of scope per the story's
+own guards: repartitioning R5 (fabricates a draw), relaxing the seed minimum
+(tunes the seed to GS — anti-goal), an engine change (no `src/` changes),
+dropping R5 silently (guts the drop witness).
+
+**Owner decision 2026-09-10 (Pete):** rules that read as "SHOULD" are
+non-terminal — a SHOULD-level breach (R5's 5-group against F5J's min-6) must
+not refuse; it should surface as a warning somewhere/somehow. The warning
+mechanism itself is a deferred decision (recorded in
+`kanban/deferred-decisions.md` §Draw) so this story can move forward. This
+selects route (2): new backlog stub
+`kanban/backlog/should-level-minima-warn-dont-refuse.md` owns the hardness
+recalibration; routes (1) and (3) fall away — R5 stays in the window, and
+there is no refusal left to witness (a warning-grain, if the mechanism story
+creates one, is that story's business). This story stays parked here until
+the stub lands, then returns to `in-progress/` with `git mv`.
+
+**Landed alongside the finding (uncommitted):** WI-1 75 m fix + domain tests;
+WI-2 harness widening + 5 tape-reading example facts; WI-3 ledger spine
+(`f5j-christchurch-2019/parallel-run/30-f5j.json`), scenario + two witness
+steps, stale-expectation fixes (`SeeingWhatIsRecorded`, landing-tape capture
+sites — WI-1 metric now enumerated), `CheckProvenance` cross-phase-duplicate
+fix, fai-rules resolutions (motor-restart note; overfly 5.5.11.12 g+k,
+touched 5.5.11.12 j).
+
 ## Scope guards and standing constraints
 
 - **Anti-goal, stated hard:** the seed classes are never tuned to GS. The
@@ -706,4 +762,24 @@ ledger); the raw grain exact; ranking mismatches witnessed per pilot.
   the geometry-dependent follow-on plan and the importer-decoding plan are
   superseded by the 2026-09-08 decisions; no such stub is required by this
   story. Any genuinely new feature found during implementation needs a separate
-  backlog stub under house rule 6, never silent scope growth here.
+   backlog stub under house rule 6, never silent scope growth here.
+
+## WI-5 completion (2026-09-10)
+
+1. **Mapping-table flip** (D6 of the mapping-table story):
+   `tests/GliderscoreFixtures/parallel-run-mapping.md:98` christchurch row →
+   `done`; `why` folds the measured outcome (7-pilot drop split with per-pilot
+   moves, raw-grain exactness on the declared scale, normalised grid pinned
+   127, R1–11 window scope with R5 5-group prescribing under SHOULD warning).
+   Seed coverage records christchurch under `30-f5j.json` as done alongside
+   hawkes-bay/south-island; no variant line, no seed-count growth.
+2. **Cross-story citations:** parent `kanban/in-progress/tape-points-landing-seeds.md`
+   still in-progress — cited at its actual lane with its verified WI-0–WI-5
+   contract (commit `68c3cd1`; see WI-0); completion not required, file not
+   edited. R5 warn-through cites completed
+   `kanban/completed/should-level-minima-warn-dont-refuse.md` (WI-1–WI-5).
+3. **Board reconciliation:** verified, no new entries — the fly-off draw
+   deferral stands (`deferred-decisions.md` §Draw; its SHOULD-mechanism half
+   already records Landed by the hardness story); the run surfaced nothing new
+   (all unwitnessed candidates live in ledger provenance notes, never as
+   entries). `tech-debt.md` untouched.

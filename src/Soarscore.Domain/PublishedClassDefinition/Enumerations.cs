@@ -51,3 +51,11 @@ public enum WorkingTimeKind { Fixed, UntilAllFlightsComplete }
 public enum NormalisationDirection { HigherIsBetter, LowerIsBetter }
 
 public enum RoundingMode { Truncate, HalfUp, Ceiling }
+
+/// <summary>
+/// The rulebook modal verb behind a <see cref="GroupConstraint"/> minimum —
+/// kanban/in-progress/should-level-minima-warn-dont-refuse.md WI-1. Shall is
+/// today's hard refusal; Should is the warn-through hardness WI-2 will honour.
+/// Generic, never per-class: the class author states the verb beside the number.
+/// </summary>
+public enum MinEnforcement { Shall, Should }

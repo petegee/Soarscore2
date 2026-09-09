@@ -55,6 +55,7 @@ using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
+using Soarscore.SeedData;
 
 namespace Soarscore.Acceptance.Tests.Support.Gliderscore;
 
@@ -228,10 +229,21 @@ public static class ParallelRunComparator
         // Coverage, same discipline as parity: an oracle cell never compared is
         // itself a computed difference (a slot that failed to open must not
         // silently shrink the difference set toward the triaged set).
+        //
+        // f5j-christchurch-parallel-run-witness.md WI-2 item 2 — under a
+        // declared scored window the coverage universe IS the window: oracle
+        // cells outside it are deliberately uncompared (a declared scope,
+        // recorded in the ledger, never a silent shrink). Without this the
+        // 11-round window yields 126 spurious "never compared" mismatches per
+        // grain. No window behaves exactly as today (the ales precedent).
+        IEnumerable<string> oracleUniverse = ledger.Provenance.ScoredWindowRounds is { } scoredWindow
+            ? fixture.ExpectedScores.Scores.Keys.Where(key => OracleRoundNo(key) <= scoredWindow)
+            : fixture.ExpectedScores.Scores.Keys;
+
         Comparator.EnsureOracleCoverage(
-            fixture.ExpectedScores.Scores.Keys, comparedRaw, "raw", rawMismatches);
+            oracleUniverse, comparedRaw, "raw", rawMismatches);
         Comparator.EnsureOracleCoverage(
-            fixture.ExpectedScores.Scores.Keys, comparedNormalised, "normalised", normalisedMismatches);
+            oracleUniverse, comparedNormalised, "normalised", normalisedMismatches);
 
         // The computed set, ledger-shaped and minus nothing.
         var computed = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).ToList();
@@ -319,6 +331,11 @@ public static class ParallelRunComparator
 
     // ---------------------------------------------------------- provenance
 
+    /// <summary>One oracle key's RoundNo — the keyFormat is
+    /// {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"}.</summary>
+    private static int OracleRoundNo(string oracleKey) =>
+        int.Parse(oracleKey.Split('/')[1], System.Globalization.CultureInfo.InvariantCulture);
+
     /// <summary>
     /// The P4 verification: the run must have run under the ledger's disclosed
     /// provenance. Publication proof (the adoption content hash), the actual
@@ -326,6 +343,12 @@ public static class ParallelRunComparator
     /// identity, and every metric-mapping disclosure against the adopted seed
     /// class's own declared whenNotRecorded — the proof that the disclosed
     /// values are seed-declared and engine-resolved, never harness-emitted.
+    ///
+    /// f5j-christchurch-parallel-run-witness.md WI-2 item 6 widens four
+    /// places, all additive and null-tolerant (ledgers without them verify
+    /// exactly as before): number-valued metric mappings, derived-metric
+    /// declarations, the scored-window round-count check, and the declared
+    /// reading-scale match.
     /// </summary>
     private static List<string> CheckProvenance(
         GliderscoreFixture fixture,
@@ -405,28 +428,133 @@ public static class ParallelRunComparator
                 continue;
             }
 
-            if (matches.Count > 1)
+            // f5j-christchurch-parallel-run-witness.md WI-3 — a multi-phase
+            // seed declares its shared task's metrics once PER PHASE (30-f5j's
+            // preliminary and fly-off carry the same task), so a name may
+            // match more than once. Identical duplicates name one disclosure
+            // unambiguously; genuinely DIFFERING declarations stay a break.
+            if (matches.Select(m => $"{m.Kind}/{Describe(m.WhenNotRecorded)}").Distinct().Count() > 1)
             {
                 breaks.Add(
                     $"the ledger discloses metric '{mapping.Metric}' but the adopted seed class declares it "
-                    + $"{matches.Count}× — the disclosure cannot name which declaration it means.");
+                    + "differently across phases — the disclosure cannot name which declaration it means.");
                 continue;
             }
 
             var whenNotRecorded = matches[0].WhenNotRecorded;
 
-            if (whenNotRecorded is not { Kind: MeasuredKind.Flag, Flag: { } flag } || flag != mapping.Resolved)
+            // WI-2 item 6 — Flag (bool) and Number (decimal) whenNotRecorded
+            // values are both expressible; anything else is not a value the
+            // seed could have declared and breaks loudly.
+            var resolves = mapping.Resolved.ValueKind switch
+            {
+                System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False =>
+                    whenNotRecorded is { Kind: MeasuredKind.Flag, Flag: { } flag }
+                    && flag == mapping.Resolved.GetBoolean(),
+                System.Text.Json.JsonValueKind.Number =>
+                    whenNotRecorded is { Kind: MeasuredKind.Number, Number: { } number }
+                    && number == mapping.Resolved.GetDecimal(),
+                _ => false,
+            };
+
+            if (!resolves)
             {
                 breaks.Add(
-                    $"the ledger discloses '{mapping.Metric}' resolving to {mapping.Resolved} when unrecorded, "
+                    $"the ledger discloses '{mapping.Metric}' resolving to {mapping.Resolved.GetRawText()} when unrecorded, "
                     + $"but the adopted seed class declares whenNotRecorded = {Describe(whenNotRecorded)} — "
                     + "the disclosure and the seed have drifted; re-author the ledger beside a re-triage, "
                     + "never the seed to fit.");
             }
         }
 
+        // WI-2 item 6 — every derived metric is declared by the adopted seed
+        // (name match across phases — see the multi-phase note above: a shared
+        // task's metric matches once per phase, so only genuinely differing
+        // declarations are ambiguous): the derivation re-expresses
+        // a foil column under the seed's own metric name, so a name the seed
+        // never declares is a disclosure bug.
+        foreach (var derived in ledger.Provenance.DerivedMetrics ?? [])
+        {
+            var matches = declaredMetrics.Where(m => m.Name == derived.Metric).ToList();
+
+            if (matches.Count == 0)
+            {
+                breaks.Add(
+                    $"the ledger derives metric '{derived.Metric}' from '{derived.Source}' but the adopted seed class "
+                    + "declares no such metric — the derivation names nothing the run could capture under.");
+            }
+            else if (matches.Select(m => $"{m.Kind}/{Describe(m.WhenNotRecorded)}").Distinct().Count() > 1)
+            {
+                breaks.Add(
+                    $"the ledger derives metric '{derived.Metric}' but the adopted seed class declares it "
+                    + "differently across phases — the disclosure cannot name which declaration it means.");
+            }
+        }
+
+        // WI-2 item 6 — the declared scored window equals the run's prescribed
+        // round count: the run must have run under the disclosed window.
+        if (ledger.Provenance.ScoredWindowRounds is { } scoredWindow)
+        {
+            var prescribed = outcome.RoundOrdinalByRoundNo.Count;
+
+            if (prescribed != scoredWindow)
+            {
+                breaks.Add(
+                    $"the ledger declares scoredWindowRounds {scoredWindow} but the run prescribed {prescribed} "
+                    + "rounds — the run did not run under the disclosed window; re-triage, never silently shrink.");
+            }
+        }
+
+        // WI-2 item 6 — every declared reading instrument matches the
+        // competition's actual declaration: the harness-chosen name resolves,
+        // the metric agrees, and the scale equals the tape slug's corpus
+        // scale (the snapshot the declaration was built from).
+        foreach (var declared in ledger.Provenance.DeclaredInstruments ?? [])
+        {
+            var tape = TapeCorpus.All.FirstOrDefault(t => t.FileName == declared.TapeSlug);
+
+            if (tape is null)
+            {
+                breaks.Add(
+                    $"the ledger declares instrument '{declared.Instrument}' on tape slug '{declared.TapeSlug}', "
+                    + "which TapeCorpus names no tape for — the declared scale cannot be verified.");
+                continue;
+            }
+
+            var actual = competition.DeclaredInstruments?.Instruments
+                .FirstOrDefault(i => i.Instrument == declared.Instrument);
+
+            if (actual is null)
+            {
+                breaks.Add(
+                    $"the ledger declares instrument '{declared.Instrument}' for metric '{declared.Metric}' but the "
+                    + "competition declared no such instrument — the run did not run under the disclosed scale.");
+                continue;
+            }
+
+            if (!string.Equals(actual.Metric, declared.Metric, StringComparison.Ordinal))
+            {
+                breaks.Add(
+                    $"the ledger declares instrument '{declared.Instrument}' for metric '{declared.Metric}' but the "
+                    + $"competition declared it for metric '{actual.Metric}'.");
+            }
+
+            if (!ReadingScalesEqual(tape.Tape.ToReadingScale(), actual.Scale))
+            {
+                breaks.Add(
+                    $"the ledger declares instrument '{declared.Instrument}' on tape '{declared.TapeSlug}' but the "
+                    + "competition's declared scale differs from that tape's corpus scale — the run did not run "
+                    + "under the disclosed scale.");
+            }
+        }
+
         return breaks;
     }
+
+    private static bool ReadingScalesEqual(ReadingScale expected, ReadingScale actual) =>
+        string.Equals(expected.Unit, actual.Unit, StringComparison.Ordinal)
+        && expected.OffScaleReading == actual.OffScaleReading
+        && expected.Marks.SequenceEqual(actual.Marks);
 
     private static string Describe(MeasuredValue? value) => value switch
     {

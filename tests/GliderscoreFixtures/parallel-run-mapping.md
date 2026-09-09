@@ -95,7 +95,7 @@ is not required to write a row.
 | fixture | seed | character | status | why |
 | --- | --- | --- | --- | --- |
 | ales-sample-comp | 80-nz-m-ales200.json | near-twin | done | Landed parallel run: exact final placings; difference set = three triaged kind-1 raw-grain entries (GS folds landing into pre-normalisation raw, seed-run adds it post-normalisation; final cells identical). `ledger tests/GliderscoreFixtures/ales-sample-comp/parallel-run/80-nz-m-ales200.json` |
-| f5j-christchurch-2019 | 30-f5j.json | witness | stubbed | Guaranteed final-aggregate split: fixture's drop thresholds null (GS summed everything) vs rulebook drop-from-5 — the seed drops the lowest round score. `stub kanban/in-progress/f5j-christchurch-parallel-run-witness.md` |
+| f5j-christchurch-2019 | 30-f5j.json | witness | done | Measured split over R1–11: rulebook drop-from-5 moves 7 pilots (p79 12→13, p82 7→6, p83 6→8, p94 13→11, p129 8→9, p131 9→7, p133 11→12) vs GS unset thresholds; raw grain exact on the declared NZ F3J-side tape (canonical landingDistance unchanged); normalised grid pinned 127 (GS HalfUp-1dp vs the seed's exact values). R5 5-group prescribes under SHOULD warning. `ledger tests/GliderscoreFixtures/f5j-christchurch-2019/parallel-run/30-f5j.json` |
 | f3j-international | 50-f3j.json | witness | stubbed | Rounding-grid candidate: GS's proven HalfUp-1dp normalisation vs rulebook Truncate-0.1; the original guaranteed drop-divergence claim was withdrawn (thresholds agree). `stub kanban/backlog/f3j-international-parallel-run-retriage.md` |
 | f3j-international-flyoff | 50-f3j.json | witness | planned | Local fly-off shape: GS scored all 4 rounds to the 900 s target (flights to 898 s, R1 raw 996) vs the seed Preliminary's 600 pt cap — provable at the raw grain; second candidate: GS HalfUp-integer grid vs rulebook Truncate-0.1 (981 vs 980.9). Drops agree at 4 rounds. `config tests/GliderscoreFixtures/f3j-international-flyoff/competition.json familyRows.Dur.durTargetTime` `config tools/Soarscore.SeedData/json/50-f3j.json phases[0].tasks[0].score[0].cap` `rule f3j.md F3J.10.11` |
 | jerilderie-2010 | 50-f3j.json | not-expressible | refused | G5: the fixture's scheme-3 landings are readings on the NZ F3J-side tape — the rulebook distance lookup pre-composed on the tape (scheme-3 identity lookup; scores-raw Landing 93 → GS raw 262+93=355 is the tape's identity read, not a distance) — capturable only by declaring tape-nz-f3j-side for landingDistance and submitting the marks verbatim naming that tape, which no replay has yet run. The seed's metres metric and rulebook table stand unchanged and no tape-points seed exists: the instrument is declared, not derived. Status stays refused until WI-6 lands that witness. `config tests/GliderscoreFixtures/jerilderie-2010/competition.json lookups.landingSchemes[0].Name` `config tools/Soarscore.SeedData/json/50-f3j.json phases[0].tasks[0].metrics.landingDistance` `stub kanban/in-progress/tape-points-landing-seeds.md` |
@@ -121,7 +121,8 @@ only by `refused` rows is `uncovered (refused rows only)`; a seed named in a
 - `20-f3b.json` — uncovered (refused rows only) — named only by the refused
   f3b-international row, where the pairing is moot (G2 multi-task refusal; no
   fixture directory was curated).
-- `30-f5j.json` — f5j-christchurch-2019 (witness, stubbed),
+- `30-f5j.json` — f5j-christchurch-2019 (witness, done — the landed
+  parallel-run ledger),
   f5j-hawkes-bay-trials (witness, planned), f5j-nz-south-island (witness,
   planned; won its per-pair NZ decision over 85c).
 - `40-f5k.json` — f5k-ni-round-2 (witness, planned).

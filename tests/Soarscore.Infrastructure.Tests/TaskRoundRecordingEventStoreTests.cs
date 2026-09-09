@@ -6,10 +6,11 @@
 //
 // F5J (30-f5j) throughout, for the same two reasons the scoring tests give:
 // literal MinPerGroup 6 makes a 6-pilot field draw to exactly one group, and
-// its task declares six real metrics — so "captures only flightTime" leaves a
-// concrete five-metric gap list whose order is the task's declared order:
+// its task declares seven real metrics — so "captures only flightTime" leaves a
+// concrete six-metric gap list whose order is the task's declared order:
 // startHeight, startHeightRecorded, landingDistance, overflySeconds,
-// touchedByCompetitor.
+// touchedByCompetitor, landedWithin75m (the last added by
+// f5j-christchurch-parallel-run-witness.md WI-1, 5.5.11.7 d).
 
 using AwesomeAssertions;
 using Soarscore.Application;
@@ -38,6 +39,7 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
     private static readonly string[] NonFlightTimeMetrics =
     [
         "startHeight", "startHeightRecorded", "landingDistance", "overflySeconds", "touchedByCompetitor",
+        "landedWithin75m",
     ];
 
     // ---------------------------------------------------------------- setup
@@ -141,6 +143,7 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
         await CaptureAsync("landingDistance", MeasuredValue.Of(100m));
         await CaptureAsync("overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync("touchedByCompetitor", MeasuredValue.Of(false));
+        await CaptureAsync("landedWithin75m", MeasuredValue.Of(true));
 
         return opened.Value;
     }
@@ -207,7 +210,7 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
     // ---- 3. Partial transcription names its missing metrics ----------------
 
     [Fact]
-    public async Task A_flight_capturing_only_flightTime_is_reported_missing_the_other_five_metrics_in_declared_order()
+    public async Task A_flight_capturing_only_flightTime_is_reported_missing_the_other_six_metrics_in_declared_order()
     {
         var (competitionId, competitors) = await SetUpAsync(fixture, "partial-capture", 6, 1);
         var group = await SingleGroupOfRound1Async(fixture, competitionId);

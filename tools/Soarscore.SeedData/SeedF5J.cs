@@ -4,6 +4,11 @@
 // The class that shows why a
 // PhaseDefinition owns its tasks: the fly-off is the same task with a different
 // working time and a different points cap.
+//
+// The 75 m landing-spot gate (5.5.11.7 d, docs/rules/f5j.md:37) is encoded as
+// the landedWithin75m Flag plus a flightValidWhen gate on the shared task, so
+// both phases carry it (WI-1 kanban/in-progress/
+// f5j-christchurch-parallel-run-witness.md).
 
 using System.Collections.Immutable;
 using Soarscore.Domain.PublishedClassDefinition;
@@ -37,6 +42,10 @@ public static class SeedF5J
             whenNotRecorded: 0),                                               // 5.5.11.12 g, k — seconds past working time are what the
                                                                                 //   timekeeper records; a flight landing within time has none
         Metric.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j — the touch forfeits the bonus; absence ⇒ no touch
+        Metric.Flag("landedWithin75m", whenNotRecorded: true),                      // 5.5.11.7 d "nose not at rest within 75 m of the designated
+                                                                                 //   landing spot" — the outside-75m zero is what is recorded,
+                                                                                 //   absence ⇒ within (WI-1 kanban/in-progress/
+                                                                                 //   f5j-christchurch-parallel-run-witness.md; cf. SeedF5jNdc.cs:57)
     ];
 
     // The two scoring tables of 5.5.11.12, declared once and used by both phases
@@ -79,7 +88,7 @@ public static class SeedF5J
             WorkingTime = 600,                                                 // 5.5.11.8.2 b working time 10 minutes
             PreparationTime = 300,                                             // 5.5.11.8.2 a "competitors are entitled to five (5) minutes preparation time"
         },
-        Group = new() { MinPerGroup = 6 },                                     // 5.5.11.8
+        Group = new() { MinPerGroup = 6, MinEnforcement = MinEnforcement.Should },  // 5.5.11.8.1 a) "should" — SHOULD-level minimum (cf. advisory 5.5.11.14.1 d)-e)): warn, don't refuse
         Normalise = new()
         {
             Direction = NormalisationDirection.HigherIsBetter,
@@ -92,7 +101,9 @@ public static class SeedF5J
         // "a zero score will be recorded".
         FlightValidWhen = Predicate.All(
             Predicate.LessThanOrEqual("overflySeconds", 60),                                        // 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
-            Predicate.Is("startHeightRecorded", true)),                                // 5.5.11.7 e
+            Predicate.Is("startHeightRecorded", true),                                // 5.5.11.7 e
+            Predicate.Is("landedWithin75m", true)),                                    // 5.5.11.7 d (WI-1 kanban/in-progress/
+                                                                                 //   f5j-christchurch-parallel-run-witness.md; cf. SeedF5jNdc.cs:107)
         Score =
         [
             ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points

@@ -176,6 +176,10 @@ public static class ClassDefinitionValidation
                 if (task.Group is { } group)
                 {
                     CheckNumberRef(group.MinPerGroup, $"{taskPath}.group.minPerGroup", declared, defects);
+                    // kanban/in-progress/should-level-minima-warn-dont-refuse.md
+                    // WI-1: GroupConstraint.MinEnforcement is a closed enum carrying
+                    // no ParameterRef, so check 3 has nothing further to resolve for
+                    // it — Shall and Should alike validate clean by representation.
                 }
 
                 if (task.Reflight is { } reflight)

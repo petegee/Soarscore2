@@ -45,10 +45,17 @@ public static class EndpointRouteBuilderExtensions
     /// layers already produce (Person.cs, PersonLoader.cs, MartenEventStore.cs) —
     /// a later work item's codes fall into the right bucket here without this
     /// file changing, as long as they follow the same "*.notFound" convention.
+    /// Success with advisories (kanban/in-progress
+    /// /should-level-minima-warn-dont-refuse.md WI-2) stays 200; the value is
+    /// carried beside the warnings in one envelope, the same defects-style
+    /// extension mechanism failures use. Empty advisories return the value
+    /// bare, byte-identical to before.
     /// </summary>
     private static IResult ToHttpResult<T>(this Result<T> result) =>
         result.Match(
-            onSuccess: Results.Ok,
+            onSuccess: value => result.Advisories.Count == 0
+                ? Results.Ok(value)
+                : Results.Json(new { value, warnings = result.Advisories }),
             onFailure: failure => Results.Problem(
                 statusCode: StatusCodeFor(failure.Code!),
                 title: failure.Code,

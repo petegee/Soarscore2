@@ -64,9 +64,52 @@ public static class AcceptanceFixture
 
     public static IEntryQuery EntryQuery { get; private set; } = null!;
 
+    private static readonly SemaphoreSlim InitGate = new(1, 1);
+
+    /// <summary>
+    /// f5j-christchurch-parallel-run-witness.md WI-2 item 7 — idempotent
+    /// initialisation for plain xunit [Fact]s in this assembly (the fixture
+    /// example tests), which run outside Reqnroll's [BeforeTestRun] ordering:
+    /// whichever runs first — a Reqnroll scenario or a fact — builds the one
+    /// store, factory and client; every later caller reuses them. After
+    /// [AfterTestRun] tears the fixture down (nulling Client), a late fact
+    /// rebuilds standalone — Reqnroll is finished by then, so no second
+    /// store can orphan scenario state.
+    /// </summary>
+    public static async Task EnsureInitializedAsync()
+    {
+        if (Client is not null)
+        {
+            return;
+        }
+
+        await InitGate.WaitAsync();
+
+        try
+        {
+            if (Client is null)
+            {
+                await BeforeTestRunAsync();
+            }
+        }
+        finally
+        {
+            InitGate.Release();
+        }
+    }
+
     [BeforeTestRun]
     public static async Task BeforeTestRunAsync()
     {
+        // Idempotent under EnsureInitializedAsync's gate: Reqnroll fires this
+        // hook once per run, but a plain [Fact] may have built the fixture
+        // first — rebuilding would orphan that fact's competitions on a
+        // second store (a second sqlite file) and leak a container.
+        if (Client is not null)
+        {
+            return;
+        }
+
         var storeName = Environment.GetEnvironmentVariable("SOARSCORE_TEST_STORE") ?? "postgres";
         var store = storeName.ToLowerInvariant() switch
         {
@@ -138,20 +181,27 @@ public static class AcceptanceFixture
     public static async Task AfterTestRunAsync()
     {
         Client?.Dispose();
+        Client = null!;
 
         if (_factory is not null)
         {
             await _factory.DisposeAsync();
+            _factory = null;
         }
 
         if (_storeProvider is not null)
         {
             await _storeProvider.DisposeAsync();
+            _storeProvider = null;
         }
+
+        EventStore = null!;
+        EntryQuery = null!;
 
         if (_container is not null)
         {
             await _container.DisposeAsync();
+            _container = null;
         }
 
         if (_sqlitePath is not null)
@@ -165,6 +215,8 @@ public static class AcceptanceFixture
                     File.Delete(file);
                 }
             }
+
+            _sqlitePath = null;
         }
     }
 }

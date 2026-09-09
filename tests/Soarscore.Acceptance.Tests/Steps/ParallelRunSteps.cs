@@ -21,6 +21,7 @@
 
 using AwesomeAssertions;
 using Reqnroll;
+using System.Text.RegularExpressions;
 using Soarscore.Acceptance.Tests.Support;
 using Soarscore.Acceptance.Tests.Support.Gliderscore;
 
@@ -151,6 +152,108 @@ public sealed class ParallelRunSteps
             $"every ledgered difference must be a triaged rulebook-vs-local-practice difference "
             + $"(kind 1 local variation or kind 2 seed-class authoring gap) with a citation; "
             + $"{ledger.Pair.Fixture} carries {untriagedOrUncited.Count} without one.");
+    }
+
+    // -------------------------------------------------------------- plumbing
+
+    // f5j-christchurch-parallel-run-witness.md WI-3 — the declared-scale /
+    // canonical exactness claim (decision 2): both sides compute min(t,600)·1
+    // + the landing award − two-rate height with identical band arithmetic,
+    // so every raw cell in the window compares exact (162 flown + 34
+    // flight-less 0.0 + the 2 cancelled 0.0). A raw-grain mismatch is a
+    // declaration/authoring bug or a kind-3 engine divergence — escalate,
+    // never a ledger edit. The wildcard normalised class entry's exactness is
+    // its pinned measured count (decision 4): the entry carries
+    // "Pinned normalised-cell count: N", and the computed normalised count
+    // must equal it, so a silently shrunk comparison cannot fake the match.
+    [Then(@"^the raw grain is exact against the GliderScore oracle$")]
+    public void ThenTheRawGrainIsExactAgainstTheGliderScoreOracle()
+    {
+        var report = Report();
+        var ledger = Ledger();
+
+        report.ComputedDifferences
+            .Where(mismatch => mismatch.Grain == "raw")
+            .Should().BeEmpty(
+                "the raw grain is exact on this pair (declared NZ F3J-side scale composed with the seed's own "
+                + "5.5.11.12 h rows, identical band arithmetic, no floor exercised, no overfly recorded) — a raw "
+                + "mismatch is an authoring bug or a kind-3 engine divergence, never a ledger edit."
+                + $"{Environment.NewLine}{report.Render()}");
+
+        var normalisedEntry = ledger.TriagedDifferences
+            .Where(entry => entry.Grain == "normalised")
+            .Should().ContainSingle("the ledger carries exactly one normalised-grain class entry.")
+            .Subject;
+
+        var pinned = PinnedNormalisedCount(normalisedEntry.Difference);
+
+        report.ComputedDifferences
+            .Count(mismatch => mismatch.Grain == "normalised")
+            .Should().Be(pinned,
+                $"the ledger's normalised class entry pins the measured count at {pinned} cells — the wildcard "
+                + "covers any cell, so the count is what makes the entry exact."
+                + $"{Environment.NewLine}{report.Render()}");
+    }
+
+    // f5j-christchurch-parallel-run-witness.md WI-3 — the story's guarantee,
+    // loud: the drop split (seed Σ best-10 vs GS Σ 11) moves final placings,
+    // so the ranking grain must be NON-empty, every computed ranking mismatch
+    // covered by a triaged per-pilot ranking entry, and every such entry
+    // witnessed (none missing). The verdict step asserts the global
+    // set-equality; this step asserts its ranking-grain legs with
+    // grain-scoped evidence.
+    [Then(@"^the final placings split from the GliderScore oracle exactly as the ledger triages$")]
+    public void ThenTheFinalPlacingsSplitFromTheGliderScoreOracleExactlyAsTheLedgerTriages()
+    {
+        var report = Report();
+        var ledger = Ledger();
+
+        var rankingComputed = report.ComputedDifferences
+            .Where(mismatch => mismatch.Grain == "ranking")
+            .ToList();
+
+        rankingComputed.Should().NotBeEmpty(
+            "the drop split is this pair's guarantee — the seed drops each pilot's lowest round score "
+            + "(applyWhenRoundsCompletedAtLeast 5 over 11 scored rounds) while GS summed everything — so an "
+            + "empty ranking grain means the run did not witness the split."
+            + $"{Environment.NewLine}{report.Render()}");
+
+        var rankingEntries = ledger.TriagedDifferences
+            .Where(entry => entry.Grain == "ranking")
+            .ToList();
+
+        rankingEntries.Should().NotBeEmpty(
+            "the ranking grain — the product — is fully enumerated per pilot; a split with no per-pilot "
+            + "entries is an uncurated run.");
+
+        rankingComputed
+            .Where(mismatch => !rankingEntries.Any(entry => entry.Covers(mismatch)))
+            .Should().BeEmpty(
+                "every computed ranking mismatch must be covered by a triaged per-pilot ranking entry — "
+                + "an uncovered placing is a re-triage or a kind-3 escalation, never a ledger edit."
+                + $"{Environment.NewLine}{report.Render()}");
+
+        rankingEntries
+            .Where(entry => !rankingComputed.Any(mismatch => entry.Covers(mismatch)))
+            .Should().BeEmpty(
+                "every triaged per-pilot ranking entry must be witnessed — a triaged placing that fails to "
+                + "appear FAILS the scenario."
+                + $"{Environment.NewLine}{report.Render()}");
+    }
+
+    private static int PinnedNormalisedCount(string difference)
+    {
+        var match = Regex.Match(difference, @"Pinned normalised-cell count: (\d+)");
+
+        if (!match.Success)
+        {
+            throw new InvalidOperationException(
+                "The ledger's normalised class entry carries no 'Pinned normalised-cell count: N' clause — "
+                + "the count pin (decision 4) is what makes the wildcard entry exact; curate it from the "
+                + "measured run, never omit it.");
+        }
+
+        return int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
     }
 
     // -------------------------------------------------------------- plumbing

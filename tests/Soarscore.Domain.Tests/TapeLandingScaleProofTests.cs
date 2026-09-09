@@ -792,10 +792,15 @@ public class TapeLandingScaleProofTests
          {
              foreach (var (validWhen, name) in new[] { (f3jValidWhen!, "F3J"), (f5jValidWhen!, "F5J") })
              {
-                 var metrics = BaseMetrics(t.d);
-                 metrics["overflySeconds"] = MeasuredValue.Of(t.overfly);
-                 metrics["restedWithin75m"] = MeasuredValue.Of(t.rested);
-                 metrics["startHeightRecorded"] = MeasuredValue.Of(t.heightRecorded);
+                  var metrics = BaseMetrics(t.d);
+                  metrics["overflySeconds"] = MeasuredValue.Of(t.overfly);
+                  metrics["restedWithin75m"] = MeasuredValue.Of(t.rested);
+                  metrics["startHeightRecorded"] = MeasuredValue.Of(t.heightRecorded);
+                  // WI-1 kanban/in-progress/f5j-christchurch-parallel-run-witness.md:
+                  // canonical F5J's flightValidWhen also gates landedWithin75m
+                  // (5.5.11.7 d); hold it compliant so this property keeps
+                  // sweeping overfly/height-recorded against the landing value.
+                  metrics["landedWithin75m"] = MeasuredValue.Of(true);
                  var task = TaskWith([new ConstantTerm { Value = 1m }], ImmutableArray<MetricDefinition>.Empty)
                      with { FlightValidWhen = validWhen };
                  var result = FlightInterpreter.Interpret(task, 1, metrics);

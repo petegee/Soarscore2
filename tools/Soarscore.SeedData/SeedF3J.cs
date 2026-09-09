@@ -74,7 +74,7 @@ public static class SeedF3J
         Metrics = FlightMetrics,
         Flights = new LastFlight(),
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },    // F3J.6.2 b "exactly ten (10) minutes duration"
-        Group = new() { MinPerGroup = 6 },                                     // F3J.6.1 minimum 6, preferably 8-10
+        Group = new() { MinPerGroup = 6, MinEnforcement = MinEnforcement.Should },  // F3J.6.1 a) "should" — SHOULD-level minimum (cf. advisory F3J.13.1 c)): warn, don't refuse
         Normalise = new()
         {
             Direction = NormalisationDirection.HigherIsBetter,

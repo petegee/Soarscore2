@@ -163,6 +163,10 @@ public sealed class LandingTapeDeclaredScaleSteps
             await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
             await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
             await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
+            // f5j-christchurch-parallel-run-witness.md WI-1: canonical F5J
+            // declares the 75 m gate (5.5.11.7 d), so a complete flight
+            // records it.
+            await CaptureAsync(entryId, "landedWithin75m", MeasuredValue.Of(true));
             await CaptureAsync(entryId, "landingDistance", MeasuredValue.Of(landing), instrument);
         }
     }
@@ -187,6 +191,9 @@ public sealed class LandingTapeDeclaredScaleSteps
         await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
+        // f5j-christchurch-parallel-run-witness.md WI-1: see above — the 75 m
+        // gate is a declared canonical-F5J metric.
+        await CaptureAsync(entryId, "landedWithin75m", MeasuredValue.Of(true));
         await CaptureAsync(entryId, "landingDistance", MeasuredValue.Of(12.0m));
     }
 

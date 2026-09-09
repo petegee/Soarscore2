@@ -323,5 +323,13 @@ public sealed record ResolvedTiming(
 
 public sealed record ResolvedGroupConstraint(
     decimal MinPerGroup,
-    int? MinValidResults
+    int? MinValidResults,
+    /// <summary>
+    /// Total, never absent: the authored <c>GroupConstraint.MinEnforcement</c>
+    /// with absent defaulting to <c>Shall</c> (today's hard refusal) —
+    /// kanban/in-progress/should-level-minima-warn-dont-refuse.md WI-1. A
+    /// ParameterRef minimum inherits the constraint's hardness; the bound
+    /// number carries no verb of its own.
+    /// </summary>
+    MinEnforcement MinEnforcement = MinEnforcement.Shall
 );

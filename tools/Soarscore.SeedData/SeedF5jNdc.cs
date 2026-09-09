@@ -97,7 +97,7 @@ public static class SeedF5jNdc
             WorkingTime = 600,                                                 // 5.5.11.8.2 b working time 10 minutes
             PreparationTime = 300,                                             // 5.5.11.8.2 a "competitors are entitled to five (5) minutes preparation time"
         },
-        Group = new() { MinPerGroup = 6 },                                     // 5.5.11.8 carries per NZ.0.3 c and governs the DRAW only —
+        Group = new() { MinPerGroup = 6, MinEnforcement = MinEnforcement.Should },  // 5.5.11.8.1 a) "should" carries per NZ.0.3 c and governs the DRAW only — SHOULD-level minimum (cf. advisory 5.5.11.14.1 d)-e)): warn, don't refuse
                                                                                //   its normalisation sentences (5.5.11.12 l/m) are
                                                                                //   superseded by NZ.0.3 d's raw-sum total
         // NO normalise (F25): NZ.0.3 d "Disregard 5.5.11.12.m and score the sum

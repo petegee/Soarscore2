@@ -254,6 +254,57 @@ public class ClassDefinitionValidationTests
         defects.Should().ContainSingle().Which.Code.Should().Be("class-definition.check-15.normalisation-without-group");
     }
 
+    // WI-1 (kanban/in-progress/should-level-minima-warn-dont-refuse.md): the
+    // hardness datum is a closed enum carrying no ParameterRef, so check 3 has
+    // nothing to resolve for it — Shall, Should and absent alike validate
+    // clean, on literal and on parameterised minima.
+
+    [Fact]
+    public void GroupConstraint_with_Should_hardness_on_a_literal_minimum_validates_clean()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Group = new GroupConstraint { MinPerGroup = 6, MinEnforcement = MinEnforcement.Should },
+        };
+        definition = WithSingleTask(definition, task);
+
+        ClassDefinitionValidation.Validate(definition).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GroupConstraint_with_Should_hardness_on_a_parameterised_minimum_validates_clean()
+    {
+        var definition = Minimal() with
+        {
+            Parameters = [new Parameter { Name = "minPerGroup", Kind = MeasuredKind.Number }],
+        };
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Group = new GroupConstraint
+            {
+                MinPerGroup = NumberOrParam.Param("minPerGroup"),
+                MinEnforcement = MinEnforcement.Should,
+            },
+        };
+        definition = WithSingleTask(definition, task);
+
+        ClassDefinitionValidation.Validate(definition).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GroupConstraint_with_absent_hardness_validates_clean()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Group = new GroupConstraint { MinPerGroup = 6 },
+        };
+        definition = WithSingleTask(definition, task);
+
+        ClassDefinitionValidation.Validate(definition).Should().BeEmpty();
+    }
+
     [Fact]
     public void Check16_exclusion_group_members_must_all_be_deduct_points()
     {

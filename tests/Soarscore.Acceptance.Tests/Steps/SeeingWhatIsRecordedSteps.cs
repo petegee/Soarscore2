@@ -10,10 +10,11 @@
 // is under way, with".
 //
 // F5J (30-f5j) throughout: literal MinPerGroup 6 makes a 6-pilot field draw to
-// exactly one group, and its task declares six metrics, so a flight captured
-// with flight time alone leaves a concrete five-metric gap in the task's
+// exactly one group, and its task declares seven metrics, so a flight captured
+// with flight time alone leaves a concrete six-metric gap in the task's
 // declared order (startHeight, startHeightRecorded, landingDistance,
-// overflySeconds, touchedByCompetitor).
+// overflySeconds, touchedByCompetitor, landedWithin75m — the last added by
+// f5j-christchurch-parallel-run-witness.md WI-1, 5.5.11.7 d).
 //
 // Every Then asserts facts about what is recorded — "recorded", "not
 // recorded", "missing" — never completeness. That phrasing discipline is this
@@ -169,7 +170,7 @@ public sealed class SeeingWhatIsRecordedSteps
         group.MetricGaps.Where(g => g.CompetitorRef == _enteredNotFlown).Should().BeEmpty();
     }
 
-    [Then(@"^that flight is shown missing its five other metrics in the task's declared order$")]
+    [Then(@"^that flight is shown missing its six other metrics in the task's declared order$")]
     public void ThenThePartiallyCapturedFlightIsNamed()
     {
         var group = TheGroup();
@@ -180,6 +181,7 @@ public sealed class SeeingWhatIsRecordedSteps
         flightGaps.MissingMetrics.Should().Equal(
         [
             "startHeight", "startHeightRecorded", "landingDistance", "overflySeconds", "touchedByCompetitor",
+            "landedWithin75m",
         ]);
     }
 
@@ -189,7 +191,7 @@ public sealed class SeeingWhatIsRecordedSteps
         _recording!.Groups.Should().ContainSingle().Subject;
 
     /// <summary>
-    /// Opens the Entry and its one flight over HTTP, capturing either all six
+    /// Opens the Entry and its one flight over HTTP, capturing either all seven
     /// F5J metrics or flightTime alone. Flight times are irrelevant here —
     /// nothing below scores anything.
     /// </summary>
@@ -211,6 +213,10 @@ public sealed class SeeingWhatIsRecordedSteps
         await CaptureAsync(entryId, "landingDistance", MeasuredValue.Of(100m));
         await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
+        // f5j-christchurch-parallel-run-witness.md WI-1: the 75 m gate
+        // (5.5.11.7 d) is a declared task metric, so a "fully recorded"
+        // flight records it.
+        await CaptureAsync(entryId, "landedWithin75m", MeasuredValue.Of(true));
     }
 
     private static async Task CaptureAsync(EntryId entryId, string metric, MeasuredValue value) =>

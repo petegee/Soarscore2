@@ -123,6 +123,31 @@ Drained from `gap.md` (deleted 2026-08-16); decisions dated where the record has
   pilots our field-freeze model would have kept in every group; reproducing that
   faithfully needs either withdrawal-timing import or per-round eligibility, neither
   designed. Skip-listed at fixture curation until a fixture demands it.
+- **How SHOULD-level breaches surface as warnings.** **Decided 2026-09-10**
+  (owner decision on the R5 finding in
+  `kanban/blocked/f5j-christchurch-parallel-run-witness.md`, worked in
+  `kanban/backlog/should-level-minima-warn-dont-refuse.md`). The principle is
+  settled: rules that read as "SHOULD" are non-terminal — a SHOULD-level breach
+  (the case in hand: a drawn 5-group against F5J's SHOULD-schedule min-6,
+  `5.5.11.8.1 a)`, which the club flew legitimately since `5.5.11.14.1 e)`
+  triggers repair only at 4-or-fewer for that field size) prescribes with a
+  warning, never refuses. The *mechanism* — where a warning lives
+  (`Result<T>`/defect vocabulary vs event log vs read model) — is deferred to
+  the backlog story, deliberately, so the witness run is gated on the hardness
+  recalibration and not on the surfacing design. Do not "resolve" this by
+  lowering a seed minimum: the minimum stays rulebook-faithful; only the
+  hardness changes, and generically, never per-class.
+  **Landed 2026-09-10** (`kanban/completed/should-level-minima-warn-dont-refuse.md`,
+  WI-1–WI-4; history above retained). The mechanism is event-carried warning +
+  synchronous advisory, read-model for free: `GroupConstraint.MinEnforcement`
+  (`Shall`, the default = today's hard refusal, | `Should`) authored beside the
+  number with the rulebook citation; a SHOULD breach prescribes and records one
+  `PhaseDrawn.Warnings` entry per breach (retained on the phase, so the log
+  keeps the trace and the existing `GET /competition` surfaces it), carried
+  synchronously on `Result<T>.Advisories` (200 with an advisory extension).
+  SHOULD-marked: F3J / F5J / F5J-NDC min-6; shall-hard unchanged: F3K 5,
+  F3B 5/3/8, F3F 10 (contingency scope noted). The mechanism half of this
+  deferral is discharged; the principle half stands.
 
 ## Task-round lifecycle and finalisation
 

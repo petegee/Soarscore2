@@ -1530,9 +1530,14 @@ public static class Comparator
         }
     }
 
-    /// <summary>Every oracle cell must have been compared by EVERY grain — absence is a harness bug, surfaced as a mismatch.</summary>
+    /// <summary>Every oracle cell must have been compared by EVERY grain — absence is a harness bug, surfaced as a mismatch.
+    /// f5j-christchurch-parallel-run-witness.md WI-2 item 2 widens the universe
+    /// to IEnumerable: under a declared scored window the parallel-run
+    /// comparator passes only the window's keys (cells outside the window are
+    /// deliberately uncompared — a declared scope, never a silent shrink).
+    /// Every existing caller passes the full key set, exactly as before.</summary>
     internal static void EnsureOracleCoverage(
-        Dictionary<string, ExpectedCell>.KeyCollection oracleKeys, HashSet<string> compared, string grain, List<GrainMismatch> mismatches)
+        IEnumerable<string> oracleKeys, HashSet<string> compared, string grain, List<GrainMismatch> mismatches)
     {
         foreach (var key in oracleKeys)
         {

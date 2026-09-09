@@ -141,6 +141,13 @@ public sealed record ScoresRawFile(ScoresRow[] Rows);
 /// stay loader-invisible: curation-verified duplicates of what the strings'
 /// FPT fields hold, and the harness recomputes rather than reads them.
 /// </para>
+/// <para>
+/// f5j-christchurch-parallel-run-witness.md WI-2 — the GS Updated flag
+/// ("True"/"False" strings in the export), read only by the parallel-run
+/// scored-window assertion (MAX(RoundNo where Updated=='True') must equal the
+/// declared window). Optional with a null default so every fixture without the
+/// column and every synthetic row keeps deserialising exactly as before.
+/// </para>
 /// </summary>
 public sealed record ScoresRow(
     int TaskNo,
@@ -161,7 +168,8 @@ public sealed record ScoresRow(
     string? Flight1 = null,
     string? Flight2 = null,
     string? Flight3 = null,
-    string? Flight4 = null);
+    string? Flight4 = null,
+    string? Updated = null);
 
 public sealed record ExpectedScoresFile(Dictionary<string, ExpectedCell> Scores);
 

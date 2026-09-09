@@ -99,8 +99,13 @@ public class DrawPhasePropertyTests
 
             result.IsSuccess.Should().BeTrue();
 
+            // No minimum breached, so no warning anywhere: neither on the
+            // recorded event nor on the synchronous channel.
+            result.Advisories.Should().BeEmpty();
+
             var stream = store.Streams[competitionId.Value];
             var drawn = stream[^1].Should().BeOfType<PhaseDrawn>().Subject;
+            drawn.Warnings.Should().BeEmpty();
             drawn.Rounds.Length.Should().Be(t.rounds);
 
             foreach (var round in drawn.Rounds)
@@ -117,8 +122,11 @@ public class DrawPhasePropertyTests
     }
 
     [Fact]
-    public void DrawPhaseHandler_field_below_MinPerGroup_always_fails_with_fieldTooSmall_and_no_other_code()
+    public void DrawPhaseHandler_field_below_the_SHOULD_MinPerGroup_succeeds_with_a_recorded_warning_and_forwarded_advisories()
     {
+        // F3J.6.1 a)'s minimum is SHOULD-level (should-level-minima story
+        // WI-2): the draw prescribes through with a recorded warning rather
+        // than refusing with drawPhase.fieldTooSmall.
         (from fieldSize in Gen.Int[1, MinPerGroup - 1]
          from rounds in RoundCount
          select (fieldSize, rounds))
@@ -134,8 +142,18 @@ public class DrawPhasePropertyTests
                 .GetAwaiter()
                 .GetResult();
 
-            result.IsFailure.Should().BeTrue();
-            result.Code.Should().Be("drawPhase.fieldTooSmall");
+            result.IsSuccess.Should().BeTrue("a SHOULD breach draws with a warning");
+
+            var stream = store.Streams[competitionId.Value];
+            var drawn = stream[^1].Should().BeOfType<PhaseDrawn>().Subject;
+            drawn.Warnings.Should().NotBeNull();
+            var warnings = drawn.Warnings!;
+            warnings.Should().HaveCount(t.rounds);
+            warnings.Should().OnlyContain(w => w.Code == "drawPhase.fieldTooSmall");
+            warnings[0].Message.Should().Contain($"eligible field ({t.fieldSize})");
+
+            // The handler forwards the decide's advisories synchronously.
+            result.Advisories.Should().Equal(warnings);
         });
     }
 
@@ -157,13 +175,10 @@ public class DrawPhasePropertyTests
                 .GetAwaiter()
                 .GetResult();
 
-            if (result.IsFailure)
-            {
-                // Below MinPerGroup — covered by the dedicated failure test
-                // above; nothing to fold here.
-                result.Code.Should().Be("drawPhase.fieldTooSmall");
-                return;
-            }
+            // F3J's minimum is SHOULD-level (should-level-minima story WI-2),
+            // so every field of at least one draws — below-minimum fields
+            // with a recorded warning, covered by the dedicated test above.
+            result.IsSuccess.Should().BeTrue(result.Code ?? "draw succeeded");
 
             var events = store.Streams[competitionId.Value];
             var priorEvents = events.Take(events.Count - 1);
@@ -175,11 +190,14 @@ public class DrawPhasePropertyTests
             // independently, must reproduce an equal Phases[0] both times —
             // the fold is a pure function of (current, event), not something
             // that mutates hidden state or re-derives the draw differently
-            // on a second pass.
+            // on a second pass. BeEquivalentTo, not Be: record/ImmutableArray
+            // equality is backing-array identity, so Be would pass only
+            // because both folds share the event's arrays — BeEquivalentTo
+            // asserts the value idempotence the ADR actually promises.
             var first = priorState.Apply(phaseDrawn);
             var second = priorState.Apply(phaseDrawn);
 
-            second.Phases[0].Should().Be(first.Phases[0]);
+            second.Phases[0].Should().BeEquivalentTo(first.Phases[0]);
         });
     }
 }

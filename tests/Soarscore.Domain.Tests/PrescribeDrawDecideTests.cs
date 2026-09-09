@@ -301,12 +301,14 @@ public class PrescribeDrawDecideTests
     [Fact]
     public void PrescribeDraw_with_a_field_smaller_than_minPerGroup_fails_with_a_stable_code()
     {
-        // F3J.6.1 minimum is 6; five eligible pilots fail the shared resolution
-        // before any prescription-specific partition check runs.
-        var competition = CompetitionAdopting(SeedF3J.Definition, 5);
+        // F3K.9.1's minimum is 5 and mandatory (shall) — F3J's 6 is SHOULD
+        // (should-level-minima story) and now warns through instead. The
+        // shared resolution refuses before any prescription-specific
+        // partition check runs.
+        var competition = CompetitionAdopting(SeedF3K.Definition, 4);
         var field = EligibleField(competition);
 
-        var result = competition.PrescribeDraw([MakeRound(null, field.ToArray())], "CD", Now);
+        var result = competition.PrescribeDraw([MakeRound("A", field.ToArray())], "CD", Now);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("prescribeDraw.fieldTooSmall");
@@ -409,13 +411,14 @@ public class PrescribeDrawDecideTests
     [Fact]
     public void PrescribeDraw_with_a_group_below_the_class_minimum_fails_with_a_stable_code()
     {
-        // Both groups clear the 2-member floor; the five-member one is below
-        // F3J.6.1's six.
-        var competition = CompetitionAdopting(SeedF3J.Definition, 12);
+        // Both groups clear the 2-member floor; the four-member one is below
+        // F3K.9.1's mandatory (shall) five — F3J's 6 is SHOULD
+        // (should-level-minima story) and now warns through instead.
+        var competition = CompetitionAdopting(SeedF3K.Definition, 10);
         var field = EligibleField(competition);
 
         var result = competition.PrescribeDraw(
-            [MakeRound(null, field.Take(7).ToArray(), field.Skip(7).Take(5).ToArray())],
+            [MakeRound("A", field.Take(6).ToArray(), field.Skip(6).Take(4).ToArray())],
             "CD", Now);
 
         result.IsFailure.Should().BeTrue();

@@ -452,6 +452,15 @@ public sealed record Phase
 
     /// <summary>1..*.</summary>
     public required ImmutableArray<Round> Rounds { get; init; }
+
+    /// <summary>
+    /// Audit-only SHOULD-minimum warnings recorded at draw time
+    /// (kanban/in-progress/should-level-minima-warn-dont-refuse.md WI-2) —
+    /// retained from <see cref="PhaseDrawn.Warnings"/>, so the existing
+    /// <c>GET /competition</c> query surfaces them with no new endpoint.
+    /// Empty on every shall-hard path and every pre-WI-2 draw.
+    /// </summary>
+    public ImmutableArray<DrawWarning> Warnings { get; init; } = [];
 }
 
 /// <summary>
@@ -588,6 +597,9 @@ public sealed record Competition
             Ordinal = @event.PhaseOrdinal,
             Draw = @event.Draw,
             Rounds = @event.Rounds,
+            // A payload persisted before WI-2 carries no property and reads
+            // as null — normalised to empty here, never stored as null.
+            Warnings = @event.Warnings is null ? [] : [.. @event.Warnings],
         };
 
         return this with { Phases = Phases.Add(phase) };
@@ -1217,7 +1229,7 @@ public sealed record Competition
             return Result<PhaseDrawn>.Failure(resolved.Code!, resolved.Message!);
         }
 
-        var (phaseDefinition, resolvedTaskRefs, field, minPerGroupByRound) = resolved.Value;
+        var (phaseDefinition, resolvedTaskRefs, field, minPerGroupByRound, _, scheduleWarnings) = resolved.Value;
 
         var groupedRounds = PhaseDraw.BuildGroups(field, minPerGroupByRound, DeriveProtectedPairs(field));
 
@@ -1250,9 +1262,14 @@ public sealed record Competition
             Type: phaseDefinition.Type,
             Draw: new Draw { CreatedAt = at, Status = "drawn" },
             Rounds: rows,
-            At: at);
+            At: at,
+            // A SHOULD-minimum breach resolved warn-through above rides here
+            // (usually empty — the happy path is unchanged) and, identically,
+            // on the synchronous advisories: the caller sees the warning
+            // without a second round-trip (WI-2).
+            Warnings: [.. scheduleWarnings]);
 
-        return Result<PhaseDrawn>.Success(@event);
+        return Result<PhaseDrawn>.Success(@event, [.. scheduleWarnings]);
     }
 
     /// <summary>
@@ -1316,7 +1333,11 @@ public sealed record Competition
             return Result<PhaseDrawn>.Failure(resolved.Code!, resolved.Message!);
         }
 
-        var (phaseDefinition, resolvedTaskRefs, field, minPerGroupByRound) = resolved.Value;
+        var (phaseDefinition, resolvedTaskRefs, field, minPerGroupByRound, enforcementByRound, scheduleWarnings) = resolved.Value;
+
+        // One warning entry per breached SHOULD gate (WI-2): G4 entries
+        // resolved warn-through above ride along, G6 entries collect below.
+        var warnings = scheduleWarnings.ToBuilder();
 
         for (var roundIndex = 0; roundIndex < rounds.Count; roundIndex++)
         {
@@ -1367,9 +1388,24 @@ public sealed record Competition
 
                 if (size < minPerGroupByRound[roundIndex])
                 {
-                    return Result<PhaseDrawn>.Failure(
-                        "prescribeDraw.groupBelowClassMinimum",
-                        $"Round {roundIndex + 1}, group {groupIndex + 1}: the group has {size} member(s), smaller than the class's minimum group size ({minPerGroupByRound[roundIndex]}).");
+                    // WI-2 (kanban/in-progress/should-level-minima-warn-dont-refuse.md):
+                    // a SHOULD-level minimum prescribes with a recorded
+                    // warning; a shall minimum (the default — every existing
+                    // path) refuses exactly as before. The sub-2 floor above
+                    // stands on both hardnesses: a lone pilot cannot
+                    // group-score, whatever the class says.
+                    if (enforcementByRound[roundIndex] == MinEnforcement.Should)
+                    {
+                        warnings.Add(new DrawWarning(
+                            "prescribeDraw.groupBelowClassMinimum",
+                            $"Round {roundIndex + 1}, group {groupIndex + 1}: the group has {size} member(s), smaller than the class's SHOULD-level minimum group size ({minPerGroupByRound[roundIndex]}); scheduled with a recorded warning."));
+                    }
+                    else
+                    {
+                        return Result<PhaseDrawn>.Failure(
+                            "prescribeDraw.groupBelowClassMinimum",
+                            $"Round {roundIndex + 1}, group {groupIndex + 1}: the group has {size} member(s), smaller than the class's minimum group size ({minPerGroupByRound[roundIndex]}).");
+                    }
                 }
             }
         }
@@ -1404,16 +1440,19 @@ public sealed record Competition
             Draw: new Draw { CreatedAt = at, Status = "drawn" },
             Rounds: rows,
             At: at,
-            PrescribedBy: by);
+            PrescribedBy: by,
+            Warnings: [.. warnings]);
 
-        return Result<PhaseDrawn>.Success(@event);
+        return Result<PhaseDrawn>.Success(@event, [.. warnings]);
     }
 
     private sealed record ResolvedSchedule(
         PhaseDefinition Phase,
         ImmutableArray<string> ResolvedTaskRefs,
         ImmutableArray<CompetitorId> Field,
-        ImmutableArray<int> MinPerGroupByRound);
+        ImmutableArray<int> MinPerGroupByRound,
+        ImmutableArray<MinEnforcement> EnforcementByRound,
+        ImmutableArray<DrawWarning> Warnings);
 
     // The schedule validation shared by DrawPhase and PrescribeDraw — guards,
     // task resolution, eligible field, per-round minPerGroup resolution. The
@@ -1538,6 +1577,8 @@ public sealed record Competition
         // inside it: the draw is atomic, so an unbound parameter on round 5
         // must fail the whole draw rather than emit a partial schedule.
         var minPerGroupByRound = ImmutableArray.CreateBuilder<int>(rounds);
+        var enforcementByRound = ImmutableArray.CreateBuilder<MinEnforcement>(rounds);
+        var scheduleWarnings = ImmutableArray.CreateBuilder<DrawWarning>();
 
         for (var i = 0; i < rounds; i++)
         {
@@ -1546,15 +1587,17 @@ public sealed record Competition
             // Absent GroupConstraint means the class does not group-score at
             // all (NZ N/P) — one whole-field group, every round; minPerGroup
             // == field.Length makes PhaseDraw.BuildGroups's groupCount
-            // formula produce exactly one group without a special case.
+            // formula produce exactly one group without a special case. No
+            // minimum, so nothing to warn on; Shall is the inert default.
             var minPerGroup = field.Length;
+            var enforcement = MinEnforcement.Shall;
 
             if (task.Group is not null)
             {
-                decimal resolvedMinPerGroup;
+                ResolvedGroupConstraint resolvedGroup;
                 try
                 {
-                    resolvedMinPerGroup = ParameterResolver.Resolve(task.Group.MinPerGroup, bindings, AdoptedRules.Definition.Parameters);
+                    resolvedGroup = ParameterResolver.ResolveGroup(task.Group, bindings, AdoptedRules.Definition.Parameters);
                 }
                 catch (UnresolvedParameterException ex)
                 {
@@ -1562,21 +1605,43 @@ public sealed record Competition
                         $"{codePrefix}.parameterUnbound", $"Round {i + 1} ('{task.Code}'): {ex.Message}");
                 }
 
-                minPerGroup = (int)resolvedMinPerGroup;
+                minPerGroup = (int)resolvedGroup.MinPerGroup;
+                enforcement = resolvedGroup.MinEnforcement;
 
                 if (minPerGroup > field.Length)
                 {
-                    return Result<ResolvedSchedule>.Failure(
-                        $"{codePrefix}.fieldTooSmall",
-                        $"Round {i + 1} ('{task.Code}'): the eligible field ({field.Length}) is smaller than the class's minimum group size ({minPerGroup}).");
+                    // WI-2 (kanban/in-progress/should-level-minima-warn-dont-refuse.md
+                    // G4): a SHOULD-level round minimum warns through — the
+                    // draw proceeds (DrawPhase's generator already emits the
+                    // single-group shape; a prescription's groups are checked
+                    // against G5/G6 below) — while a shall minimum refuses
+                    // byte-identically to before.
+                    if (enforcement == MinEnforcement.Should)
+                    {
+                        scheduleWarnings.Add(new DrawWarning(
+                            $"{codePrefix}.fieldTooSmall",
+                            $"Round {i + 1} ('{task.Code}'): the eligible field ({field.Length}) is smaller than the class's SHOULD-level minimum group size ({minPerGroup}); scheduled with a recorded warning."));
+                    }
+                    else
+                    {
+                        return Result<ResolvedSchedule>.Failure(
+                            $"{codePrefix}.fieldTooSmall",
+                            $"Round {i + 1} ('{task.Code}'): the eligible field ({field.Length}) is smaller than the class's minimum group size ({minPerGroup}).");
+                    }
                 }
             }
 
             minPerGroupByRound.Add(minPerGroup);
+            enforcementByRound.Add(enforcement);
         }
 
         return Result<ResolvedSchedule>.Success(new ResolvedSchedule(
-            phaseDefinition, resolvedTaskRefs, field, minPerGroupByRound.MoveToImmutable()));
+            phaseDefinition,
+            resolvedTaskRefs,
+            field,
+            minPerGroupByRound.MoveToImmutable(),
+            enforcementByRound.MoveToImmutable(),
+            scheduleWarnings.ToImmutable()));
     }
 
     // Instance decide function — WI-2 (kanban/completed/capture-a-score-steel-thread-plan.md).

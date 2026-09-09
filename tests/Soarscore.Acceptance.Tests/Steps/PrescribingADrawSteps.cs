@@ -100,6 +100,14 @@ public sealed class PrescribingADrawSteps
         _rawResponse = await ApiClient.PostCommandRawAsync(
             Client, "/prescribe-draw", new PrescribeDraw(_competitionId, BuildRounds(table), CdName));
 
+    [When(@"^the contest director tries to prescribe the preliminary phase naming these tasks and groups$")]
+    public async Task WhenTheContestDirectorTriesToPrescribeNamingTasksAndGroups(Table table)
+    {
+        _namedTaskRefs = table.Rows.Select(row => row["task"]).ToList();
+        _rawResponse = await ApiClient.PostCommandRawAsync(
+            Client, "/prescribe-draw", new PrescribeDraw(_competitionId, BuildRounds(table), CdName));
+    }
+
     [When(@"^the contest director rejects the prescribed draw because ""(.+)""$")]
     public async Task WhenTheContestDirectorRejectsThePrescribedDrawBecause(string reason)
     {
@@ -149,6 +157,48 @@ public sealed class PrescribingADrawSteps
         // the ordinal stays in the step text where a reader can see it.
         _rawResponse!.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await ReadProblemTitleAsync(_rawResponse)).Should().Be("prescribeDraw.competitorMissing");
+    }
+
+    // should-level-minima-warn-dont-refuse.md WI-4 — the R5 shape: a 5-group
+    // under F5J's SHOULD-level minimum 6 prescribes (200) with the advisory in
+    // the {value, warnings} envelope, naming the group and both sizes.
+    [Then(@"^the prescription succeeds with a warning naming group (\d+)$")]
+    public async Task ThenThePrescriptionSucceedsWithAWarningNamingGroup(int groupOrdinal)
+    {
+        _rawResponse!.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var document = System.Text.Json.JsonDocument.Parse(
+            await _rawResponse.Content.ReadAsStringAsync());
+        document.RootElement.TryGetProperty("warnings", out _).Should().BeTrue(
+            "a SHOULD breach returns the {value, warnings} envelope, not the bare value");
+        var warnings = System.Text.Json.JsonSerializer.Deserialize<IReadOnlyList<DrawWarning>>(
+            document.RootElement.GetProperty("warnings").GetRawText(), ApiClient.Options)!;
+        var warning = warnings.Should().ContainSingle().Subject;
+        warning.Code.Should().Be("prescribeDraw.groupBelowClassMinimum");
+        warning.Message.Should().Contain($"group {groupOrdinal}");
+        warning.Message.Should().Contain("5 member(s)");
+        warning.Message.Should().Contain("(6)");
+    }
+
+    // WI-4 — the same warning is retained on the folded phase, visible via the
+    // existing GET /competition read surface (no new endpoint).
+    [Then(@"^the drawn phase retains the warning naming group (\d+)$")]
+    public async Task ThenTheDrawnPhaseRetainsTheWarningNamingGroup(int groupOrdinal)
+    {
+        var phase = await CompetitionPhaseAsync();
+        var warning = phase.Warnings.Should().ContainSingle().Subject;
+        warning.Code.Should().Be("prescribeDraw.groupBelowClassMinimum");
+        warning.Message.Should().Contain($"group {groupOrdinal}");
+        warning.Message.Should().Contain("5 member(s)");
+    }
+
+    // WI-4 triage — a shall-class minimum (F3K's must, 5) still refuses with
+    // the stable code; the phase stays undrawn (asserted by the following
+    // "nothing drawn" step).
+    [Then(@"^the prescription is refused as below the class minimum$")]
+    public async Task ThenThePrescriptionIsRefusedAsBelowTheClassMinimum()
+    {
+        _rawResponse!.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ReadProblemTitleAsync(_rawResponse)).Should().Be("prescribeDraw.groupBelowClassMinimum");
     }
 
     [Then(@"^the competition reads as having nothing drawn$")]

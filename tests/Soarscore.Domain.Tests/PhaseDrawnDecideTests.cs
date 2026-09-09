@@ -247,9 +247,11 @@ public class PhaseDrawnDecideTests
     [Fact]
     public void DrawPhase_with_a_field_smaller_than_minPerGroup_fails_with_a_stable_code()
     {
-        var competition = CompetitionAdopting(SeedF3J.Definition, 5); // F3J.6.1 minimum is 6
+        // F3K.9.1's minimum is 5 and mandatory (shall) — F3J's 6 is SHOULD
+        // (should-level-minima story) and now warns through instead.
+        var competition = CompetitionAdopting(SeedF3K.Definition, 4);
 
-        var result = competition.DrawPhase(1, [], DateTimeOffset.UtcNow);
+        var result = competition.DrawPhase(1, ["A"], DateTimeOffset.UtcNow);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("drawPhase.fieldTooSmall");

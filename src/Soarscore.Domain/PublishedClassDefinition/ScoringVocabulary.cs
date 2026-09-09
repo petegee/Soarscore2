@@ -280,6 +280,20 @@ public sealed record GroupConstraint
 
     /// <summary>Unset means no group is annulled for want of valid results.</summary>
     public int? MinValidResults { get; init; }
+
+    /// <summary>
+    /// The rulebook modal verb behind <see cref="MinPerGroup"/> —
+    /// kanban/in-progress/should-level-minima-warn-dont-refuse.md WI-1. Null
+    /// (absent) is <see cref="MinEnforcement.Shall"/>: today's hard refusal,
+    /// so every existing payload and seed behaves exactly as before (NFR-2
+    /// additive-only; WhenWritingNull omits it from canonical JSON). A class
+    /// author states <see cref="MinEnforcement.Should"/> beside the number
+    /// with the rulebook citation (e.g. F5J 5.5.11.8.1 a) "should"), which WI-2
+    /// honours as prescribe-with-warning via the resolved hardness. The datum
+    /// lives on the constraint, never on the parameter: a ParameterRef minimum
+    /// inherits the class's hardness when resolved.
+    /// </summary>
+    public MinEnforcement? MinEnforcement { get; init; }
 }
 
 /// <summary>

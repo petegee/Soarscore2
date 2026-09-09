@@ -249,14 +249,26 @@ public static class ParameterResolver
         );
     }
 
-    private static ResolvedGroupConstraint ResolveGroup(
+    /// <summary>
+    /// Resolve a task's <see cref="GroupConstraint"/> to its concrete minimum
+    /// plus the authored hardness (absent hardness is
+    /// <see cref="PublishedClassDefinition.MinEnforcement.Shall"/>) —
+    /// kanban/in-progress/should-level-minima-warn-dont-refuse.md WI-1. A
+    /// ParameterRef minimum inherits the constraint's hardness; the bound
+    /// number carries no verb of its own. Throws
+    /// <see cref="UnresolvedParameterException"/> exactly as
+    /// <see cref="Resolve(NumberOrParam, IReadOnlyDictionary{string, MeasuredValue}, ImmutableArray{Parameter})"/>
+    /// does — the draw's shared schedule validation relies on it.
+    /// </summary>
+    public static ResolvedGroupConstraint ResolveGroup(
         GroupConstraint group,
         IReadOnlyDictionary<string, MeasuredValue> bindings,
         ImmutableArray<Parameter> declaredParameters)
     {
         return new ResolvedGroupConstraint(
             MinPerGroup: Resolve(group.MinPerGroup, bindings, declaredParameters),
-            MinValidResults: group.MinValidResults
+            MinValidResults: group.MinValidResults,
+            MinEnforcement: group.MinEnforcement ?? PublishedClassDefinition.MinEnforcement.Shall
         );
     }
 

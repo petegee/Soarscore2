@@ -14,6 +14,8 @@
 
 namespace Soarscore.Domain;
 
+using Soarscore.Domain.Competitions;
+
 /// <summary>
 /// One validation failure. LADR-0002 §4: "Defect renders as an API error
 /// body — check identity, path into the document, and a message naming the
@@ -29,18 +31,25 @@ public sealed record Defect(string Code, string Path, string Message);
 /// machine-readable <see cref="Code"/>, a human <see cref="Message"/>, and the
 /// <see cref="Defects"/> a validation failure needs to report more than one
 /// problem at once. Never both, never neither.
+///
+/// Success may additionally carry <see cref="Advisories"/>: audit-only
+/// warnings recorded alongside the outcome (kanban/in-progress
+/// /should-level-minima-warn-dont-refuse.md WI-2 — a SHOULD-level draw
+/// minimum prescribed through, not refused). Empty (never null) on failure
+/// and on every pre-existing success path; the outcome stays binary.
 /// </summary>
 public readonly struct Result<T>
 {
     private readonly T? _value;
 
-    private Result(bool isSuccess, T? value, string? code, string? message, IReadOnlyList<Defect> defects)
+    private Result(bool isSuccess, T? value, string? code, string? message, IReadOnlyList<Defect> defects, IReadOnlyList<DrawWarning> advisories)
     {
         IsSuccess = isSuccess;
         _value = value;
         Code = code;
         Message = message;
         Defects = defects;
+        Advisories = advisories;
     }
 
     public bool IsSuccess { get; }
@@ -56,15 +65,19 @@ public readonly struct Result<T>
     /// <summary>Failure only. Empty (never null) on success.</summary>
     public IReadOnlyList<Defect> Defects { get; }
 
+    /// <summary>Success only. Empty (never null) on failure and on every path that predates advisories.</summary>
+    public IReadOnlyList<DrawWarning> Advisories { get; }
+
     /// <summary>Throws if <see cref="IsFailure"/> — read <see cref="IsSuccess"/> first, or use <see cref="Match{TResult}"/>.</summary>
     public T Value => IsSuccess
         ? _value!
         : throw new InvalidOperationException($"Result is a failure ({Code}): {Message}");
 
-    public static Result<T> Success(T value) => new(true, value, null, null, []);
+    public static Result<T> Success(T value, IReadOnlyList<DrawWarning>? advisories = null) =>
+        new(true, value, null, null, [], advisories ?? []);
 
     public static Result<T> Failure(string code, string message, IReadOnlyList<Defect>? defects = null) =>
-        new(false, default, code, message, defects ?? []);
+        new(false, default, code, message, defects ?? [], []);
 
     public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<Result<T>, TResult> onFailure) =>
         IsSuccess ? onSuccess(_value!) : onFailure(this);

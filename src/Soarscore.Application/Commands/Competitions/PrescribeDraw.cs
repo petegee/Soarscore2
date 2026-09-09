@@ -64,6 +64,8 @@ public sealed class PrescribeDrawHandler(IEventStore eventStore, IClock clock) :
             command.CompetitionId.Value, ExpectedVersion.Exact(version), [decision.Value], cancellationToken);
         return append.IsFailure
             ? Result<CompetitionId>.Failure(append.Code!, append.Message!, append.Defects)
-            : Result<CompetitionId>.Success(command.CompetitionId);
+            // A SHOULD-minimum warn-through (should-level-minima story WI-2)
+            // rides synchronously beside the id — empty on every other path.
+            : Result<CompetitionId>.Success(command.CompetitionId, decision.Advisories);
     }
 }

@@ -204,6 +204,55 @@ public class CompetitionEventJsonTests
         reread.Should().BeOfType<PhaseDrawn>().Which.PrescribedBy.Should().BeNull();
     }
 
+    // kanban/in-progress/should-level-minima-warn-dont-refuse.md WI-2 — the
+    // appended Warnings. The round-trip half proves the payload survives; the
+    // legacy half is the backward-compatibility contract against both
+    // stores' pre-WI-2 persisted history.
+
+    [Fact]
+    public void PhaseDrawn_round_trips_its_Warnings_through_SoarscoreEventJson_byte_for_byte()
+    {
+        CompetitionEvent drawn = SamplePhaseDrawnEvent() with
+        {
+            Warnings =
+            [
+                new DrawWarning(
+                    "prescribeDraw.groupBelowClassMinimum",
+                    "Round 1, group 1: the group has 5 member(s), smaller than the class's SHOULD-level minimum group size (6); scheduled with a recorded warning."),
+            ],
+        };
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+
+        json.Should().Contain("groupBelowClassMinimum");
+
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+        var reemitted = JsonSerializer.Serialize(reread, SoarscoreEventJson.Options);
+
+        reemitted.Should().Be(json);
+        reread.Should().BeOfType<PhaseDrawn>().Which.Warnings.Should().Equal(
+            ((PhaseDrawn)drawn).Warnings);
+    }
+
+    [Fact]
+    public void Legacy_PhaseDrawn_payload_without_Warnings_deserialises_to_null_and_folds_to_empty()
+    {
+        // Warnings is nullable precisely so the pre-WI-2 persisted shape —
+        // no property at all — reads back; the fold normalises it to empty.
+        CompetitionEvent drawn = SamplePhaseDrawnEvent();
+
+        var json = JsonSerializer.Serialize(drawn, SoarscoreEventJson.Options);
+
+        json.Should().NotContain("warnings");
+
+        var reread = JsonSerializer.Deserialize<CompetitionEvent>(json, SoarscoreEventJson.Options);
+
+        reread.Should().BeOfType<PhaseDrawn>().Which.Warnings.Should().BeNull();
+
+        var folded = Competition.Create(SampleCreatedEvent()).Apply((PhaseDrawn)reread!);
+        folded.Phases.Single().Warnings.Should().BeEmpty();
+    }
+
     private static ParameterBinding SampleParameterBinding(
         MeasuredValue value, DateTimeOffset? at = null, int? phaseOrdinal = null, int? roundOrdinal = null) =>
         new()

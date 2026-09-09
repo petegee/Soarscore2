@@ -20,3 +20,11 @@ Feature: Parallel-running a GliderScore fixture under a seed competition class
     Then the parallel-run verdict is exactly the triaged differences
     And the final placings match the GliderScore oracle exactly
     And every ledgered difference is a triaged rulebook-vs-local-practice difference with a citation
+
+  Scenario: The f5j-christchurch-2019 parallel run under canonical F5J reports exactly the triaged differences
+    Given the fixture corpus manifest
+    When the harness parallel-runs the GliderScore fixture "f5j-christchurch-2019" under the seed class "30-f5j"
+    Then the parallel-run verdict is exactly the triaged differences
+    And the raw grain is exact against the GliderScore oracle
+    And the final placings split from the GliderScore oracle exactly as the ledger triages
+    And every ledgered difference is a triaged rulebook-vs-local-practice difference with a citation

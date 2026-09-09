@@ -10,6 +10,7 @@
 
 using System.Net.Http.Json;
 using Soarscore.Application.Commands.CompetitionClasses;
+using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Acceptance.Tests.Support;
 
@@ -18,11 +19,42 @@ public static class ApiClient
     /// <summary>What every request body is written with and every response body is read with — see this file's header.</summary>
     public static System.Text.Json.JsonSerializerOptions Options => ClassDefinitionIngestion.Options;
 
+    /// <summary>
+    /// POST a command, unwrapping the WI-2 {value, warnings} envelope when the
+    /// endpoint returns one (a 200 with advisories carries the value beside the
+    /// warnings; empty advisories return the value bare). Warnings are
+    /// discarded here — use <see cref="PostCommandWithWarningsAsync{TResult}"/>
+    /// when the test must assert on them.
+    /// </summary>
     public static async Task<TResult> PostCommandAsync<TResult>(HttpClient client, string path, object command)
+    {
+        var (value, _) = await PostCommandWithWarningsAsync<TResult>(client, path, command);
+        return value;
+    }
+
+    /// <summary>
+    /// POST a command, returning the value plus any advisory warnings carried
+    /// in the WI-2 {value, warnings} envelope (empty when the endpoint returned
+    /// the value bare).
+    /// </summary>
+    public static async Task<(TResult Value, IReadOnlyList<DrawWarning> Warnings)> PostCommandWithWarningsAsync<TResult>(
+        HttpClient client, string path, object command)
     {
         var response = await client.PostAsJsonAsync(path, command, Options);
         await EnsureSuccessAsync(response, path);
-        return (await response.Content.ReadFromJsonAsync<TResult>(Options))!;
+        var body = await response.Content.ReadAsStringAsync();
+        using var document = System.Text.Json.JsonDocument.Parse(body);
+        if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+            && document.RootElement.TryGetProperty("warnings", out var warningsElement))
+        {
+            var value = System.Text.Json.JsonSerializer.Deserialize<TResult>(
+                document.RootElement.GetProperty("value").GetRawText(), Options)!;
+            var warnings = System.Text.Json.JsonSerializer.Deserialize<IReadOnlyList<DrawWarning>>(
+                warningsElement.GetRawText(), Options) ?? [];
+            return (value, warnings);
+        }
+
+        return (System.Text.Json.JsonSerializer.Deserialize<TResult>(body, Options)!, []);
     }
 
     public static async Task<HttpResponseMessage> PostCommandRawAsync(HttpClient client, string path, object command) =>

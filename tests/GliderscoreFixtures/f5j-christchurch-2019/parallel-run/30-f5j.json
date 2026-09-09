@@ -1,0 +1,137 @@
+{
+  "pair": {
+    "fixture": "f5j-christchurch-2019",
+    "seed": "30-f5j"
+  },
+  "seedClass": {
+    "name": "RC Electric Powered Thermal Duration Gliders",
+    "version": "FAI F5 Electric 2026 ed.2"
+  },
+  "provenance": {
+    "scoredWindowRounds": 11,
+    "parameterBindings": [],
+    "metricMappings": [
+      {
+        "metric": "overflySeconds",
+        "resolved": 0,
+        "mechanism": "seed-declared whenNotRecorded (Number 0), resolved by the engine (FlightMetricResolution tier 1, metric-absence-semantics.md) — the harness emits NO assumed values; the capture map stays exactly the duration replay's and records only what the fixture data carries.",
+        "justification": "P1 (assumed-clean unless recorded to the contrary): seconds past the working time are what the timekeeper records; a flight landing within time has none. FAI 5.5.11.12 g — 'A zero score will be recorded for overflying the end of the Group's Working Time by more than one (1) minute' — and 5.5.11.12 k (no landing bonus when the model overflies the end of the working time) are the rulebook shape the seed's overflySeconds metric and its flightValidWhen/landing gates implement. Corroborated inside the foil's own data: the longest decoded flight is 599 s, inside the 600 s working time, so no row could carry a positive value."
+      },
+      {
+        "metric": "touchedByCompetitor",
+        "resolved": false,
+        "mechanism": "seed-declared whenNotRecorded (Flag false), resolved by the engine — no harness-emitted values.",
+        "justification": "P1: FAI 5.5.11.12 j — 'If during the landing procedure the model aircraft touches the competitor or his helper (or the team manager if present) or any deliberately placed obstruction, zero landing bonus must be allocated' — is an exception a helper records. No GS column records it on this fixture, so the benign value (no contact; the landing award stands per 5.5.11.12 h) is the negative recording. The seed declares the flag inside the conditional gating its landing lookup."
+      }
+    ],
+    "derivedMetrics": [
+      {
+        "metric": "startHeight",
+        "source": "Scores.FlightScoreDeduction",
+        "derivation": "P2 re-expression under the seed's metric name: a flown row with a positive payload captures startHeight = payload. GS's FlightScoreDeduction column carries the start height on an F5J fixture ('misleadingly named', ladder.py:26-27).",
+        "justification": "FAI 5.5.11.12 d — 'The recorded Start Height in metres shall be truncated to the nearest metre' — the recorded quantity exists on every flown row here (66–271 m); 5.5.11.12 e prices it (half a point per metre to 200 m, three points above). The seed's two-rate bands are byte-identical to GS's deduction."
+      },
+      {
+        "metric": "startHeightRecorded",
+        "source": "Scores.FlightScoreDeduction",
+        "derivation": "P2 re-expression beside startHeight: a flown row with a positive payload captures startHeightRecorded = true; a flown row with a zero payload would capture startHeightRecorded = false (never exercised here — every flown row carries 66–271 m). The seed declares no whenNotRecorded for this flag, so the derivation covers every flown row and no flight runs Pending.",
+        "justification": "FAI 5.5.11.7 e — 'the AMRT does not record any Start Height data' cancels the flight — and the seed's flightValidWhen gate implements exactly that outcome: a height-less flight scores zero on both sides."
+      }
+    ],
+    "declaredInstruments": [
+      {
+        "instrument": "nz-f3j-side",
+        "metric": "landingDistance",
+        "tapeSlug": "tape-nz-f3j-side",
+        "clause": "NZ.2.4.4"
+      }
+    ],
+    "notes": [
+      "No parameter bindings (decision 8): the seed's two parameters (flyoffMaxGroup 14, flyoffMinRounds 3) both carry declared defaults bound at CompetitionSetup and neither is ever exercised — the fly-off never draws (second-phase draw refused; RankingEngine never reads promotion/finalRanking) — so DeriveParallelRunBindings' documented defaulted-parameter arm binds nothing and ParallelRunBindings is an empty dictionary, verified against this empty block.",
+      "Landing is NOT a derived metric: landingDistance carries the reading exactly as recorded (Scores.Landing), verbatim and naming the nz-f3j-side instrument, including 0 for the off-the-tape reading. The award is composed from the seed's own 5.5.11.12 h rows under the declared NZ.2.4.4 scale via the parent story's contract. GS scheme 11 is that same composition pre-composed (50/45/40/35/30/25/20/15/10/5/0 row for row) — a verification target for the parent's composition, never adapter logic. A reading is not points (mark 55 awards 5) and not a claim about the physical tape's calibration.",
+      "UNWITNESSED — raw floor: FAI 5.5.11.12 f records a zero score where the score is negative (penalties stand). The minimum flown raw is 123.0, so the floor never fires on a flown row. A provenance note, NOT a ledger entry.",
+      "Motor-restart rows (Before-starting answer): 22 flown rows carry F5JMotorReStarted=true; GS applies no scoring effect (Dur.F5JMotorRestartOption null, ladder.py:35), the seed declares no such metric, and the harness maps no such flag — the two sides' numbers agree by construction. FAI 5.5.11.7 g cancels the flight (zero score) when the propeller keeps turning after the 30-second motor run period; whether GS's flag denotes that offence is a GS-vs-rulebook question — reported here, never reconciled, and never a harness-emitted zeroing.",
+      "75 m rows flight-less both sides: R8/G3 P82 and R11/G1 P104 are rule-driven cancelled flights (time 0, height 0, LandingOver75m true) under FAI 5.5.11.7 d ('the nose of the model aircraft does not come to rest within 75 meters of the centre of the competitor's designated landing spot'); GS persisted 0.0 cells and the harness's zero-row rule (Time1Mins <= 0, flight-less) makes them flight-less in the seed-run too — cell 0 both sides. Equivalent; a provenance note.",
+      "Overfly corroboration: the longest decoded flight is 599 s — nobody overflew the 600 s working time — so the overflySeconds → 0 assumption is also what the foil's own data implies (FAI 5.5.11.12 g).",
+      "The +0.005 nudge is integer-exact: raw points are whole numbers (min(t,600)·1 + landing award − two-rate deduction), so GS's half-up-1dp nudge changes nothing at the raw grain.",
+      "GS re-rounds Score and RawScore to GroupScoreDecimals (effective 1 dp, half-up) BEFORE comparing, then sorts Score DESC / RawScore DESC with ties displayed '=n' — the =n tie-display semantics vs the engine's exact-decimal ties. The rounding grid cascades into the ranking grain through the aggregate; a rounding-cascade disclosure, not a separate entry.",
+      "R12–18 declared outside the window: the fixture carries 18 rounds of rows but GS scored rounds 1–11 (TaskLastRound = MAX(RoundNo where Updated='True') = 11); R12–18 are wholly-unflown placeholder rows whose persisted 0.0 oracle cells are deliberately outside the comparison universe (scoredWindowRounds 11), and a full-fixture run would let the seed's drop-from-5 eat a phantom zero and erase the witnessed split.",
+      "Penalties all 0 (G4 moot — the harness's loud infraction-mapping refusal never fires); no re-flights (OriginalRoundNo == RoundNo, ReFlightNo 0 everywhere); all 18 CompPilots carry Team='0' so the team mapping no-ops and the comparator's deliberate no-team-grain stance holds (the ales precedent).",
+      "R5 prescribe-with-warning (disclosed run shape, NOT a triaged difference — CheckProvenance passes): R5's drawn 5/6/7 partition prescribes against canonical F5J minPerGroup 6 with a recorded SHOULD-level warning (FAI 5.5.11.8.1 a) 'SHOULD be scheduled'; the hardness recalibration (should-level-minima-warn-dont-refuse.md WI-2: SHOULD breach in [2, min) prescribes + warns naming the group) carries it on PhaseDrawn.Warnings, retained on the folded phase and surfaced synchronously in the {value, warnings} envelope the ReplayDriver unwraps. R5 stays in the 11-round window; no refusal left to witness."
+    ]
+  },
+  "triagedDifferences": [
+    {
+      "triageKind": 1,
+      "grain": "normalised",
+      "round": null,
+      "group": null,
+      "pilotNo": "*",
+      "difference": "Normalised-cell rounding grid: GS normalises 1000·Raw/max HalfUp to 1 dp (effective GroupScoreDecimals 1 — every scored cell lands on the grid) while the seed leaves the rulebook's exact values (full decimal expansion). Witnessed on every fractional cell of the window; cascades into the ranking grain through the aggregate. Pinned normalised-cell count: 127 — measured 2026-09-10 on sqlite (198 normalised cells compared over the 11-round window; the 1000.0 group-winner and 0.0 flight-less cells compare exact, the 127 fractional cells differ); the wildcard covers any cell, so the count is what makes the entry exact (decision 4).",
+      "citation": "Local practice: the club's GS grid rounds normalised cells HalfUp to 1 dp (competition.json configProvenance.knobs.GroupScoreDecimals — stored null, effective 1, basis: all 162 positive NormalisedScore values match half-up rounding to exactly 1 dp and none match truncation). Rulebook: FAI 5.5.11.12 l–m normalise the group winner to 1000 and scale the rest by percentage, stating no normalised-score rounding precision — the f3j re-triage framing. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 79,
+      "difference": "Final-placing split, pilot 79: GS rank 12 vs seed-run placing 13 (down 1). The seed drops the pilot's lowest round score — R11/G1 265.1, flown (off-tape landing, award 0) and uniquely lowest (next-lowest R8/G1 313.1, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =12/=13 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 ('if more than 4 [rounds flown], the lowest round score is dropped') implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds, fires on real rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99 — no drop-worst can activate within rounds 1-11). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence on normalised precision. Minimum-tie rule 30-f5j tieBreak Latest: pilot 79's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 82,
+      "difference": "Final-placing split, pilot 82: GS rank 7 vs seed-run placing 6 (up 1). The pilot's lowest cell is R8/G3 0.0 — the rule-driven cancelled 75 m flight (flight-less both sides, provenance-noted) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =6/=7 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231); the cancelled flight is FAI 5.5.11.7 d. Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 82's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 83,
+      "difference": "Final-placing split, pilot 83: GS rank 6 vs seed-run placing 8 (down 2). The seed drops the pilot's lowest round score — R11/G1 358.0, flown and uniquely lowest (next-lowest R10/G2 440.0, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =6/=8 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 83's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 94,
+      "difference": "Final-placing split, pilot 94: GS rank 13 vs seed-run placing 11 (up 2). The pilot's lowest cell is R7/G1 0.0 — an unflown placeholder slot inside the window (Updated False) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =11/=13 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 94's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 129,
+      "difference": "Final-placing split, pilot 129: GS rank 8 vs seed-run placing 9 (down 1). The seed drops the pilot's lowest round score — R5/G3 264.4, flown and uniquely lowest (next-lowest R11/G3 615.7, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =8/=9 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 129's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 131,
+      "difference": "Final-placing split, pilot 131: GS rank 9 vs seed-run placing 7 (up 2). The pilot's lowest cell is R11/G3 0.0 — an unflown placeholder slot inside the window (Updated False) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =7/=9 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 131's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 133,
+      "difference": "Final-placing split, pilot 133: GS rank 11 vs seed-run placing 12 (down 1). The seed drops the pilot's lowest round score — R7/G2 261.6, flown and uniquely lowest (next-lowest R5/G2 289.0, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =11/=12 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 133's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+    }
+  ]
+}

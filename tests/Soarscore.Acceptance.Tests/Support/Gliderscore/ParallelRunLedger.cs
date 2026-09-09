@@ -60,7 +60,24 @@ public sealed record ParallelRunSeedClass(string Name, string Version);
 public sealed record ParallelRunProvenance(
     IReadOnlyList<ParallelRunParameterBinding> ParameterBindings,
     IReadOnlyList<ParallelRunMetricMapping> MetricMappings,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<string> Notes,
+    // f5j-christchurch-parallel-run-witness.md WI-2 item 5 — three additive,
+    // null-tolerant widenings. Every ledger authored before them (the ales
+    // pair) carries none and deserialises unchanged.
+    //
+    // ScoredWindowRounds — the fixture's scored rollup window the run
+    // prescribed (rounds 1–N); the comparator scopes its oracle-coverage
+    // universe to it and verifies the run's prescribed round count equals it.
+    // DerivedMetrics — the P2 derivations the harness captured from foil
+    // columns under the seed's metric names (never assumptions: each is
+    // declared by the adopted seed, verified by name).
+    // DeclaredInstruments — the reading instruments the run declared (the
+    // harness-chosen name, the metric, the TapeCorpus slug snapshotted into
+    // the declaration, and the scale's rule authority); the comparator
+    // verifies each against the competition's actual declaration.
+    int? ScoredWindowRounds = null,
+    IReadOnlyList<ParallelRunDerivedMetric>? DerivedMetrics = null,
+    IReadOnlyList<ParallelRunDeclaredInstrument>? DeclaredInstruments = null);
 
 /// <summary>One seed parameter bound from the comp's actual config, with its derivation.</summary>
 public sealed record ParallelRunParameterBinding(string Parameter, decimal Value, string Derivation);
@@ -68,15 +85,44 @@ public sealed record ParallelRunParameterBinding(string Parameter, decimal Value
 /// <summary>
 /// One seed-declared metric the foil never recorded, and the value it resolves
 /// to when unrecorded. <paramref name="resolved"/> is the seed-declared
-/// whenNotRecorded FLAG value the engine resolves (P1); the comparator verifies
+/// whenNotRecorded value the engine resolves (P1), serialised verbatim —
+/// a Flag as a JSON boolean, a Number as a JSON number — so both shapes the
+/// metric-absence machinery declares stay expressible. The comparator verifies
 /// it against the ADOPTED definition, so the disclosure and the seed cannot
-/// drift apart silently.
+/// drift apart silently. (Before WI-2 this was bool; the ales ledger's
+/// <c>true</c> deserialises into the widened type unchanged.)
 /// </summary>
 public sealed record ParallelRunMetricMapping(
     string Metric,
-    bool Resolved,
+    JsonElement Resolved,
     string Mechanism,
     string Justification);
+
+/// <summary>
+/// One P2 derived metric: a seed metric the harness captured from a foil
+/// column under the seed's own name (e.g. startHeight from
+/// Scores.FlightScoreDeduction), with the derivation rule and its
+/// rulebook justification. Landing readings are NOT derived metrics — they
+/// are recorded verbatim under a declared instrument (DeclaredInstruments).
+/// </summary>
+public sealed record ParallelRunDerivedMetric(
+    string Metric,
+    string Source,
+    string Derivation,
+    string Justification);
+
+/// <summary>
+/// One declared reading instrument: the harness-chosen <paramref name="instrument"/>
+/// name the captures cite, the <paramref name="metric"/> it was read against,
+/// the <paramref name="tapeSlug"/> (TapeCorpus stem) whose scale was
+/// snapshotted into the declaration, and the <paramref name="clause"/> — the
+/// rule authority for that scale (e.g. NZ.2.4.4).
+/// </summary>
+public sealed record ParallelRunDeclaredInstrument(
+    string Instrument,
+    string Metric,
+    string TapeSlug,
+    string Clause);
 
 /// <summary>
 /// One triaged, witnessed difference. Round/group are null when the entry is
