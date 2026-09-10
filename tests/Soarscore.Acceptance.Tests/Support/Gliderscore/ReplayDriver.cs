@@ -298,6 +298,17 @@ public sealed class ReplayDriver(HttpClient client)
             ["f5j-christchurch-2019"] = ("nz-f3j-side", "tape-nz-f3j-side"),
         };
 
+    // ParallelRunSkipParityRoundBinds — f3j-international-parallel-run-retriage
+    // .md decision 4: parallel-run pairs whose parity round-scoped binds are
+    // deliberately neither refused nor applied. Consulted before the refusal
+    // in ReplayAsync throws; a skipped fixture binds nothing from
+    // RoundParameterBindings and the parity path never consults the set. For
+    // f3j-international the seed declares no targetTime parameter at all —
+    // there is nothing to bind — and the R1 540 knowledge is triaged kind 1,
+    // never applied under the seed.
+    private static readonly IReadOnlySet<string> ParallelRunSkipParityRoundBinds =
+        new HashSet<string> { "f3j-international" };
+
     // ------------------------------------------- WI-1 item 2 parameter binds
 
     /// <summary>
@@ -362,11 +373,30 @@ public sealed class ReplayDriver(HttpClient client)
         {
             if (parameter.DefaultValue is null)
             {
+                // kanban/in-progress/f3j-international-parallel-run-retriage.md
+                // decision 6 — KNOWN-UNEXERCISED SKIP, checked before the
+                // unknown-parameter throw below: "carryPenalties" binds
+                // NOTHING. Flag kind; the decimal-typed bind pipeline would
+                // need widening for a parameter that is never read — the
+                // fly-off phase never draws, so promotion's CarryPenalties
+                // never resolves; F3J states nothing (F12). Disclosed in
+                // ledger provenance, not bound.
+                if (parameter.Name == "carryPenalties")
+                {
+                    continue;
+                }
+
                 binds.Add((parameter.Name, parameter.Name switch
                 {
                     "groupSize" => (decimal)largestActualGroup,
                     "minRounds" => (decimal)roundsFlown,
                     "minNewGroup" => 1m,
+                    // flyoffMinRounds = 1 — F3J.11 states no fly-off minimum
+                    // (F12 — silence is a parameter); 1 is the
+                    // least-constraining rulebook-consistent choice (the ales
+                    // minNewGroup=1 precedent); never exercised — the fly-off
+                    // phase never draws.
+                    "flyoffMinRounds" => 1m,
                     _ => throw new NotSupportedException(
                         $"Seed class '{seed.Name}' declares no-default parameter '{parameter.Name}', which this "
                         + "harness's per-pair parameter mapping does not derive — a mapping gap "
@@ -613,7 +643,10 @@ public sealed class ReplayDriver(HttpClient client)
         // the story's stated anti-goal — so the pair is refused loudly and
         // must author its own mapping (the same discipline as
         // DeriveParallelRunBindings' unknown-parameter arm).
-        if (parallelRun is not null && RoundParameterBindings.ContainsKey(fixture.Slug))
+        var skipParityRoundBinds = parallelRun is not null
+            && ParallelRunSkipParityRoundBinds.Contains(fixture.Slug);
+
+        if (parallelRun is not null && RoundParameterBindings.ContainsKey(fixture.Slug) && !skipParityRoundBinds)
         {
             throw new NotSupportedException(
                 $"Fixture '{fixture.Slug}' carries parity round-scoped parameter binds, which are GS-oracle knowledge "
@@ -621,7 +654,7 @@ public sealed class ReplayDriver(HttpClient client)
                 + "(seed-definition-parallel-run.md anti-goal: seed classes are never tuned to GS).");
         }
 
-        if (RoundParameterBindings.GetValueOrDefault(fixture.Slug) is { } binds)
+        if (!skipParityRoundBinds && RoundParameterBindings.GetValueOrDefault(fixture.Slug) is { } binds)
         {
             foreach (var (parameter, roundNo, value) in binds)
             {

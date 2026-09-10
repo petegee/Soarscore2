@@ -77,7 +77,14 @@ public sealed record ParallelRunProvenance(
     // verifies each against the competition's actual declaration.
     int? ScoredWindowRounds = null,
     IReadOnlyList<ParallelRunDerivedMetric>? DerivedMetrics = null,
-    IReadOnlyList<ParallelRunDeclaredInstrument>? DeclaredInstruments = null);
+    IReadOnlyList<ParallelRunDeclaredInstrument>? DeclaredInstruments = null,
+    // f3j-international-parallel-run-retriage.md WI-1 item 3 — a fourth
+    // additive, null-tolerant widening: ExcludedOracleCells declares the oracle
+    // cells the run deliberately never compares (decision 7 — a provenance-level
+    // declared scope, the christchurch scored-window discipline). Every ledger
+    // authored before it (the ales and christchurch pairs) carries none and
+    // deserialises unchanged.
+    IReadOnlyList<ParallelRunExcludedCell>? ExcludedOracleCells = null);
 
 /// <summary>One seed parameter bound from the comp's actual config, with its derivation.</summary>
 public sealed record ParallelRunParameterBinding(string Parameter, decimal Value, string Derivation);
@@ -125,8 +132,47 @@ public sealed record ParallelRunDeclaredInstrument(
     string Clause);
 
 /// <summary>
+/// One declared excluded oracle cell (f3j-international-parallel-run-retriage.md
+/// decision 7): an oracle cell the run deliberately never compares, declared as
+/// scope in provenance exactly like the scored window — GS persists cells the
+/// seed-run can never produce (its phantom rows the draw derivation drops), and
+/// undeclared they would surface as spurious "never compared" mismatches.
+/// <paramref name="pilotNo"/> is a number or "*" (any pilot in the group), and
+/// <paramref name="reason"/> rides unverified — the ledger review covers its
+/// honesty, exactly like the provenance notes.
+/// </summary>
+public sealed record ParallelRunExcludedCell(
+    int Round,
+    int Group,
+    JsonElement? PilotNo,
+    string Reason)
+{
+    /// <summary>True when this cell declares the given oracle cell's (round,
+    /// group, pilot): round and group equal, and the declared pilot is "*" or
+    /// the cell's pilot number. A cell with no pilot declaration covers
+    /// nothing — it matches no key and the comparator's provenance check
+    /// breaks loudly (a typo, not a silent shrink).</summary>
+    public bool Covers(int roundNo, int groupNo, long pilotNo) =>
+        Round == roundNo && Group == groupNo
+        && PilotNo is { } pilot && (
+            pilot.ValueKind == JsonValueKind.Number && pilot.TryGetInt64(out var n) && n == pilotNo
+            || pilot.ValueKind == JsonValueKind.String && pilot.GetString() == "*");
+
+    /// <summary>The pilot token as written ("13" or "*"), for provenance break lines.</summary>
+    public string PilotToken() => PilotNo is { } pilot && pilot.ValueKind == JsonValueKind.Number
+        ? pilot.TryGetInt64(out var n) ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : pilot.GetRawText()
+        : PilotNo?.GetString() ?? "(none)";
+}
+
+/// <summary>
 /// One triaged, witnessed difference. Round/group are null when the entry is
 /// not scoped to a score cell (the ranking grain); pilotNo is a number or "*".
+/// <para>
+/// gs-ledger-modes.md WI-1 — the optional CI disposition, mirroring
+/// DivergenceEntry: "permanent" (a cited rulebook-vs-local-practice split the
+/// seed class holds by design) is reported but never fails strict mode;
+/// anything else is "pending" and fails strict mode.
+/// </para>
 /// </summary>
 public sealed record ParallelRunDifferenceEntry(
     int TriageKind,
@@ -135,8 +181,19 @@ public sealed record ParallelRunDifferenceEntry(
     int? Group,
     JsonElement? PilotNo,
     string Difference,
-    string Citation)
+    string Citation,
+    string? Disposition = null)
 {
+    /// <summary>True for a permanent-by-design entry (never fails strict mode);
+    /// throws on any token other than pending/permanent — a typo must not
+    /// silently demote an entry to pending.</summary>
+    public bool Permanent => (Disposition ?? "pending").ToLowerInvariant() switch
+    {
+        "pending" => false,
+        "permanent" => true,
+        var d => throw new InvalidOperationException(
+            $"Parallel-run ledger entry has unknown disposition '{d}' (valid: pending, permanent): {Difference[..Math.Min(80, Difference.Length)]}"),
+    };
     /// <summary>True when this entry names the computed mismatch's cell: same
     /// grain, the entry's round/group scope (null = any), and the entry's pilot
     /// (number or "*"). The set-equality verdict is this predicate in both

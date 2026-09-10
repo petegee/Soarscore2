@@ -45,6 +45,22 @@ public sealed class ReplaySteps
 
         _report = await Comparator.CompareAsync(
             _fixture, outcome, AcceptanceFixture.EventStore, AcceptanceFixture.Client);
+
+        // gs-ledger-modes.md WI-3 — the ledger gate, at the When tail so a red
+        // run has already run the FULL comparison (strict keeps reporting
+        // whether everything else was exact). Strict (the default) fails any
+        // PENDING ledgered divergence with its rendered explanation; every
+        // mode fails a pending entry whose divergence no longer fires.
+        if (GsLedgerModeReader.FromEnvironment() == GsLedgerMode.Strict)
+        {
+            var pending = _fixture.Divergences.Where(d => !d.Permanent).ToList();
+
+            pending.Should().BeEmpty(
+                LedgerGate.FixtureDivergenceExplanation(_fixture, pending, _report));
+        }
+
+        _report.UnwitnessedLedgerEntries.Should().BeEmpty(
+            LedgerGate.UnwitnessedExplanation(_fixture, _report.UnwitnessedLedgerEntries));
     }
 
     // ------------------------------------------------------------------ Then

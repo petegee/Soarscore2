@@ -13,6 +13,13 @@ Feature: Parallel-running a GliderScore fixture under a seed competition class
   names its difference in words with a triage kind and a rulebook or
   local-practice citation; an untriaged difference escalates for human triage
   and is never resolved by editing the ledger to fit.
+  Ledger modes (gs-ledger-modes.md): by default (SOARSCORE_GS_LEDGER_MODE=strict)
+  any PENDING triaged difference fails the scenario after the full comparison,
+  with its rendered evidence; `ledgered` restores the verdict-only behaviour.
+  Every entry carries a disposition — `permanent` entries are cited
+  rulebook-vs-local-practice splits held by design (reported in
+  TestResults/gs-divergences.md, never failed); pending entries are actionable
+  debt: discharge the seed class, or re-triage to permanent with a citation.
 
   Scenario: The ales-sample-comp parallel run under NZ ALES 200 reports exactly the triaged differences
     Given the fixture corpus manifest
@@ -27,4 +34,12 @@ Feature: Parallel-running a GliderScore fixture under a seed competition class
     Then the parallel-run verdict is exactly the triaged differences
     And the raw grain is exact against the GliderScore oracle
     And the final placings split from the GliderScore oracle exactly as the ledger triages
+    And every ledgered difference is a triaged rulebook-vs-local-practice difference with a citation
+
+  Scenario: The f3j-international parallel run under the F3J seed class reports exactly the triaged differences
+    Given the fixture corpus manifest
+    When the harness parallel-runs the GliderScore fixture "f3j-international" under the seed class "50-f3j"
+    Then the parallel-run verdict is exactly the triaged differences
+    And the final placings split from the GliderScore oracle exactly as the ledger triages
+    And the witnessed split counts match the ledger's pins
     And every ledgered difference is a triaged rulebook-vs-local-practice difference with a citation

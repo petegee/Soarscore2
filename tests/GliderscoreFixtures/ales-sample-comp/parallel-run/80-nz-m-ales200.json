@@ -65,7 +65,8 @@
       "group": 1,
       "pilotNo": 13,
       "difference": "Raw score-cell composition: GS's stored RawScore folds the landing points into the pre-normalisation raw (flight 120 s = 120 pts + 3 m landing = 40 pts, stored 160), while the NZ rulebook composition the seed-run produces keeps the pre-normalisation raw at flight points only (120) and adds the landing points after normalisation (final cell 440 = 400 + 40, identical on both sides). Witnessed: raw cell 1/1/1/0/13 is 160 in GS's oracle, 120 in the seed-run.",
-      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides."
+      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -74,7 +75,8 @@
       "group": 1,
       "pilotNo": 48,
       "difference": "Raw score-cell composition: GS's stored RawScore folds the landing points into the pre-normalisation raw (flight 240 s = 240 pts + 4 m landing = 35 pts, stored 275), while the NZ rulebook composition the seed-run produces keeps the pre-normalisation raw at flight points only (240) and adds the landing points after normalisation (final cell 835 = 800 + 35, identical on both sides). Witnessed: raw cell 1/1/1/0/48 is 275 in GS's oracle, 240 in the seed-run.",
-      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides."
+      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -83,7 +85,8 @@
       "group": 1,
       "pilotNo": 70,
       "difference": "Raw score-cell composition: GS's stored RawScore folds the landing points into the pre-normalisation raw (flight 300 s = 300 pts + 5 m landing = 30 pts, stored 330), while the NZ rulebook composition the seed-run produces keeps the pre-normalisation raw at flight points only (300) and adds the landing points after normalisation (final cell 1030 = 1000 + 30, identical on both sides). Witnessed: raw cell 1/1/1/0/70 is 330 in GS's oracle, 300 in the seed-run.",
-      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides."
+      "citation": "Rulebook: NZ.3.12.1 e — 'Landing points will be added to the normalized flight score to determine the overall score'; NZ.3.12.3 d — 'The contestant's final score will be the sum of the pilot's normalized flight score and the landing score'. Local practice: the club's GS grid composes landing into its persisted RawScore pre-normalisation (resolve-gliderscore-scoring-arithmetic.md D1). Triage kind 1 — local variation: the club ran a variant of the rulebook; correct on both sides.",
+      "disposition": "permanent"
     }
   ]
 }

@@ -238,6 +238,36 @@ existing distance path is not legacy and must survive untouched.
     physical tape is printed accurately; the model states which instrument the
     club declared each reading came from.
 
+### Field evidence for decision 8 (2026-09-10, from the f3j-international parallel run)
+
+GliderScore hard-codes the off-the-tape / no-bonus distinction on the
+**distance path too**, not just the reading path - the field evidence that a
+recorded 0.0 distance and a spot landing are different facts that a
+fused-table input form cannot represent:
+
+- The Landings form prints, generically for **every** landing table in the
+  catalogue, "The Landing Distance '0' is a special case and automatically
+  receives 0 Points. Distance and/or Points entries of 0 or less will not be
+  saved." (`gliderscore/GliderScore_Master/Lndgs_FRM.vb:296-298`, set in the
+  form's load handler, so not table-specific).
+- `GetLandingBonus` short-circuits before the exact-match table lookup:
+  `If LndgDistance = 0 Then Return 0` (`Scoring_MOD.vb:737-738`; also
+  `Scoring_ScoreCheck.vb:743`).
+- GS injects a `0 -> 0` row into every landing table at load
+  (`Comps1.vb:4586`, `GlobalFunctions_MOD.vb:1327,1413` - "adds the record
+  0 distance = 0 points to the table"), which is exactly the explicit
+  `upTo: 0 -> 0` row the f3j-international fixture's class-definition.json
+  carries.
+
+The collision this produces is witnessed and triaged in
+`tests/GliderscoreFixtures/f3j-international/parallel-run/50-f3j.json` (34 raw
+cells: GS 0 where the rulebook's `F3J.10.5` first band awards 100 for a
+recorded 0.0 m nose-to-spot distance). The ambiguity this story's three-way
+distinction ends is not hypothetical: it is what the club had to work around
+by entering 0 for "no bonus" - and a genuine spot landing has no
+representable value on that form. Re-verify the cited line numbers before
+relying on them.
+
 ## Owner follow-ups (2026-09-09, on branch `docs/tape-reading-scale-wording`)
 
 - **Wording approved and landed.** The Reading Scale glossary section and the

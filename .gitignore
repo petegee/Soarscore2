@@ -17,3 +17,6 @@ gliderscore/
 __pycache__/
 
 gliderscore/
+
+# dotnet test artifact directories (gs-divergences.md report, TRX, coverage)
+TestResults/

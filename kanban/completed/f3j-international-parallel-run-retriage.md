@@ -1,6 +1,12 @@
 # Story — f3j-international parallel-run re-triage
 
-**Status:** Backlog · **Raised:** 2026-09-06 (decision 2 of
+**Status:** Completed 2026-09-10 — the f3j-international parallel run landed
+under `50-f3j`: verdict `MatchesTriagedSet`; measured split raw 54 /
+normalised 264 mismatch cells / 20-pilot final-placing split (rounding grid
+174, landing-0 sentinel 34, −30 absence 11, R1 540 decay 22; 5 phantom
+exclusions held; drops agree — the original claim stays withdrawn); 92/92
+acceptance both stores (Domain 820, Application 310, Architecture 7).
+**Raised:** 2026-09-06 (decision 2 of
 `kanban/completed/seed-definition-parallel-run.md`: the pair's original
 guaranteed-divergence claim was withdrawn; this stub carries the corrected
 difference list) · **Plan written:** 2026-09-10 — the fixture data was

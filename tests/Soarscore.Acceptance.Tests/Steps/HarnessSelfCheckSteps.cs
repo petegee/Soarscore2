@@ -81,6 +81,7 @@ public sealed class HarnessSelfCheckSteps
     private int _roundNo;
     private int _groupNo;
     private GrainMismatch _seededMismatch = null!;
+    private IReadOnlyList<DivergenceEntry> _subtractedLedger = [];
     private ComparisonReport _ledgerReport = null!;
 
     [Given(@"^a synthetic comparison carrying one normalised-grain mismatch for pilot (\d+) in round (\d+) group (\d+), ours (.+) versus oracle (.+)$")]
@@ -123,6 +124,13 @@ public sealed class HarnessSelfCheckSteps
             _seededMismatch.Ours!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
             .And.Contain(_seededMismatch.Expected!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
             .And.Contain(_seededMismatch.Delta);
+
+        // gs-ledger-modes.md WI-6 — the witnessing arm's shadow: whatever the
+        // ledger carried, the entries that cover nothing of the seeded
+        // mismatch are exactly the ones reported unwitnessed.
+        report.UnwitnessedLedgerEntries.Should().BeEquivalentTo(
+            _subtractedLedger.Where(d => !d.CoversGrainRoundGroupPilot(_seededMismatch)).ToList(),
+            "unwitnessed = ledger entries whose divergence no longer fires");
     }
 
     [Then(@"^the report compares exact$")]
@@ -131,11 +139,18 @@ public sealed class HarnessSelfCheckSteps
         SyntheticReport().AllGrainsExact.Should().BeTrue(
             "the ledger entry covers exactly the seeded mismatch, so nothing may remain"
             + $"{Environment.NewLine}{SyntheticReport().DiffTable()}");
+
+        // gs-ledger-modes.md WI-6 — under the exact-cover entry the ledger is
+        // fully witnessed; the arm must not fire on a passing report.
+        SyntheticReport().UnwitnessedLedgerEntries.Should().BeEmpty(
+            "the exact-cover entry witnessed the seeded mismatch, so nothing is unwitnessed");
     }
 
     // -------------------------------------------------------------- plumbing
 
-    private void BuildSyntheticReport(IReadOnlyList<DivergenceEntry> divergences) =>
+    private void BuildSyntheticReport(IReadOnlyList<DivergenceEntry> divergences)
+    {
+        _subtractedLedger = divergences;
         _ledgerReport = Comparator.BuildReport(
             SyntheticFixture(divergences),
             [],
@@ -147,6 +162,7 @@ public sealed class HarnessSelfCheckSteps
             normalisedCellsCompared: 1,
             rankingPilotsCompared: 0,
             oracleCells: 1);
+    }
 
     private ComparisonReport SyntheticReport() =>
         _ledgerReport ?? throw new InvalidOperationException(

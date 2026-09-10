@@ -177,8 +177,21 @@ public sealed record ComparisonReport(
     int RankingPilotsCompared,
     int OracleCells,
     int TeamsCompared = 0,
-    int LadderStandingsCompared = 0)
+    int LadderStandingsCompared = 0,
+    // gs-ledger-modes.md WI-2 — pending ledger entries that covered NO
+    // pre-subtraction mismatch: a discharged divergence lingering in the
+    // ledger. Permanent entries are exempt (T1 is documentary by design;
+    // D5/R1 witness but are not required to). Defaulted so the self-check
+    // and any earlier caller compile unchanged.
+    IReadOnlyList<DivergenceEntry>? UnwitnessedLedgerEntries = null)
 {
+    private readonly IReadOnlyList<DivergenceEntry> _unwitnessedLedgerEntries =
+        UnwitnessedLedgerEntries ?? [];
+
+    /// <summary>gs-ledger-modes.md WI-2 — the pending entries whose divergence
+    /// no longer fires. Never empty-tolerated: a discharged entry is removed
+    /// from the ledger, not silently carried.</summary>
+    public IReadOnlyList<DivergenceEntry> UnwitnessedLedgerEntries => _unwitnessedLedgerEntries;
     public bool AllGrainsExact =>
         RawMismatches.Count == 0
         && NormalisedMismatches.Count == 0
@@ -370,6 +383,19 @@ public static class Comparator
         var normalisedRemainder = SubtractLedger(fixture, normalisedMismatches).ToList();
         var rankingRemainder = SubtractLedger(fixture, rankingMismatches).ToList();
 
+        // gs-ledger-modes.md WI-2 — the witnessing arm: every PENDING entry
+        // must cover at least one computed (pre-subtraction) mismatch. An
+        // entry whose divergence no longer fires is a discharged divergence
+        // the ledger still carries — fail it in every mode rather than
+        // silently carry it. Permanent entries are exempt: T1 entries are
+        // documentary (the team grain they describe does not run), and D5/R1
+        // entries witness today but are decided-law, not debt to verify.
+        var preSubtraction = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).ToList();
+        var unwitnessed = fixture.Divergences
+            .Where(d => !d.Permanent)
+            .Where(d => !preSubtraction.Any(d.CoversGrainRoundGroupPilot))
+            .ToList();
+
         return new ComparisonReport(
             RawMismatches: rawRemainder,
             NormalisedMismatches: normalisedRemainder,
@@ -381,7 +407,8 @@ public static class Comparator
             RankingPilotsCompared: rankingPilotsCompared,
             OracleCells: oracleCells,
             TeamsCompared: teamsCompared,
-            LadderStandingsCompared: ladderStandingsCompared);
+            LadderStandingsCompared: ladderStandingsCompared,
+            UnwitnessedLedgerEntries: unwitnessed);
     }
 
     // ------------------------------------------------------------- grain 1
@@ -1492,11 +1519,7 @@ public static class Comparator
     // -------------------------------------------------------------- ledger
 
     private static IEnumerable<GrainMismatch> SubtractLedger(GliderscoreFixture fixture, IEnumerable<GrainMismatch> mismatches) =>
-        mismatches.Where(m => !fixture.Divergences.Any(d =>
-            d.Grain.Equals(m.Grain, StringComparison.OrdinalIgnoreCase)
-            && (d.Round is null || d.Round == m.RoundNo)
-            && (d.Group is null || d.Group == m.GroupNo)
-            && (d.PilotNo is null || d.Covers(m.PilotNo))));
+        mismatches.Where(m => !fixture.Divergences.Any(d => d.CoversGrainRoundGroupPilot(m)));
 
     // ------------------------------------------------------------ plumbing
     // The plumbing helpers are internal (not private): ParallelRunComparator

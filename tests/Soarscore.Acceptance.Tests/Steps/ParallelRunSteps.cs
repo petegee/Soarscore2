@@ -61,6 +61,20 @@ public sealed class ParallelRunSteps
 
         _report = await ParallelRunComparator.CompareAsync(
             fixture, _ledger, outcome, AcceptanceFixture.EventStore, AcceptanceFixture.Client);
+
+        // gs-ledger-modes.md WI-3 — the ledger gate at the When tail: strict
+        // (the default) fails any PENDING triaged difference after the full
+        // compare, with its rendered evidence. The verdict's exactness and
+        // set-equality assertions below are unchanged and still run on green
+        // pairs; permanent entries are reported (corpus report), never failed.
+        if (GsLedgerModeReader.FromEnvironment() == GsLedgerMode.Strict)
+        {
+            var pending = _ledger.TriagedDifferences.Where(e => !e.Permanent).ToList();
+
+            pending.Should().BeEmpty(
+                LedgerGate.PairDivergenceExplanation(pending)
+                + $"{Environment.NewLine}{_report.Render()}");
+        }
     }
 
     // ------------------------------------------------------------------ Then
@@ -239,6 +253,78 @@ public sealed class ParallelRunSteps
                 "every triaged per-pilot ranking entry must be witnessed — a triaged placing that fails to "
                 + "appear FAILS the scenario."
                 + $"{Environment.NewLine}{report.Render()}");
+    }
+
+    // f3j-international-parallel-run-retriage.md WI-2 item 2 — the count pins
+    // (decision 1's shape, decision 8's step): the ledger triages its raw and
+    // normalised differences as wildcard class entries, so the entry's exact
+    // witness is its pinned measured count — the computed count per grain must
+    // equal it. The raw grain is NON-empty by assertion (the landing-0
+    // sentinel split is this pair's raw-grain product — its first non-exact
+    // raw grain); the ranking grain needs no pin — it is fully enumerated per
+    // pilot and the split step asserts coverage in both directions.
+    [Then(@"^the witnessed split counts match the ledger's pins$")]
+    public void ThenTheWitnessedSplitCountsMatchTheLedgerSPins()
+    {
+        var report = Report();
+        var ledger = Ledger();
+
+        var rawComputed = report.ComputedDifferences
+            .Count(mismatch => mismatch.Grain == "raw");
+
+        rawComputed.Should().BePositive(
+            "the landing-0 sentinel split is this pair's raw-grain product — an empty raw grain means "
+            + "the run did not witness the split."
+            + $"{Environment.NewLine}{report.Render()}");
+
+        var pinnedRaw = PinnedRawCount(
+            DesignatedEntry(ledger, "raw", "Pinned raw-mismatch count").Difference);
+
+        rawComputed.Should().Be(pinnedRaw,
+            $"the ledger's raw class entry pins the measured count at {pinnedRaw} cells — the wildcard "
+            + "covers any cell, so the count is what makes the entry exact."
+            + $"{Environment.NewLine}{report.Render()}");
+
+        var normalisedComputed = report.ComputedDifferences
+            .Count(mismatch => mismatch.Grain == "normalised");
+
+        var pinnedNormalised = PinnedNormalisedCount(
+            DesignatedEntry(ledger, "normalised", "Pinned normalised-cell count").Difference);
+
+        normalisedComputed.Should().Be(pinnedNormalised,
+            $"the ledger's normalised class entry pins the measured count at {pinnedNormalised} cells — the "
+            + "wildcard covers any cell, so the count is what makes the entry exact."
+            + $"{Environment.NewLine}{report.Render()}");
+    }
+
+    // The designated pin entry: the grain's entries carrying the pin marker —
+    // the marker's presence, not position, designates it (the f3j ledger
+    // carries several wildcard entries per grain; exactly one is the pin).
+    private static ParallelRunDifferenceEntry DesignatedEntry(
+        ParallelRunLedger ledger, string grain, string marker)
+    {
+        return ledger.TriagedDifferences
+            .Where(entry => entry.Grain == grain
+                            && entry.Difference.Contains(marker, StringComparison.Ordinal))
+            .Should().ContainSingle(
+                $"the ledger's {grain} grain carries exactly one entry pinning its measured count "
+                + $"('{marker}: N') — without it the wildcard entry has no exact witness.")
+            .Subject;
+    }
+
+    private static int PinnedRawCount(string difference)
+    {
+        var match = Regex.Match(difference, @"Pinned raw-mismatch count: (\d+)");
+
+        if (!match.Success)
+        {
+            throw new InvalidOperationException(
+                "The ledger's raw class entry carries no 'Pinned raw-mismatch count: N' clause — "
+                + "the count pin (decision 1) is what makes the wildcard entry exact; curate it from the "
+                + "measured run, never omit it.");
+        }
+
+        return int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private static int PinnedNormalisedCount(string difference)

@@ -240,10 +240,23 @@ public static class ParallelRunComparator
             ? fixture.ExpectedScores.Scores.Keys.Where(key => OracleRoundNo(key) <= scoredWindow)
             : fixture.ExpectedScores.Scores.Keys;
 
+        // f3j-international-parallel-run-retriage.md WI-1 item 4 — declared
+        // excluded cells (decision 7) shrink the universe further, the same
+        // declared-scope discipline as the window: a key whose parsed
+        // (round, group, pilot) is covered by a declared cell — pilot number or
+        // "*" — is deliberately uncompared (GS's phantom rows the draw
+        // derivation drops are oracle keys the seed-run can never produce).
+        // Null or empty declares nothing: the ales and christchurch ledgers
+        // carry none, no key is parsed, and the universe is exactly as before.
+        var excludedCells = ledger.Provenance.ExcludedOracleCells;
+        IEnumerable<string> comparableUniverse = excludedCells is not { Count: > 0 }
+            ? oracleUniverse
+            : oracleUniverse.Where(key => !IsDeclaredExcluded(key, excludedCells));
+
         Comparator.EnsureOracleCoverage(
-            oracleUniverse, comparedRaw, "raw", rawMismatches);
+            comparableUniverse, comparedRaw, "raw", rawMismatches);
         Comparator.EnsureOracleCoverage(
-            oracleUniverse, comparedNormalised, "normalised", normalisedMismatches);
+            comparableUniverse, comparedNormalised, "normalised", normalisedMismatches);
 
         // The computed set, ledger-shaped and minus nothing.
         var computed = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).ToList();
@@ -335,6 +348,21 @@ public static class ParallelRunComparator
     /// {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"}.</summary>
     private static int OracleRoundNo(string oracleKey) =>
         int.Parse(oracleKey.Split('/')[1], System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>True when one oracle key is covered by a declared excluded cell —
+    /// round and group equal, and the declared pilot "*" or the key's pilot
+    /// number. The keyFormat is
+    /// {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"}.</summary>
+    private static bool IsDeclaredExcluded(
+        string oracleKey, IReadOnlyList<ParallelRunExcludedCell> excludedCells)
+    {
+        var parts = oracleKey.Split('/');
+        var roundNo = int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+        var groupNo = int.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture);
+        var pilotNo = long.Parse(parts[4], System.Globalization.CultureInfo.InvariantCulture);
+
+        return excludedCells.Any(cell => cell.Covers(roundNo, groupNo, pilotNo));
+    }
 
     /// <summary>
     /// The P4 verification: the run must have run under the ledger's disclosed
@@ -545,6 +573,26 @@ public static class ParallelRunComparator
                     $"the ledger declares instrument '{declared.Instrument}' on tape '{declared.TapeSlug}' but the "
                     + "competition's declared scale differs from that tape's corpus scale — the run did not run "
                     + "under the disclosed scale.");
+            }
+        }
+
+        // f3j-international-parallel-run-retriage.md WI-1 item 5 — every
+        // declared excluded cell must match ≥1 actual oracle key: the exclusion
+        // is declared scope over the oracle, so a cell the oracle names nothing
+        // for is a typo, and the compared universe would silently shrink by it.
+        // The reason string rides unverified (the ledger review covers its
+        // honesty), exactly like the provenance notes.
+        if (ledger.Provenance.ExcludedOracleCells is { Count: > 0 } excludedCells)
+        {
+            foreach (var cell in excludedCells)
+            {
+                if (!fixture.ExpectedScores.Scores.Keys.Any(key => IsDeclaredExcluded(key, [cell])))
+                {
+                    breaks.Add(
+                        $"the ledger excludes oracle cell r{cell.Round}/g{cell.Group} p{cell.PilotToken()} but the "
+                        + "oracle carries no key matching it — a declared cell that matches nothing is a typo; "
+                        + "fix the ledger, never silently shrink.");
+                }
             }
         }
 

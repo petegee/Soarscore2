@@ -210,18 +210,52 @@ public sealed record TeamStandingOracle(
 /// One accepted divergence. The ledger starts EMPTY and an entry lands only
 /// after human triage (D6); pilotNo-or-"*" arrives as either a number or a
 /// string, hence the raw element. Round/group are null for the ranking grain.
+/// <para>
+/// gs-ledger-modes.md WI-1 — the optional CI disposition: "permanent" (a
+/// decided law — deferred-decisions.md R1/T1 — or a structural fact GS rows a
+/// replay can never produce) is reported but never fails strict mode;
+/// anything else is "pending" (the default when absent) and fails strict
+/// mode, and must keep witnessing a live computed mismatch in every mode.
+/// Null-tolerant widening precedent: ParallelRunProvenance.
+/// </para>
 /// </summary>
 public sealed record DivergenceEntry(
     string Grain,
     int? Round,
     int? Group,
     JsonElement? PilotNo,
-    string Reason)
+    string Reason,
+    string? Disposition = null)
 {
     /// <summary>True when the entry names this pilot, or "*" for all pilots.</summary>
     public bool Covers(long pilotNo) => PilotNo is { } p && (
         p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var n) && n == pilotNo
         || p.ValueKind == JsonValueKind.String && p.GetString() == "*");
+
+    /// <summary>True when this entry names the computed mismatch's cell — the
+    /// SubtractLedger predicate, shared with the WI-2 witnessing arm
+    /// (gs-ledger-modes.md). A null pilotNo covers any pilot, as always.</summary>
+    public bool CoversGrainRoundGroupPilot(GrainMismatch mismatch) =>
+        Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
+        && (Round is null || Round == mismatch.RoundNo)
+        && (Group is null || Group == mismatch.GroupNo)
+        && (PilotNo is null || Covers(mismatch.PilotNo));
+
+    /// <summary>The pilot token as written ("13" or "*"), for report lines.</summary>
+    public string PilotToken() => PilotNo is { } pilot && pilot.ValueKind == JsonValueKind.Number
+        ? pilot.TryGetInt64(out var n) ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : pilot.GetRawText()
+        : PilotNo?.GetString() ?? "(none)";
+
+    /// <summary>True for a permanent-by-design entry (never fails strict mode);
+    /// throws on any token other than pending/permanent — a typo must not
+    /// silently demote an entry to pending.</summary>
+    public bool Permanent => (Disposition ?? "pending").ToLowerInvariant() switch
+    {
+        "pending" => false,
+        "permanent" => true,
+        var d => throw new InvalidOperationException(
+            $"Ledger entry has unknown disposition '{d}' (valid: pending, permanent): {Reason[..Math.Min(80, Reason.Length)]}"),
+    };
 }
 
 /// <summary>One loaded fixture — everything the replay and comparison need.</summary>

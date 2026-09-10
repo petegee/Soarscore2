@@ -5,13 +5,20 @@ Feature: Replaying a GliderScore fixture
   the public command surface only — publish the authored class definition,
   create, register, prescribe the realised draw, accept, open entries/flights,
   capture measurements, complete task rounds, finalise — and its persisted
-  scores are   compared against Soarscore's at three grains with EXACT decimal
+  scores are compared against Soarscore's at three grains with EXACT decimal
   equality, no tolerance: raw flight score (in-process, pre-normalisation),
   per-round normalised score, and the final ranking. A per-fixture divergence
   ledger lists accepted differences after human triage; the comparator
   subtracts them and fails on the remainder.
   WI-5 adds the harness's own self-checks on top of that machinery:
   replay determinism, score conservation, and ledger strictness.
+  Ledger modes (gs-ledger-modes.md): by default (SOARSCORE_GS_LEDGER_MODE=strict)
+  any PENDING ledgered divergence fails the scenario after the full comparison,
+  with a rendered explanation of where and how SoarScore diverges; `ledgered`
+  restores the subtract-and-pass behaviour. Every entry carries a disposition —
+  `permanent` entries are decided laws or structural facts (reported in
+  TestResults/gs-divergences.md, never failed); a pending entry whose divergence
+  no longer fires fails in every mode.
 
   Scenario: The ales-sample-comp fixture reproduces GliderScore exactly at all three grains
     Given the fixture corpus manifest

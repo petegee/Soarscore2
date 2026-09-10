@@ -1,0 +1,308 @@
+{
+  "pair": {
+    "fixture": "f3j-international",
+    "seed": "50-f3j"
+  },
+  "seedClass": {
+    "name": "RC Thermal Duration Gliders",
+    "version": "FAI F3 Soaring 2025 ed.2"
+  },
+  "provenance": {
+    "parameterBindings": [
+      {
+        "parameter": "flyoffMinRounds",
+        "value": 1,
+        "derivation": "the seed declares no default (50-f3j.json phases[1].validity.minRounds resolves through the parameter) and it is bound 1 before /prescribe-draw (CompetitionSetup). F3J.11 states no minimum number of fly-off rounds (F3J.11.1–F3J.11.4: organisation, 15-min working time, scoring as in F3J.10, final placing) and nothing through F3J.12 states one either — the rulebook's silence is a parameter, so 1 is the least-constraining rulebook-consistent choice (the ales ledger's minNewGroup=1 precedent). Never exercised on this pair — the fly-off never draws (16 qualifying rounds fill the window; phase 2's parameters are never reached)."
+      }
+    ],
+    "metricMappings": [
+      {
+        "metric": "overflySeconds",
+        "resolved": 0,
+        "mechanism": "seed-declared whenNotRecorded (Number 0), resolved by the engine (FlightMetricResolution tier 1, metric-absence-semantics.md) — the harness emits NO assumed values; the capture map records only what the fixture data carries (the seed declares no lateLandingDeduction/launchHeight metrics, so the definition-gated arms capture nothing).",
+        "justification": "P1 (assumed-clean unless recorded to the contrary): seconds past the working time are what the timekeeper records; a flight landing within time has none. F3J.10.3 — 'A penalty of thirty (30) points will be deducted from the flight score for overflying the end of the group's working time for up to a maximum of one (1) minute' — and F3J.10.4 — 'A zero score will be recorded for overflying the end of the group's working time by more than one (1) minute' — are the rulebook shape the seed's overflySeconds metric and its flightValidWhen gate implement. Corroborated inside the foil's own data: the longest decoded flight is 598 s, inside the 600 s working time (F3J.6.2 b), so no row could carry a positive value."
+      },
+      {
+        "metric": "touchedByCompetitor",
+        "resolved": false,
+        "mechanism": "seed-declared whenNotRecorded (Flag false), resolved by the engine — no harness-emitted values.",
+        "justification": "P1: F3J.10.8 — 'the model aircraft touches either the competitor or his helper during the landing manoeuvre, no landing points will be given' — is an exception a helper records. No GS column records it on this fixture, so the benign value (no contact; the landing award stands) is the negative recording. The seed declares the flag inside the conditional gating its landing lookup (overflySeconds = 0 AND touchedByCompetitor = false)."
+      },
+      {
+        "metric": "restedWithin75m",
+        "resolved": true,
+        "mechanism": "seed-declared whenNotRecorded (Flag true), resolved by the engine — no harness-emitted values.",
+        "justification": "P1: F3J.5.1 e — 'The flight is cancelled and recorded as a zero score if, during landing, some part of the model aircraft does not come to rest within 75 metres of the centre of the competitor's designated landing circle' — is an exception a timer/helper records; an unrecorded cancellation is the negative recording of the exception. Corroborated inside the foil's own data: every scores-raw row carries LandingOver75m false (no contrary record). The seed declares the flag as the flightValidWhen gate, matching F3J.5.1 e's shape — it zeroes the flight, not the bonus."
+      }
+    ],
+    "excludedOracleCells": [
+      {
+        "round": 1,
+        "group": 5,
+        "pilotNo": "*",
+        "reason": "D5 phantom group 5: GS's R1 export carries five all-zero placeholder rows (pilots 7, 11, 17, 39, 56 — oracle keys 1/1/5/0/{7,11,17,39,56}) whose pilots also fly real flights in groups 1/4 of the same round (fixture provenance.json: 'Round 1 carries a phantom group 5: five zero-score rows (pilots 7, 11, 17, 39, 56) whose pilots also have real flights in groups 1/4 of the same round; kept verbatim. GS aggregates best-per-original-round keeping the highest, so these rows do not alter totals or drops'). The draw derivation's dedup keeps each pilot's real flight (highest oracle NormalisedScore per (pilot, original round) — ReplayDriver.cs:1038-1049, matching GS's own best-per-original-round aggregation, which is what makes the phantom neutral) and drops the phantoms, so these 5 oracle cells are never replayed or compared. Declared scope in provenance (decision 7), never a triaged entry: a never-compared cell is not a difference."
+      }
+    ],
+    "notes": [
+      "The story's original guaranteed-divergence claim — GS's local Drop1AtRound=8 forcing a drop-policy split — stands WITHDRAWN: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) equals the seed's phases[0].drops[0] applyWhenRoundsCompletedAtLeast: 8, and F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — makes 8 the rulebook threshold (16 scored rounds fire exactly one drop per pilot on both sides). The 20 ranking moves come from the score cells, not the drop policy; where the dropped cell sits differently on each side (pilot 12: R14 vs R1, pilot 25: R13 vs R1, pilot 26: R9 vs R14, pilot 54: R13 vs R7, pilot 2: R13 vs R16) that is a consequence of the cell differences below, never a policy difference.",
+      "The −30 payload is not mapped — the offences differ (decision 3): all 11 FlightScoreDeduction=30 rows carry flight times 182–596 s, inside the 600 s working time, so F3J.10.3's overfly offence (flying past the end of working time) cannot describe them; GS's durFlightPenalty=1 late-landing scheme (competition.json familyRows.Dur; provenance.json: '11 rows carry FlightScoreDeduction=30; Penalty is 0 everywhere') is a local GS construct the rulebook does not state. The harness captures nothing for the column under this seed — the capture gate reads the published definition (ReplayDriver.cs:1161-1168) and the seed declares no lateLandingDeduction metric — so the seed-run scores those rows +30 relative to GS. Triaged below, never reconciled.",
+      "Teams reach no persisted score: UseTeams=true with all 30 pilots assigned across 8 teams (sizes 4,3,4,4,4,3,4,4 — competition.json triageJustification.teams), but team standings are report-time aggregations of unchanged individual normalised scores, never an input to them; the parallel comparator's deliberate no-team-grain stance holds (the ales precedent).",
+      "GS re-rounds Score and RawScore to GroupScoreDecimals (1 dp, RoundOrTruncate=0 HalfUp) before comparing, then sorts Score DESC / RawScore DESC with ties displayed '=n' — the =n tie-display semantics vs the engine's exact-decimal ties. Inert on this pair: no aggregate ties exist on either side (every rank 1–30 is distinct on both sides), but the rounding grid's sub-0.1 shifts are exactly the kind of perturbation that could create or dissolve an '=n' display — a rounding-cascade disclosure, not a separate entry.",
+      "Unexercised parameters: flyoffSize is defaulted (9) — the defaulted arm binds nothing (christchurch decision-8 precedent) and the fly-off never draws; carryPenalties is unbound (decision 6 — a Flag bind would widen the decimal-typed bind pipeline for a parameter that is never read: the fly-off phase never draws, so promotion's CarryPenalties never resolves; F3J states nothing about carry-over); flyoffMinRounds is bound (1, above) but never read. Unbound-but-never-read is safe: the engine resolves parameters per use, and phase 2's parameters are never reached.",
+      "The R1 540 target is oracle-reconciled knowledge and is never bound under the seed (decision 4): the export carries no DurTargetTimeByRound rows at all (competition.json scheduleTables.DurTargetTimeByRound.rows is empty — ReplayDriver.cs:185-203) and 22 R1 flights over 540 s imply the target exactly (every decay witness solves T = (t + TS)/2 = 540); the fixture's RoundParameterBindings entry is parity-only and the parallel run refuses fixture round binds (ReplayDriver.cs:646-655), and the seed declares no targetTime parameter — nothing to bind. The decay difference is triaged below, never applied.",
+      "GS's landing-0 convention is generic, documented and code-verified — the club-convention reading of the 34 recorded 0.0s (no landing bonus; the pilot landed off the tape) is GliderScore's own explicit rule, not an inference: the Landings form prints 'The Landing Distance 0 is a special case and automatically receives 0 Points. Distance and/or Points entries of 0 or less will not be saved.' for EVERY landing table in the catalogue (gliderscore/GliderScore_Master/Lndgs_FRM.vb:296-298, set in the form's load handler); GetLandingBonus short-circuits before the exact-match lookup — If LndgDistance = 0 Then Return 0 (Scoring_MOD.vb:737-738); and GS injects a 0→0 row into every landing table at load (Comps1.vb:4586, GlobalFunctions_MOD.vb:1327 and :1413 — 'adds the record 0 distance = 0 points to the table'), which is exactly the fixture-authored class-definition.json's explicit upTo: 0 → 0 row cited in the sentinel entry below. This strengthens the sentinel's disclosure but does not change its triage: F3J.10.5's measurement semantics genuinely award 100 for a recorded 0.0 m nose-to-spot distance (its first band, 'up to 0.2'), so the collision — a recorded numeral overloaded between GS's program rule and the rulebook's table read literally — stands triaged kind 1, and the ending of that overload belongs to the declared-instrument model (tape-points-landing-seeds.md decision 8's three-way distinction: off-the-tape, 0 m on the spot, and no measurement)."
+    ]
+  },
+  "triagedDifferences": [
+    {
+      "triageKind": 1,
+      "grain": "raw",
+      "round": null,
+      "group": null,
+      "pilotNo": "*",
+      "difference": "Raw score-cell landing-0 sentinel: GS records 'no landing bonus' as Landing 0.0 and its exact-match scheme awards 0 for it (the scheme's rows start at 0.2 m — a recorded 0.0 misses every row), while the seed's rulebook table has no 0-row either but its first band scores a recorded 0.0 at 100 ('up to 0.2'). The harness submits row.Landing AS RECORDED, 0.0 included — the seed declares landingDistance a demanded observation with no whenNotRecorded, so an uncaptured flight would run Pending forever, and rewriting 0.0 to a distance would be a harness-authored interpretation of the foil's sentinel (decision 2: captured verbatim, triaged, never mapped away). Witnessed on 34 flown cells (22 pure, 10 sharing the −30 deduction cell, 1 sharing an R1 decay cell, 1 sharing both). Pinned raw-mismatch count: 54 across the three raw classes below — the wildcard covers any cell, so the count is what makes the entry exact (decision 1).",
+      "citation": "Rulebook: F3J.10.5 — the landing-bonus table's first band is 'up to 0.2 | 100' and no row awards for a recorded 0.0 a value other than that band ('over 15 | 0' closes the table). Local practice: competition.json lookups.landingSchemes[0] — scheme LndgNo 2 'F3J/F3L/F5L Enter Dist' (durLndg=2, entered distances 0.2–14.0 m) — whose points rows run 0.2→100 through 15.0→30 with no zero row, so GS's exact-match lookup awards 0 for the empty distance; the fixture-authored definition encodes the same award explicitly (class-definition.json score lookup: upTo 0 → 0 row) and the ReplayDriver capture comment states it (ReplayDriver.cs:1150-1152: 'landingDistance — metres; ALWAYS captured for a flown slot. The class lookup scores a zero as zero (GS's exact-match miss on the empty distance)'). Triage kind 1 — local variation: the club's record convention (0.0 = no bonus) vs the rulebook's measurement semantics; the seed is rulebook-faithful and nothing is fixed (decision 2).",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "raw",
+      "round": null,
+      "group": null,
+      "pilotNo": "*",
+      "difference": "Raw score-cell −30 late-landing deduction: 11 rows carry FlightScoreDeduction=30 (R1G1P44, R5G4P7, R6G3P2, R6G4P63, R10G3P2, R12G2P63, R13G1P42, R13G4P54, R14G2P25, R14G3P44, R14G4P7), and GS deducts the payload from the raw pre-normalisation; the seed declares no such term, so the seed-run scores those rows +30 relative to GS. The offences differ: every deduction row sits inside the 600 s working time (flight times 182–596 s), so F3J.10.3's overfly offence cannot describe them, and GS's durFlightPenalty=1 late-landing scheme is a local GS construct the rulebook does not state — the payload is not mapped (decision 3: the mapping policy fixes values, not offences). All 11 cells sit inside the sentinel cells (every deduction row also carries Landing 0.0).",
+      "citation": "Rulebook: F3J.10.3 — 'A penalty of thirty (30) points will be deducted from the flight score for overflying the end of the group's working time for up to a maximum of one (1) minute' — the overfly offence, which the seed's conditional implements exactly (overflySeconds > 0 → −30) and which never fires here (overflySeconds unrecorded → 0, and no flight overflew). Local practice: competition.json familyRows.Dur.durFlightPenalty = 1 puts GS's late-landing scheme in force (provenance.json: 'durFlightPenalty=1 puts the late-landing deduction mode in force (unlike ales-sample-comp): 11 rows carry FlightScoreDeduction=30; Penalty is 0 everywhere'); the capture gate reads the published definition — the seed class in parallel-run mode (ReplayDriver.cs:1161-1168) — and the seed declares no lateLandingDeduction metric, so the harness captures nothing for the column. Triage kind 1 — local variation: the offences differ, so the payload is disclosed and never reconciled (decision 3).",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "raw",
+      "round": null,
+      "group": null,
+      "pilotNo": "*",
+      "difference": "Raw score-cell R1 over-target decay: GS scored round 1 against a 540 s target with linear over-target decay (target − (t − target)), while rounds 2–16 held the 600 s target with no decay; 22 R1 flights over 540 s witness it (every one solves T = (t + TS)/2 = 540 exactly — oracle-reconciled, the export carrying no DurTargetTimeByRound rows, ReplayDriver.cs:185-203). The seed's working time is a fixed 600 s with a 1 pt/s rate term capped PerFlight at 600 and no decay clause, so the seed-run scores those 22 flights at their flight time — up to 116 points above GS's decayed value (at 598 s: GS flight points 482, seed 598).",
+      "citation": "Rulebook: F3J.6.2 b — 'The working time allowed to each competitor in a group shall be of exactly ten (10) minutes duration' — the fixed 600 s the seed's timing declares; F3J.10.1 c ends the timed attempt at 'completion of the group's working time', so no flight scores beyond 600 s (the seed's rate term caps PerFlight at 600; the 1 pt/s rate itself is the universal F3J convention, carried at docs/rules/f3j.md:74-78 as convention, not citation). The rulebook states no over-target decay clause. Local practice: GS scored R1 against 540 s (competition.json familyRows.Dur.durTargetTime 600 covers rounds 2–16; the R1 value exists nowhere in the fixture's input files — DurTargetTimeByRound has zero rows — and is oracle-reconciled in the parity harness, ReplayDriver.cs:185-203, never bound under the seed: decision 4). Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "normalised",
+      "round": null,
+      "group": null,
+      "pilotNo": "*",
+      "difference": "Normalised-cell rounding grid: GS normalises 1000·Raw/max HalfUp to 1 dp (competition.json scoring: GroupScoreDecimals 1, RoundOrTruncate 0) while the seed truncates to 1 dp per the rulebook. Witnessed on 174 cells with identical raws and unshifted group maxima — the first sighting on the corpus of the HalfUp-vs-Truncate split. Witness cell 1/1/4/0/11: exact 1000·421/588 = 715.986… → GS 716.0 vs seed 715.9. Pinned normalised-cell count: 264 across the two normalised classes (this grid and the cascade below) — the wildcard covers any cell, so the count is what makes the entry exact (decision 1).",
+      "citation": "Rulebook: F3J.10.11 — 'The corrected score shall be recorded (truncated) to one place after the decimal point' — truncation is the cited rulebook position, implemented by 50-f3j.json's normalise.round (Truncate, 0.1). Local practice: the club's GS grid rounds HalfUp to 1 dp (competition.json scoring: GroupScoreDecimals 1, RoundOrTruncate 0) — the same grid the christchurch pair witnessed where the rulebook was silent; here the rulebook speaks and the citation is stronger. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "normalised",
+      "round": null,
+      "group": null,
+      "pilotNo": "*",
+      "difference": "Normalised-cell composition/renormalisation cascade: the 90 non-rounding normalised mismatches — 53 cells carrying a raw-mismatched value (the three raw classes above; the 54th raw mismatch, 1/13/3/0/63, is the R13G3 winner cell whose raw changes 574 → 674 while its normalised stays 1000.0 on both sides) plus 37 cells whose own raw is unchanged but whose group's composition shifted (the group max moved, so the seed renormalises every cell against it). The group max moved in exactly 10 groups: R1G1, R1G2, R1G3, R5G4, R6G3, R7G2, R8G1, R13G1, R13G3, R15G4 — the 37 raw-unchanged rescaled cells sit in 8 of them (R1G1, R5G4, R6G3, R7G2, R8G1, R13G1, R13G3, R15G4), because in R1G2 and R1G3 every normalised mismatch carries its own raw difference (all 7 and all 8 respectively) and no raw-unchanged cell there differs after the re-scale. In nine of the ten the winner pilot changes (e.g. R1G3 p50 → p13, R13G1 p62 → p42); in R13G3 the winner pilot holds (p63 wins both sides) while his raw moves 574 → 674 and re-scales the group. Cites the three raw classes as its causes; the remaining 174 normalised mismatches are the rounding grid (the entry above).",
+      "citation": "Rulebook: F3J.10.10 — the group winner is 'the highest aggregate of points comprising of flight points plus landing bonus points minus penalty points' — the composition whose seed-side value the three raw classes change; F3J.10.11 — each competitor's corrected score is his own score 'multiplied by 1000 / highest points total scored in the group before correction' — the renormalisation that propagates a moved max to every raw-unchanged cell. Local practice causes: the landing-0 sentinel (34 cells), the −30 late-landing deduction (11 rows, GS-side only) and the R1 540 s decay (22 cells) — each triaged above. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 54,
+      "difference": "Final-placing split, pilot 54: GS rank 6 vs seed-run placing 3 (up 3). His R13G4 row carries both the landing-0 sentinel (the seed awards the landing 100 where GS's exact-match scheme awards 0) and the −30 deduction the seed never carries (+130 pre-normalisation); his R1G3 decay cell scores his 588 s flight at flight time on the seed side where GS decayed it past the 540 s target (+96 raw); 9 further cells ride the rounding grid and the renormalisation cascade (+91.9 aggregate). GS drops R13 while the seed-run drops R7 — the cell differences moved his minimum, not the drop policy. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinel + −30 absence (R13G4), R1 540 s decay (R1G3), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 54's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 13,
+      "difference": "Final-placing split, pilot 13: GS rank 8 vs seed-run placing 4 (up 4). His single R1 row (R1G3) carries both the R1 540 s decay (GS flight points 485 where the seed scores his 595 s flight) and the landing-0 sentinel (Landing 0.0 → +100 on the seed side): +210 pre-normalisation on one cell; 4 further cells ride the rounding grid (+188.6 aggregate). Both sides drop R10. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay + landing-0 sentinel on the same cell (R1G3), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 13's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 56,
+      "difference": "Final-placing split, pilot 56: GS rank 3 vs seed-run placing 5 (down 2). No sentinel or deduction cells of his own; his R1G1 decay cell scores higher on the seed side (GS decayed it past the 540 s target) and 6 further cells ride the rounding grid and the renormalisation cascade, but his aggregate moves −4.1 while the +100 sentinel cells landing on rivals pass him: pilot 54 (+91.9) and pilot 13 (+188.6). Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G1); rivals' sentinel +100s dominating (pilots 54, 13), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 56's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 21,
+      "difference": "Final-placing split, pilot 21: GS rank 4 vs seed-run placing 6 (down 2). No sentinel or deduction cells of his own; his R1G3 decay cell scores higher on the seed side and 6 further cells ride the rounding grid and the renormalisation cascade (−17.0 aggregate) — he is passed by pilot 54 (+91.9) and pilot 13 (+188.6), whose sentinel and decay cells the seed scores higher. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G3); rivals' sentinel +100s dominating (pilots 54, 13); rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 21's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 47,
+      "difference": "Final-placing split, pilot 47: GS rank 5 vs seed-run placing 7 (down 2). No sentinel or deduction cells of his own; his R1G1 decay cell scores higher on the seed side and 8 further cells ride the rounding grid and the renormalisation cascade (+1.0 aggregate — the decay gain and the cascade costs nearly cancel) — he is passed by pilot 54 (+91.9) and pilot 13 (+188.6), whose sentinel and decay cells the seed scores higher. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G1); rivals' sentinel +100s dominating (pilots 54, 13); rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 47's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 26,
+      "difference": "Final-placing split, pilot 26: GS rank 7 vs seed-run placing 8 (down 1). His R9G4 row is a pure sentinel cell (+100 pre-normalisation) and his R1G3 decay cell scores higher on the seed side; 7 further cells ride the rounding grid and the renormalisation cascade (+29.7 aggregate) — but pilot 13's decay+sentinel R1 cell (+188.6) passes him. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinel (own, R9G4), R1 540 s decay (own, R1G3), rounding cascade; pilot 13's sentinel+decay pass. Minimum-tie rule 50-f3j tieBreak Latest: pilot 26's minimum is unique on both sides (GS drops R9, the seed-run drops R14 — the cell differences moved his minimum, not the drop policy). Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 12,
+      "difference": "Final-placing split, pilot 12: GS rank 11 vs seed-run placing 9 (up 2). Two sentinel cells (R14G4, R13G1 — +100 pre-normalisation each) lift his aggregate +209.6; 8 further cells ride the rounding grid and the renormalisation cascade. His GS-side minimum is R14 — the sentinel cell itself — so the +100 moves his seed-side minimum to R1: GS drops R14 while the seed-run drops R1, the cell differences moving his minimum, not the drop policy. He passes pilot 17 and pilot 22. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinels (own, R14G4 + R13G1) dominating; rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 12's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 30,
+      "difference": "Final-placing split, pilot 30: GS rank 12 vs seed-run placing 10 (up 2). His R12G4 sentinel cell (+100 on the seed side) lifts him level with the group's 1000 (GS 856.3 → seed 1000.0 — the seed's second co-winner at raw 696); his R1G2 decay cell scores his flight time where GS decayed it; 9 further cells ride the rounding grid and the renormalisation cascade (+146.1 aggregate) — he passes pilot 17 (−0.5) and pilot 22 (−13.4). Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinel (own, R12G4 — the co-winner cell), R1 540 s decay (own, R1G2), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 30's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 17,
+      "difference": "Final-placing split, pilot 17: GS rank 9 vs seed-run placing 11 (down 2). No sentinel, deduction or decay cell of his own — his raw aggregate is identical on both sides (9910) and the split is the rounding grid alone: 5 pure rounding-grid cells cost 0.5 across the aggregate (−0.5). He is passed by pilot 12 (+209.6) and pilot 30 (+146.1), whose sentinel cells the seed scores higher. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: the rounding grid alone (5 cells) against rivals' sentinel gains (pilots 12, 30). Minimum-tie rule 50-f3j tieBreak Latest: pilot 17's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 22,
+      "difference": "Final-placing split, pilot 22: GS rank 10 vs seed-run placing 12 (down 2). No sentinel or deduction cells of his own; his R1G2 decay cell scores higher on the seed side, yet 8 further cells ride the rounding grid and the renormalisation cascade the other way (−13.4 aggregate) — he is passed by pilot 12 (+209.6) and pilot 30 (+146.1), whose sentinel cells the seed scores higher. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G2); rivals' sentinel +100s dominating (pilots 12, 30); rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 22's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 25,
+      "difference": "Final-placing split, pilot 25: GS rank 17 vs seed-run placing 16 (up 1). His R14G2 row is a sentinel+deduction cell (+130 pre-normalisation: the landing 100 the seed awards, the −30 GS carries that the seed does not) and his R13G3 row is a pure sentinel cell (+100); 6 further cells ride the rounding grid and the renormalisation cascade (+178.2 aggregate) — he passes pilot 29 (−20.5). GS drops R13 while the seed-run drops R1 — the cell differences moved his minimum, not the drop policy. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinel + −30 absence (own, R14G2), landing-0 sentinel (own, R13G3), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 25's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 42,
+      "difference": "Final-placing split, pilot 42: GS rank 19 vs seed-run placing 17 (up 2). Three sentinel cells (R7G2, R11G1, R13G1 — the last also GS's −30 deduction row, so +130 pre-normalisation on it) and his R1G3 decay cell scored at his flight time on the seed side lift his aggregate +493.2; 6 further cells ride the rounding grid — he passes pilot 50 (−38.6) and pilot 29 (−20.5). Both sides drop R4. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinels (own, R7G2 + R11G1 + R13G1), −30 absence (own, R13G1), R1 540 s decay (own, R1G3), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 42's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 29,
+      "difference": "Final-placing split, pilot 29: GS rank 16 vs seed-run placing 18 (down 2). No sentinel or deduction cells of his own; his R1G1 decay cell scores higher on the seed side, yet 12 further cells ride the rounding grid and the renormalisation cascade the other way (−20.5 aggregate) — he is passed by pilot 25 (+178.2) and pilot 42 (+493.2), whose sentinel cells the seed scores higher. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G1); rivals' sentinel +100s dominating (pilots 25, 42); rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 29's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 2,
+      "difference": "Final-placing split, pilot 2: GS rank 24 vs seed-run placing 19 (up 5). Four sentinel cells (R6G3, R10G3, R15G4, R13G3) — two of them (R6G3, R10G3) also GS's −30 deduction rows, so +130 pre-normalisation on each — lift his aggregate +570.4; 5 further cells ride the rounding grid and the renormalisation cascade. He passes the five pilots GS ranked 19–23 (42, 32, 52, 46, 64). GS drops R13 while the seed-run drops R16 — the cell differences moved his minimum, not the drop policy. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinels (own, four cells) dominating, −30 absence (own, R6G3 + R10G3), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 2's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 50,
+      "difference": "Final-placing split, pilot 50: GS rank 18 vs seed-run placing 20 (down 2). No sentinel or deduction cells of his own; his R1G3 decay cell scores higher on the seed side, yet 7 further cells ride the rounding grid and the renormalisation cascade the other way (−38.6 aggregate) — he is passed by pilot 42 (+493.2) and pilot 2 (+570.4). His minimum ties on both sides (R13 and R16 both 0.0, flight-less cells): tieBreak Latest drops R16 on both — aggregate-neutral, and the same resolution either way. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G3); rivals' sentinel gains dominating (pilots 42, 2); rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 50's minimum ties (R13/R16 both 0.0) on both sides — the arm fires identically (latest dropped), aggregate-neutral. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 32,
+      "difference": "Final-placing split, pilot 32: GS rank 20 vs seed-run placing 21 (down 1). Two sentinel cells (R15G3, R11G1 — +100 pre-normalisation each) and his R1G2 decay cell score higher on the seed side (+143.5 aggregate), but pilot 2's four sentinel cells (+570.4) pass him. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinels (own, R15G3 + R11G1), R1 540 s decay (own, R1G2); pilot 2's sentinel pass. Minimum-tie rule 50-f3j tieBreak Latest: pilot 32's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 52,
+      "difference": "Final-placing split, pilot 52: GS rank 21 vs seed-run placing 23 (down 2). No sentinel or deduction cells of his own; his R1G3 decay cell scores higher on the seed side, yet 7 further cells ride the rounding grid and the renormalisation cascade the other way (+10.7 aggregate — a gain still too small to hold position) — he is passed by pilot 2 (+570.4) and pilot 64 (+126.4), whose sentinel cells the seed scores higher. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G3); rivals' sentinel +100s dominating (pilots 2, 64); rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 52's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 64,
+      "difference": "Final-placing split, pilot 64: GS rank 23 vs seed-run placing 24 (down 1). His R6G3 row is a pure sentinel cell (+100 pre-normalisation) and his R1G2 decay cell scores higher on the seed side (+126.4 aggregate) — but pilot 2's four sentinel cells (+570.4) pass him. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinel (own, R6G3), R1 540 s decay (own, R1G2); pilot 2's sentinel pass; rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 64's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 39,
+      "difference": "Final-placing split, pilot 39: GS rank 26 vs seed-run placing 25 (up 1). Two sentinel cells (R6G1, R13G1 — +100 pre-normalisation each) and his R1G1 decay cell scored at his flight time on the seed side lift his aggregate +288.3, passing pilot 43 (+3.8). Both sides drop R14 — his minimum sits in the same round on each side, so the drop is not part of his split. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: landing-0 sentinels (own, R6G1 + R13G1), R1 540 s decay (own, R1G1), rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 39's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    },
+    {
+      "triageKind": 1,
+      "grain": "ranking",
+      "round": null,
+      "group": null,
+      "pilotNo": 43,
+      "difference": "Final-placing split, pilot 43: GS rank 25 vs seed-run placing 26 (down 1). No sentinel or deduction cells of his own; his R1G3 decay cell scores higher on the seed side and 7 further cells ride the rounding grid and the renormalisation cascade (+3.8 aggregate) — but pilot 39's two sentinel cells (+288.3) pass him. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "citation": "Rulebook drop: F3J.3.1 a — 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' — implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest — 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) — the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G3); pilot 39's sentinel pass; rounding cascade. Minimum-tie rule 50-f3j tieBreak Latest: pilot 43's minimum is unique on both sides, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
+    }
+  ]
+}

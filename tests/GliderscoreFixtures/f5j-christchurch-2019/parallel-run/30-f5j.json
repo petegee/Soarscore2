@@ -68,7 +68,8 @@
       "group": null,
       "pilotNo": "*",
       "difference": "Normalised-cell rounding grid: GS normalises 1000·Raw/max HalfUp to 1 dp (effective GroupScoreDecimals 1 — every scored cell lands on the grid) while the seed leaves the rulebook's exact values (full decimal expansion). Witnessed on every fractional cell of the window; cascades into the ranking grain through the aggregate. Pinned normalised-cell count: 127 — measured 2026-09-10 on sqlite (198 normalised cells compared over the 11-round window; the 1000.0 group-winner and 0.0 flight-less cells compare exact, the 127 fractional cells differ); the wildcard covers any cell, so the count is what makes the entry exact (decision 4).",
-      "citation": "Local practice: the club's GS grid rounds normalised cells HalfUp to 1 dp (competition.json configProvenance.knobs.GroupScoreDecimals — stored null, effective 1, basis: all 162 positive NormalisedScore values match half-up rounding to exactly 1 dp and none match truncation). Rulebook: FAI 5.5.11.12 l–m normalise the group winner to 1000 and scale the rest by percentage, stating no normalised-score rounding precision — the f3j re-triage framing. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Local practice: the club's GS grid rounds normalised cells HalfUp to 1 dp (competition.json configProvenance.knobs.GroupScoreDecimals — stored null, effective 1, basis: all 162 positive NormalisedScore values match half-up rounding to exactly 1 dp and none match truncation). Rulebook: FAI 5.5.11.12 l–m normalise the group winner to 1000 and scale the rest by percentage, stating no normalised-score rounding precision — the f3j re-triage framing. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -77,7 +78,8 @@
       "group": null,
       "pilotNo": 79,
       "difference": "Final-placing split, pilot 79: GS rank 12 vs seed-run placing 13 (down 1). The seed drops the pilot's lowest round score — R11/G1 265.1, flown (off-tape landing, award 0) and uniquely lowest (next-lowest R8/G1 313.1, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =12/=13 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 ('if more than 4 [rounds flown], the lowest round score is dropped') implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds, fires on real rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99 — no drop-worst can activate within rounds 1-11). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence on normalised precision. Minimum-tie rule 30-f5j tieBreak Latest: pilot 79's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 ('if more than 4 [rounds flown], the lowest round score is dropped') implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds, fires on real rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99 — no drop-worst can activate within rounds 1-11). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence on normalised precision. Minimum-tie rule 30-f5j tieBreak Latest: pilot 79's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -86,7 +88,8 @@
       "group": null,
       "pilotNo": 82,
       "difference": "Final-placing split, pilot 82: GS rank 7 vs seed-run placing 6 (up 1). The pilot's lowest cell is R8/G3 0.0 — the rule-driven cancelled 75 m flight (flight-less both sides, provenance-noted) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =6/=7 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231); the cancelled flight is FAI 5.5.11.7 d. Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 82's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231); the cancelled flight is FAI 5.5.11.7 d. Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 82's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -95,7 +98,8 @@
       "group": null,
       "pilotNo": 83,
       "difference": "Final-placing split, pilot 83: GS rank 6 vs seed-run placing 8 (down 2). The seed drops the pilot's lowest round score — R11/G1 358.0, flown and uniquely lowest (next-lowest R10/G2 440.0, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =6/=8 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 83's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 83's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -104,7 +108,8 @@
       "group": null,
       "pilotNo": 94,
       "difference": "Final-placing split, pilot 94: GS rank 13 vs seed-run placing 11 (up 2). The pilot's lowest cell is R7/G1 0.0 — an unflown placeholder slot inside the window (Updated False) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =11/=13 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 94's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 94's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -113,7 +118,8 @@
       "group": null,
       "pilotNo": 129,
       "difference": "Final-placing split, pilot 129: GS rank 8 vs seed-run placing 9 (down 1). The seed drops the pilot's lowest round score — R5/G3 264.4, flown and uniquely lowest (next-lowest R11/G3 615.7, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =8/=9 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 129's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 129's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -122,7 +128,8 @@
       "group": null,
       "pilotNo": 131,
       "difference": "Final-placing split, pilot 131: GS rank 9 vs seed-run placing 7 (up 2). The pilot's lowest cell is R11/G3 0.0 — an unflown placeholder slot inside the window (Updated False) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =7/=9 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 131's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 131's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     },
     {
       "triageKind": 1,
@@ -131,7 +138,8 @@
       "group": null,
       "pilotNo": 133,
       "difference": "Final-placing split, pilot 133: GS rank 11 vs seed-run placing 12 (down 1). The seed drops the pilot's lowest round score — R7/G2 261.6, flown and uniquely lowest (next-lowest R5/G2 289.0, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =11/=12 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 133's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides."
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 133's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
+      "disposition": "permanent"
     }
   ]
 }
