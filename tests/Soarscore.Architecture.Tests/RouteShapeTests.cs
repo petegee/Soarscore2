@@ -20,6 +20,7 @@ public sealed class RouteShapeTests
     public void Every_endpoint_is_GET_or_POST()
     {
         IEndpointRouteBuilder app = Composition.Build([
+            "--Soarscore:Store=postgres",
             "--ConnectionStrings:Soarscore=Host=127.0.0.1;Port=1;Database=archtest;Username=archtest;Password=archtest",
         ]);
 

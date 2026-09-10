@@ -20,3 +20,8 @@ gliderscore/
 
 # dotnet test artifact directories (gs-divergences.md report, TRX, coverage)
 TestResults/
+
+# Local dev event store — created by src/Soarscore.Api/appsettings.json's
+# Data Source=soarscore.db on first run
+src/Soarscore.Api/*.db
+src/Soarscore.Api/*.db-*

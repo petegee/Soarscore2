@@ -3,6 +3,7 @@
 // and enumerate its EndpointDataSource without starting Kestrel or opening an
 // HTTP client — "driven without HTTP testing tools" (LADR-0003).
 
+using System.Text.Json;
 using Microsoft.AspNetCore.Http.Features;
 using Soarscore.Api.Commands;
 using Soarscore.Api.Queries;
@@ -43,9 +44,21 @@ public static class Composition
         // adds to ASP.NET's Web defaults (already camelCase); harmless to the
         // Person endpoints, none of which carry a NumberOrParam/FlagOrParam or an
         // enum.
+        //
+        // WI-6 originally also set SerializerOptions.MaxDepth = 24 here — the
+        // ingestion nesting ceiling enforced at binding. That broke GET
+        // /openapi/v1.json: .NET 10's OpenAPI document generation reuses these
+        // shared options, and a type's JSON *schema* is roughly twice as deep
+        // as the deepest *instance* it documents (each model level adds a
+        // type/properties wrapper), so no options depth that admits legal
+        // class definitions can also write ClassDefinition's schema —
+        // Utf8JsonWriter threw "CurrentDepth (24) is equal to or larger than
+        // the maximum allowed depth of 24". The ceiling therefore lives in the
+        // payload middleware below instead, enforced against the raw body with
+        // the same STJ parser semantics (LADR-0002 §4's bound, unchanged);
+        // these shared options keep the Web default of 64, itself a bound.
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
-            options.SerializerOptions.MaxDepth = ClassDefinitionIngestion.MaxDepth;
             options.SerializerOptions.AllowOutOfOrderMetadataProperties = true;
             foreach (var converter in ClassDefinitionIngestion.Options.Converters)
             {
@@ -132,11 +145,18 @@ public static class Composition
 
         var app = builder.Build();
 
-        // WI-1/WI-6: the payload-size ceiling, ahead of routing and therefore
-        // ahead of model binding — Kestrel enforces it while reading the body
-        // stream, before ClassDefinitionIngestion.Options ever parses a byte of
-        // an oversized POST. Scoped to this one path; every other endpoint's body
-        // is small by construction and keeps the server's ordinary default.
+        // WI-1/WI-6: the payload-size and nesting-depth ceiling, ahead of routing
+        // and therefore ahead of model binding — Kestrel enforces the size while
+        // reading the body stream, before ClassDefinitionIngestion.Options ever
+        // parses a byte of an oversized POST, and the depth walk below enforces
+        // LADR-0002 §4's nesting bound (ClassDefinitionIngestion.MaxDepth) with
+        // the same parser semantics before binding parses at the shared default.
+        // The depth bound lives here rather than in ConfigureHttpJsonOptions —
+        // see the comment there for why (OpenAPI schema generation shares those
+        // options and needs room for ClassDefinition's schema, which is deeper
+        // than any legal instance). Scoped to this one path; every other
+        // endpoint's body is small and shallow by construction and keeps the
+        // server's ordinary defaults.
         app.Use(async (context, next) =>
         {
             if (HttpMethods.IsPost(context.Request.Method)
@@ -154,6 +174,36 @@ public static class Composition
                 // silent gap — TestServer enforces no body-size limit of its own
                 // either, so there is nothing to configure.
                 context.Features.Get<IHttpMaxRequestBodySizeFeature>()?.MaxRequestBodySize = ClassDefinitionIngestion.MaxPayloadBytes;
+
+                // The depth half of the ceiling. The body is buffered (already
+                // size-capped above) and walked once with Utf8JsonReader — the
+                // same parser binding will use — at the ingestion MaxDepth, so
+                // the semantics are STJ's own: a JsonException means malformed
+                // JSON or depth beyond the ceiling, both of which binding would
+                // otherwise reject with a plain 400. The buffered bytes are put
+                // back as the request body for binding to parse normally. Club
+                // scale (a ≤ 256 KiB payload, ≤ 8 rounds/day) makes the double
+                // parse unmeasurable; doing it here keeps LADR-0002 §4's bound
+                // exactly while the shared options stay at the default.
+                using var buffered = new MemoryStream();
+                await context.Request.Body.CopyToAsync(buffered, context.RequestAborted);
+                var body = buffered.ToArray();
+                try
+                {
+                    var reader = new Utf8JsonReader(
+                        body, new JsonReaderOptions { MaxDepth = ClassDefinitionIngestion.MaxDepth });
+                    while (reader.Read()) { }
+                }
+                catch (JsonException ex)
+                {
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "class-definition.ingestion.invalid-json",
+                        detail: ex.Message).ExecuteAsync(context);
+                    return;
+                }
+
+                context.Request.Body = new MemoryStream(body);
             }
 
             await next();

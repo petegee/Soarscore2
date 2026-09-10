@@ -39,6 +39,7 @@ public sealed class HandlerRegistrationTests
     public void Every_mapped_command_and_query_resolves_its_handler_from_DI()
     {
         var app = Composition.Build([
+            "--Soarscore:Store=postgres",
             "--ConnectionStrings:Soarscore=Host=127.0.0.1;Port=1;Database=archtest;Username=archtest;Password=archtest",
         ]);
 

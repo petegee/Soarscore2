@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Composition.cs": {
-    "mtime": 1789076301.8518276,
-    "seen": 1789076448.190085,
-    "ast_hash": "0f287580af183eda219a50d67c8db18f",
+    "mtime": 1788995734.3550181,
+    "seen": 1788998457.4191034,
+    "ast_hash": "c7374f983f7c7fa2b9847e32704937b9",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Program.cs": {
@@ -1326,9 +1326,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Architecture.Tests/HandlerRegistrationTests.cs": {
-    "mtime": 1789076427.2727733,
-    "seen": 1789076448.2056544,
-    "ast_hash": "c4588df97c0f091cee88acc232cdc037",
+    "mtime": 1788323247.1358542,
+    "seen": 1788929450.7996686,
+    "ast_hash": "363a5a9c95aea02aec943301e29bc1e3",
     "semantic_hash": ""
   },
   "tests/Soarscore.Architecture.Tests/LayerRuleTests.cs": {
@@ -1338,9 +1338,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Architecture.Tests/RouteShapeTests.cs": {
-    "mtime": 1789076420.735724,
-    "seen": 1789076448.2056737,
-    "ast_hash": "5bfcfe89650a1a3256a5fa199599cbb9",
+    "mtime": 1787269098.0985498,
+    "seen": 1788929450.7996705,
+    "ast_hash": "d0d9d3e48ef77f493d10e152aeb7f72f",
     "semantic_hash": ""
   },
   "tests/Soarscore.Architecture.Tests/Soarscore.Architecture.Tests.csproj": {
@@ -4317,18 +4317,6 @@
     "mtime": 1789012234.9142098,
     "seen": 1789012255.5555322,
     "ast_hash": "7c2ac92c9077970bc63f3803b5a1afe4",
-    "semantic_hash": ""
-  },
-  "src/Soarscore.Api/appsettings.json": {
-    "mtime": 1789073856.095764,
-    "seen": 1789076448.190238,
-    "ast_hash": "6716e8faf1899ca43ac41e5e22951006",
-    "semantic_hash": ""
-  },
-  "docs/integrators-guide.md": {
-    "mtime": 1789026938.24915,
-    "seen": 1789076448.2081976,
-    "ast_hash": "dda2ffe252189e61dd6ffebbff636c97",
     "semantic_hash": ""
   }
 }
