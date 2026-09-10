@@ -12,6 +12,7 @@
 // wherever an id is minted: `readonly record struct XId(Guid)`,
 // `Guid.CreateVersion7()`.
 
+using System.Collections.Immutable;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.PublishedClassDefinition;
 
@@ -95,6 +96,34 @@ public sealed record ReflightRuling
 
     public required DateTimeOffset At { get; init; }
 }
+
+/// <summary>
+/// The CD's recorded resolution of one tie group whose ladder halted on an
+/// operational or UndefinedRequiresRuling rung (operational-tie-break-resolution
+/// story D1/D3). Kin to ReflightRuling: recorded, never derived; consumed by
+/// the ranking engine where it matches a halted group, inert where it does
+/// not (D4).
+/// </summary>
+public sealed record TieBreakOutcome
+{
+    /// <summary>0-based positional index into the class's phase list — the PhaseDrawn / TaskRoundCoordinate convention. Always 0 today.</summary>
+    public required int PhaseOrdinal { get; init; }
+
+    public required TieBreakDirective Directive { get; init; }
+
+    /// <summary>The group's resolved ordering: every member exactly once, dense skip-ahead from 1, equal places for recorded ties (D1).</summary>
+    public required ImmutableArray<TieBreakOutcomePlacing> Placings { get; init; }
+
+    /// <summary>What was flown (task, scoresheet) or the ruling's basis — substantive, ReflightRuling.Reason precedent.</summary>
+    public required string Reason { get; init; }
+
+    /// <summary>Who recorded it, when the client supplies it — optional. Penalty.By precedent.</summary>
+    public string? By { get; init; }
+
+    public required DateTimeOffset At { get; init; }
+}
+
+public sealed record TieBreakOutcomePlacing(CompetitorId CompetitorRef, int PlaceInGroup);
 
 /// <summary>
 /// The same ordinal triple <see cref="Entries.EntryOpened"/> already carries,

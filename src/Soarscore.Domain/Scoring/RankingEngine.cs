@@ -24,9 +24,21 @@ namespace Soarscore.Domain.Scoring;
 /// <see cref="PublishedClassDefinition.QualifyingPosition"/> rungs. Absent
 /// entries cannot be separated on such a rung (the pair stays tied).
 /// </param>
+/// <param name="Outcomes">
+/// Recorded resolutions for halted tie groups
+/// (operational-tie-break-resolution story D4), oldest first — the LAST
+/// matching outcome wins at lookup. Empty (the default) is structurally
+/// today's path: every halted group surfaces as pending.
+/// </param>
+public sealed record ResolvedTieBreakOutcome(
+    TieBreakDirective Directive,
+    /// <summary>CompetitorRef (string, engine world) → recorded place in group.</summary>
+    ImmutableDictionary<string, int> PlacesByCompetitor);
+
 public sealed record TieBreakContext(
     ImmutableArray<TieBreakDirective> Directives,
-    ImmutableDictionary<string, int> QualifyingPositions)
+    ImmutableDictionary<string, int> QualifyingPositions,
+    ImmutableArray<ResolvedTieBreakOutcome> Outcomes = default)
 {
     /// <summary>
     /// No stated policy: the class-agnostic display ladder (Score DESC,
@@ -93,6 +105,48 @@ public static class RankingEngine
         var keyRungs = directives
             .TakeWhile(d => d is BestDroppedScore or QualifyingPosition)
             .ToArray();
+
+        // The dormant comparator rungs (D2): the BestDroppedScore /
+        // QualifyingPosition directives stated AFTER the halt. Never
+        // evaluated without a recorded outcome (trap 5); with one, they
+        // separate only members sharing a recorded place, with the same
+        // comparison logic as the pre-halt rungs.
+        var haltIndex = halt is null ? -1 : directives.IndexOf(halt);
+        var dormantRungs = haltIndex < 0
+            ? Array.Empty<TieBreakDirective>()
+            : directives.Skip(haltIndex + 1)
+                .Where(d => d is BestDroppedScore or QualifyingPosition)
+                .ToArray();
+
+        int CompareDormant(FinalCompetitorScore a, FinalCompetitorScore b)
+        {
+            foreach (var rung in dormantRungs)
+            {
+                switch (rung)
+                {
+                    case BestDroppedScore:
+                        // Higher is better ("the best dropped score defines
+                        // the ranking") — same logic as the pre-halt rung.
+                        var c = b.BestDroppedScore.CompareTo(a.BestDroppedScore);
+                        if (c != 0) return c;
+                        break;
+                    case QualifyingPosition:
+                        // A better prior placing is the LOWER number —
+                        // ascending; absent entries stay tied — same logic
+                        // as the pre-halt rung.
+                        var hasA = tieBreaks.QualifyingPositions.TryGetValue(a.CompetitorRef, out var posA);
+                        var hasB = tieBreaks.QualifyingPositions.TryGetValue(b.CompetitorRef, out var posB);
+                        if (hasA && hasB)
+                        {
+                            c = posA.CompareTo(posB);
+                            if (c != 0) return c;
+                        }
+                        break;
+                }
+            }
+
+            return 0;
+        }
 
         int Compare(FinalCompetitorScore a, FinalCompetitorScore b)
         {
@@ -182,9 +236,54 @@ public static class RankingEngine
             // it stay dormant.
             if (j - i > 1 && halt is not null and not EqualPlaces)
             {
-                pending.Add(new PendingTieBreak(
-                    ranked.Skip(i).Take(j - i).Select(s => s.CompetitorRef).ToImmutableArray(),
-                    halt));
+                // Resolution (operational-tie-break-resolution story D4):
+                // the LAST outcome whose directive kind matches the halt
+                // (runtime-type equality, the decide's directiveNotStated
+                // matcher) and whose key set equals the group's ref set
+                // (order-independent, exact) resolves the group. A
+                // non-matching outcome is inert — today's behaviour verbatim.
+                var match = FindMatchingOutcome(tieBreaks.Outcomes, halt, ranked, i, j);
+
+                if (match is null)
+                {
+                    pending.Add(new PendingTieBreak(
+                        ranked.Skip(i).Take(j - i).Select(s => s.CompetitorRef).ToImmutableArray(),
+                        halt));
+                }
+                else
+                {
+                    // Order the slice by recorded place ASC, residual
+                    // recorded ties by each dormant comparator rung; assign
+                    // places within the slice with the usual skip-ahead from
+                    // the group's place. NO PendingTieBreak entry. The
+                    // group's place span, the skip-ahead arithmetic, and
+                    // every competitor outside the group are untouched.
+                    var slice = ranked.GetRange(i, j - i);
+                    slice.Sort((a, b) =>
+                    {
+                        var c = match.PlacesByCompetitor[a.CompetitorRef]
+                            .CompareTo(match.PlacesByCompetitor[b.CompetitorRef]);
+                        return c != 0 ? c : CompareDormant(a, b);
+                    });
+
+                    var place = currentPlace;
+                    var m = 0;
+                    while (m < slice.Count)
+                    {
+                        var n = m + 1;
+                        while (n < slice.Count
+                            && match.PlacesByCompetitor[slice[m].CompetitorRef]
+                                == match.PlacesByCompetitor[slice[n].CompetitorRef]
+                            && CompareDormant(slice[m], slice[n]) == 0)
+                            n++;
+
+                        for (var k = m; k < n; k++)
+                            placings[slice[k].CompetitorRef] = place;
+
+                        place += n - m;
+                        m = n;
+                    }
+                }
             }
 
             // Next place skips the tie group size.
@@ -201,5 +300,47 @@ public static class RankingEngine
         {
             PendingTieBreaks = pending.ToImmutable()
         };
+    }
+
+    /// <summary>
+    /// The D4 lookup: the last outcome in log order whose directive kind
+    /// matches <paramref name="halt"/> and whose key set equals the tie
+    /// group's ref set (order-independent, exact — all members, each once),
+    /// or null when no outcome matches. A reshaped group (score amendment,
+    /// later DQ, amended ladder) stops matching and surfaces as pending again.
+    /// </summary>
+    private static ResolvedTieBreakOutcome? FindMatchingOutcome(
+        ImmutableArray<ResolvedTieBreakOutcome> outcomes,
+        TieBreakDirective halt,
+        List<FinalCompetitorScore> ranked,
+        int from,
+        int to)
+    {
+        if (outcomes.IsDefaultOrEmpty)
+            return null;
+
+        for (var m = outcomes.Length - 1; m >= 0; m--)
+        {
+            var candidate = outcomes[m];
+            if (candidate.Directive.GetType() != halt.GetType())
+                continue;
+            if (candidate.PlacesByCompetitor.Count != to - from)
+                continue;
+
+            var covers = true;
+            for (var k = from; k < to; k++)
+            {
+                if (!candidate.PlacesByCompetitor.ContainsKey(ranked[k].CompetitorRef))
+                {
+                    covers = false;
+                    break;
+                }
+            }
+
+            if (covers)
+                return candidate;
+        }
+
+        return null;
     }
 }

@@ -285,9 +285,10 @@ public sealed record CompetitionResult(
     /// comparator-only ladders, and for EqualPlaces ladders (the stated
     /// settlement: the shared place IS the outcome, nothing is awaited).
     /// A read-side annotation, never a write gate (NFR-4): shared places
-    /// are assigned exactly as today while the tie stands. HTTP/read-model
-    /// exposure is out of scope (no route, DTO or projection change) — the
-    /// surface exists when contest flow wants it, as data.
+    /// are assigned exactly as today while the tie stands. Surfaced to
+    /// contest flow by the dedicated pending-tie-breaks query and resolved
+    /// by recorded outcomes the ranking engine consumes (D4) — a resolved
+    /// group no longer appears here.
     /// </summary>
     public ImmutableArray<PendingTieBreak> PendingTieBreaks { get; init; } = [];
 }

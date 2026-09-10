@@ -609,11 +609,27 @@ public static class ScoringService
         // since no second phase can be drawn to supply prior placings. The
         // per-phase orchestration a multi-phase ranking would need belongs to
         // future multi-phase contest flow.
+        //
+        // The recorded outcomes for the ranking phase
+        // (operational-tie-break-resolution story D4/D9: positional index 0
+        // today, the D9 single-phase stance), CompetitorId → its string form
+        // (the finding-3 idiom's inverse). No ScoreCompetition signature
+        // change — the outcomes are folded state on the competition, like
+        // Penalties.
+        var resolvedOutcomes = competition.TieBreakOutcomes
+            .Where(o => o.PhaseOrdinal == 0)
+            .Select(o => new ResolvedTieBreakOutcome(
+                o.Directive,
+                o.Placings.ToImmutableDictionary(
+                    p => p.CompetitorRef.ToString(),
+                    p => p.PlaceInGroup)))
+            .ToImmutableArray();
         return Result<CompetitionResult>.Success(
             Rank(finalScores.ToImmutable(), classDef.FinalRanking, promotion,
                 new TieBreakContext(
                     classDef.Phases[0].TieBreaks,
-                    ImmutableDictionary<string, int>.Empty)));
+                    ImmutableDictionary<string, int>.Empty,
+                    resolvedOutcomes)));
     }
 
     // ---------------------------------------------------- D7 bookkeeping

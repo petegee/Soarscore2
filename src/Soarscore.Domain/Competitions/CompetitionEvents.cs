@@ -6,9 +6,10 @@
 // competitor, accept or reject the draw, append a reflight group, assign a
 // group's field spots, complete / annul / reopen a task-round, amend the
 // rules, bind a parameter, declare or correct the instruments in use,
-// finalise, record a penalty, record a reflight ruling, define scoring teams
+// finalise, record a penalty, record a reflight ruling, record a tie-break
+// outcome, define scoring teams
 // and protection groups with their memberships, configure team
-// classification. Twenty-five events total, mirroring aggregate-roots.md §3's
+// classification. Twenty-six events total, mirroring aggregate-roots.md §3's
 // mutation list one-for-one plus teams-mvp.md's seven plus
 // tape-points-landing-seeds.md WI-3's declaration pair.
 //
@@ -42,6 +43,7 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(Finalised), "finalised")]
 [JsonDerivedType(typeof(PenaltyRecorded), "penaltyRecorded")]
 [JsonDerivedType(typeof(ReflightRulingRecorded), "reflightRulingRecorded")]
+[JsonDerivedType(typeof(TieBreakOutcomeRecorded), "tieBreakOutcomeRecorded")]
 [JsonDerivedType(typeof(GroupSpotsAssigned), "groupSpotsAdded")]
 [JsonDerivedType(typeof(ScoringTeamDefined), "scoringTeamDefined")]
 [JsonDerivedType(typeof(ScoringTeamMembershipAssigned), "scoringTeamMembershipAssigned")]
@@ -218,6 +220,15 @@ public sealed record PenaltyRecorded(Penalty Penalty) : CompetitionEvent;
 /// the log keeps every decision, and last-logged wins at lookup time (RR3).
 /// </summary>
 public sealed record ReflightRulingRecorded(ReflightRuling Ruling) : CompetitionEvent;
+
+/// <summary>
+/// The CD's recorded resolution of one tie group whose ladder halted on an
+/// operational or UndefinedRequiresRuling rung (operational-tie-break-resolution
+/// story D1/D3). Superseding outcomes accumulate — the log keeps every
+/// decision, and last-logged wins at lookup time (D4), the ReflightRulingRecorded
+/// precedent.
+/// </summary>
+public sealed record TieBreakOutcomeRecorded(TieBreakOutcome Outcome) : CompetitionEvent;
 
 /// <summary>
 /// The CD (or a consuming setup UI) assigning one group's field spots for a

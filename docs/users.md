@@ -53,12 +53,13 @@ it is *run* belong to the Contest Director.
 The official with **authority over the running of the competition** and over the
 **key decisions** during it. Where the Organiser sets the contest up, the Contest
 Director decides how it proceeds and makes the rulings that change results —
-penalties, re-flights, retirements, accepting the draw, and locking the final
-result. Highest privilege; often the same person as the Organiser in practice.
+penalties, re-flights, retirements, accepting the draw, resolving tie-breaks,
+and locking the final result. Highest privilege; often the same person as the Organiser in practice.
 
 **Key needs**
 - Authority to make **mid-contest interventions** — penalties, re-flights,
-  retirements — and have results recompute correctly and consistently.
+  retirements, tie-break resolutions — and have results recompute correctly
+  and consistently.
 - Confidence the **draw is fair** and defensible if challenged, with the ability
   to reject it and re-draw.
 - **Trustworthy, final** results they can lock, publish and stand behind.

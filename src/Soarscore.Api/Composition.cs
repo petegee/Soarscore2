@@ -102,6 +102,7 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<AppendReflightGroup, GroupId>, AppendReflightGroupHandler>();
         builder.Services.AddScoped<ICommandHandler<AssignGroupSpots, GroupId>, AssignGroupSpotsHandler>();
         builder.Services.AddScoped<ICommandHandler<RecordReflightRuling, CompetitionId>, RecordReflightRulingHandler>();
+        builder.Services.AddScoped<ICommandHandler<RecordTieBreakOutcome, CompetitionId>, RecordTieBreakOutcomeHandler>();
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
 
@@ -127,6 +128,7 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<GetTaskRoundRecording, TaskRoundRecordingView>, GetTaskRoundRecordingHandler>();
         builder.Services.AddScoped<IQueryHandler<ScoreTaskRound, IReadOnlyList<GroupScoreView>>, ScoreTaskRoundHandler>();
         builder.Services.AddScoped<IQueryHandler<ScoreCompetition, CompetitionScoreView>, ScoreCompetitionHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetPendingTieBreaks, PendingTieBreaksView>, GetPendingTieBreaksHandler>();
 
         var app = builder.Build();
 

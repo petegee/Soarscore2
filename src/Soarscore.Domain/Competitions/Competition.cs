@@ -532,6 +532,14 @@ public sealed record Competition
     /// </summary>
     public ImmutableArray<ReflightRuling> Rulings { get; init; } = [];
 
+    /// <summary>
+    /// The CD's recorded tie-break resolutions — accumulate, never replace: a
+    /// superseding outcome is a new entry, and last-logged wins at lookup time
+    /// (operational-tie-break-resolution story D4), exactly as Rulings
+    /// accumulates.
+    /// </summary>
+    public ImmutableArray<TieBreakOutcome> TieBreakOutcomes { get; init; } = [];
+
     // Team state — teams-mvp.md WI-3. All inside the Competition aggregate:
     // scoring teams and protection groups are competition-scoped, and the
     // classification policy is competition-level configuration (owner
@@ -566,6 +574,7 @@ public sealed record Competition
             Finalisations = [],
             Penalties = [],
             Rulings = [],
+            TieBreakOutcomes = [],
             ScoringTeams = [],
             ProtectionGroups = [],
             ScoringTeamMemberships = [],
@@ -687,6 +696,11 @@ public sealed record Competition
     // Accumulate, never replace: the log keeps every ruling (RR3's fold half).
     public Competition Apply(ReflightRulingRecorded @event) =>
         this with { Rulings = Rulings.Add(@event.Ruling) };
+
+    // Accumulate, never replace: the log keeps every outcome (D4's fold half —
+    // last-wins happens at lookup, never here).
+    public Competition Apply(TieBreakOutcomeRecorded @event) =>
+        this with { TieBreakOutcomes = TieBreakOutcomes.Add(@event.Outcome) };
 
     // Whole-replacement semantics: the payload is the complete mapping and
     // replaces whatever was there (decision D3,
@@ -816,6 +830,7 @@ public sealed record Competition
             Finalised e => Require(current, e).Apply(e),
             PenaltyRecorded e => Require(current, e).Apply(e),
             ReflightRulingRecorded e => Require(current, e).Apply(e),
+            TieBreakOutcomeRecorded e => Require(current, e).Apply(e),
             GroupSpotsAssigned e => Require(current, e).Apply(e),
             ScoringTeamDefined e => Require(current, e).Apply(e),
             ScoringTeamMembershipAssigned e => Require(current, e).Apply(e),
@@ -2581,6 +2596,108 @@ public sealed record Competition
             : new Defect("recordReflightRuling.classRuleSpeaks", "$.selection",
                 "The adopted class rules state which of a competitor's attempts counts here; " +
                 "there is no silence for a ruling to fill.");
+    }
+
+    // Instance decide function — operational-tie-break-resolution.md WI-1.
+    // Defect-chain style, like RecordReflightRuling beside it: no later check
+    // needs a value an earlier one computed. Validates the outcome's shape and
+    // rulebook context against the adopted class definition — data, never a
+    // branch on class (CLAUDE.md's core architectural law).
+    //
+    // Deliberately absent (lifecycle-function style):
+    //   - No pending-ness check (D6, NFR-4): the outcome lands whenever the CD
+    //     records it — before, during or after the tie it resolves. An outcome
+    //     matching no halted group is inert, never refused.
+    //   - No uniqueness check (D4): re-recording for the same group
+    //     supersedes — the most recently logged outcome is the effective one,
+    //     and the log keeps every decision.
+    public Result<TieBreakOutcomeRecorded> RecordTieBreakOutcome(TieBreakOutcome outcome)
+    {
+        var defect = ValidateTieBreakPhaseDrawn(outcome.PhaseOrdinal)
+            ?? ValidateDirectiveIsAResolution(outcome.Directive)
+            ?? ValidateDirectiveStated(outcome.PhaseOrdinal, outcome.Directive)
+            ?? ValidateOutcomeCompetitorsRegistered(outcome.Placings)
+            ?? ValidatePlacingsWellFormed(outcome.Placings)
+            ?? ReasonGiven(outcome.Reason, "recordTieBreakOutcome")
+            ?? ValidateByNotBlank(outcome.By, "recordTieBreakOutcome");
+
+        return defect is not null
+            ? Result<TieBreakOutcomeRecorded>.Failure(defect.Code, defect.Message)
+            : Result<TieBreakOutcomeRecorded>.Success(new TieBreakOutcomeRecorded(outcome));
+    }
+
+    // Drawn state, not merely authored — a pending tie cannot exist before the
+    // phase exists. Positional index (the PhaseDrawn convention), NOT
+    // PhaseDefinition.Ordinal — trap 7.
+    private Defect? ValidateTieBreakPhaseDrawn(int phaseOrdinal) =>
+        Phases.Any(p => p.Ordinal == phaseOrdinal)
+            ? null
+            : new Defect("recordTieBreakOutcome.phaseNotFound", "$.phaseOrdinal",
+                $"No phase has been drawn with ordinal {phaseOrdinal}.");
+
+    private static Defect? ValidateDirectiveIsAResolution(TieBreakDirective directive) =>
+        directive is AdditionalFullRound or TieBreakFlyoff or ClassificationRounds or UndefinedRequiresRuling
+            ? null
+            : new Defect("recordTieBreakOutcome.directiveNotAResolution", "$.directive",
+                $"A tie-break outcome must resolve an operational or UndefinedRequiresRuling rung. '{directive.GetType().Name}' " +
+                "never halts the ladder — a comparator never halts, and EqualPlaces settles itself — so there is nothing to record against it.");
+
+    // ValidateClassRuleSilent's analogue: accepting an outcome where the
+    // adopted rules state no operational/undefined rung would let a CD believe
+    // they settled something that had no effect. Kind-matched (the runtime
+    // type), not record-equal — the directive kind is what halts the ladder.
+    private Defect? ValidateDirectiveStated(int phaseOrdinal, TieBreakDirective directive)
+    {
+        var phaseDefinition = AdoptedRules.Definition.Phases.ElementAtOrDefault(phaseOrdinal);
+        return phaseDefinition is not null
+            && phaseDefinition.TieBreaks.Any(stated => stated.GetType() == directive.GetType())
+            ? null
+            : new Defect("recordTieBreakOutcome.directiveNotStated", "$.directive",
+                $"The adopted class definition states no '{directive.GetType().Name}' rung on phase {phaseOrdinal}; " +
+                "there is no halted ladder for this outcome to resolve.");
+    }
+
+    // Typo protection only: an outcome keyed to nobody would silently never
+    // apply. Withdrawal is NOT checked — the ruling precedent's planner's
+    // call 2: a moot outcome for a withdrawn competitor is inert, not harmful.
+    private Defect? ValidateOutcomeCompetitorsRegistered(ImmutableArray<TieBreakOutcomePlacing> placings)
+    {
+        var unknown = placings.FirstOrDefault(p => !Competitors.Any(c => c.Id == p.CompetitorRef));
+        return unknown is null
+            ? null
+            : new Defect("recordTieBreakOutcome.competitorNotFound", "$.placings",
+                "No such competitor in this competition.");
+    }
+
+    // D1's shape: every member exactly once (refs distinct, ≥2, covering
+    // exactly the placing refs), dense skip-ahead numbering from 1 — place 1
+    // exists, and the place after a k-way tie at place p is p+k.
+    private static Defect? ValidatePlacingsWellFormed(ImmutableArray<TieBreakOutcomePlacing> placings)
+    {
+        if (placings.Length < 2 || placings.Select(p => p.CompetitorRef).Distinct().Count() != placings.Length)
+        {
+            return new Defect("recordTieBreakOutcome.placingsMalformed", "$.placings",
+                "Placings must name at least two competitors, each exactly once.");
+        }
+
+        var groups = placings
+            .GroupBy(p => p.PlaceInGroup)
+            .OrderBy(g => g.Key)
+            .ToImmutableArray();
+
+        var expected = 1;
+        foreach (var group in groups)
+        {
+            if (group.Key != expected)
+            {
+                return new Defect("recordTieBreakOutcome.placingsMalformed", "$.placings",
+                    $"Placings must number densely from 1 with skip-ahead after ties: expected place {expected}, found {group.Key}.");
+            }
+
+            expected += group.Count();
+        }
+
+        return null;
     }
 
     // Compares against *all* competitors, including withdrawn ones — a

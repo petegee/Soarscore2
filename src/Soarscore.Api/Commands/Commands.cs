@@ -39,6 +39,7 @@ public static class Commands
         app.MapCommand<AppendReflightGroup, GroupId>("/append-reflight-group");
         app.MapCommand<AssignGroupSpots, GroupId>("/assign-group-spots");
         app.MapCommand<RecordReflightRuling, CompetitionId>("/record-reflight-ruling");
+        app.MapCommand<RecordTieBreakOutcome, CompetitionId>("/record-tie-break-outcome");
 
         app.MapCommand<DefineScoringTeam, ScoringTeamId>("/define-scoring-team");
         app.MapCommand<DefineProtectionGroup, ProtectionGroupId>("/define-protection-group");

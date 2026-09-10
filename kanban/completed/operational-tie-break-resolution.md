@@ -1,6 +1,9 @@
 # Story — Operational tie-break resolution: record the outcome, re-rank
 
-**Status:** In Progress · **Raised:** 2026-09-04 (from the `nz-ndc-seed-classes` ruling
+**Status:** Completed 2026-09-10 (WI-0–WI-5; WI-0 gates signed off in-session —
+docs edits applied, extra `byBlank` defect kept with footnote, Invariant O
+wording left as written with the entailed reading recorded in the property
+test's doc comment) · **Raised:** 2026-09-04 (from the `nz-ndc-seed-classes` ruling
 review — Pete story-stubbed the gap: "nothing records or executes a tie-break
 fly-off result") · **Fleshed out:** 2026-09-07 (the stub's "rules first" item
 discharged at source via the fai-rules script — see *Rules verification*; the
@@ -273,6 +276,7 @@ pattern, prefix `recordTieBreakOutcome.`):
 | Every `CompetitorRef` registered | `competitorNotFound` | Typo protection only; withdrawal NOT checked (ruling precedent). |
 | Placings well-formed | `placingsMalformed` | Refs distinct; ≥2; the placing list covers exactly the refs (all, each once); dense skip-ahead from 1 — place 1 exists, and the place after a k-way tie is k+1. |
 | `Reason` not blank | `reasonRequired` | `ValidateByNotBlank` precedent. |
+| `By` not blank when supplied | `byBlank` | Footnote (WI-1): the table omitted it; the `Penalty.By`/`ReflightRuling.By` precedent refuses blank `By` on every command carrying one — kept at WI-5 close-out on Pete's sign-off. |
 | No uniqueness check | — | Re-recording supersedes (D4); the log keeps both. Ruling decision-2 precedent. |
 | No pending-ness check | — | D6; NFR-4. |
 

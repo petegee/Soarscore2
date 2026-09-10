@@ -68,6 +68,7 @@ internal static class SoarscoreEventTypes
         (typeof(Soarscore.Domain.Competitions.PenaltyRecorded), "competitionPenaltyRecorded"),
         (typeof(ReflightGroupAppended), "reflightGroupAppended"),
         (typeof(ReflightRulingRecorded), "reflightRulingRecorded"), // reflight-scoring-rulings.md WI-5 — missing this line fails at runtime on BOTH backends per LADR-0001 §4.8.
+        (typeof(TieBreakOutcomeRecorded), "tieBreakOutcomeRecorded"), // operational-tie-break-resolution.md WI-3 — same rule.
         // draw-acceptance-redraw.md WI-5 registered the draw-lifecycle pair;
         // as above, a missing line fails at runtime on both backends per
         // LADR-0001 §4.8. RulesAmended remains the only registered-nothing
