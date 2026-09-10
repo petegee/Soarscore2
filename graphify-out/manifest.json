@@ -534,9 +534,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/Scoring/FlightSelector.cs": {
-    "mtime": 1788928801.7498808,
-    "seen": 1788929450.7992122,
-    "ast_hash": "5e481574b74614d03fc3c6c22bc6f22d",
+    "mtime": 1788999900.003549,
+    "seen": 1788999920.2709205,
+    "ast_hash": "190ae2e197ae571e880435174560ac52",
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/Scoring/MeasurementDigest.cs": {
@@ -2298,9 +2298,9 @@
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
-    "mtime": 1788929487.8814747,
-    "seen": 1788929493.9458554,
-    "ast_hash": "73d6ee7f546b53d34deb37026a74eb9f",
+    "mtime": 1788999900.0034027,
+    "seen": 1788999920.2822828,
+    "ast_hash": "1ebfa37aff7fa17306085f09c5910255",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/README.md": {
@@ -3887,12 +3887,6 @@
     "ast_hash": "6f541221145b41493781d8756768b507",
     "semantic_hash": ""
   },
-  "kanban/backlog/f3j-international-parallel-run-retriage.md": {
-    "mtime": 1788688794.5253608,
-    "seen": 1788929450.7998784,
-    "ast_hash": "d4e986a5e5bf45362cf351ff2dcebff4",
-    "semantic_hash": ""
-  },
   "kanban/completed/seed-definition-parallel-run.md": {
     "mtime": 1788688826.7201798,
     "seen": 1788929450.7999513,
@@ -4269,6 +4263,18 @@
     "mtime": 1788998419.977465,
     "seen": 1788998457.4337497,
     "ast_hash": "2eeb1fb0cb31ef5133bf6cbaf06e1737",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Domain.Tests/FlightZeroingTaskGateTests.cs": {
+    "mtime": 1788999900.003549,
+    "seen": 1788999920.2778585,
+    "ast_hash": "7e596572b7e010d0fcb9ab7905dec9d8",
+    "semantic_hash": ""
+  },
+  "kanban/completed/flight-zeroing-vs-task-gate.md": {
+    "mtime": 1788999900.0034027,
+    "seen": 1788999920.2814624,
+    "ast_hash": "5991039139186dbc492ff18ba74c4a8c",
     "semantic_hash": ""
   }
 }
