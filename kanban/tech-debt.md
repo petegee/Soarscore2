@@ -187,7 +187,7 @@ See CLAUDE.md house-keeping rule 5.
   120 target under the old score ranking (raw 345). Fast loop green (Domain
   691, Application 276, Architecture 7, Infrastructure non-Storage 72); BDD
   acceptance green on both stores (73/73 each).
-- [ ] `FlightSelector`'s validWhen gate vs `FlightInterpreter`'s per-flight
+- [x] `FlightSelector`'s validWhen gate vs `FlightInterpreter`'s per-flight
   zeroing — conflicting semantics, unwitnessed. `FlightInterpreter.Interpret`
   zeroes a flight failing `flightValidWhen` but leaves it selected and counted
   ("zero points for that flight only", 5.5.10.12 flight penalty b — the reading
@@ -200,6 +200,27 @@ See CLAUDE.md house-keeping rule 5.
   validWhen flag). Found 2026-09-04 during `kanban/in-progress/f5k-fixture-from-server-db.md`
   WI-3. Decide which reading 5.5.10.12 means, align the two sites, and cover it
   with a domain test before a fixture witnesses a zeroed flight.
+  **Discharged 2026-09-10.** 5.5.10.12 flight penalty b confirmed flight-scoped
+  from the verbatim rule text (the safety-penalty block's "zero (0) for the
+  round" wording scopes differently, adjacent in the same section); the
+  combination semantics decided once in the core over class data —
+  `FlightSelector.SelectAndScore` step 4 now judges `task.ValidWhen` over
+  countable selected flights only (countable = passed `flightValidWhen`), so a
+  zeroed flight never trips the task gate and a countable gate failure still
+  voids the cell; `ClampAndRecompute` re-applies the flight gate so a target
+  clamp cannot un-zero a zeroed flight. Single-gate behaviour byte-identical
+  (F3B-C/F3F still NoResult; the F3K late-landing LastFlight still Valid 0,
+  stays selected, predecessor not promoted). Pinned by eight pipeline tests in
+  `tests/Soarscore.Domain.Tests/FlightZeroingTaskGateTests.cs` (all pass).
+  Story, with the verbatim citation and the three recorded decisions:
+  `kanban/completed/flight-zeroing-vs-task-gate.md`. Fast loop green (Domain
+  783, Application 309, Architecture 7, Infrastructure non-Storage 76; the 10
+  residual failures are the documented pre-existing baseline — 9
+  `CatalogueDrawPropertyTests` + 1 `SeedCorpusIngestionTests` worktree
+  repo-root detection); BDD acceptance run on both stores (sqlite 80/6 of 86,
+  postgres 80/6 of 86 — the same six pre-existing worktree root-detection
+  failures in `SeedDefinitionLoader` on each, reproduced identical on the
+  stashed baseline, unrelated to the change).
 - [ ] Per-round F5K NLH parameter bindings — `ReplayDriver` binds parameters
   per-slug with fixture-specific data (f3j precedent); `f5k-ni-round-2` needed
   no binding only because all ten rounds share NLH 60 (the driver guards loudly
