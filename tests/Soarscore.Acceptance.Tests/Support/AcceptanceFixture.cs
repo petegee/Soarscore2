@@ -153,6 +153,16 @@ public static class AcceptanceFixture
         Environment.SetEnvironmentVariable("ConnectionStrings__Soarscore", connectionString);
         Environment.SetEnvironmentVariable("Soarscore__Store", storeName);
 
+        // kanban/in-progress/seed-class-corpus-at-startup.md WI-5: the Api now
+        // publishes the shipped class corpus at startup (ClassCorpusSeederHost).
+        // Point the host at the repo's frozen corpus the same way the Docker
+        // image points it at /app/seed — the suite then runs against a realistic
+        // deployment, and SeedingTheClassCatalogueSteps proves the catalogue
+        // landed. Same mechanism as the two variables above: read by
+        // WebApplicationBuilder's default configuration before the factory
+        // builds the host.
+        Environment.SetEnvironmentVariable("Soarscore__SeedCorpusDirectory", FindSeedJsonDirectory());
+
         _factory = new WebApplicationFactory<Program>();
         Client = _factory.CreateClient();
 
@@ -218,5 +228,20 @@ public static class AcceptanceFixture
 
             _sqlitePath = null;
         }
+    }
+
+    /// <summary>The repo's frozen canonical corpus — what the seeder publishes at
+    /// startup here, and what the Docker image copies to /app/seed.</summary>
+    private static string FindSeedJsonDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory is null
+            ? throw new InvalidOperationException("Could not find the repository root from the test's base directory.")
+            : Path.Combine(directory.FullName, "tools", "Soarscore.SeedData", "json");
     }
 }

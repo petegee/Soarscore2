@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Composition.cs": {
-    "mtime": 1789076301.8518276,
-    "seen": 1789076448.190085,
-    "ast_hash": "0f287580af183eda219a50d67c8db18f",
+    "mtime": 1789080852.0835013,
+    "seen": 1789081345.433284,
+    "ast_hash": "4117287c73a4fba6de9ae5e375972826",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Program.cs": {
@@ -996,9 +996,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/AcceptanceFixture.cs": {
-    "mtime": 1788991276.1405096,
-    "seen": 1788991521.5434923,
-    "ast_hash": "f769c128b5beb4a39d53b9cc8d5bcf51",
+    "mtime": 1789080977.3870416,
+    "seen": 1789081345.4403672,
+    "ast_hash": "d05f952fb2fb0238180194e37c0c79a2",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/ApiClient.cs": {
@@ -4320,15 +4320,51 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/appsettings.json": {
-    "mtime": 1789073856.095764,
-    "seen": 1789076448.190238,
-    "ast_hash": "6716e8faf1899ca43ac41e5e22951006",
+    "mtime": 1789080855.0785382,
+    "seen": 1789081345.433367,
+    "ast_hash": "1a30b5b7154aada6283552c4d045e3dc",
     "semantic_hash": ""
   },
   "docs/integrators-guide.md": {
     "mtime": 1789026938.24915,
     "seen": 1789076448.2081976,
     "ast_hash": "dda2ffe252189e61dd6ffebbff636c97",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Api/Seeding/ClassCorpusSeederHost.cs": {
+    "mtime": 1789080998.088302,
+    "seen": 1789081345.433346,
+    "ast_hash": "c78c33c610d2ecd96e584c3b02d3a0fc",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Seeding/ClassCorpusSeeder.cs": {
+    "mtime": 1789080840.7833626,
+    "seen": 1789081345.4348426,
+    "ast_hash": "a93f647649bfebf950dcf1cebf48542d",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Steps/SeedingTheClassCatalogueSteps.cs": {
+    "mtime": 1789081020.1485791,
+    "seen": 1789081345.4403398,
+    "ast_hash": "e0b758f956a5c2836ce15dc5a6778ef4",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Application.Tests/Seeding/ClassCorpusSeederTests.cs": {
+    "mtime": 1789080957.7337983,
+    "seen": 1789081345.442131,
+    "ast_hash": "9456bef11fb9af1e2fd9bf89db58c4a7",
+    "semantic_hash": ""
+  },
+  ".github/workflows/fly-deploy.yml": {
+    "mtime": 1789080970.0499496,
+    "seen": 1789081345.4450521,
+    "ast_hash": "a4fdf85f29ad9b85b6807a32d1debdd6",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/seed-class-corpus-at-startup.md": {
+    "mtime": 1789080709.9447565,
+    "seen": 1789081345.4467595,
+    "ast_hash": "6e92754074ea24346ba812d5036afb4a",
     "semantic_hash": ""
   }
 }

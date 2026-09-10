@@ -1,0 +1,25 @@
+# fly.toml app configuration file generated for soarscore2-quiet-shadow-5419 on 2026-09-11T10:56:10+12:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'soarscore2-quiet-shadow-5419'
+primary_region = 'syd'
+
+[build]
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpus = 1
+  memory_mb = 1024

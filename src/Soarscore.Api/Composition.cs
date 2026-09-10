@@ -143,6 +143,11 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<ScoreCompetition, CompetitionScoreView>, ScoreCompetitionHandler>();
         builder.Services.AddScoped<IQueryHandler<GetPendingTieBreaks, PendingTieBreaksView>, GetPendingTieBreaksHandler>();
 
+        // Deployment seeding — kanban/in-progress/seed-class-corpus-at-startup.md WI-2.
+        // Registered hosted services start before the generic web host (Kestrel),
+        // so the seed corpus is published before the API accepts a request.
+        builder.Services.AddHostedService<Seeding.ClassCorpusSeederHost>();
+
         var app = builder.Build();
 
         // WI-1/WI-6: the payload-size and nesting-depth ceiling, ahead of routing
