@@ -85,14 +85,23 @@ public static class FlightSelector
             return new TaskResult(TaskResultState.NoResult, null, 0m, AwaitingCapture: awaiting);
 
         // 3. If targets are assigned, clamp and re-score (before validWhen check).
-        var withTargets = ApplyTargets(selected, task.Flights, task.Score, declaredInstruments, UnitsOf(task));
+        var withTargets = ApplyTargets(selected, task.Flights, task.Score, task.FlightValidWhen, declaredInstruments, UnitsOf(task));
 
-        // 4. Evaluate validWhen against selected flights' measurements (Issue #2, #6).
+        // 4. Evaluate validWhen against the countable selected flights
+        //    (flight-zeroing-vs-task-gate.md WI-1/WI-3): a flight zeroed by
+        //    flightValidWhen has already scored its 0 and stays selected — it
+        //    does not participate in the task gate. Countable = a selected
+        //    flight that passed the flight gate; if every selected flight is
+        //    zeroed, the gate passes vacuously. F3B-C/F3F set no flight gate,
+        //    so countable == selected and this is their existing semantics.
         if (task.ValidWhen is not null)
         {
             bool allPass = true;
             foreach (var flight in withTargets)
             {
+                if (IsZeroedByFlightGate(task.FlightValidWhen, flight))
+                    continue;
+
                 if (!PredicateEvaluator.Evaluate(task.ValidWhen,
                         flight.Metrics))
                 {
@@ -195,6 +204,7 @@ public static class FlightSelector
         ImmutableArray<InterpretedFlight> selected,
         FlightSelection selection,
         ImmutableArray<ScoreTerm> scoreTerms,
+        Predicate? flightValidWhen,
         ImmutableArray<DeclaredInstrument> declaredInstruments,
         IReadOnlyDictionary<string, string?> metricUnits)
     {
@@ -223,7 +233,7 @@ public static class FlightSelector
                     target = bn.TargetValues[i];
                 }
 
-                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms, declaredInstruments, metricUnits));
+                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms, flightValidWhen, declaredInstruments, metricUnits));
             }
 
             return result.ToImmutable();
@@ -240,7 +250,7 @@ public static class FlightSelector
             for (int i = 0; i < selected.Length && i < en.TargetValues.Length; i++)
             {
                 decimal target = en.TargetValues[i];
-                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms, declaredInstruments, metricUnits));
+                result.Add(ClampAndRecompute(selected[i], targetMetric, target, scoreTerms, flightValidWhen, declaredInstruments, metricUnits));
             }
 
             return result.ToImmutable();
@@ -287,6 +297,20 @@ public static class FlightSelector
     }
 
     /// <summary>
+    /// True when the flight failed the task's flightValidWhen gate: the
+    /// interpreter zeroed it (score 0, still selected — 5.5.10.12 flight
+    /// penalty b) and, per the WI-1 combination rule
+    /// (flight-zeroing-vs-task-gate.md), it takes no further part in gate
+    /// decisions. Reads the flight's original metrics — clamping rewrites
+    /// scores, never metrics — so this re-evaluation is exactly the
+    /// interpreter's own gate decision, whatever the flight's score is now.
+    /// </summary>
+    private static bool IsZeroedByFlightGate(
+        Predicate? flightValidWhen, InterpretedFlight flight) =>
+        flightValidWhen is not null
+        && !PredicateEvaluator.Evaluate(flightValidWhen, flight.Metrics);
+
+    /// <summary>
     /// Create a copy of the flight's measurements with the target metric clamped,
     /// then re-score all terms.
     /// </summary>
@@ -295,9 +319,16 @@ public static class FlightSelector
         string targetMetric,
         decimal target,
         ImmutableArray<ScoreTerm> scoreTerms,
+        Predicate? flightValidWhen,
         ImmutableArray<DeclaredInstrument> declaredInstruments,
         IReadOnlyDictionary<string, string?> metricUnits)
     {
+        // Re-apply the flight gate (same logic the interpreter ran): a
+        // clamped re-score must not un-zero a flight-gate-zeroed flight —
+        // its 0 stands whatever the clamped metrics would have scored.
+        if (IsZeroedByFlightGate(flightValidWhen, flight))
+            return flight;
+
         var metrics = flight.Metrics;
 
         if (!metrics.TryGetValue(targetMetric, out var originalValue)
