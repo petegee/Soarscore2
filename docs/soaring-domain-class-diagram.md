@@ -302,7 +302,7 @@ classDiagram
     Flight "1" *-- "1..*" Measurement : captures
     Measurement "1" *-- "1" MeasuredValue
     Measurement "1" *-- "0..*" Amendment : corrected by
-    Measurement "..> 0..1" ReadingScale : read on
+    Measurement ..> "0..1" ReadingScale : read on
     ReadingScale "1" *-- "1..*" TapeMark : graduated in
     Competition "1" *-- "0..*" InstrumentDeclaration : declares (scale to metric)
     Entry "1" *-- "0..1" Annulment : voided by ruling
@@ -360,6 +360,8 @@ classDiagram
         +string version
         +FinalRankingKind finalRanking
     }
+    %% faiDesignation is nullable — empty for a national class; six
+    %% definitions leave it blank.
     %% finalRanking is nullable, and absent means SinglePhase — the only value a
     %% one-phase class can take, so six of the eleven definitions no longer
     %% write it. It is not a default in the "invented rule" sense: the phase
@@ -459,7 +461,14 @@ classDiagram
         +int dropCount
         +int applyWhenRoundsCompletedAtLeast
         +int applyWhenResultsAtLeast
+        +DropTieBreak tieBreak
     }
+    %% tieBreak decides which of the equally-bad drop candidates goes: Latest
+    %% (the default) drops the LAST of the tied candidates — value ASC then
+    %% round DESC, GliderScore's ordering (owner decision 2026-09-08,
+    %% literal-record-f3k-sample-comp.md WI-4b) — and Earliest the first. No
+    %% rulebook in either corpus states the choice: practice parity, not a
+    %% rulebook clause, and no definition writes the operand.
     %% Both gates are nullable and conjunctive: a drop applies only when every
     %% populated gate holds. F3B.2.8 states two — more than five complete rounds
     %% AND a task with more than five results — and they diverge whenever a
@@ -645,15 +654,18 @@ classDiagram
         +PenaltyEffect effect
         +decimal points
     }
-    %% There is no appliedAt: the pipeline stage is a property of the EFFECT
-    %% within the stages where the recorded penalty's SCOPE makes it visible:
-    %% Flight/Entry records act at the task-round stage, TaskRound/Competition
-    %% records at the final aggregate. DeductPoints and Disqualify act on the
-    %% final aggregate; ZeroFlight, ZeroRound and ZeroTask act on the raw score,
-    %% which is the only stage at which a flight or a round is still a
-    %% distinguishable thing to zero. All eleven definitions agreed before the
-    %% attribute was removed — 24 deductions and one disqualification at the
-    %% final aggregate, 13 zeroes at the raw score — and the unused pairings are
+    %% There is no appliedAt: the recorded penalty's SCOPE places the stage and
+    %% the EFFECT picks the action within it (D1,
+    %% entry-scoped-deduct-points-penalties-inert.md). Flight/Entry records are
+    %% visible only at the task-round stage, where Zero* zero the raw score and
+    %% DeductPoints subtracts pre-normalisation, inside the ratio
+    %% normalisation then applies; TaskRound/Competition records act on the
+    %% final aggregate, where DeductPoints and Disqualify act. Zero* can never
+    %% reach the aggregate — the only stage at which a flight or a round is
+    %% still a distinguishable thing to zero is the raw score — and the corpus
+    %% (sixteen definitions) uses the effects in exactly those shapes: 39
+    %% deductions and one disqualification, 21 zeroes, no ZeroTask. The unused
+    %% pairings are
     %% not statable rules. §4 below is where the pipeline reads the derivation.
     %% Disqualify is the odd one: it is not an arithmetic operation on a score
     %% at all, it removes the competitor from the ranking (F3F.1.2). It has no
@@ -697,6 +709,18 @@ classDiagram
         <<enumeration>>
         ByRound
         ByTask
+    }
+
+    class DropTieBreak {
+        <<enumeration>>
+        Latest
+        Earliest
+    }
+
+    class MinEnforcement {
+        <<enumeration>>
+        Shall
+        Should
     }
 
     class PromotionKind {
@@ -757,7 +781,7 @@ classDiagram
     PhaseDefinition "1" *-- "1..*" Task : catalogue
     Task "1" *-- "0..1" ReflightRule : overrides the class default
     PhaseDefinition "1" *-- "0..*" DropPolicy : ordered, first match wins
-    PhaseDefinition "1" *-- "0..*" TieBreakDirective : ordered; absent = display-ladder fallback
+    PhaseDefinition "1" *-- "0..*" TieBreakDirective : ordered, absent keeps display-ladder fallback
     PhaseDefinition "1" *-- "1" ValidityRule
     PhaseDefinition "1" *-- "0..1" PromotionRule : entry criteria
 
@@ -989,7 +1013,16 @@ classDiagram
         <<value object>>
         +int minPerGroup
         +int minValidResults
+        +MinEnforcement minEnforcement
     }
+    %% minEnforcement states the rulebook's modal verb beside the number it
+    %% governs. Nullable; absent is Shall — today's hard refusal — and Should
+    %% prescribes with a warning instead of refusing (F3J.6.1 a),
+    %% 5.5.11.8.1 a): a drawn five-pilot group against a SHOULD-schedule min-6
+    %% is a legitimate flying of the class. The datum lives beside the number,
+    %% never on the parameter: a ParameterRef minimum inherits the class's
+    %% hardness when resolved. Three definitions mark Should (F3J, F5J,
+    %% F5J-NDC). should-level-minima-warn-dont-refuse.md.
     %% minValidResults is nullable; unset means the class states no annulment
     %% threshold, and no group is annulled for want of valid results.
     %% Optional on Task, and ABSENT IS NOT THE SAME STATEMENT AS A

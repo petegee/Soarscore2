@@ -4,8 +4,10 @@ A hand-writing notation for a `CompetitionClass`. Written as language-neutral
 pseudo-code — the host language is not yet chosen, and §9 states exactly which
 host-language features it assumes.
 
-Seven FAI classes and three NZ national classes are written in it in
-`tools/Soarscore.SeedData/`. They are the notation's test and the model's: because the notation
+Sixteen definitions are written in it in
+`tools/Soarscore.SeedData/` — seven FAI classes, eight NZ national soaring ones
+and one MFNZ free-flight power class (`90-aggregate`, the model's first
+non-soaring class). They are the notation's test and the model's: because the notation
 is isomorphic to `soaring-domain-class-diagram.md`, anything they cannot express
 is a gap in the model rather than in the notation.
 
@@ -48,6 +50,14 @@ all seven FAI classes agree on two things the NZ classes do not.
 Re-reading `F3F.1` against the F3F definition it had already produced found one
 more (F28, §14), and that one had been mis-scoring: penalty exclusion was
 modelled as an equivalence class where `F3F.1.10` states a pairwise relation.
+
+The corpus then grew from eleven definitions to sixteen — three NDC formats
+(over FAI F3K `NZ.0.2` and FAI F5J `NZ.0.3`, and the NZ Class Q hand-launch
+electric `NZ.3.16.37`), NZ Class X5J (`NZ.3.14`) and the MFNZ free-flight
+`90-aggregate` — through scoring-work stories rather than a fresh rulebook
+probe. Two of those stories extended the model, and rule 2 made the notation
+follow (F29–F30, §15); a third re-derived the penalty pipeline's staging law
+without adding a keyword (§3, D1).
 
 ---
 
@@ -134,9 +144,9 @@ the group the number would size.
 
 **`finalRanking` is optional, and a single-phase class omits it.** A class with
 exactly one `phase` can only rank on that phase, so `SinglePhase` restates the
-phase list rather than adding to it; six of the eleven definitions wrote
-`SinglePhase` and now none does, leaving the five multi-phase classes as the
-only ones with a line. The keyword stays because the other two values are real
+phase list rather than adding to it; six of the eleven definitions then in the
+corpus wrote `SinglePhase` and none does now, leaving the five multi-phase
+classes as the only ones with a line. The keyword stays because the other two values are real
 choices a multi-phase class must make and neither is derivable —
 `LastPhaseReplaces`
 (`F3K.10`, `5.5.10.16`) and `SplitByPromotion` (`F3J.11`, `5.5.11.13`,
@@ -146,16 +156,25 @@ as `SinglePhase` on a class with more than one phase is rejected**, and **a
 class with more than one phase and no `finalRanking` is rejected too** — the
 default is only available where it is forced.
 
-**Penalties carry one or more effects** (F20), and **the effect is what decides
-where in the pipeline it lands.** `deduct` and `disqualify` act on the final
-aggregate; `zeroFlight`, `zeroRound` and `zeroTask` act on the raw score, which
-is the only stage where a flight or a round still exists as a thing to zero.
-There is no `at` clause, and there never was a class that needed one: across
-the eleven definitions all 24 `deduct`s and the single `disqualify` were
-written at the final aggregate and all 13 `zeroFlight`/`zeroRound`s at the raw
-score, and the opposite pairings are not rules a rulebook could state — zeroing
-a flight at the final aggregate names a flight the aggregate no longer
-distinguishes.
+**Penalties carry one or more effects** (F20), and **the recorded scope places
+the stage; the effect picks the action within it.** A flight/entry-scoped
+record is visible only at the task-round stage, where its `zeroFlight`,
+`zeroRound` and `zeroTask` effects zero the raw score and its `deduct`
+subtracts pre-normalisation, inside the ratio normalisation then applies; a
+task-round/competition-scoped record acts on the final aggregate, where its
+`deduct` and `disqualify` act. That is decision D1
+(`kanban/completed/entry-scoped-deduct-points-penalties-inert.md`): the
+difference between the two routes is the GliderScore distinction between
+flight-score penalties and post-sum penalties, and it is chosen by where the CD
+records the infraction, never configured. There is still no `at` clause, and
+the reason is stronger than the one this text used to give: the stage is a
+property of the *recording*, which is event data the class does not own, so a
+class-side clause would claim a fact the class cannot state. What the class
+writes is the effect alone, and the sixteen definitions use it in exactly its
+shapes — 39 `deduct`s, the single `disqualify`, and 21 `zeroFlight`/
+`zeroRound`s, no `zeroTask` — and the opposite pairing remains not a rule a
+rulebook could state: zeroing a flight at the final aggregate names a flight
+the aggregate no longer distinguishes.
 
 One infraction can still act twice, and it is *because* the two effects differ
 that the two stages do: `F3B.2.2 p` zeroes the flight *and* deducts 1000 from
@@ -197,7 +216,7 @@ the recorded infractions**: a penalty is suppressed if any group it names holds
 a larger accrued contribution, and a penalty that survives is applied once
 however many groups it names. Iterating over the survivors instead would let a
 suppressed penalty un-suppress a third and make the total depend on evaluation
-order. Ten of the eleven definitions name one group or none and are unaffected.
+order. Fifteen of the sixteen definitions name one group or none and are unaffected.
 
 **`perOccurrence`** (F23) sets `PenaltyDefinition.accrual`. The default,
 `OncePerAttempt`, is what `F3K.4.3` and `F3J.2.4 c` say word for word — "each
@@ -236,9 +255,11 @@ The same discipline, applied to the eleven definitions once they were all
 written, removed four more — three of them elements the notation had a keyword
 or operand for, so rule 1 removed the keyword with them:
 
-- **`PenaltyApplication` and the `at` clause** — derivable from the effect, as
-  above. Readmission needs a rule that deducts points from something other than
-  the final aggregate, or zeroes a flight after the aggregate exists.
+- **`PenaltyApplication` and the `at` clause** — the stage follows the recorded
+  scope and the effect picks the action (§3, D1), so it is derived from data
+  the class does not own. Readmission needs a rule that fixes the stage in
+  class data — an infraction that must deduct at the final aggregate however
+  it is recorded, say, or zeroes a flight after the aggregate exists.
 - **`PenaltyCatalogue`** — a value object with no attributes between the class
   and its penalty definitions. `CompetitionClass *-- 0..* PenaltyDefinition`
   says the same thing, and the notation never had a keyword for it. Readmission
@@ -353,7 +374,8 @@ re-derived.
                  [distinctTaskPerRound] [maxRounds <n>]]              # §7 default
     validity   minRounds <n> [minTasks <n>]
     [drop      <ByRound|ByTask> <count> [whenRounds >= <n>] [whenResults >= <n>]
-                 … (one or more, in order)]                       # optional
+                  [tieBreak <latest|earliest>]
+                  … (one or more, in order)]                       # optional
     [tiebreak  <directive> … (one or more, in order)]             # optional
     promotion  <TopN <n> | TopPercent <pct>> group <min>..<max>
                  carryPenalties <true|false|param(<name>)>
@@ -500,8 +522,8 @@ reasoning that used to sit here is now reversed. `DropPolicy` was mandatory
 (1..\*) on `PhaseDefinition`, so a phase with no discard still needed one, and
 `drop none` was sugar for a single `ByRound 0` with neither gate. That is F25's
 shape — a mandatory slot satisfied with an invented value — and it was the
-majority case, not the exception: nine of the sixteen phases in `tools/Soarscore.SeedData/`
-have no discard to state, including every fly-off in the corpus and all four NZ
+majority case, not the exception: thirteen of the twenty phases in `tools/Soarscore.SeedData/`
+have no discard to state, including every fly-off in the corpus and all eight NZ
 definitions. Unlike normalisation, discarding nothing does at least *have* an
 identity value, so the fabrication cost no arithmetic; what it cost was the
 claim itself, a `DropPolicy` asserting that the phase's rules contain a discard
@@ -533,7 +555,8 @@ tasks**; it does not inherit them. See `like` (§7) for the notation shortcut.
                  [whenNotRecorded <literal>]
       flights    <selection>
       timing     <Fixed <duration> | UntilAllFlightsComplete> [prep <duration>] [maxLaunches <n>]
-      group      minPerGroup <n> [minValidResults <n>]             # optional
+      group      minPerGroup <n> [minValidResults <n>]
+                  [minEnforcement <shall|should>]                # optional, F29
       normalise  <HigherIsBetter|LowerIsBetter> winner <n> [round <mode> <precision>]
                                                                     # optional
       rawScore   round <mode> <precision>                           # optional
@@ -621,8 +644,15 @@ results, which is already what an unset `minValidResults` meant inside a written
 the adoption check the optionality needs: **a task that writes `normalise` and
 no `group` is rejected** — normalisation is defined against the best score in
 the group, so a class that normalises has to say how groups are formed. The
-eleven definitions already agree without exception, every normalising task
-writing a `group` and every non-normalising one omitting it.
+corpus agrees without exception on the direction the check gates: all 48
+normalising tasks write a `group` and no normalising task omits it. The
+converse does not hold, and since the NDC definitions it no longer even holds
+as a corpus habit: nine tasks across the three NDC definitions write a `group`
+with no `normalise`, because the group sizes the DRAW only — `NZ.0.2.1 a`
+scores the raw-sum total with no per-group normalisation, so there is nothing
+for the group to scale and it exists only to divide the field. A task may
+write `group` without `normalise`; it may never write `normalise` without
+`group`.
 
 **`normalise` is itself optional** (F25). Written, the task normalises and the
 `score` block is what normalisation consumes. Omitted, the task does not
@@ -1118,15 +1148,18 @@ neither weakens them nor needs a variant of them.
 A default is the notation declining to write a value the model already treats
 as absent or as the identity. **No default here changes the model** — no
 multiplicity, attribute or enum moved to make one possible; each writes exactly
-the instance the long form wrote. Five exist.
+the instance the long form wrote. Seven exist — the five the corpus grew up
+with, plus the two that arrived with F29 and F30 (§15).
 
 | Written nowhere | Means | Sites removed |
 |---|---|---|
-| `else <term>` on a conditional | the omitted branch contributes **0** to the sum | 26 of 29 conditionals |
-| `maxLaunches <n>` on `timing` | **unlimited** launches | 16 of 32 `timing` lines |
-| `rounds …` on a phase | `FixedSequence tasksPerRound 1`, no `distinctTaskPerRound`, no `maxRounds` | 8 of 16 phases |
-| `boundAt <point>` on a `param` | `CompetitionSetup` | 22 of 33 params |
-| the kind on a `param` | `Number` | 29 of 33 params |
+| `else <term>` on a conditional | the omitted branch contributes **0** to the sum | 47 of 57 conditionals |
+| `maxLaunches <n>` on `timing` | **unlimited** launches | 29 of 61 `timing` lines |
+| `rounds …` on a phase | `FixedSequence tasksPerRound 1`, no `distinctTaskPerRound`, no `maxRounds` | 8 of 20 phases |
+| `boundAt <point>` on a `param` | `CompetitionSetup` | 24 of 37 params |
+| the kind on a `param` | `Number` | 33 of 37 params |
+| `minEnforcement` on `group` | `Shall` — today's hard refusal (F29) | 52 of 57 `group` lines |
+| `tieBreak` on `drop` | `Latest` — the GliderScore-parity tie-break (F30) | all 8 `drop` lines |
 
 The three that were *not* adopted are recorded in §7.3, because the half that
 did not change is the more useful half.
@@ -1170,8 +1203,17 @@ statement*, not two different ones:
 - **`param` kind** — none needed; `Flag` is always written, and there are only
   two kinds. The four `Flag` parameters in the corpus are all `carryPenalties`.
   Note that this default is **not** extended to `metric`, whose kind stays
-  mandatory: metrics are 39 `Flag` to 28 `Number`, so there is no dominant value
-  to default to and the reader of a `score` block needs the kind to hand.
+  mandatory: metrics are 163 `Flag` to 104 `Number` — a dominant value, since
+  the corpus grew — but the reader of a `score` block needs the kind to hand.
+- **`minEnforcement` on `group`** — none needed (F29). A rulebook that states a
+  group minimum either states it with "shall" or says nothing about modality,
+  and both write nothing: `Shall` is the hard refusal every pre-F29 definition
+  meant. A rulebook that states "should" must be written — the three
+  `Should`-marked definitions (F3J, F5J, F5J-NDC) are the corpus's only
+  non-default lines.
+- **`tieBreak` on `drop`** — none needed (F30). No rulebook in either corpus
+  states which equally-bad candidate a discard takes; `Latest` is GliderScore's
+  practice made default, and no definition writes the operand.
 
 **Defaults and `like` compose; the precedence is stated once, here.** Applying
 §7.1's granularity rule — a restated block replaces, an unrestated block is
@@ -1190,8 +1232,11 @@ keyword the parent wrote and the restated block omits takes the *default*, not
 the parent's value. No `like` in the eleven definitions relies on that — every
 `timing` line in the corpus that is restated writes its own launch limit or
 means unlimited — so no default made an existing `like` ambiguous. The other
-four defaults cannot interact with `like` at all: `rounds` is on a phase and
-phases have no `like`, and `param` is class-scoped.
+four defaults of the original five cannot interact with `like` at all: `rounds`
+is on a phase and phases have no `like`, and `param` is class-scoped. Of the
+two added later, `minEnforcement` rides the one-line `group` keyword exactly as
+`maxLaunches` rides `timing`, and `tieBreak` rides `drop` — phase-level, where
+`like` never reaches.
 
 ### 7.3 Defaults considered and rejected
 
@@ -1218,7 +1263,7 @@ written out every time.
   would move that hazard from "check these two against the rule text" to
   "nothing on the page to check".
 
-The distinction between the five and these three: the five are places where the
+The distinction between the seven and these three: the seven are places where the
 rules say *nothing*, and writing nothing is therefore the honest transcription.
 These three are places where the rules state a number or a direction, and the
 notation's job is to carry it.
@@ -1541,9 +1586,12 @@ contain, so the multiplicity was wrong rather than the classes.
 - **`NZ.2.8.3`'s zero is discretionary.** A launch exceeding the designated
   altitude by 10% means the CD "*may* assign a score of zero". Same category as
   `F3B.2.3 b`'s midair exception (§6): a ruling, not a predicate.
-- **`faiDesignation` is empty for a national class.** Three definitions now
+- **`faiDesignation` is empty for a national class.** ~~Three definitions now
   leave it blank. It is presumably nullable, but the field name says otherwise
-  and nothing states it.
+  and nothing states it.~~ **Resolved:** the model field is `string?
+  FaiDesignation` — "empty for a national class" (`ClassDefinition.cs`) — and
+  six definitions leave it blank: Classes M, N, P and X5J, and the Class M and
+  F5K-NDC formats.
 - **A drafting error in `NZ.3.15.1 j`.** It reads "the model must be airborne at
   the end of the round the flight time for the flight & landing to count", where
   the parallel Class N clause `NZ.3.13.1 j` says the opposite — still airborne at
@@ -1633,5 +1681,48 @@ where the person contact is the largest member of both its groups.
   round deciding, is the `bestDroppedScore` fallback rung, dormant until
   contest flow has acted.
 - **Re-flight scheduling, unchanged.** `F3F.1.5`'s "after a fixed number of
-  pilots" remains a `param` nothing reads — now legal by statement rather than by
-  omission (§3).
+  pilots" remains a `param` nothing reads — now legal by statement rather than
+  by omission (§3).
+
+---
+
+## 15. Findings F29–F30 — the model-sync pass
+
+F1–F28 each arrived from a rulebook read against a definition. These two did
+not: they arrived from scoring-work stories that extended the model, and rule 2
+— every model instance is writable here — made the notation follow. The corpus
+stood at sixteen definitions when the pass was made and none of the new ones
+needed a keyword; both findings record model elements the stories added.
+
+| # | Extension | Forced by |
+|---|---|---|
+| F29 | `minEnforcement <shall\|should>` on `group` — `GroupConstraint.MinEnforcement` | the rulebook's modal verb is class data: `F3J.6.1 a)` and `5.5.11.8.1 a)` state the group minimum with "should", and a definition that cannot say so either refuses groups the rulebook permits or loses the distinction |
+| F30 | `tieBreak <latest\|earliest>` on `drop` — `DropTieBreak` on `DropPolicy` | no rulebook clause — an owner decision (2026-09-08, Pete), `literal-record-f3k-sample-comp.md` WI-4b: drop ties break GliderScore's way, generally, not per fixture |
+
+**`minEnforcement`** states the rulebook's modal verb beside the number it
+governs. Default `Shall` — today's hard refusal, so every definition predating
+F29 is unchanged — while `Should` prescribes with a warning instead of
+refusing: a drawn five-pilot group against F5J's SHOULD-schedule min-6
+(`5.5.11.8.1 a)`, with repair triggered only at four-or-fewer per
+`5.5.11.14.1 e)`) is a legitimate flying of the class, not a broken one. Three
+definitions mark it — F3J, F5J and the F5J NDC definition, each on their min-6
+group — and every other `group` line in the corpus omits it. The datum lives
+on the constraint beside the number, never on the parameter: a `param()`
+minimum inherits the class's hardness when resolved.
+
+**`tieBreak`** decides which of the equally-bad drop candidates goes. `Latest`
+— the default — drops the LAST of the tied candidates (value ASC then round
+DESC, GliderScore's ordering); `Earliest` drops the first. No rulebook in
+either corpus states the choice, which is why this is practice parity rather
+than a rulebook finding: the same grounding as the core-owned PreDropScore
+countback at tie-break rung 2 — established practice, settled by owner
+decision. No definition writes the operand; it is recorded because the datum
+is class data and rule 2 outranks the corpus's silence.
+
+**What the pass otherwise held.** The thirteen `ParameterRef` slots are
+unchanged; both new elements ride keyword lines that already existed. The
+corpus shifts the pass had to catch up with are recorded where they landed —
+the one-directional group/normalise agreement (§5) and the D1 staging law for
+penalty effects (§3) — and nothing in them needed new notation: the stage a
+recorded penalty lands at is chosen by the recording, which is event data, so
+there is still nothing for a class-side clause to say.
