@@ -216,6 +216,18 @@ public static class Composition
 
         app.MapOpenApi();
 
+        // Swashbuckle's Swagger UI at /swagger, pointed at the in-box document
+        // above — the UI is the only thing Swashbuckle supplies here; the spec
+        // still has exactly one generator (LADR-0003 "API documentation", as
+        // amended for the hosted UI). Served in every environment: the trust
+        // model is the club-level no-auth one, and the point of the page is
+        // poking the deployed API (e.g. on Fly.io).
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/openapi/v1.json", "Soarscore v1");
+            options.DocumentTitle = "Soarscore API";
+        });
+
         app.MapCommands();
         app.MapQueries();
 

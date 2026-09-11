@@ -1,0 +1,20 @@
+info:
+  name: F3K Class Definition
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: https://soarscore2-quiet-shadow-5419.fly.dev/class-definition?contentHash=8054892603d74f3f1bf8e87282ab9198a83a4a1aef5d07bc15480466fef666c4
+  params:
+    - name: contentHash
+      value: 8054892603d74f3f1bf8e87282ab9198a83a4a1aef5d07bc15480466fef666c4
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

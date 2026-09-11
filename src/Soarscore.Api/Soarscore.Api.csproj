@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <!-- UI only — the document still comes from Microsoft.AspNetCore.OpenApi
+         above (Composition.cs wires UseSwaggerUI to /openapi/v1.json). -->
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
   </ItemGroup>
 
   <ItemGroup>
