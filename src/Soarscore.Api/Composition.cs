@@ -150,11 +150,11 @@ public static class Composition
 
         var app = builder.Build();
 
-        // docs/integrators-guide.md, rendered to wwwroot/integrators-guide.html and
-        // served here. Middleware, not routing — no endpoint is created, so the
-        // WI-2 route-shape reflection test (only GET/POST from MapCommand/MapQuery)
-        // is unaffected; it enumerates EndpointDataSource, which static files
-        // never add to.
+        // wwwroot/integrators-guide.html — the integrators guide, the single
+        // artifact (no markdown source). Middleware, not routing — no endpoint
+        // is created, so the WI-2 route-shape reflection test (only GET/POST
+        // from MapCommand/MapQuery) is unaffected; it enumerates
+        // EndpointDataSource, which static files never add to.
         app.UseStaticFiles();
 
         // WI-1/WI-6: the payload-size and nesting-depth ceiling, ahead of routing
