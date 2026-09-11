@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>SoarScore Integrators Guide</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           max-width: 62rem; margin: 0 auto; padding: 1rem 1.5rem 4rem;
+           line-height: 1.55; color: #1a1a1a; }
+    h1 { font-size: 1.7rem; border-bottom: 2px solid #2c5f8a; padding-bottom: .3rem; }
+    h2 { font-size: 1.35rem; border-bottom: 1px solid #d0d7de; padding-bottom: .2rem; margin-top: 2.2rem; }
+    h3 { font-size: 1.1rem; margin-top: 1.6rem; }
+    a { color: #2c5f8a; }
+    code { background: #f2f4f7; padding: .08rem .3rem; border-radius: 3px;
+           font-size: .88em; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+    pre { background: #f2f4f7; border: 1px solid #d0d7de; border-radius: 6px;
+          padding: .8rem 1rem; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    table { border-collapse: collapse; margin: 1rem 0; width: 100%; font-size: .92rem; }
+    th, td { border: 1px solid #d0d7de; padding: .35rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #eef3f8; }
+    blockquote { border-left: 4px solid #d0d7de; margin: 1rem 0; padding: .2rem 1rem; color: #444; }
+    hr { border: none; border-top: 1px solid #d0d7de; margin: 2rem 0; }
+  </style>
+</head>
+<body>
+<h1 id="soarscore-integrators-guide">SoarScore Integrators Guide</h1>
+<p>How to run a competition through the SoarScore HTTP API, and how to
+build a UI on top of it. This guide is written for two audiences: an
+<strong>integrator</strong> (club scorekeeper tooling, Gliderscore
+bridging, spreadsheet import) and a <strong>UI developer</strong>
+(tablet/web front end).</p>
+<blockquote>
+<p>House-keeping: <code>docs/rules/</code> is derived from the official
+FAI/NZMAA rules and is read-only; everything here must not contravene
+them. This guide is transient software documentation — see docs
+house-keeping rules.</p>
+</blockquote>
+<hr />
+<h2 id="1-how-the-api-thinks">1. How the API thinks</h2>
+<p>Read this once; every use-case below assumes it.</p>
+<ul>
+<li><strong>One central route surface</strong>:
+<code>MapCommand</code>/<code>MapQuery</code> only
+(<code>src/Soarscore.Api/Routing/EndpointRouteBuilderExtensions.cs</code>).
+Routes are kebab-case, <strong>commands are verbs</strong>
+(<code>/draw-phase</code>), <strong>queries name the read</strong>
+(<code>/competition-result</code>).</li>
+<li><strong>POST for commands, JSON body</strong>
+(<code>{"competitionId":{"value":"&lt;guid&gt;"}, …}</code>).</li>
+<li><strong>GET for queries, query-string only</strong>
+(<code>?competitionRef=&lt;guid&gt;&amp;phaseOrdinal=0</code>). No route
+takes a body on GET or query-string parameters on POST.</li>
+<li><strong>IDs on the wire</strong>: strong-typed ids
+(<code>PersonId</code>, <code>CompetitionId</code>,
+<code>EntryId</code>, <code>GroupId</code>, <code>ScoringTeamId</code>,
+<code>ProtectionGroupId</code>, <code>CompetitorId</code>) are
+<strong>JSON objects</strong> <code>{"value":"&lt;guid&gt;"}</code> in
+bodies and responses. In <strong>query strings</strong> they are bare
+Guid strings.</li>
+<li><strong>camelCase</strong> property names; <strong>enums are
+strings</strong> (<code>"role": "Entitled"</code>,
+<code>"scope": "Flight"</code>); nulls omitted in responses; plain JSON
+numbers for measurements and scores.</li>
+<li><strong>Measured values</strong> are kinded:
+<code>{"kind":"Number","number":412.3}</code> or
+<code>{"kind":"Flag","flag":false}</code>. A flag metric is how class
+data expresses timing validity (e.g.
+<code>launchedInWorkingTime</code>).</li>
+<li><strong>Ordinals</strong>: <code>phaseOrdinal</code> is 0-based;
+<code>roundOrdinal</code> and <code>taskRoundOrdinal</code> are 1-based.
+Today there is a single live phase — always
+<code>phaseOrdinal: 0</code>.</li>
+<li><strong>Success</strong>: <code>200 OK</code> with the bare value —
+<code>{"value":"&lt;guid&gt;"}</code> for id-returning commands, bare
+JSON string for <code>/publish-class-definition</code>, arrays/objects
+for queries. Commands that can carry advisories (draws) return
+<code>{"value": &lt;T&gt;, "warnings":[{"code":…, "message":…}]}</code>
+— always check for <code>warnings</code>.</li>
+<li><strong>Failure</strong>: RFC 9457 ProblemDetails.
+<code>title</code> is a <strong>stable machine-readable failure
+code</strong> (<code>openEntry.alreadyOpen</code>), <code>detail</code>
+a human message, and <code>extensions.defects</code> carries validation
+defects when present. Status: codes ending <code>.notFound</code> →
+<strong>404</strong>; <code>eventStore.streamAlreadyExists</code> /
+<code>concurrencyConflict</code> /
+<code>uniqueConstraintViolation</code> → <strong>409</strong>; else
+<strong>400</strong>. Every command has exactly one defect code per
+failure — you can branch on the code without parsing
+<code>detail</code>.</li>
+<li><strong>No auth.</strong> Auditability comes from the immutable
+event log; <code>by</code> fields record who acted, never enforced.</li>
+<li><strong>OpenAPI</strong> is published
+(<code>/openapi/v1.json</code>).</li>
+</ul>
+<h3 id="the-one-law-no-imposed-ordering-nfr-4">The one law: no imposed
+ordering (NFR-4)</h3>
+<p>Nothing ever gates on scores being up to date. You may capture
+flights in any order, across competitors, groups, rounds and days;
+record a ruling before its flight; complete rounds out of order; leave a
+round unentered (it is absent from results, not zero). Validity is
+structural, never temporal. Corrections (rulings, penalties, annulments,
+tie-break outcomes) are deliberately legal even after a round was
+completed or the competition finalised. The leaderboard is re-derived at
+read time from the log, so every read is current.</p>
+<p><strong>A consequence for integrators</strong>: results are computed
+per query. An amendment, a late capture, or a correction costs a
+re-query — there is no "scoring pass" you trigger. Score reads are
+cheap; re-query after every change.</p>
+<hr />
+<h2 id="2-endpoint-map">2. Endpoint map</h2>
+<h3 id="commands-post">Commands (POST)</h3>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/register-person</code></td>
+<td>Master data: a pilot.</td>
+</tr>
+<tr>
+<td><code>/rename-person</code></td>
+<td>Rename.</td>
+</tr>
+<tr>
+<td><code>/change-person-contact-details</code></td>
+<td>Update contact.</td>
+</tr>
+<tr>
+<td><code>/change-person-club-affiliation</code></td>
+<td>Update club.</td>
+</tr>
+<tr>
+<td><code>/publish-class-definition</code></td>
+<td>Publish a competition-class model; idempotent, returns content
+hash.</td>
+</tr>
+<tr>
+<td><code>/create-competition</code></td>
+<td>Create from a published class (by content hash).</td>
+</tr>
+<tr>
+<td><code>/register-competitor</code></td>
+<td>Enter a person into a competition.</td>
+</tr>
+<tr>
+<td><code>/withdraw-competitor</code></td>
+<td>Withdrawal (legal any time, even after finalisation).</td>
+</tr>
+<tr>
+<td><code>/draw-phase</code></td>
+<td>Generate a fair draw.</td>
+</tr>
+<tr>
+<td><code>/prescribe-draw</code></td>
+<td>Import an explicit draw (e.g. from paper or Gliderscore).</td>
+</tr>
+<tr>
+<td><code>/accept-draw</code></td>
+<td>Pivot: freezes field + setup parameters; entries may now open.</td>
+</tr>
+<tr>
+<td><code>/reject-draw</code></td>
+<td>Discard the phase (redraw is legal with no edit).</td>
+</tr>
+<tr>
+<td><code>/bind-parameter</code></td>
+<td>Bind a class parameter (e.g. <code>groupSize</code>), optionally
+round-scoped.</td>
+</tr>
+<tr>
+<td><code>/declare-instruments</code></td>
+<td>Declare reading instruments (tape scales, F5J-style). Empty set
+valid.</td>
+</tr>
+<tr>
+<td><code>/correct-instrument-declaration</code></td>
+<td>Whole-set correction, <code>reason</code> required, retroactive by
+re-derivation.</td>
+</tr>
+<tr>
+<td><code>/complete-task-round</code></td>
+<td>CD asserts a round is settled. Never inferred, never a side
+effect.</td>
+</tr>
+<tr>
+<td><code>/reopen-task-round</code></td>
+<td>From Complete or Annulled → Drawn; <code>reason</code>
+required.</td>
+</tr>
+<tr>
+<td><code>/annul-task-round</code></td>
+<td>Faulty round: contributes 0, doesn't count for drops or
+finalisation.</td>
+</tr>
+<tr>
+<td><code>/finalise-competition</code></td>
+<td>Freeze declared results from the derived score.</td>
+</tr>
+<tr>
+<td><code>/record-competition-penalty</code></td>
+<td>Penalty with scope TaskRound or Competition, subject required.</td>
+</tr>
+<tr>
+<td><code>/append-reflight-group</code></td>
+<td>Form a re-flight group; returns newly minted GroupId.</td>
+</tr>
+<tr>
+<td><code>/assign-group-spots</code></td>
+<td>Whole-replacement spot map for a group.</td>
+</tr>
+<tr>
+<td><code>/record-reflight-ruling</code></td>
+<td>Replacement/BetterOf when the class rule is silent.</td>
+</tr>
+<tr>
+<td><code>/record-tie-break-outcome</code></td>
+<td>Settle a pending tie from
+<code>GET /competition-pending-tie-breaks</code>.</td>
+</tr>
+<tr>
+<td><code>/define-scoring-team</code></td>
+<td>Define a scoring team.</td>
+</tr>
+<tr>
+<td><code>/define-protection-group</code></td>
+<td>Define a draw-protection group (before any live draw exists).</td>
+</tr>
+<tr>
+<td><code>/assign-scoring-team-membership</code></td>
+<td>One team per competitor.</td>
+</tr>
+<tr>
+<td><code>/clear-scoring-team-membership</code></td>
+<td>Before re-assigning to a different team.</td>
+</tr>
+<tr>
+<td><code>/add-protection-group-member</code> /
+<code>/remove-protection-group-member</code></td>
+<td>Draw protection editing.</td>
+</tr>
+<tr>
+<td><code>/configure-team-classification</code></td>
+<td>Enable/disable team scoring.</td>
+</tr>
+<tr>
+<td><code>/open-entry</code></td>
+<td>Open a competitor's entry in a group. Role:
+Original/Entitled/Filler.</td>
+</tr>
+<tr>
+<td><code>/open-flight</code></td>
+<td>Open a flight slot; explicit <code>sequence</code> for out-of-order
+typing.</td>
+</tr>
+<tr>
+<td><code>/capture-measurement</code></td>
+<td>Capture a metric value. First value only.</td>
+</tr>
+<tr>
+<td><code>/amend-measurement</code></td>
+<td>Correct a captured metric; original preserved; reason + by
+required.</td>
+</tr>
+<tr>
+<td><code>/annul-entry</code></td>
+<td>Kill an entry (protest, mis-open); the write dead-end.</td>
+</tr>
+<tr>
+<td><code>/record-entry-penalty</code></td>
+<td>Penalty with scope Flight or Entry.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="queries-get">Queries (GET)</h3>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/people</code></td>
+<td>Find people by name/email (at least one criterion).</td>
+</tr>
+<tr>
+<td><code>/person</code></td>
+<td>Person read by <code>id</code>.</td>
+</tr>
+<tr>
+<td><code>/class-definitions</code></td>
+<td>List published class models.</td>
+</tr>
+<tr>
+<td><code>/class-definition</code></td>
+<td>Full class model by <code>contentHash</code>.</td>
+</tr>
+<tr>
+<td><code>/competitions</code></td>
+<td>List competitions, optional date/class filters.</td>
+</tr>
+<tr>
+<td><code>/competition</code></td>
+<td><strong>Full folded competition state</strong> (large; includes
+pairwise co-occurrence).</td>
+</tr>
+<tr>
+<td><code>/entries</code></td>
+<td>Filter by competitionRef and any coordinate.</td>
+</tr>
+<tr>
+<td><code>/task-round-recording</code></td>
+<td>Completeness indicator: counts and metric gaps per group.</td>
+</tr>
+<tr>
+<td><code>/task-round-result</code></td>
+<td>Group scores, raw + pre-normalisation, awaiting-capture
+diagnostics.</td>
+</tr>
+<tr>
+<td><code>/competition-result</code></td>
+<td>Current standings (always derived at read time).</td>
+</tr>
+<tr>
+<td><code>/competition-pending-tie-breaks</code></td>
+<td>Tie groups the ladder can't separate.</td>
+</tr>
+<tr>
+<td><code>/competition-teams</code></td>
+<td>Team rosters (scoring teams + protection groups).</td>
+</tr>
+<tr>
+<td><code>/competition-team-result</code></td>
+<td>Team standings: derived + declared.</td>
+</tr>
+<tr>
+<td><code>/draw-diagnostics</code></td>
+<td>Draw-protection violations (after the draw; not
+prescribed-draw).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2
+id="3-use-case-1-ndc-organiser--scores-on-paper-entered-afterwards">3.
+Use-case 1: NDC organiser — scores on paper, entered afterwards</h2>
+<p>The whole competition ran at the club field on paper. The system is
+used <strong>retrospectively</strong> to compute and publish results.
+Nothing here depends on being "in the moment" — the event log records
+facts as you enter them, and scores never gate capture.</p>
+<h3 id="sequence">Sequence</h3>
+<table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Request</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Organiser</td>
+<td><code>POST /publish-class-definition</code> — once per class</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /create-competition</code> (name, location, dates,
+classContentHash)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /register-person</code> (each pilot)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /register-competitor</code> (each entry)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /prescribe-draw</code> (paper draw, flying order is
+truth)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /accept-draw</code></td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /open-entry</code> / <code>open-flight</code> /
+<code>capture-measurement</code> (flight by flight)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /complete-task-round</code> (once a round is fully
+transcribed)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>GET /task-round-result</code>,
+<code>/competition-result</code></td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /finalise-competition</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-walkthrough">The walkthrough</h3>
+<ol type="1">
+<li><p><strong>Class model.</strong> If the class is already published
+in the seed set (<code>tools/Soarscore.SeedData/json/</code>), look up
+its hash with <code>GET /class-definitions</code> — skip publishing.</p>
+<pre class="http"><code>GET /class-definitions?name=NZ%20ALES%20200&amp;activeOnly=true</code></pre></li>
+<li><p><strong>Create the competition</strong> from the class content
+hash:</p>
+<pre class="http"><code>POST /create-competition
+{&quot;name&quot;:&quot;NZMAA NDC 2026&quot;,&quot;location&quot;:&quot;Club field&quot;,&quot;startDate&quot;:&quot;2026-09-05&quot;,
+ &quot;endDate&quot;:&quot;2026-09-05&quot;,&quot;classContentHash&quot;:&quot;&lt;hash from step 1&gt;&quot;}</code></pre>
+<p>Response: <code>{"value":"&lt;competitionGuid&gt;"}</code>.</p></li>
+<li><p><strong>People and entries.</strong> Register each pilot, then
+each entry. Keep the returned PersonId and CompetitorId values; the
+competitor is what the draw and entries reference. A duplicate is
+refused with
+<code>competition.competitor.alreadyRegistered</code>.</p></li>
+<li><p><strong>The paper draw is the draw.</strong> Do
+<strong>not</strong> use <code>/draw-phase</code> — the flying order was
+already realised on paper. Import it faithfully with
+<code>/prescribe-draw</code>: one <code>PrescribedRound</code> per
+round, one <code>PrescribedGroup</code> per group,
+<code>competitors</code> in flying order. The list position is the
+single source of truth for ordinals — do not supply ordinals
+anywhere.</p>
+<pre class="http"><code>POST /prescribe-draw
+{&quot;competitionId&quot;:{&quot;value&quot;:&quot;&lt;competitionGuid&gt;&quot;},
+ &quot;rounds&quot;:[
+   {&quot;taskRef&quot;:&quot;ALES200&quot;,&quot;groups&quot;:[
+     {&quot;competitors&quot;:[{&quot;value&quot;:&quot;&lt;compA&gt;&quot;},{&quot;value&quot;:&quot;&lt;compB&gt;&quot;},{&quot;value&quot;:&quot;&lt;compC&gt;&quot;}]},
+     {&quot;competitors&quot;:[{&quot;value&quot;:&quot;&lt;compD&gt;&quot;},{&quot;value&quot;:&quot;&lt;compE&gt;&quot;},{&quot;value&quot;:&quot;&lt;compF&gt;&quot;}]}]}],
+ &quot;by&quot;:&quot;Pete Smith&quot;}</code></pre>
+<p>Check the <code>warnings</code> envelope (SHOULD-minimum advisories,
+e.g. group-size minima) and the returned GroupIds via
+<code>GET /competition?id=…</code> — the group objects live at
+<code>phases[0].rounds[n].taskRounds[m].groups[]</code>.</p>
+<p><code>PrescribedBy</code> provenance is recorded. Note: a prescribed
+draw is <strong>not</strong> checked for protection-pair violations —
+that is the generator's business, and the CD already accepted the paper
+draw.</p></li>
+<li><p><strong>Accept the draw.</strong>
+<code>POST /accept-draw {"competitionId":{"value":"…"}}</code>. This
+freezes the field and setup parameters and is required before any entry
+can open (<code>entry.drawNotAccepted</code>).</p></li>
+<li><p><strong>Transcribe the scores.</strong> For each competitor's
+flight, in whatever order the paper comes:</p>
+<pre class="http"><code>POST /open-entry
+{&quot;competitionRef&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;phaseOrdinal&quot;:0,&quot;roundOrdinal&quot;:1,
+ &quot;taskRoundOrdinal&quot;:1,&quot;groupRef&quot;:{&quot;value&quot;:&quot;&lt;groupGuid&gt;&quot;},
+ &quot;competitorRef&quot;:{&quot;value&quot;:&quot;&lt;competitorGuid&gt;&quot;}}</code></pre>
+<p>Then per flight slot, per metric. Paper is often out of order — use
+the explicit <code>sequence</code> so a flight typed late keeps its
+launch label:</p>
+<pre class="http"><code>POST /open-flight
+{&quot;entryRef&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;sequence&quot;:3}
+
+POST /capture-measurement
+{&quot;entryRef&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;flightSequence&quot;:3,&quot;metric&quot;:&quot;flightTime&quot;,
+ &quot;value&quot;:{&quot;kind&quot;:&quot;Number&quot;,&quot;number&quot;:587}}
+
+POST /capture-measurement
+{&quot;entryRef&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;flightSequence&quot;:3,&quot;metric&quot;:&quot;landingDistance&quot;,
+ &quot;value&quot;:{&quot;kind&quot;:&quot;Number&quot;,&quot;number&quot;:4.2}}</code></pre>
+<p>If the class declares tape instruments, a captured instrument reading
+must be an <strong>exact member</strong> of the tape's reading set —
+never rounded or guessed
+(<code>captureMeasurement.readingNotOnScale</code>).</p>
+<p>Use
+<code>GET /task-round-recording?competitionRef=…&amp;phaseOrdinal=0&amp;roundOrdinal=1&amp;taskRoundOrdinal=1</code>
+as your transcription checklist: <code>notRecordedCompetitorRefs</code>
+and <code>metricGaps</code> name exactly what the paper still owes. It
+states facts, never a verdict — presence of gaps proves <em>not
+ready</em>; absence never proves ready.</p></li>
+<li><p><strong>Transcribed a whole round?</strong>
+<code>POST /complete-task-round</code> (see §3.10 below for the
+lifecycle). Rounds may be completed out of order.</p></li>
+<li><p><strong>Read results at any point</strong> — provisional
+leaderboards are scored on what's present:
+<code>GET /task-round-result</code>,
+<code>GET /competition-result</code>.</p></li>
+<li><p><strong>Finalise.</strong>
+<code>POST /finalise-competition {"competitionRef":{"value":"…"},"by":"Pete Smith"}</code>
+— refused until the class's <code>MinRounds</code> (and
+<code>MinTasks</code>, F3B) are fully flown; annulled rounds don't
+count. Finalisation freezes the declared results; corrections after it
+remain legal and produce a readable declared-vs-derived divergence
+(never silently reconciled).</p></li>
+</ol>
+<h3 id="pitfalls-specific-to-retrospective-entry">Pitfalls specific to
+retrospective entry</h3>
+<ul>
+<li>A second capture for the same (flight, metric) fails
+<code>captureMeasurement.alreadyCaptured</code>. The correction is
+<code>/amend-measurement</code> with <code>reason</code> and
+<code>by</code>.</li>
+<li>Flights may be opened in any order via explicit
+<code>sequence</code> — gaps are legal, duplicates are not
+(<code>openFlight.duplicateSequence</code>).</li>
+<li>If the paper draw was mis-transcribed and nobody has flown against
+it, see §4.9 (reject + re-prescribe). <code>prescribe-draw</code>
+requires <strong>no live phase</strong>, and rejection removes the phase
+entirely — re-prescribe with no other edit.</li>
+</ul>
+<hr />
+<h2
+id="4-use-case-2-national--international-organiser--set-up-in-advance-run-live">4.
+Use-case 2: National / international organiser — set up in advance, run
+live</h2>
+<p>The competition is created days or weeks before the event; scores
+enter live through the day(s), from one or more scorekeepers on tablets
+at the field.</p>
+<h3 id="phase-a--set-up-before-the-event">Phase A — set up (before the
+event)</h3>
+<table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Request</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Organiser</td>
+<td><code>POST /publish-class-definition</code> (if class changed)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /create-competition</code></td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /register-person</code> (roster imports)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /register-competitor</code> (entry list grows up to the
+day)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /bind-parameter</code> (BeforeFlying params, e.g. F5K
+nlh)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /define-protection-group</code> + members (before any
+draw)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /configure-team-classification</code> (if teams)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /define-scoring-team</code> + membership</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /declare-instruments</code> (tape scales in force)</td>
+</tr>
+<tr>
+<td>—</td>
+<td><em>Registration closes when the draw is accepted</em></td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /draw-phase</code> (rounds, groupSize)</td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>GET /draw-diagnostics</code></td>
+</tr>
+<tr>
+<td>Organiser</td>
+<td><code>POST /accept-draw</code></td>
+</tr>
+</tbody>
+</table>
+<ol type="1">
+<li><strong>Publish the class</strong> if this year's class model
+changed (<code>POST /publish-class-definition</code> — full
+ClassDefinition document, idempotent by content). Adopt the hash in
+<code>/create-competition</code>.</li>
+<li><strong>Create the competition early</strong> and register
+people/competitors as the entry list builds. Nothing prevents adding
+entries up to the draw acceptance; after acceptance registration is
+closed (<code>competition.field.frozen</code>) — but
+<code>/withdraw-competitor</code> <strong>never</strong> closes.</li>
+<li><strong>Bind parameters</strong> the class wants before flying
+(<code>POST /bind-parameter</code> — <code>parameterName</code>,
+<code>value</code> as MeasuredValue, optional <code>roundOrdinal</code>
+for round-scoped resolution). After draw acceptance CompetitionSetup
+parameters freeze (<code>competition.parameter.frozen</code>);
+BeforeFlying parameters (F5K <code>nlh</code>) stay bindable.</li>
+<li><strong>Draw protection</strong> (if the class wants same-club pair
+separation): define protection groups <strong>before any draw
+exists</strong> — edits are refused while a live phase exists
+(<code>addProtectionMember.drawExists</code>). A rejected draw removes
+the phase and reopens editing.</li>
+<li><strong>Teams</strong>: define scoring teams, assign membership (one
+team per competitor; re-assignment to the same team flips
+<code>contributes</code>, a different team needs a clear first), and
+<code>POST /configure-team-classification {"enabled":true,"by":"…"}</code>.</li>
+<li><strong>Declare instruments</strong> — the whole SET in force
+(<code>POST /declare-instruments</code>; empty set is valid for
+distance-only classes). Changes afterwards are
+<code>/correct-instrument-declaration</code> with a <code>reason</code>,
+whole-set replacement, retroactive by re-derivation.</li>
+<li><strong>Draw the phase</strong>:
+<code>POST /draw-phase {"competitionId":{"value":"…"},"rounds":4,"taskRefs":["F5J"]}</code>.
+The generator forms the least-bad draw against protection pairs. Read
+the <code>warnings</code> envelope, then
+<code>GET /draw-diagnostics?competitionRef=…</code> for residual
+protection violations — the CD decides: <code>/accept-draw</code> or
+<code>/reject-draw</code>. Rejection removes the phase; re-draw with no
+other edit. Groups materialise in <code>GET /competition</code> at
+<code>phases[0].rounds[n].taskRounds[m].groups[]</code>.</li>
+</ol>
+<h3 id="phase-b--run-during-the-event">Phase B — run (during the
+event)</h3>
+<table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Request</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scorer UI (tablet)</td>
+<td><em>loop: each competitor, in whatever order scores arrive</em></td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>POST /open-entry</code></td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>POST /open-flight</code> (sequence optional)</td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>POST /capture-measurement</code> (per metric)</td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>GET /task-round-result</code> (provisional leaderboard)</td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>GET /task-round-recording</code> (who hasn't flown yet)</td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>POST /complete-task-round</code> (per settled round)</td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>GET /competition-result</code> (current standings)</td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>GET /competition-pending-tie-breaks</code></td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>POST /record-tie-break-outcome</code></td>
+</tr>
+<tr>
+<td>Scorer UI</td>
+<td><code>POST /finalise-competition</code></td>
+</tr>
+</tbody>
+</table>
+<ol type="1">
+<li><strong>Capture live.</strong> For each drawn competitor in the
+current round: open an entry in their drawn group, open flight slots,
+capture measurements. Capture order is completely free — across
+competitors, groups, rounds, even across days (multi-day events simply
+keep drawing and capturing; nothing resets between days). The only
+refusals are structural: not drawn, withdrawn,
+<code>entry.drawNotAccepted</code>, <code>openEntry.alreadyOpen</code>,
+<code>openEntry.taskRoundClosed</code>.</li>
+<li><strong>Keep the leaderboard running.</strong>
+<code>GET /competition-result</code> and
+<code>GET /task-round-result</code> score whatever is present —
+unentered rounds are absent, incomplete flights read
+<code>Pending</code> with <code>awaitingCapture</code> diagnostics
+naming the missing metric. Drawn-but-not-Complete rounds still score, so
+the leaderboard is provisional by construction.</li>
+<li><strong>Settle rounds.</strong>
+<code>POST /complete-task-round</code> is the CD asserting scores are in
+and settled — never inferred. There is no "all groups flown" check on
+purpose. Use <code>GET /task-round-recording</code> as the CD's
+checklist.</li>
+<li><strong>Pending ties.</strong> A tie the comparator ladder can't
+settle surfaces on <code>GET /competition-pending-tie-breaks</code>
+(shared places are already assigned — pending is an annotation, never a
+gate). <code>POST /record-tie-break-outcome</code> with the halting
+directive and well-formed placings (≥2, distinct, dense numbering from
+1, equal places allowed). The directive must be stated on the phase's
+ladder; the outcome is ranking-only, last-logged wins, and a
+non-matching outcome is inert. If scores later change, the outcome stops
+matching and the tie goes pending again.</li>
+<li><strong>Finalise</strong> at the end:
+<code>POST /finalise-competition</code>. It scores first (individuals +
+teams) and freezes the declaration
+(<code>GET /competition-result</code>,
+<code>GET /competition-team-result</code> — <code>derived</code> vs
+<code>declared</code>).</li>
+</ol>
+<hr />
+<h2 id="5-use-case-3-import-a-realised-draw-from-another-system">5.
+Use-case 3: Import a realised draw from another system</h2>
+<p>When migrating mid-stream from Gliderscore or a spreadsheet — or an
+event ran day one outside the system — the paper/other-system draw is
+the truth. This is <code>/prescribe-draw</code>, identical to use-case 1
+step 4: import rounds/groups with competitors in flying order, accept,
+and capture from that point. Keep <code>by</code> (who imported) and
+check warnings. The log preserves the provenance
+(<code>PrescribedBy</code>).</p>
+<p>The same pattern covers <strong>re-flights declared on
+paper</strong>: <code>append-reflight-group</code> with the members
+(§6.3), entries opened with role
+<code>Entitled</code>/<code>Filler</code>.</p>
+<hr />
+<h2 id="6-use-case-4-exceptions-to-the-normal-running">6. Use-case 4:
+Exceptions to the normal running</h2>
+<p>Read §1 "no imposed ordering" first: everything below is legal
+whenever the fact is known, including after round completion or
+finalisation. The log is always the audit trail; nothing here is gated
+on anything being current.</p>
+<h3 id="61-withdrawal-post-withdraw-competitor">6.1 Withdrawal
+(<code>POST /withdraw-competitor</code>)</h3>
+<p>Legal <strong>any time</strong> — including after draw acceptance and
+after finalisation. Effects: no new entries
+(<code>openEntry.competitorWithdrawn</code>); excluded from future draw
+fields and reflight groups; spots read as vacant; completeness
+"expected" drops by one. <strong>Existing entries keep scoring</strong>
+— past scores are not touched. They can still be penalised and receive
+rulings/outcomes. Cannot be re-added to team/protection memberships.</p>
+<h3 id="62-annul-an-entry-post-annul-entry">6.2 Annul an entry
+(<code>POST /annul-entry</code>)</h3>
+<p><code>reason</code> + <code>by</code> required. The entry becomes a
+<strong>write dead-end</strong> — every further command on it fails
+<code>entry.annulled</code>. Scoring effect: <code>NoResult</code>,
+excluded from normalisation. The "second attempt" is a
+<strong>new</strong> entry via <code>/open-entry</code> (an annulled
+Original never blocks). Re-annulment is allowed (jury revises; fold
+overwrites) — there is deliberately no un-annul.</p>
+<h3
+id="63-re-flights-append-reflight-group--assign-group-spots--open-entry--ruling">6.3
+Re-flights (<code>/append-reflight-group</code> →
+<code>/assign-group-spots</code> → <code>/open-entry</code> →
+ruling)</h3>
+<table>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Request</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Competition Director</td>
+<td><code>POST /append-reflight-group</code> (members, reason)</td>
+</tr>
+<tr>
+<td>SoarScore</td>
+<td>returns <code>{"value": "&lt;new GroupId&gt;"}</code></td>
+</tr>
+<tr>
+<td>Competition Director</td>
+<td><code>POST /assign-group-spots</code> (optional, whole
+replacement)</td>
+</tr>
+<tr>
+<td>Competition Director</td>
+<td><code>POST /open-entry</code> (role: Entitled / Filler)</td>
+</tr>
+<tr>
+<td>Competition Director</td>
+<td><code>POST /capture-measurement</code> (the re-fly)</td>
+</tr>
+<tr>
+<td>Competition Director</td>
+<td><code>POST /record-reflight-ruling</code> (only if class
+silent)</td>
+</tr>
+</tbody>
+</table>
+<ol type="1">
+<li><code>POST /append-reflight-group</code> — members must be
+registered, not withdrawn, ≥ the class's resolved
+<code>MinNewGroupSize</code>; refused on an annulled round; Complete
+rounds allowed (protest after read-out is the ordinary late case).
+Returns the newly minted GroupId.</li>
+<li>Spots optional: <code>/assign-group-spots</code> replaces the whole
+spot map and must cover every live member.</li>
+<li>Open entries with <code>role</code>:
+<ul>
+<li><strong><code>Entitled</code></strong> — the re-flyer. Score slot:
+the class's <code>EntitledScores</code> (normally
+<code>Replacement</code> — the re-flight is official even if
+worse).</li>
+<li><strong><code>Filler</code></strong> — others drawn in to make up
+the group. Slot <code>OthersScore</code> (normally <code>BetterOf</code>
+— max of the two normalised scores). The Original still participates in
+group normalisation.</li>
+<li><strong>Make-ups</strong>: <code>countsForRoundOrdinal</code> +
+<code>reason</code> aggregate the score into an earlier round's ladder
+slot (validated: existing, earlier, same phase).</li>
+</ul></li>
+<li><code>POST /record-reflight-ruling</code> (Replacement|BetterOf)
+<strong>only where the class rule is silent</strong>
+(<code>UndefinedRequiresRuling</code> classes — F3B Task C, F5L, NZ M;
+otherwise <code>recordReflightRuling.classRuleSpeaks</code>). No
+pending-ness or entry-existence check — record whenever known; re-record
+to supersede (last-logged wins). If the class is silent and
+<strong>no</strong> ruling exists, the leaderboard fails
+<code>score.reflightRequiresRuling</code> — that refusal is the designed
+prompt to the CD.</li>
+</ol>
+<h3 id="64-penalties-mis-behaviour-after-the-fact">6.4 Penalties
+(mis-behaviour after the fact)</h3>
+<pre class="http"><code>POST /record-entry-penalty          (scope: Flight or Entry)
+POST /record-competition-penalty    (scope: TaskRound or Competition; competitorRef required)</code></pre>
+<ul>
+<li><strong>Entry endpoint</strong>: Flight/Entry-scoped, raw stage
+<strong>pre-normalisation</strong> — <code>Zero*</code> → the task-round
+cell becomes <code>NoResult</code>; <code>DeductPoints</code> →
+subtracted from raw before the 1000-basis winner is found (floored at
+0), scaling inside the group ratio.</li>
+<li><strong>Competition endpoint</strong>: TaskRound/Competition-scoped,
+aggregate stage — after drops, before ranking; <code>DeductPoints</code>
+is flat. A <code>Zero*</code>-carrying infraction requires the
+task-round coordinate.</li>
+<li>Both validate: infraction type declared by the adopted class
+(<code>infractionTypeNotDeclared</code>), permitted scopes include the
+recorded scope (<code>scopeNotAllowed</code>).</li>
+<li>One record = one occurrence; <code>OncePerAttempt</code> definitions
+accrue once.</li>
+<li><code>Disqualify</code> is a <strong>flag, not arithmetic</strong> —
+excluded from placings, placing reads as 0 in the declared result, the
+score is still declared.</li>
+<li>No finalisation gate, no withdrawn check — the protest-after-contest
+case is the designed one.</li>
+</ul>
+<h3 id="65-pending-ties">6.5 Pending ties</h3>
+<p>See use-case 2 Phase B step 4. Pending ties <strong>gate
+nothing</strong> — shared places are already assigned and the
+leaderboard is readable while a fly-off is pending. An
+<code>EqualPlaces</code> directive is settled (the shared place
+<em>is</em> the outcome) and never surfaces pending.</p>
+<h3 id="66-round-lifecycle--late-scores">6.6 Round lifecycle &amp; late
+scores</h3>
+<pre><code>Drawn ──complete-task-round──&gt; Complete
+Drawn ──annul-task-round────&gt; Annulled
+Complete ──reopen-task-round─&gt; Drawn
+Annulled ──reopen-task-round─&gt; Drawn        (erroneous annulment is correctable)</code></pre>
+<ul>
+<li>Annul: <code>reason</code> required; a Complete round
+<strong>may</strong> be annulled (read out, then found faulty is the
+ordinary case). Effect: scores contribute 0, don't count for drop gates
+or finalisation validity. A wrongly annulled round is reopened —
+annulment is a resolution, not a dead-end.</li>
+<li>Late score after a completed round: <code>/reopen-task-round</code>
+(+ reason), capture, re-complete. Reopening never touches any
+Finalisation — a finalised-then- reopened competition shows a
+declared-vs-derived divergence <strong>by design</strong>; read it,
+never reconcile it. There is <strong>no re-finalise today</strong>.</li>
+<li>No cross-round ordering check: rounds may complete out of order, or
+not at all.</li>
+</ul>
+<h3 id="67-mis-keyed-score-correction-amend-measurement">6.7 Mis-keyed
+score correction (<code>/amend-measurement</code>)</h3>
+<p>Capture is first-value-only
+(<code>captureMeasurement.alreadyCaptured</code>); every correction is
+an amendment: <code>flightSequence</code>, <code>metric</code>,
+<code>newValue</code>, <code>reason</code>, <code>by</code>, and the
+instrument <strong>after</strong> the amendment (restated to retain,
+null to clear to a distance). Kind must match. Original measurement is
+preserved append-only. Since results are derived per query, the
+correction costs a re-query — nothing else. Launch timestamps are
+deliberately uncorrectable because no rule wants a launch instant;
+timing validity is class flag data, corrected by amendment like any
+measurement.</p>
+<h3 id="68-instrument-declaration-corrections">6.8 Instrument
+declaration corrections</h3>
+<p><code>POST /correct-instrument-declaration</code> — only after a
+declaration; whole-set replacement; <code>reason</code> required.
+Retroactive by re-derivation: the leaderboard is re-derived per query
+from the declaration in force; the log keeps every declaration, so the
+audit is independent. <strong>Finalisation freezes composed scores from
+the declaration in force at finalisation time.</strong></p>
+<h3 id="69-draw-exceptions-acceptrejectredraw">6.9 Draw exceptions
+(accept/reject/redraw)</h3>
+<pre class="http"><code>POST /reject-draw {&quot;competitionRef&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;reason&quot;:&quot;Group sizes wrong&quot;}
+POST /draw-phase {&quot;competitionId&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;rounds&quot;:4,&quot;taskRefs&quot;:[&quot;F5J&quot;]}
+POST /accept-draw {&quot;competitionId&quot;:{&quot;value&quot;:&quot;…&quot;}}</code></pre>
+<ul>
+<li>Rejection is refused <strong>only if entries exist against the
+phase</strong> (<code>rejectDraw.entriesExist</code>).</li>
+<li>Allowed even on an <strong>accepted</strong> draw nobody has flown
+against — the ordinary correction path. Rejection <em>removes</em> the
+phase (there is no "rejected" state in the folded view) and thereby
+reopens registration, parameter binds and protection editing. The
+replacement draw gets the next phase ordinal.</li>
+<li>Redraw is legal with <strong>no edit</strong> anywhere — the same
+commands again.</li>
+<li>The log keeps every rejected draw; <code>GET /competition</code>
+shows only the live one (no draw-history read surface today — see
+<code>deferred-decisions.md</code>).</li>
+</ul>
+<h3 id="610-score-read-exceptions">6.10 Score-read exceptions</h3>
+<p>A few refusals exist <strong>on read</strong> by design; branch on
+the code:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>score.reflightRequiresRuling</code></td>
+<td>Class is silent on re-flight slot selection and no CD ruling
+recorded. Record one.</td>
+</tr>
+<tr>
+<td><code>score.reflightShapeUnsupported</code></td>
+<td>Reflight entry shape impossible to interpret — inspect
+<code>/entries</code> and annul the wrong one.</td>
+</tr>
+<tr>
+<td><code>score.reflightDestinationUnresolved</code> /
+<code>DestinationConflict</code></td>
+<td>A make-up <code>countsForRoundOrdinal</code> names a bad
+destination.</td>
+</tr>
+<tr>
+<td><code>score.zeroEffectUnanchored</code></td>
+<td>A zeroing penalty recorded without its task-round coordinate.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-use-case-5-building-a-ui-on-top-of-the-api">7. Use-case 5:
+Building a UI on top of the API</h2>
+<p>The API is deliberately small and intent-shaped: your UI drives it as
+a sequence of verbs, and all aggregation lives server-side. There are no
+'class-specific' branches to write — variance between classes is inside
+the published class model, and your UI reads the class definition to
+learn what to display.</p>
+<h3 id="71-read-the-class-definition-to-render-capture-forms">7.1 Read
+the class definition to render capture forms</h3>
+<p><code>GET /class-definition?contentHash=&lt;hash&gt;</code> returns
+the class model: <code>parameters[]</code> (what the CD binds and what
+tasks expect), tasks and their <code>metrics[]</code> (what
+<code>/capture-measurement</code> accepts per flight),
+<code>reflight</code> settings
+(<code>EntitledScores</code>/<code>OthersScore</code>/<code>MinNewGroupSize</code>),
+<code>penalties[]</code> (infraction types + permitted scopes — the
+<code>record-*-penalty</code> dropdowns), landing tape data, drop-worst,
+and the tie-break ladder.</p>
+<p>Your capture form per flight = the task's metrics, each rendered by
+its <code>MeasuredKind</code> (<code>Number</code> → numeric input;
+<code>Flag</code> → checkbox). Never invent a metric name not on the
+task; the server refuses it. Flag metrics (e.g.
+<code>launchedInWorkingTime</code>) render as validity checkboxes, not
+numbers.</p>
+<h3 id="72-screen-to-screen-map">7.2 Screen-to-screen map</h3>
+<table>
+<thead>
+<tr>
+<th>Screen</th>
+<th>Reads</th>
+<th>Writes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entry list / registration</td>
+<td><code>/people</code>, <code>/class-definitions</code>,
+<code>/competitions</code></td>
+<td><code>/register-person</code>, <code>/register-competitor</code>,
+<code>/withdraw-competitor</code></td>
+</tr>
+<tr>
+<td>Draw review</td>
+<td><code>/competition</code> (groups), <code>/draw-diagnostics</code>,
+draw warnings envelope</td>
+<td><code>/draw-phase</code> or <code>/prescribe-draw</code>,
+<code>/accept-draw</code>, <code>/reject-draw</code></td>
+</tr>
+<tr>
+<td>Score capture</td>
+<td><code>/entries</code>, <code>/task-round-recording</code> (gaps),
+<code>/task-round-result</code></td>
+<td><code>/open-entry</code>, <code>/open-flight</code>,
+<code>/capture-measurement</code></td>
+</tr>
+<tr>
+<td>Corrections</td>
+<td><code>/task-round-result</code> (<code>awaitingCapture</code>)</td>
+<td><code>/amend-measurement</code>, <code>/annul-entry</code>,
+<code>/record-entry-penalty</code></td>
+</tr>
+<tr>
+<td>Round control</td>
+<td><code>/task-round-recording</code></td>
+<td><code>/complete-task-round</code>, <code>/reopen-task-round</code>,
+<code>/annul-task-round</code></td>
+</tr>
+<tr>
+<td>CD console</td>
+<td><code>/competition-pending-tie-breaks</code>,
+<code>/competition-teams</code>, <code>/competition-result</code></td>
+<td><code>/record-reflight-ruling</code>,
+<code>/append-reflight-group</code>, <code>/assign-group-spots</code>,
+<code>/record-tie-break-outcome</code>,
+<code>/record-competition-penalty</code>,
+<code>/finalise-competition</code></td>
+</tr>
+<tr>
+<td>Results display</td>
+<td><code>/competition-result</code>,
+<code>/competition-team-result</code>,
+<code>/task-round-result</code></td>
+<td>none (read-only)</td>
+</tr>
+<tr>
+<td>Setup</td>
+<td><code>/competition</code>, <code>/class-definition</code></td>
+<td><code>/bind-parameter</code>, <code>/declare-instruments</code>,
+<code>/correct-instrument-declaration</code>, teams + protection
+commands</td>
+</tr>
+</tbody>
+</table>
+<h3 id="73-wire-behaviour-your-ui-must-honour">7.3 Wire behaviour your
+UI must honour</h3>
+<ol type="1">
+<li><strong>Never gate capture on anything temporal</strong> (NFR-4).
+Capture forms must be available whenever structurally possible. Disable
+on structural refusals only: not drawn, withdrawn, entry already open,
+round closed. <code>entry.drawNotAccepted</code> → show "draw pending",
+not an error.</li>
+<li><strong>Poll, don't push.</strong> There is no event stream on the
+HTTP surface. Poll <code>/competition-result</code> and
+<code>/task-round-recording</code> (e.g. 5s on a leaderboard screen) —
+scoring is cheap; re-derive per poll is the designed pattern.</li>
+<li><strong>Handle the warnings envelope.</strong> Any command response
+may be <code>{"value":…, "warnings":[…]}</code> — surface warnings, use
+<code>value</code> as the id. Today only draw commands produce them;
+unwrap generically anyway.</li>
+<li><strong>Branch on failure codes, not messages.</strong>
+<code>title</code> is stable; e.g. <code>openEntry.alreadyOpen</code> →
+disable the button; <code>captureMeasurement.readingNotOnScale</code> →
+hint "exact tape mark"; <code>captureMeasurement.alreadyCaptured</code>
+→ route to the amendment form. <code>.notFound</code> → 404;
+<code>.concurrencyConflict</code> → 409, refresh and retry.</li>
+<li><strong>The amendment form needs <code>reason</code> and
+<code>by</code></strong> (server-validated). Same for annulments,
+rulings, tie-break outcomes, round lifecycle, instrument corrections.
+Render them as required fields.</li>
+<li><strong>Ordinals discipline</strong>: 0-based
+<code>phaseOrdinal</code>, 1-based
+<code>roundOrdinal</code>/<code>taskRoundOrdinal</code>. Single phase
+today.</li>
+<li><strong><code>GET /competition</code> is large</strong> (whole
+folded state + pairwise co-occurrence). Don't poll it at leaderboard
+frequency; use the narrow queries (<code>/task-round-result</code>,
+<code>/task-round-recording</code>, <code>/entries</code>).</li>
+<li><strong><code>GET /people</code> requires a criterion</strong> — the
+registration screen search must send <code>?name=…</code> or
+<code>?email=…</code>, never bare.</li>
+<li><strong>Teams</strong>: one team per competitor — the UI enforces
+clear-then-assign for a different team; the same-team re-assign flips
+<code>contributes</code> (the eligibility toggle). Protection-group
+editing screens must be disabled once any live phase exists
+(<code>addProtectionMember.drawExists</code>); they open again after a
+rejected draw.</li>
+<li><strong>Out-of-order typing</strong>: the paper-style capture screen
+should always let the scorer type flights in whatever order they occur,
+via explicit <code>sequence</code> on <code>/open-flight</code>. Never
+derive sequence positionally.</li>
+<li><strong>Team standings read <code>derived</code> vs
+<code>declared</code></strong> on <code>/competition-team-result</code>;
+after a post-finalisation correction the two diverge — show the
+divergence (it is by design), never reconcile.</li>
+</ol>
+<h3 id="74-minimal-viable-ui">7.4 Minimal viable UI</h3>
+<p>Smallest viable scorer: draw review → per-group capture grid → round
+control → leaderboard. The capture grid polls
+<code>/task-round-recording</code> for gaps and posts
+<code>/open-entry</code> → <code>/open-flight</code> →
+<code>/capture-measurement</code> per gap. Everything else (CD console,
+teams, instruments) is optional and additive.</p>
+<hr />
+<h2 id="8-quick-reference-the-canonical-happy-path">8. Quick reference:
+the canonical happy path</h2>
+<pre class="http"><code># Class (idempotent)
+POST /publish-class-definition          → contentHash
+
+# Setup
+POST /create-competition                → CompetitionId
+POST /register-person                   → PersonId   (per pilot)
+POST /register-competitor               → CompetitorId  (per entry)
+POST /bind-parameter                    (optional)
+POST /declare-instruments               (optional, empty set ok)
+POST /define-protection-group + members (optional, before draw)
+POST /configure-team-classification     (optional)
+
+# Draw
+POST /draw-phase  (or /prescribe-draw)  → GroupIds via GET /competition
+POST /accept-draw                       → entries may open
+
+# Fly &amp; capture (any order, NFR-4)
+POST /open-entry                        → EntryId
+POST /open-flight                       (sequence optional)
+POST /capture-measurement               (per metric)
+GET  /task-round-recording              (completeness checklist)
+GET  /task-round-result                 (provisional)
+
+# Exceptions (any time, in any order)
+POST /amend-measurement
+POST /annul-entry            (+ new /open-entry)
+POST /withdraw-competitor
+POST /record-entry-penalty   / record-competition-penalty
+POST /append-reflight-group  → open-entry(Entitled/Filler) → (record-reflight-ruling)
+POST /record-tie-break-outcome
+POST /reopen-task-round      / annul-task-round
+POST /correct-instrument-declaration
+
+# Settle &amp; close
+POST /complete-task-round               (per settled round)
+GET  /competition-result                (standings, always current)
+GET  /competition-pending-tie-breaks    (CD settles)
+POST /finalise-competition              → declared results frozen</code></pre>
+</body>
+</html>
