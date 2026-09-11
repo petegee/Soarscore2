@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Composition.cs": {
-    "mtime": 1789090185.1615112,
-    "seen": 1789090273.6679153,
-    "ast_hash": "c3e692b218b916ad82d2d6a5a0a05a07",
+    "mtime": 1789094086.611481,
+    "seen": 1789095167.448748,
+    "ast_hash": "3a9f8c07c318d330b0b90249673ee099",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Program.cs": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Queries/Queries.cs": {
-    "mtime": 1788995734.337018,
-    "seen": 1788998457.4191284,
-    "ast_hash": "84bcab24fd14ac465dd9403c0b649f65",
+    "mtime": 1789094094.0975683,
+    "seen": 1789095167.4487689,
+    "ast_hash": "40fc67f62f8801620b839535f724e633",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Routing/EndpointRouteBuilderExtensions.cs": {
@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/People/IPeopleQuery.cs": {
-    "mtime": 1787269098.0940032,
-    "seen": 1788929450.7991686,
-    "ast_hash": "9f45b746477b5a57afd99a8ac5710b96",
+    "mtime": 1789093932.022677,
+    "seen": 1789095167.4501717,
+    "ast_hash": "b84894957ab653985aaef4957c8c8234",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/People/PeopleProjection.cs": {
@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/ClassDefinition.cs": {
-    "mtime": 1788908647.3482273,
-    "seen": 1788929450.799194,
-    "ast_hash": "105103f232694d1fadad3a8296feba22",
+    "mtime": 1789094905.3331838,
+    "seen": 1789095167.4505744,
+    "ast_hash": "0735e97cb556d55f3d02341594d30964",
     "semantic_hash": ""
   },
   "src/Soarscore.Domain/PublishedClassDefinition/ClassDefinitionEvents.cs": {
@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/People/DocumentPeopleQuery.cs": {
-    "mtime": 1787269098.0953932,
-    "seen": 1788929450.799246,
-    "ast_hash": "e1a8ca33b2d5d629ce0b877c1d0323c3",
+    "mtime": 1789093937.5367413,
+    "seen": 1789095167.4512453,
+    "ast_hash": "83c21b779fdb8aec63639f85293cc771",
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/People/PersonSummaryProjection.cs": {
@@ -1308,9 +1308,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Shared/People/TestDoubles.cs": {
-    "mtime": 1787269098.0985498,
-    "seen": 1788929450.7996647,
-    "ast_hash": "cea3c9fe4a97950c4901db1b08d39711",
+    "mtime": 1789093946.85885,
+    "seen": 1789095167.4575934,
+    "ast_hash": "92e106ea0c047fbfca4aac49242e50f4",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Soarscore.Application.Tests.csproj": {
@@ -1938,9 +1938,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/build-and-test.yml": {
-    "mtime": 1785987752.881299,
-    "seen": 1788929450.7998397,
-    "ast_hash": "102f0d03f32e27244316b05bc70c4458",
+    "mtime": 1789091022.413785,
+    "seen": 1789095167.4602575,
+    "ast_hash": "eecfed0a12d0d45066320b307636d4ab",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -1956,9 +1956,9 @@
     "semantic_hash": ""
   },
   "docs/competition-class-notation.md": {
-    "mtime": 1788674200.8002405,
-    "seen": 1788929450.7998455,
-    "ast_hash": "9a724c01ac4b97792ae25066a8e7f321",
+    "mtime": 1789094873.5088022,
+    "seen": 1789095167.4603822,
+    "ast_hash": "e9c659dcf1249c22f2e7d1170481a4e6",
     "semantic_hash": ""
   },
   "docs/high-level-architecture.md": {
@@ -2100,9 +2100,9 @@
     "semantic_hash": ""
   },
   "docs/soaring-domain-class-diagram.md": {
-    "mtime": 1788994604.5610766,
-    "seen": 1788998457.432882,
-    "ast_hash": "de97dd2e47b4831078625adef0ac2566",
+    "mtime": 1789094999.090308,
+    "seen": 1789095167.460814,
+    "ast_hash": "2403ca6602154fa339465dfbdf4a85e3",
     "semantic_hash": ""
   },
   "docs/soaring-domain-glossary.md": {
@@ -4325,12 +4325,6 @@
     "ast_hash": "1a30b5b7154aada6283552c4d045e3dc",
     "semantic_hash": ""
   },
-  "docs/integrators-guide.md": {
-    "mtime": 1789026938.24915,
-    "seen": 1789076448.2081976,
-    "ast_hash": "dda2ffe252189e61dd6ffebbff636c97",
-    "semantic_hash": ""
-  },
   "src/Soarscore.Api/Seeding/ClassCorpusSeederHost.cs": {
     "mtime": 1789080998.088302,
     "seen": 1789081345.433346,
@@ -4353,12 +4347,6 @@
     "mtime": 1789080957.7337983,
     "seen": 1789081345.442131,
     "ast_hash": "9456bef11fb9af1e2fd9bf89db58c4a7",
-    "semantic_hash": ""
-  },
-  ".github/workflows/fly-deploy.yml": {
-    "mtime": 1789090099.307445,
-    "seen": 1789090273.6790118,
-    "ast_hash": "ae0988fc84f6a7425ac72515df800b09",
     "semantic_hash": ""
   },
   "SS/All Class Definitions.yml": {
@@ -4401,6 +4389,42 @@
     "mtime": 1789090168.4723039,
     "seen": 1789090273.680812,
     "ast_hash": "9dbb2f9ffb1be51d27d7d21797582e84",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Queries/Competitions/EventLogSummariser.cs": {
+    "mtime": 1789094022.4017317,
+    "seen": 1789095167.4499052,
+    "ast_hash": "b88c30bcffa1323616a412189fa430e0",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Queries/Competitions/GetCompetitionEventLog.cs": {
+    "mtime": 1789094652.7621558,
+    "seen": 1789095167.449948,
+    "ast_hash": "b3920db3e29d508e3c92c1b32caa51fb",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Application.Tests/Queries/Competitions/GetCompetitionEventLogHandlerTests.cs": {
+    "mtime": 1789094645.2130651,
+    "seen": 1789095167.4571514,
+    "ast_hash": "e30d180bf9e72f1d9fa3739e02a5fbf4",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Infrastructure.Tests/CompetitionEventLogEventStoreTests.cs": {
+    "mtime": 1789094779.8876798,
+    "seen": 1789095167.4592764,
+    "ast_hash": "df189eb29a654f8eaf7ddb90b9aa5bce",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1789092116.6841345,
+    "seen": 1789095167.4602914,
+    "ast_hash": "2ce5586aca483466a64108ae57f0dec1",
+    "semantic_hash": ""
+  },
+  "kanban/completed/competition-event-log-endpoint.md": {
+    "mtime": 1789095148.1390948,
+    "seen": 1789095167.4611828,
+    "ast_hash": "644e6496368d2de6c907685ce484e08c",
     "semantic_hash": ""
   }
 }

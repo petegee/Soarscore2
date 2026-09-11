@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Composition.cs": {
-    "mtime": 1789080852.0835013,
-    "seen": 1789081345.433284,
-    "ast_hash": "4117287c73a4fba6de9ae5e375972826",
+    "mtime": 1789090185.1615112,
+    "seen": 1789090273.6679153,
+    "ast_hash": "c3e692b218b916ad82d2d6a5a0a05a07",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Program.cs": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Soarscore.Api.csproj": {
-    "mtime": 1785963953.527986,
-    "seen": 1788929450.7990777,
-    "ast_hash": "20ca74d7b2ea9964d7610dd4447258f5",
+    "mtime": 1789083367.5917592,
+    "seen": 1789090273.6679964,
+    "ast_hash": "33f342ee47f8263781e9b5a6ab9aaf3a",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/CompetitionClasses/ClassDefinitionHashing.cs": {
@@ -4356,15 +4356,51 @@
     "semantic_hash": ""
   },
   ".github/workflows/fly-deploy.yml": {
-    "mtime": 1789080970.0499496,
-    "seen": 1789081345.4450521,
-    "ast_hash": "a4fdf85f29ad9b85b6807a32d1debdd6",
+    "mtime": 1789090099.307445,
+    "seen": 1789090273.6790118,
+    "ast_hash": "ae0988fc84f6a7425ac72515df800b09",
     "semantic_hash": ""
   },
-  "kanban/in-progress/seed-class-corpus-at-startup.md": {
-    "mtime": 1789080709.9447565,
-    "seen": 1789081345.4467595,
-    "ast_hash": "6e92754074ea24346ba812d5036afb4a",
+  "SS/All Class Definitions.yml": {
+    "mtime": 1789085308.104186,
+    "seen": 1789090273.6790452,
+    "ast_hash": "d80ede976f567062fae2975f15d65628",
+    "semantic_hash": ""
+  },
+  "SS/F3K Class Definition.yml": {
+    "mtime": 1789085673.0600524,
+    "seen": 1789090273.6790462,
+    "ast_hash": "008513b6e931f2b336f928315825eb05",
+    "semantic_hash": ""
+  },
+  "SS/openapi.json.yml": {
+    "mtime": 1789085230.479151,
+    "seen": 1789090273.679047,
+    "ast_hash": "d55eef1b0cf4ba1b1ae5a2610e7742d3",
+    "semantic_hash": ""
+  },
+  "SS/opencollection.yml": {
+    "mtime": 1789085187.389577,
+    "seen": 1789090273.6790476,
+    "ast_hash": "7590d5d0e8b80709cfae817dec8615b4",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/ci-seed-corpus-drift-guard.md": {
+    "mtime": 1789081410.0084784,
+    "seen": 1789090273.6795814,
+    "ast_hash": "218d8c70494066b3d089f55466d478a3",
+    "semantic_hash": ""
+  },
+  "kanban/completed/seed-class-corpus-at-startup.md": {
+    "mtime": 1789081355.7727969,
+    "seen": 1789090273.6806529,
+    "ast_hash": "e8cb0706d69139267acf13a86c30d4d6",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Api/wwwroot/integrators-guide.html": {
+    "mtime": 1789090168.4723039,
+    "seen": 1789090273.680812,
+    "ast_hash": "9dbb2f9ffb1be51d27d7d21797582e84",
     "semantic_hash": ""
   }
 }

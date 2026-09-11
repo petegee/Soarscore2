@@ -118,6 +118,7 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<RecordTieBreakOutcome, CompetitionId>, RecordTieBreakOutcomeHandler>();
         builder.Services.AddScoped<IQueryHandler<FindCompetitions, IReadOnlyList<CompetitionSummary>>, FindCompetitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetCompetition, CompetitionView>, GetCompetitionHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetCompetitionEventLog, CompetitionEventLogView>, GetCompetitionEventLogHandler>();
 
         builder.Services.AddScoped<ICommandHandler<DefineScoringTeam, ScoringTeamId>, DefineScoringTeamHandler>();
         builder.Services.AddScoped<ICommandHandler<DefineProtectionGroup, ProtectionGroupId>, DefineProtectionGroupHandler>();

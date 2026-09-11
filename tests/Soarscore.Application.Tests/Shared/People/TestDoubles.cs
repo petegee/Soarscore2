@@ -4,6 +4,7 @@
 
 using Soarscore.Application.Queries.People;
 using Soarscore.Domain;
+using Soarscore.Domain.People;
 
 namespace Soarscore.Application.Tests.Shared.People;
 
@@ -79,6 +80,9 @@ internal sealed class FakePeopleQuery : IPeopleQuery
     public Task<IReadOnlyList<PersonSummary>> SearchByNameAsync(string name, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<PersonSummary>>(
             _people.Where(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList());
+
+    public Task<IReadOnlyList<PersonSummary>> FindByIdsAsync(IReadOnlyList<PersonId> ids, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<PersonSummary>>(_people.Where(p => ids.Contains(p.Id)).ToList());
 }
 
 /// <summary>Hand-written fake (LADR-0003 "Doubles") — resolves handlers from a fixed dictionary, no real DI container.</summary>

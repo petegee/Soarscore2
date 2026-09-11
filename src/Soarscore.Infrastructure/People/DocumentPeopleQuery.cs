@@ -12,6 +12,7 @@
 
 using JasperFx.Events.Documents;
 using Soarscore.Application.Queries.People;
+using Soarscore.Domain.People;
 
 namespace Soarscore.Infrastructure.People;
 
@@ -43,5 +44,24 @@ public sealed class DocumentPeopleQuery(IDocumentSessionFactory sessions) : IPeo
         return await session.Query<PersonSummary>()
             .Where(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
             .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// In-memory filter, same finding as DocumentEntryQuery's three id-typed
+    /// filters: strong-typed ids are stored as nested JSON objects, so a
+    /// server-side <c>Where</c> on <see cref="PersonSummary.Id"/> would hit
+    /// Marten's bare-scalar duck-typing. The people read model is the whole
+    /// club's population — a few dozen rows at this project's scale.
+    /// </summary>
+    public async Task<IReadOnlyList<PersonSummary>> FindByIdsAsync(IReadOnlyList<PersonId> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        await using var session = sessions.QuerySession();
+        var all = await session.Query<PersonSummary>().ToListAsync(cancellationToken);
+        return all.Where(p => ids.Contains(p.Id)).ToList();
     }
 }

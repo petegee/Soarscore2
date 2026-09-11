@@ -256,7 +256,9 @@ defects when present. Status: codes ending <code>.notFound</code> →
 failure — you can branch on the code without parsing
 <code>detail</code>.</li>
 <li><strong>No auth.</strong> Auditability comes from the immutable
-event log; <code>by</code> fields record who acted, never enforced.</li>
+event log (readable via
+<code>GET /competition-event-log</code>); <code>by</code> fields record
+who acted, never enforced.</li>
 <li><strong>OpenAPI</strong> is published
 (<code>/openapi/v1.json</code>).</li>
 </ul>
@@ -476,6 +478,13 @@ required.</td>
 <td><code>/competition</code></td>
 <td><strong>Full folded competition state</strong> (large; includes
 pairwise co-occurrence).</td>
+</tr>
+<tr>
+<td><code>/competition-event-log</code></td>
+<td>The audit view: every event on the competition stream plus each
+entry stream — version, name, human summary;
+<code>&amp;includePayload=true</code> adds the full record (see
+§7.5).</td>
 </tr>
 <tr>
 <td><code>/entries</code></td>
@@ -1088,8 +1097,12 @@ replacement draw gets the next phase ordinal.</li>
 <li>Redraw is legal with <strong>no edit</strong> anywhere — the same
 commands again.</li>
 <li>The log keeps every rejected draw; <code>GET /competition</code>
-shows only the live one (no draw-history read surface today — see
-<code>deferred-decisions.md</code>).</li>
+shows only the live one. To see <strong>why</strong> a draw was
+rejected, read the audit view
+<code>GET /competition-event-log?id=…</code> — the
+<code>drawRejected</code> event carries the reason. (A polished
+draw-history surface remains deferred — see
+<code>deferred-decisions.md</code>.)</li>
 </ul>
 <h3 id="610-score-read-exceptions">6.10 Score-read exceptions</h3>
 <p>A few refusals exist <strong>on read</strong> by design; branch on
@@ -1277,6 +1290,33 @@ control → leaderboard. The capture grid polls
 <code>/open-entry</code> → <code>/open-flight</code> →
 <code>/capture-measurement</code> per gap. Everything else (CD console,
 teams, instruments) is optional and additive.</p>
+<h3 id="75-the-audit-view">7.5 The audit view</h3>
+<p><code>GET /competition-event-log?id=&lt;guid&gt;</code> returns the
+immutable event log for a competition. The competition stream comes
+first, then every entry stream in contest order, <strong>grouped per
+stream</strong> — there is deliberately no global cross-stream timeline,
+because entry-scoped events carry no timestamp. Each event carries:</p>
+<ul>
+<li><code>version</code> — 1-based position within its own stream;</li>
+<li><code>name</code> — the stable <code>$kind</code> discriminator
+(<code>"drawRejected"</code>, <code>"measurementCaptured"</code>,
+…);</li>
+<li><code>summary</code> — a human line where one adds value
+("John Smith (#3) entered task-round 0.1.1",
+"Flight 1: flightTime = 47.3", "Phase 0 draw rejected: Group sizes
+wrong"), omitted where the name says it all and for event kinds the
+reader predates (unknown kinds degrade to name-only, so a client can
+render the log without knowing every event type);</li>
+<li><code>payload</code> — the full serialised event, present only when
+you ask: <code>&amp;includePayload=true</code>. Same JSON conventions
+as everywhere else (<code>$kind</code> first, enums as strings).</li>
+</ul>
+<p>Each stream also carries a <code>label</code> naming its competitor
+and task-round ("Bob Brown (#2) — task-round 0.1.2"); the competition
+stream's label is null. Unknown competition id →
+<code>competition.notFound</code> (404). Typical uses: a CD console
+"history" tab, a UI's debugging view of "why is the leaderboard like
+this", or reading back the reason behind a rejected draw (§6.9).</p>
 <hr />
 <h2 id="8-quick-reference-the-canonical-happy-path">8. Quick reference:
 the canonical happy path</h2>
@@ -1317,6 +1357,9 @@ POST /correct-instrument-declaration
 POST /complete-task-round               (per settled round)
 GET  /competition-result                (standings, always current)
 GET  /competition-pending-tie-breaks    (CD settles)
-POST /finalise-competition              → declared results frozen</code></pre>
+POST /finalise-competition              → declared results frozen
+
+# Audit (any time)
+GET  /competition-event-log             (the immutable log, human-readable)</code></pre>
 </body>
 </html>

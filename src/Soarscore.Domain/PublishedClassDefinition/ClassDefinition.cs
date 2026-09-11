@@ -288,7 +288,7 @@ public sealed record ClassDefinition
 {
     public required string Name { get; init; }
 
-    /// <summary>Empty for a national class — the four NZ definitions leave it blank.</summary>
+    /// <summary>Empty for a national class — six definitions leave it blank.</summary>
     public string? FaiDesignation { get; init; }
 
     /// <summary>Provenance only. Nothing may resolve it (ADR-0002 §5).</summary>
