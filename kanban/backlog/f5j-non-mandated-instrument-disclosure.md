@@ -2,7 +2,7 @@
 
 **Status:** Backlog
 **Raised:** 2026-09-09 — WI-0 owner question Q1 of
-`kanban/in-progress/tape-points-landing-seeds.md` (the landing tape as a
+`kanban/completed/tape-points-landing-seeds.md` (the landing tape as a
 declared reading scale), decided log-only; reporting surface deferred here.
 
 ## What

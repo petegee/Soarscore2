@@ -256,4 +256,4 @@ See CLAUDE.md house-keeping rule 5.
   appends RulesAmended yet), but when rule amendments land both must move to
   effective together — otherwise a declaration could pass against a table
   capture never sees. Found 2026-09-09 during
-  `kanban/in-progress/tape-points-landing-seeds.md` WI-3.
+  `kanban/completed/tape-points-landing-seeds.md` WI-3.

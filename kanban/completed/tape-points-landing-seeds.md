@@ -1,6 +1,11 @@
 # Story - The landing tape as a declared reading scale
 
-**Status:** In-progress (WI-0 active)
+**Status:** Completed 2026-09-13 — WI-0 through WI-5 delivered (composition,
+tape catalogue, declaration/capture/amendment, scoring, property + BDD proof,
+mapping curation). WI-6 was split to
+`kanban/backlog/jerilderie-2010-tape-witness.md` at closure, by owner
+agreement, pending the unrecorded-penalty disposition; the mapping row stays
+honestly `refused`.
 **Raised:** 2026-09-07 - the jerilderie-2010 parallel-run refusal exposed a
 landing input the system cannot express.
 **Replanned:** 2026-09-08 (first) - "unit-aware capture (distance or points)".
