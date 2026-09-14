@@ -141,9 +141,14 @@ Backing detail: [NFR-1](docs/non-functional-requirements.md#nfr-1--one-centralis
 
 ## Key constraints
 
-- **Trust model:** club-level tool for a small, trusted NZ group. No auth, no
-  score sign-off; an **immutable event log of all mutations** provides
-  auditability instead.
+- **Trust model:** club-level tool for a small, trusted NZ group. **Auth is
+  required** (owner decision 2026-09-14, replacing the original "no auth"
+  stance): people register via social login through an external OIDC provider;
+  Organisers can do everything; a competitor's powers — such as entering
+  scores — are governed by **per-competition capture policy**, not by a role
+  hierarchy. No score sign-off; an **immutable event log of all mutations**
+  remains the auditability backbone. See
+  `kanban/backlog/authentication-and-authorisation.md`.
 - **Scale:** ≤ 20 pilots, ≤ 8 rounds/day, 1–2 day events;
 - **No imposed ordering on score capture:** never gate the contest on scores
   being up to date — [NFR-4](docs/non-functional-requirements.md#nfr-4--no-imposed-ordering-on-score-capture).
