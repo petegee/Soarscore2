@@ -149,6 +149,20 @@ public static class Composition
         // so the seed corpus is published before the API accepts a request.
         builder.Services.AddHostedService<Seeding.ClassCorpusSeederHost>();
 
+        // kanban/completed/cors-for-ndcscore-spa.md WI-1: cross-origin access for
+        // the NDC companion SPA (~/Source/NdcScore), which is a pure web client of
+        // this API — no BFF — so the browser enforces CORS against it. Strictly
+        // opt-in: with no origins configured there is no policy, no middleware and
+        // no change to today's responses; configuring some turns on a default
+        // policy for them. No credentials exist to allow (club-level no-auth trust
+        // model), so AllowCredentials is deliberately absent.
+        var corsOrigins = CorsOrigins(builder.Configuration);
+        if (corsOrigins.Length > 0)
+        {
+            builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+                policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod()));
+        }
+
         var app = builder.Build();
 
         // wwwroot/integrators-guide.html — the integrators guide, the single
@@ -157,6 +171,15 @@ public static class Composition
         // from MapCommand/MapQuery) is unaffected; it enumerates
         // EndpointDataSource, which static files never add to.
         app.UseStaticFiles();
+
+        // cors-for-ndcscore-spa.md WI-1: only when origins are configured.
+        // After UseStaticFiles (CORS is for the API surface, not the static
+        // integrators guide) and before any endpoint executes; adds no
+        // endpoint, so the WI-2 route-shape reflection test is unaffected.
+        if (corsOrigins.Length > 0)
+        {
+            app.UseCors();
+        }
 
         // WI-1/WI-6: the payload-size and nesting-depth ceiling, ahead of routing
         // and therefore ahead of model binding — Kestrel enforces the size while
@@ -240,5 +263,29 @@ public static class Composition
         app.MapQueries();
 
         return app;
+    }
+
+    /// <summary>
+    /// cors-for-ndcscore-spa.md WI-1: where allowed origins come from.
+    /// <c>Soarscore:Cors:Origins</c> (an array in appsettings) first, then the
+    /// flat env alias <c>SOARSCORE_CORS_ORIGINS</c> (comma-separated) — the same
+    /// flat-alias convention as <c>SOARSCORE_STORE</c> and
+    /// <c>SOARSCORE_CONNECTION_STRING</c>, because the deployments that need this
+    /// (Fly.io, the secretary's laptop behind a different dev port) set
+    /// configuration as environment variables, not JSON. Empty is the normal
+    /// case: same-origin callers need nothing, so nothing is enabled.
+    /// </summary>
+    private static string[] CorsOrigins(IConfiguration configuration)
+    {
+        var origins = configuration.GetSection("Soarscore:Cors:Origins").Get<string[]>();
+        if (origins is { Length: > 0 })
+        {
+            return origins;
+        }
+
+        var alias = configuration["SOARSCORE_CORS_ORIGINS"];
+        return string.IsNullOrWhiteSpace(alias)
+            ? []
+            : alias.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
     }
 }

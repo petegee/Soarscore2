@@ -3,6 +3,31 @@
 Residual technical debt identified or intentionally deferred while implementing a feature.
 See CLAUDE.md house-keeping rule 5.
 
+- [x] Repo-root finders fail in linked worktrees. Every corpus lookup walked up
+  from `AppContext.BaseDirectory` testing `Directory.Exists(<root>/.git)`, but a
+  worktree's `.git` is a *file* (gitdir pointer), so the walk ran past the
+  worktree root to `/` — the documented pre-existing baseline of 9
+  `CatalogueDrawPropertyTests` + 1 `SeedCorpusIngestionTests` failures (and 6
+  BDD `SeedDefinitionLoader` failures per store) whenever tests ran from any
+  linked worktree. Found again — this time as a hard blocker, not a baseline —
+  on `api-cors` (2026-09-14), the first story worked in a worktree by design.
+  **Discharged by `kanban/completed/cors-for-ndcscore-spa.md` WI-4**: all five
+  finders (`AcceptanceFixture.cs`, `SeedingTheClassCatalogueSteps.cs`,
+  `CatalogueDrawPropertyTests.cs`, `SeedCorpusIngestionTests.cs`,
+  `ClassCorpusSeederTests.cs`) plus `tools/Soarscore.SeedData/Program.cs`'s
+  `FindRepoRoot` now accept `.git` as file-or-directory; every suite passes
+  green from the worktree host, no baseline failures remain. The duplication
+  of the helper itself is still debt: one `FindSeedJsonDirectory` shared by
+  the test projects would prevent the next divergence — see the separate
+  checklist entry below.
+- [ ] `FindSeedJsonDirectory` is copy-pasted across five test/tool sites.
+  Fixed for worktrees simultaneously by
+  `kanban/completed/cors-for-ndcscore-spa.md` WI-4, but as five separate
+  edits to byte-identical helpers (`AcceptanceFixture.cs`,
+  `SeedingTheClassCatalogueSteps.cs`, `CatalogueDrawPropertyTests.cs`,
+  `SeedCorpusIngestionTests.cs`, `ClassCorpusSeederTests.cs`). Consolidate
+  into one shared helper (e.g. in a common test-support package or the
+  SeedData tool) the next time any of them needs changing.
 - [x] Duplicate `TaskRoundState` enums. Two public enums share the name with different
   members: `Soarscore.Domain.Competitions` (`Competition.cs:105` — `Drawn`, `InProgress`,
   `Complete`, `Annulled`) and `Soarscore.Domain.Scoring` (`PhaseAggregator.cs:34` —
