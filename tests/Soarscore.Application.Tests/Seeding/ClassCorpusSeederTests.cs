@@ -183,7 +183,9 @@ public class ClassCorpusSeederTests
     private static string FindSeedJsonDirectory()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+        // .git is a *file* (gitdir pointer) in a linked worktree — accept either
+        // shape or every worktree-hosted test run fails to find the seed corpus.
+        while (directory is not null && !(Directory.Exists(Path.Combine(directory.FullName, ".git")) || File.Exists(Path.Combine(directory.FullName, ".git"))))
         {
             directory = directory.Parent;
         }
