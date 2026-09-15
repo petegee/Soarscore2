@@ -109,3 +109,15 @@ A result is not always a number. A flight that was never validly completed has *
 Finalisation is the moment results stop being a live calculation and become a declared fact. During a contest, scores are derived afresh from the raw record every time they are asked for. When a phase closes, the Contest Director finalises it: the results are captured as they stood and, where a flyoff follows, the qualifiers are named — which is what records the cut that was actually applied. Finalising the competition captures the final classification.
 
 Captured results answer "what was declared", never "what is the score": the raw measurements and the competition's own copy of the rules remain the source of truth, so a finalised result can always be re-derived and compared against what was published. If an error comes to light afterwards the competition is reopened, the correction recorded, and the competition re-finalised — both result sets are kept, and nothing is overwritten.
+
+## Identity link
+
+The binding between one external identity-provider account (a provider and its subject id) and exactly one Person. A Person may hold several identity links (several social accounts, or a social account and a magic-link email); a link belongs to exactly one Person. Established at first sign-in or by an organiser.
+
+## Role
+
+A system-level authority held by a Person, independent of any competition. For v1: *Competitor* and *Organiser*; the Contest Director's authority folds into Organiser. Roles are granted and revoked by organisers.
+
+## Capture policy
+
+Per-competition configuration naming who may enter which scores for that competition: organisers only, any registered person, or an explicit allow-list of People (organisers always pass). The core interprets the policy generically; it never branches on who is acting beyond applying it.
