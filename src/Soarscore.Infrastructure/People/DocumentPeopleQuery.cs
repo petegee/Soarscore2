@@ -65,22 +65,54 @@ public sealed class DocumentPeopleQuery(IDocumentSessionFactory sessions) : IPeo
         return all.Where(p => ids.Contains(p.Id)).ToList();
     }
 
-    // authentication-and-authorisation.md WI-5 added these two IPeopleQuery
-    // members; their real bodies are WI-8's work — that WI adds the
-    // PersonIdentityRow projection and the (provider, subject) unique index
-    // (the link arbiter), and folds RoleGranted/RoleRevoked onto
-    // PersonSummary's Roles. Deliberate stubs rather than invented
-    // projections: no WI-5 consumer reaches them (the capture-policy policy
-    // reads the competitions and entry indexes, not these), and a silently
-    // wrong identity/role answer would be far worse than a loud one once
-    // WI-9 wires the current-user middleware.
-    public Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default) =>
-        throw new NotImplementedException(
-            "FindIdentityAsync needs WI-8's identity-row projection (authentication-and-authorisation.md): " +
-            "the (provider, subject) lookup joins PersonIdentityRow against the person's summary.");
+    // authentication-and-authorisation.md WI-8 — the D2 identity resolution
+    // read. Two document reads, exactly as WI-6's PersonIdentityMatch comment
+    // anticipated:
+    //
+    //   1. the identity row by (Provider, Subject) — a server-side predicate on
+    //      two plain strings, the FindByEmailAsync shape above; the store's
+    //      compound unique index on those two columns (the D5 arbiter) makes
+    //      the match total, so FirstOrDefault is not papering over ambiguity;
+    //   2. that person's summary for its roles — an in-memory filter, the
+    //      strong-typed-id finding applied to PersonSummary.Id exactly as
+    //      FindByIdsAsync below applies it (the read model is the whole
+    //      club's population — a few dozen rows at this project's scale).
+    //
+    // A link whose summary is not (yet) in the read model still resolves — the
+    // LINK exists and is the identity; the roles are the join's other half and
+    // ride along as empty rather than failing the lookup. Both documents are
+    // inline projections of the same append transaction, so the window is
+    // closed in practice; the empty-roles fallback keeps the read total.
+    public async Task<PersonIdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default)
+    {
+        await using var session = sessions.QuerySession();
+        var row = await session.Query<PersonIdentityRowDocument>()
+            .FirstOrDefaultAsync(r => r.Provider == provider && r.Subject == subject, cancellationToken);
 
-    public Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default) =>
-        throw new NotImplementedException(
-            "CountByRoleAsync needs WI-8's roles fold (authentication-and-authorisation.md): " +
-            "PersonSummary gains Roles (WI-6) and the projection folds RoleGranted/RoleRevoked before the read model can count a role.");
+        if (row is null)
+        {
+            return null;
+        }
+
+        var summaries = await session.Query<PersonSummary>().ToListAsync(cancellationToken);
+        var roles = summaries.FirstOrDefault(p => p.Id == row.PersonId)?.Roles ?? [];
+
+        return new PersonIdentityMatch(row.PersonId, roles);
+    }
+
+    /// <summary>
+    /// WI-7's RevokeRole last-organiser guard reads this. Roles fold onto
+    /// <see cref="PersonSummary.Roles"/> (WI-6) as a JSON array, so counting
+    /// them store-side would ask each backend to translate containment over a
+    /// JSON collection — precisely the per-store divergence the in-memory
+    /// pattern exists to avoid (the header note on DocumentEntryQuery). The
+    /// people read model is the club's population; the count is a
+    /// race-tolerant UX guard (WI-7), not a hot path.
+    /// </summary>
+    public async Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default)
+    {
+        await using var session = sessions.QuerySession();
+        var all = await session.Query<PersonSummary>().ToListAsync(cancellationToken);
+        return all.Count(p => p.Roles.Contains(role));
+    }
 }

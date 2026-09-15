@@ -1,7 +1,7 @@
 // The Fisher/SQLite composition root — kanban/completed/multi-backend-deployment.md
 // WI-1. The deliberate mirror of MartenConfig.cs: same event-type aliases, same
-// serialization conventions, same unique index, same four Inline projections
-// under the same four names. Read the two files side by side; where they differ,
+// serialization conventions, same unique indexes, same five Inline projections
+// under the same five names. Read the two files side by side; where they differ,
 // the difference is Fisher's API and is commented as such.
 //
 // Per LADR-0001 §4.1-3 and the story's shape, a composition root is exactly what
@@ -77,6 +77,19 @@ public static class FisherConfig
             // whole Inline-vs-async decision rests on. Same call shape as Marten's.
             opts.Schema.For<PersonSummary>().UniqueIndex(x => x.Email);
 
+            // authentication-and-authorisation.md WI-8 — the identity rows join the
+            // people read model (LADR-0004 §D2: not a fifth read model). The
+            // compound unique index on (Provider, Subject) is the D5 link arbiter,
+            // mirroring the PersonSummary.Email index above exactly: a second
+            // person claiming an already-linked identity fails INSIDE the append
+            // transaction (SQLite extended code 2067, SQLITE_CONSTRAINT_UNIQUE,
+            // which FisherEventStore.cs translates), and LinkSignIn's bounded
+            // retry resolves on it. Fisher's overload takes the columns as an
+            // expression ARRAY (not params, unlike Marten's) — hence the
+            // collection expression — and builds one index over both columns.
+            opts.Schema.For<PersonIdentityRowDocument>()
+                .UniqueIndex([x => x.Provider, x => x.Subject]);
+
             // The per-store shims, with their names pinned for exactly the reason
             // MartenConfig.cs pins them: a projection's registered name is derived
             // from the instance's type, so the shim would otherwise re-register
@@ -84,6 +97,7 @@ public static class FisherConfig
             // is the handle RebuildProjectionAsync takes, and it must mean the same
             // thing on both backends.
             opts.Projections.Add(new FisherPersonSummaryProjection(), ProjectionLifecycle.Inline, "PersonSummaryProjection");
+            opts.Projections.Add(new FisherPersonIdentityProjection(), ProjectionLifecycle.Inline, "PersonIdentityProjection");
             opts.Projections.Add(new FisherClassDefinitionSummaryProjection(), ProjectionLifecycle.Inline, "ClassDefinitionSummaryProjection");
             opts.Projections.Add(new FisherCompetitionSummaryProjection(), ProjectionLifecycle.Inline, "CompetitionSummaryProjection");
             opts.Projections.Add(new FisherEntryIndexProjection(), ProjectionLifecycle.Inline, "EntryIndexProjection");

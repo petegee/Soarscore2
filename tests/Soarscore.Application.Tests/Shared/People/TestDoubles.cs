@@ -89,13 +89,15 @@ internal sealed class FakePeopleQuery : IPeopleQuery
     // this fake stands in for the read model, and the projection that derives
     // those rows is WI-6/WI-8's subject with its own tests. FindIdentityAsync
     // is exercised by the WI-9 middleware tests' successors (WI-7's
-    // LinkSignIn); CountByRoleAsync by the last-organiser guard.
-    private readonly Dictionary<(string Provider, string Subject), IdentityMatch> _identities = [];
+    // LinkSignIn); CountByRoleAsync by the last-organiser guard. The port
+    // returns PersonIdentityMatch — WI-8's adapter swap retired the interim
+    // IdentityMatch shape (the two records were structurally identical).
+    private readonly Dictionary<(string Provider, string Subject), PersonIdentityMatch> _identities = [];
 
     public void SeedIdentity(string provider, string subject, PersonId personId, params PersonRole[] roles) =>
-        _identities[(provider, subject)] = new IdentityMatch(personId, roles);
+        _identities[(provider, subject)] = new PersonIdentityMatch(personId, roles);
 
-    public Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default) =>
+    public Task<PersonIdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default) =>
         Task.FromResult(_identities.GetValueOrDefault((provider, subject)));
 
     private readonly Dictionary<PersonRole, int> _roleCounts = [];
@@ -131,11 +133,11 @@ internal sealed class RaceWinnerIdentityQuery(FakePeopleQuery inner) : IPeopleQu
     public Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default) =>
         inner.CountByRoleAsync(role, cancellationToken);
 
-    public Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default)
+    public Task<PersonIdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default)
     {
         IdentityLookups++;
         return IdentityLookups == 1
-            ? Task.FromResult<IdentityMatch?>(null)
+            ? Task.FromResult<PersonIdentityMatch?>(null)
             : inner.FindIdentityAsync(provider, subject, cancellationToken);
     }
 }
