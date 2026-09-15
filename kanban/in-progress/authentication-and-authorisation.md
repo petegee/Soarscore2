@@ -1,6 +1,6 @@
 # Authentication & authorisation
 
-**Status:** backlog — plan written 2026-09-14; WI-1 owner sign-off gates everything below it
+**Status:** in-progress — plan written 2026-09-14; WI-1 signed off 2026-09-15
 
 ## What
 
@@ -346,6 +346,11 @@ No code. Walk the owner through the decision list and the proposed glossary,
 class-diagram and users.md text. Record ticked decisions in this file (dated).
 **Done when:** every D1–D12 is ticked (or amended with the owner's variant)
 and the glossary text is approved or reworked.
+
+**Signed off 2026-09-15:** D1–D12 approved as written; the
+§Glossary-and-diagram-amendments text (three glossary entries, class-diagram
+changes, users.md §5 replacement) approved as written. WI-2 is authorised to
+transcribe that text verbatim.
 
 ### WI-2 — LADR-0004, glossary, class diagram, users.md
 
