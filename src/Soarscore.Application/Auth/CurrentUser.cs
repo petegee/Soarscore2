@@ -21,6 +21,13 @@ public interface ICurrentUser
 
     string? Email { get; }
 
+    // The token's display name — WI-7's LinkSignIn create path registers the
+    // person from it (defaulting to the email local-part). D11/D12 keep the
+    // claim on the token; D2 keeps authority out of it: a name is never
+    // authorisation, so it rides the port without threatening the
+    // roles-never-live-in-tokens rule.
+    string? Name { get; }
+
     PersonId? PersonId { get; }    // null until linked
 
     IReadOnlyList<PersonRole> Roles { get; }
@@ -47,6 +54,8 @@ public sealed record SystemCurrentUser : ICurrentUser
 
     public string? Email => null;
 
+    public string? Name => null;
+
     public PersonId? PersonId => null;
 
     public IReadOnlyList<PersonRole> Roles { get; init; } = [PersonRole.Organiser];
@@ -71,6 +80,8 @@ public sealed record AnonymousCurrentUser : ICurrentUser
     public string? Subject => null;
 
     public string? Email => null;
+
+    public string? Name => null;
 
     public PersonId? PersonId => null;
 

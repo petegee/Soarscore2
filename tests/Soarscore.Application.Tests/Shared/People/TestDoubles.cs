@@ -106,6 +106,74 @@ internal sealed class FakePeopleQuery : IPeopleQuery
         Task.FromResult(_roleCounts.GetValueOrDefault(role, 0));
 }
 
+/// <summary>
+/// D5's race in a can (authentication-and-authorisation.md WI-7): the
+/// concurrent winner's identity row becomes readable only after the loser's
+/// first append has been rejected — the first <see cref="FindIdentityAsync"/>
+/// call misses, every later one delegates (and hits). <see cref="Inner"/> is
+/// exposed so a test seeds the winner's row up front.
+/// </summary>
+internal sealed class RaceWinnerIdentityQuery(FakePeopleQuery inner) : IPeopleQuery
+{
+    public FakePeopleQuery Inner => inner;
+
+    public int IdentityLookups { get; private set; }
+
+    public Task<PersonSummary?> FindByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        inner.FindByEmailAsync(email, cancellationToken);
+
+    public Task<IReadOnlyList<PersonSummary>> SearchByNameAsync(string name, CancellationToken cancellationToken = default) =>
+        inner.SearchByNameAsync(name, cancellationToken);
+
+    public Task<IReadOnlyList<PersonSummary>> FindByIdsAsync(IReadOnlyList<PersonId> ids, CancellationToken cancellationToken = default) =>
+        inner.FindByIdsAsync(ids, cancellationToken);
+
+    public Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default) =>
+        inner.CountByRoleAsync(role, cancellationToken);
+
+    public Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default)
+    {
+        IdentityLookups++;
+        return IdentityLookups == 1
+            ? Task.FromResult<IdentityMatch?>(null)
+            : inner.FindIdentityAsync(provider, subject, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Decorator over <see cref="FakeEventStore"/> that fails the first
+/// <c>violations</c> appends with the adapters' unique-index translation
+/// (MartenEventStore.cs / FisherEventStore.cs surface the people projection's
+/// email and (provider, subject) unique indexes as exactly this failure).
+/// Counts every append so a test can prove the retry happened exactly once.
+/// </summary>
+internal sealed class FakeUniqueIndexEventStore(FakeEventStore inner, int violations) : IEventStore
+{
+    public int AppendCalls { get; private set; }
+
+    public Task<Result<long>> AppendAsync(
+        Guid streamId, ExpectedVersion expected, IReadOnlyList<IDomainEvent> events, CancellationToken cancellationToken = default)
+    {
+        AppendCalls++;
+        if (AppendCalls <= violations)
+        {
+            return Task.FromResult(Result<long>.Failure(
+                "eventStore.uniqueConstraintViolation",
+                $"A unique index in the people projection rejected the append to stream {streamId}."));
+        }
+
+        return inner.AppendAsync(streamId, expected, events, cancellationToken);
+    }
+
+    public Task<Result<IReadOnlyList<IDomainEvent>>> ReadStreamAsync(
+        Guid streamId, long fromVersion, CancellationToken cancellationToken = default) =>
+        inner.ReadStreamAsync(streamId, fromVersion, cancellationToken);
+
+    public Task<Result<IReadOnlyList<RecordedEvent>>> ReadAllAsync(
+        long fromPosition, int batchSize, CancellationToken cancellationToken = default) =>
+        inner.ReadAllAsync(fromPosition, batchSize, cancellationToken);
+}
+
 /// <summary>Hand-written fake (LADR-0003 "Doubles") — resolves handlers from a fixed dictionary, no real DI container.</summary>
 internal sealed class FakeServiceProvider(Dictionary<Type, object> services) : IServiceProvider
 {

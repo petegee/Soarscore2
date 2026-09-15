@@ -10,9 +10,6 @@
 // message having a row — is enforced by test in WI-10, which reuses
 // HandlerRegistrationTests' route enumeration; this table plus the routes
 // must move together.
-//
-// WI-7 appends its rows here: LinkSignIn (A), GrantRole, RevokeRole,
-// ConfigureCapturePolicy, BindIdentity (all O) and WhoAmI (A).
 
 using Soarscore.Application.Auth.Policies;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -36,6 +33,13 @@ public static class CommandPolicyTable
         [typeof(RenamePerson)] = new SelfOrOrganiserPolicy(),
         [typeof(ChangePersonContactDetails)] = new SelfOrOrganiserPolicy(),
         [typeof(ChangePersonClubAffiliation)] = new SelfOrOrganiserPolicy(),
+
+        // ---- Authentication (WI-7) ---------------------------------------------
+        [typeof(LinkSignIn)] = new AuthenticatedPolicy(),          // any validated token; the handler does the get-or-create (D5)
+        [typeof(GrantRole)] = new OrganiserPolicy(),
+        [typeof(RevokeRole)] = new OrganiserPolicy(),
+        [typeof(ConfigureCapturePolicy)] = new OrganiserPolicy(),  // who may enter scores is organiser-set configuration (D10)
+        [typeof(BindIdentity)] = new OrganiserPolicy(),            // D12: organiser binds machine/external identities, pre-provisions people
 
         // ---- Competition classes (shared master data) --------------------------
         [typeof(PublishClassDefinition)] = new OrganiserPolicy(),
@@ -94,5 +98,6 @@ public static class CommandPolicyTable
         [typeof(ScoreTeamStandings)] = new AuthenticatedPolicy(),
         [typeof(ScoreTaskRound)] = new AuthenticatedPolicy(),
         [typeof(GetTaskRoundRecording)] = new AuthenticatedPolicy(),
+        [typeof(WhoAmI)] = new AuthenticatedPolicy(),              // D9 — the identity bridge the front-end flow requires
     };
 }

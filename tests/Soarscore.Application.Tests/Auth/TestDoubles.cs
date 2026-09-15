@@ -17,7 +17,8 @@ internal sealed record FakeCurrentUser(
     PersonRole[]? HeldRoles = null,
     string? Provider = null,
     string? Subject = null,
-    string? Email = null) : ICurrentUser
+    string? Email = null,
+    string? Name = null) : ICurrentUser
 {
     // The port's property type is IReadOnlyList — the positional array is the
     // fake's convenience, projected once here.
