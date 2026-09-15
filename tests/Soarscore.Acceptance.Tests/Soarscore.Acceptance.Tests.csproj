@@ -21,6 +21,11 @@
   <ItemGroup>
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <!-- authentication-and-authorisation.md WI-10: TestJwt mints the mock
+         personas' HS256 tokens with the same JsonWebTokenHandler the Api's
+         MockTokens uses — the pinned transitive, referenced directly (the
+         pin already exists in Directory.Packages.props from WI-9). -->
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Reqnroll.xunit.v3" />
     <PackageReference Include="Testcontainers.PostgreSql" />
