@@ -204,7 +204,7 @@ public class GetCompetitionEventLogHandlerTests
             var people = new PeopleDoubles.FakePeopleQuery();
             foreach (var personRef in generated.competitionStream.OfType<CompetitorRegistered>().Select(e => e.Competitor.PersonRef).Distinct())
             {
-                people.Seed(new PersonSummary(personRef, "John Smith", "john@test", null, null, null));
+                people.Seed(new PersonSummary(personRef, "John Smith", "john@test", null, null, null, []));
             }
 
             var handler = new GetCompetitionEventLogHandler(store, entryQuery, people);
@@ -338,7 +338,7 @@ public class GetCompetitionEventLogHandlerTests
             new TaskRoundCompleted(0, 1, 1, Now),
         ], TestContext.Current.CancellationToken).Wait();
         var people = new PeopleDoubles.FakePeopleQuery();
-        people.Seed(new PersonSummary(personRef, "John Smith", "john@test", null, null, null));
+        people.Seed(new PersonSummary(personRef, "John Smith", "john@test", null, null, null, []));
         return (store, new EntryDoubles.FakeEntryQuery(), people, id);
     }
 

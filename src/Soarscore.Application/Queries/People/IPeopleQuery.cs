@@ -57,3 +57,17 @@ public interface IPeopleQuery
 /// consumes.
 /// </summary>
 public sealed record IdentityMatch(PersonId PersonId, IReadOnlyList<PersonRole> Roles);
+
+/// <summary>
+/// The full join WI-8's <see cref="IPeopleQuery.FindIdentityAsync"/> adapter
+/// returns (authentication-and-authorisation.md WI-6): one
+/// <see cref="PersonIdentityRow"/> — the (provider, subject) link, read by the
+/// unique compound index — joined to that person's <see cref="PersonSummary"/>
+/// for its roles. Two document reads, performed and documented in the adapter
+/// (DocumentPeopleQuery, WI-8); the projection folds that produce the two
+/// documents are PersonIdentityProjection.Apply and PeopleProjection.Apply.
+/// IdentityMatch above is the WI-5 interim port shape the pipeline's world
+/// consumes until the adapter lands; the row and this join are part of the
+/// people read model, not a fifth read model (LADR-0004 §D2).
+/// </summary>
+public sealed record PersonIdentityMatch(PersonId PersonId, IReadOnlyList<PersonRole> Roles);
