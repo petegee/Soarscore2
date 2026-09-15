@@ -83,6 +83,27 @@ internal sealed class FakePeopleQuery : IPeopleQuery
 
     public Task<IReadOnlyList<PersonSummary>> FindByIdsAsync(IReadOnlyList<PersonId> ids, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<PersonSummary>>(_people.Where(p => ids.Contains(p.Id)).ToList());
+
+    // WI-5 port additions (authentication-and-authorisation.md). Seeded
+    // dictionaries rather than folds of IdentityLinked/RoleGranted events:
+    // this fake stands in for the read model, and the projection that derives
+    // those rows is WI-6/WI-8's subject with its own tests. FindIdentityAsync
+    // is exercised by the WI-9 middleware tests' successors (WI-7's
+    // LinkSignIn); CountByRoleAsync by the last-organiser guard.
+    private readonly Dictionary<(string Provider, string Subject), IdentityMatch> _identities = [];
+
+    public void SeedIdentity(string provider, string subject, PersonId personId, params PersonRole[] roles) =>
+        _identities[(provider, subject)] = new IdentityMatch(personId, roles);
+
+    public Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_identities.GetValueOrDefault((provider, subject)));
+
+    private readonly Dictionary<PersonRole, int> _roleCounts = [];
+
+    public void SeedRoleCount(PersonRole role, int count) => _roleCounts[role] = count;
+
+    public Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_roleCounts.GetValueOrDefault(role, 0));
 }
 
 /// <summary>Hand-written fake (LADR-0003 "Doubles") — resolves handlers from a fixed dictionary, no real DI container.</summary>

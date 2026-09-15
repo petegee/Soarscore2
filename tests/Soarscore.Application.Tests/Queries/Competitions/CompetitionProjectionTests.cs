@@ -83,4 +83,46 @@ public class CompetitionProjectionTests
 
         result.Should().BeNull();
     }
+
+    // ---- Capture policy on the summary (authentication-and-authorisation.md
+    // ---- WI-5, D10): FindCapturePolicyAsync reads this, never a stream fold.
+
+    [Fact]
+    public void A_fresh_summary_has_no_configured_policy_and_CapturePolicyConfigured_sets_it()
+    {
+        var summary = CompetitionProjection.Apply(null, SampleCreatedEvent())!;
+        summary.CapturePolicy.Should().BeNull();
+
+        var policy = new CapturePolicy(CapturePolicyMode.AllowList, [PersonId.New()]);
+
+        var updated = CompetitionProjection.Apply(summary, new CapturePolicyConfigured(policy, DateTimeOffset.UtcNow));
+
+        updated!.CapturePolicy.Should().BeSameAs(policy);
+        updated.State.Should().Be(summary.State);
+        updated.Id.Should().Be(summary.Id);
+    }
+
+    [Fact]
+    public void CapturePolicyConfigured_is_last_wins_on_replay()
+    {
+        // Reconfiguration is allowed any time, including mid-contest (D10): the
+        // fold replaces the policy whole — the log keeps the history.
+        var summary = CompetitionProjection.Apply(null, SampleCreatedEvent())!;
+        var first = new CapturePolicy(CapturePolicyMode.OrganisersOnly, []);
+        var second = new CapturePolicy(CapturePolicyMode.AnyRegisteredPerson, []);
+
+        var afterFirst = CompetitionProjection.Apply(summary, new CapturePolicyConfigured(first, DateTimeOffset.UtcNow))!;
+        var afterSecond = CompetitionProjection.Apply(afterFirst, new CapturePolicyConfigured(second, DateTimeOffset.UtcNow))!;
+
+        afterSecond.CapturePolicy.Should().BeSameAs(second);
+    }
+
+    [Fact]
+    public void CapturePolicyConfigured_against_a_null_summary_is_a_no_op_rather_than_a_throw()
+    {
+        var result = CompetitionProjection.Apply(
+            null, new CapturePolicyConfigured(new CapturePolicy(CapturePolicyMode.OrganisersOnly, []), DateTimeOffset.UtcNow));
+
+        result.Should().BeNull();
+    }
 }

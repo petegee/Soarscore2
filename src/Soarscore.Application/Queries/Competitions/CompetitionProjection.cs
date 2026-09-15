@@ -33,7 +33,8 @@ public static class CompetitionProjection
         {
             CompetitionCreated e => new CompetitionSummary(
                 e.Id, e.Name, e.Location, e.StartDate, e.EndDate,
-                e.AdoptedRules.Definition.Name, e.AdoptedRules.SourceClassId, "created"),
+                e.AdoptedRules.Definition.Name, e.AdoptedRules.SourceClassId, "created",
+                CapturePolicy: null),
             PhaseDrawn when current is not null => current with { State = "drawn" },
             // draw-acceptance-redraw.md D8: the summary mirrors the live
             // phase's Draw.Status. Acceptance is the state the glossary
@@ -48,6 +49,13 @@ public static class CompetitionProjection
             DrawRejected when current is not null => current with { State = "created" },
             Finalised e when current is not null && e.Finalisation.Scope == FinalisationScope.Competition =>
                 current with { State = "finalised" },
+            // authentication-and-authorisation.md WI-5 (D10): the capture
+            // policy rides the summary so the capture-policy policy reads
+            // FindCapturePolicyAsync, never a stream fold. Last-wins on
+            // replay exactly as the aggregate folds it (Competition.cs's
+            // CapturePolicyConfigured apply) — reconfiguration mid-contest
+            // replaces the policy, never what has been entered (NFR-4).
+            CapturePolicyConfigured e when current is not null => current with { CapturePolicy = e.Policy },
             _ => current,
         };
 }

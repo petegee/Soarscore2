@@ -64,4 +64,23 @@ public sealed class DocumentPeopleQuery(IDocumentSessionFactory sessions) : IPeo
         var all = await session.Query<PersonSummary>().ToListAsync(cancellationToken);
         return all.Where(p => ids.Contains(p.Id)).ToList();
     }
+
+    // authentication-and-authorisation.md WI-5 added these two IPeopleQuery
+    // members; their real bodies are WI-8's work — that WI adds the
+    // PersonIdentityRow projection and the (provider, subject) unique index
+    // (the link arbiter), and folds RoleGranted/RoleRevoked onto
+    // PersonSummary's Roles. Deliberate stubs rather than invented
+    // projections: no WI-5 consumer reaches them (the capture-policy policy
+    // reads the competitions and entry indexes, not these), and a silently
+    // wrong identity/role answer would be far worse than a loud one once
+    // WI-9 wires the current-user middleware.
+    public Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException(
+            "FindIdentityAsync needs WI-8's identity-row projection (authentication-and-authorisation.md): " +
+            "the (provider, subject) lookup joins PersonIdentityRow against the person's summary.");
+
+    public Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException(
+            "CountByRoleAsync needs WI-8's roles fold (authentication-and-authorisation.md): " +
+            "PersonSummary gains Roles (WI-6) and the projection folds RoleGranted/RoleRevoked before the read model can count a role.");
 }

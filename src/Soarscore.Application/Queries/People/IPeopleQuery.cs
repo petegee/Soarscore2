@@ -30,4 +30,30 @@ public interface IPeopleQuery
     /// the result; the caller renders what it has.
     /// </summary>
     Task<IReadOnlyList<PersonSummary>> FindByIdsAsync(IReadOnlyList<PersonId> ids, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One validated token's identity resolved against the read model (D2,
+    /// authentication-and-authorisation.md WI-5): roles never live in tokens,
+    /// so the WI-9 current-user middleware calls this per request and a role
+    /// grant takes effect on the next request with no token-refresh dance.
+    /// Null when no identity link matches the (provider, subject) pair.
+    /// </summary>
+    Task<IdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// How many people hold a role — WI-7's RevokeRole last-organiser guard
+    /// (revoking the only organiser would strand the system's authority; the
+    /// count is a cross-stream read guarding a UX deadlock, not an aggregate
+    /// invariant, and is race-tolerant — WI-7/tech-debt.md).
+    /// </summary>
+    Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// The identity→person join behind <see cref="IPeopleQuery.FindIdentityAsync"/>:
+/// one (provider, subject) link with the person it belongs to and that
+/// person's roles in the same read. WI-6 names the fuller join row
+/// (PersonIdentityMatch); this is the WI-5 port shape the pipeline's world
+/// consumes.
+/// </summary>
+public sealed record IdentityMatch(PersonId PersonId, IReadOnlyList<PersonRole> Roles);
