@@ -4,10 +4,14 @@
 // HTTP client — "driven without HTTP testing tools" (LADR-0003).
 
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.IdentityModel.Tokens;
+using Soarscore.Api.Auth;
 using Soarscore.Api.Commands;
 using Soarscore.Api.Queries;
 using Soarscore.Application;
+using Soarscore.Application.Auth;
 using Soarscore.Application.Commands.CompetitionClasses;
 using Soarscore.Application.Commands.Competitions;
 using Soarscore.Application.Commands.Entries;
@@ -31,7 +35,14 @@ public static class Composition
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddOpenApi();
+        // authentication-and-authorisation.md WI-9: the auth mode is validated
+        // FIRST (D8) — a misconfigured or Production-refused mode is a loud
+        // crash at boot, never a silently open or mock-keyed API. Everything
+        // auth-shaped below branches on this one value; see the mode table in
+        // the story's "Shape of the change".
+        var auth = AuthSettings.From(builder.Configuration, builder.Environment.IsProduction());
+
+        builder.Services.AddOpenApi(options => options.AddDocumentTransformer(new BearerSecurityScheme()));
 
         // LADR-0003 "Errors": RFC 9457 ProblemDetails via IProblemDetailsService —
         // Results.Problem() (Routing/EndpointRouteBuilderExtensions.cs) delegates to
@@ -93,6 +104,19 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<FindPeople, IReadOnlyList<PersonSummary>>, FindPeopleHandler>();
         builder.Services.AddScoped<IQueryHandler<GetPerson, Person>, GetPersonHandler>();
 
+        // authentication-and-authorisation.md WI-7: the sign-in/role/capture-
+        // policy/identity-binding commands and the /who-am-i identity bridge.
+        // Registered in EVERY mode — the routes are mapped in every mode
+        // (Commands.cs/Queries.cs) and HandlerRegistrationTests resolves every
+        // mapped handler; under none-mode the pipeline is absent (below), so
+        // these behave exactly as their plain pre-auth handlers would.
+        builder.Services.AddScoped<ICommandHandler<LinkSignIn, LinkSignInResult>, LinkSignInHandler>();
+        builder.Services.AddScoped<ICommandHandler<GrantRole, PersonId>, GrantRoleHandler>();
+        builder.Services.AddScoped<ICommandHandler<RevokeRole, PersonId>, RevokeRoleHandler>();
+        builder.Services.AddScoped<ICommandHandler<ConfigureCapturePolicy, CompetitionId>, ConfigureCapturePolicyHandler>();
+        builder.Services.AddScoped<ICommandHandler<BindIdentity, PersonId>, BindIdentityHandler>();
+        builder.Services.AddScoped<IQueryHandler<WhoAmI, CurrentUserView>, WhoAmIHandler>();
+
         builder.Services.AddScoped<ICommandHandler<PublishClassDefinition, string>, PublishClassDefinitionHandler>();
         builder.Services.AddScoped<IQueryHandler<FindClassDefinitions, IReadOnlyList<ClassDefinitionSummary>>, FindClassDefinitionsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetClassDefinition, ClassDefinition>, GetClassDefinitionHandler>();
@@ -144,6 +168,48 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<ScoreCompetition, CompetitionScoreView>, ScoreCompetitionHandler>();
         builder.Services.AddScoped<IQueryHandler<GetPendingTieBreaks, PendingTieBreaksView>, GetPendingTieBreaksHandler>();
 
+        // authentication-and-authorisation.md WI-9 step 6: the mode-dispatched
+        // registrations. D1/D8 make enforcement opt-in per composition — under
+        // "none" this branch registers NOTHING (no bearer validation, no
+        // pipeline, no HttpCurrentUser), which is the byte-identical default
+        // every existing test runs under.
+        builder.Services.AddSingleton(new AuthBootstrap(auth.BootstrapOrganisers));
+
+        if (auth.Mode is AuthMode.Mock or AuthMode.Oidc)
+        {
+            // D2: one HttpCurrentUser per request, bound by the middleware
+            // below. RequestCaller is the per-scope carrier — its comment
+            // explains the indirection (the seeder hosts' scopes never run
+            // the middleware and must keep the system actor).
+            builder.Services.AddScoped<HttpCurrentUser>();
+            builder.Services.AddScoped<RequestCaller>();
+            builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<RequestCaller>().User);
+            builder.Services.AddScoped<IAuthorizationPipeline, AuthorizationPipeline>();
+
+            builder.Services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options => ConfigureJwtBearer(options, auth));
+
+            if (auth.Mode is AuthMode.Mock)
+            {
+                // D11: the persona set is seeded (and its bearer tokens
+                // printed) at startup, before the web host — same
+                // hosted-service mechanism as ClassCorpusSeederHost below.
+                // Refused in Production (D8), so this never exists in a
+                // release deployment.
+                builder.Services.AddSingleton(auth.Mock!);
+                builder.Services.AddHostedService<MockPersonaSeederHost>();
+            }
+        }
+        else
+        {
+            // D1/D8: none-mode truly registers nothing auth-shaped — the
+            // stock anonymous principal keeps the port total, no
+            // IAuthorizationPipeline resolves (Dispatcher.Invoke behaves
+            // exactly as it did pre-auth).
+            builder.Services.AddSingleton<ICurrentUser, AnonymousCurrentUser>();
+        }
+
         // Deployment seeding — kanban/in-progress/seed-class-corpus-at-startup.md WI-2.
         // Registered hosted services start before the generic web host (Kestrel),
         // so the seed corpus is published before the API accepts a request.
@@ -154,8 +220,10 @@ public static class Composition
         // this API — no BFF — so the browser enforces CORS against it. Strictly
         // opt-in: with no origins configured there is no policy, no middleware and
         // no change to today's responses; configuring some turns on a default
-        // policy for them. No credentials exist to allow (club-level no-auth trust
-        // model), so AllowCredentials is deliberately absent.
+        // policy for them. AllowCredentials is still deliberately absent
+        // (authentication-and-authorisation.md amended the trust model): the SPA
+        // authenticates with an Authorization header, which CORS treats as
+        // non-credentialed — no cookies are ever involved.
         var corsOrigins = CorsOrigins(builder.Configuration);
         if (corsOrigins.Length > 0)
         {
@@ -179,6 +247,29 @@ public static class Composition
         if (corsOrigins.Length > 0)
         {
             app.UseCors();
+        }
+
+        // authentication-and-authorisation.md WI-9 steps 3–4, under mock/oidc
+        // only: UseAuthentication runs the JwtBearer handler (the token is
+        // validated, context.User filled); the middleware after it binds that
+        // principal to the request scope's ICurrentUser (HttpCurrentUser —
+        // sub parsing, D2's per-request identity resolution, D12's machine
+        // tokens) and rebinds the scope's RequestCaller. UseAuthorization is
+        // deliberately ABSENT: there are no endpoint-level policies — the
+        // authorization pipeline (AuthorizationPipeline, resolved by
+        // Dispatcher.Invoke before any handler) is the single enforcement
+        // point. Under none-mode neither middleware exists.
+        if (auth.Mode is AuthMode.Mock or AuthMode.Oidc)
+        {
+            app.UseAuthentication();
+            app.Use(async (context, next) =>
+            {
+                var caller = context.RequestServices.GetRequiredService<RequestCaller>();
+                var user = context.RequestServices.GetRequiredService<HttpCurrentUser>();
+                await user.BindAsync(context.User, context.RequestAborted);
+                caller.User = user;
+                await next();
+            });
         }
 
         // WI-1/WI-6: the payload-size and nesting-depth ceiling, ahead of routing
@@ -250,9 +341,13 @@ public static class Composition
         // Swashbuckle's Swagger UI at /swagger, pointed at the in-box document
         // above — the UI is the only thing Swashbuckle supplies here; the spec
         // still has exactly one generator (LADR-0003 "API documentation", as
-        // amended for the hosted UI). Served in every environment: the trust
-        // model is the club-level no-auth one, and the point of the page is
-        // poking the deployed API (e.g. on Fly.io).
+        // amended for the hosted UI). Served in every environment: the page's
+        // point is poking the deployed API (e.g. on Fly.io). Since
+        // authentication-and-authorisation.md the API is token-validated
+        // (WI-9) — under oidc/mock the UI's Authorize button (bearer scheme
+        // from the BearerSecurityScheme transformer) takes a pasted token, and
+        // under mock the persona tokens printed at startup are exactly what to
+        // paste. The page itself stays anonymous in v1 (deferred-decisions.md).
         app.UseSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/openapi/v1.json", "Soarscore v1");
@@ -263,6 +358,52 @@ public static class Composition
         app.MapQueries();
 
         return app;
+    }
+
+    /// <summary>
+    /// authentication-and-authorisation.md WI-9 step 3: the JwtBearer wiring,
+    /// one of two shapes per mode. Under "mock" (and under "oidc" when a
+    /// static signing key is configured — the same mechanism WI-10's
+    /// acceptance suite pins, which is what makes mock and the suite one
+    /// thing, D11) the validation parameters are pinned wholesale: issuer +
+    /// audience + symmetric key, no Authority metadata retrieval. Under plain
+    /// "oidc" the handler discovers from the Auth0 domain at first request.
+    /// MapInboundClaims stays off in every authenticated mode (the middleware
+    /// reads <c>sub</c>, <c>email</c>, <c>name</c> at their wire names) and
+    /// the principal's name claim is <c>sub</c>.
+    /// </summary>
+    private static void ConfigureJwtBearer(JwtBearerOptions options, AuthSettings auth)
+    {
+        options.MapInboundClaims = false;
+
+        if (auth.Mode is AuthMode.Mock)
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                NameClaimType = "sub",
+                ValidIssuer = MockAuthOptions.Issuer,
+                ValidAudience = auth.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(auth.Mock!.SigningKey),
+            };
+        }
+        else if (auth.StaticSigningKey is { } key)
+        {
+            // oidc with a pinned static key: the issuer is still the IdP
+            // domain — only the signing-key discovery is bypassed.
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                NameClaimType = "sub",
+                ValidIssuer = $"https://{auth.Domain}/",
+                ValidAudience = auth.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+            };
+        }
+        else
+        {
+            options.Authority = $"https://{auth.Domain}/";
+            options.Audience = auth.Audience;
+            options.TokenValidationParameters.NameClaimType = "sub";
+        }
     }
 
     /// <summary>

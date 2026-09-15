@@ -38,7 +38,12 @@ public sealed class HandlerRegistrationTests
     [Fact]
     public void Every_mapped_command_and_query_resolves_its_handler_from_DI()
     {
+        // D8 (authentication-and-authorisation.md): Production refuses every
+        // auth mode but "oidc", so the composition is built in Development —
+        // the byte-identical none-mode default — with the same fake,
+        // unreachable store connection RouteShapeTests has always used.
         var app = Composition.Build([
+            "--environment=Development",
             "--Soarscore:Store=postgres",
             "--ConnectionStrings:Soarscore=Host=127.0.0.1;Port=1;Database=archtest;Username=archtest;Password=archtest",
         ]);
@@ -67,12 +72,13 @@ public sealed class HandlerRegistrationTests
 
         // Sanity check on the reflection technique itself: if this is empty,
         // the metadata shape MapCommand/MapQuery rely on has changed and the
-        // test below would vacuously pass. Thirty-four commands + thirteen
-        // queries are mapped as of teams-mvp.md WI-6 (the seven team commands
-        // and three team queries — the count comment here previously said
-        // twenty-seven commands + ten queries as of lane-assignment.md WI-3;
-        // corrected while bumping, the smaller-items.md precedent).
-        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(38);
+        // test below would vacuously pass. Forty-two commands + sixteen
+        // queries are mapped as of authentication-and-authorisation.md WI-9
+        // (the five sign-in/role/capture-policy commands and /who-am-i on top
+        // of teams-mvp.md WI-6's surface). The count comment previously said
+        // thirty-four commands + thirteen queries; corrected while bumping,
+        // the smaller-items.md precedent.
+        mappedMessages.Should().HaveCountGreaterThanOrEqualTo(44);
 
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;

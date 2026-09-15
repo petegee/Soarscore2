@@ -52,6 +52,13 @@ public sealed class ClassCorpusSeederHost(
         }
 
         await using var scope = scopeFactory.CreateAsyncScope();
+        // authentication-and-authorisation.md WI-9: the scope's ICurrentUser
+        // resolves to SystemCurrentUser (RequestCaller's default — the
+        // current-principal middleware never runs in a seeder scope to rebind
+        // it), so under an enforcing mode (mock/oidc) the authorization
+        // pipeline allows this publish exactly as it would for an organiser.
+        // System seeding is not a user request (D1/D3): the seeder must not
+        // inherit — nor be mistaken for — a caller's authority.
         var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
         var report = await ClassCorpusSeeder.SeedAsync(dispatcher, directory, cancellationToken);

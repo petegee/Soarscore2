@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/People/IPeopleQuery.cs": {
-    "mtime": 1789455991.3069906,
-    "seen": 1789456696.621427,
-    "ast_hash": "854895de69f0548479d9905b8723607e",
+    "mtime": 1789460899.0742254,
+    "seen": 1789461563.8097105,
+    "ast_hash": "f725002fdde319064407582bba34ed0e",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/People/PeopleProjection.cs": {
@@ -654,9 +654,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/FisherConfig.cs": {
-    "mtime": 1787269098.0953932,
-    "seen": 1789345393.7093446,
-    "ast_hash": "df080162d40c6a0f27008563219d7683",
+    "mtime": 1789460953.9390883,
+    "seen": 1789461563.8107393,
+    "ast_hash": "5597da6095643e98afa6be082f240dee",
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/FisherEventStore.cs": {
@@ -672,9 +672,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/MartenConfig.cs": {
-    "mtime": 1787269098.0953932,
-    "seen": 1789345393.709347,
-    "ast_hash": "26e6483da8f37e4ab28fa24a779b0622",
+    "mtime": 1789460829.4303994,
+    "seen": 1789461563.810777,
+    "ast_hash": "9fd70baf5a0026fec2ed0881d951d5ba",
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/MartenEventStore.cs": {
@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/People/DocumentPeopleQuery.cs": {
-    "mtime": 1789453603.4633787,
-    "seen": 1789456696.6224053,
-    "ast_hash": "e205d8070a3bf90df492c89ca1f05f37",
+    "mtime": 1789460880.7902713,
+    "seen": 1789461563.8107946,
+    "ast_hash": "24c8f18144b994f32c5c1333c3fa501d",
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/People/PersonSummaryProjection.cs": {
@@ -708,9 +708,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/SoarscoreEventTypes.cs": {
-    "mtime": 1788995734.336018,
-    "seen": 1789345393.7093518,
-    "ast_hash": "acc0d9fed03f72a7b2896db1dbfbd09b",
+    "mtime": 1789460743.7476134,
+    "seen": 1789461563.8108516,
+    "ast_hash": "7c2300c529785f9dd6bf42c61a480662",
     "semantic_hash": ""
   },
   "src/Soarscore.Infrastructure/SystemClock.cs": {
@@ -1308,9 +1308,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Shared/People/TestDoubles.cs": {
-    "mtime": 1789457944.4406803,
-    "seen": 1789458469.0402536,
-    "ast_hash": "a2efdd6b2429266186e764d690f5f78e",
+    "mtime": 1789460918.093178,
+    "seen": 1789461563.8171425,
+    "ast_hash": "dda1b67fbf7887d856401efc5e3f831b",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Soarscore.Application.Tests.csproj": {
@@ -4647,6 +4647,18 @@
     "mtime": 1789458033.8296726,
     "seen": 1789458469.0400558,
     "ast_hash": "d530256638bde585af4ee1d2c816553e",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Infrastructure/People/PersonIdentityProjection.cs": {
+    "mtime": 1789460809.8704484,
+    "seen": 1789461563.8107965,
+    "ast_hash": "be4f341401276ad849165a69c0b178f5",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Infrastructure.Tests/AuthenticationEventStoreTests.cs": {
+    "mtime": 1789461047.367855,
+    "seen": 1789461563.8190315,
+    "ast_hash": "a621ba0dacf9f2238fbc19829d506668",
     "semantic_hash": ""
   }
 }
