@@ -1,9 +1,8 @@
 // authentication-and-authorisation.md WI-5 — OrganiserPolicy's truth table.
-// The role check is the whole policy: every principal without the Organiser
-// role is denied with auth.forbidden (WI-9 maps it to 403) — anonymous
-// included, since the §Per-command policy table's parenthetical names no
-// authentication step for this policy (unlike SelfOrOrganiserPolicy's
-// "requires an authenticated principal"). The command in each case is a real
+// An unauthenticated caller is denied auth.notAuthenticated (401) — the mode
+// table's "anonymous callers get 401s, unauthorised ones 403s", D10's step-1
+// shape; every authenticated principal without the Organiser role is denied
+// auth.forbidden (WI-9 maps it to 403). The command in each case is a real
 // O-mapped command.
 
 using AwesomeAssertions;
@@ -24,12 +23,12 @@ public class OrganiserPolicyTests
     private static readonly OrganiserPolicy Policy = new();
 
     [Fact]
-    public async Task Anonymous_is_denied_forbidden()
+    public async Task Anonymous_is_denied_notAuthenticated()
     {
         var outcome = await Policy.AuthorizeAsync(Command, new FakeCurrentUser(), null!, TestContext.Current.CancellationToken);
 
         outcome.Allowed.Should().BeFalse();
-        outcome.Code.Should().Be("auth.forbidden");
+        outcome.Code.Should().Be("auth.notAuthenticated");
         outcome.Message.Should().NotBeNullOrEmpty();
     }
 

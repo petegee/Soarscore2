@@ -44,6 +44,9 @@ public class DispatcherAuthorizationTests
     private static readonly ICurrentUser Organiser =
         new FakeCurrentUser(IsAuthenticated: true, PersonId: PersonId.New(), HeldRoles: [PersonRole.Organiser]);
 
+    private static readonly ICurrentUser Competitor =
+        new FakeCurrentUser(IsAuthenticated: true, PersonId: PersonId.New(), HeldRoles: [PersonRole.Competitor]);
+
     private static (Dispatcher Dispatcher, SpyRegisterPersonHandler Handler, FakeEventStore Store) Build(
         ICurrentUser user, bool withPipeline, bool withHandler)
     {
@@ -73,8 +76,10 @@ public class DispatcherAuthorizationTests
     {
         // No handler registered: if the denial step were skipped, resolution
         // would throw the missing-handler InvalidOperationException instead of
-        // returning the policy's failure.
-        var (dispatcher, handler, store) = Build(new FakeCurrentUser(), withPipeline: true, withHandler: false);
+        // returning the policy's failure. An authenticated competitor denies
+        // OrganiserPolicy with auth.forbidden (an anonymous principal would
+        // 401 first — that arm is pinned in the policy tests).
+        var (dispatcher, handler, store) = Build(Competitor, withPipeline: true, withHandler: false);
 
         var result = await dispatcher.SendAsync(Command, TestContext.Current.CancellationToken);
 
@@ -86,7 +91,7 @@ public class DispatcherAuthorizationTests
     [Fact]
     public async Task A_pipeline_denial_never_runs_the_handler_or_touches_the_store()
     {
-        var (dispatcher, handler, store) = Build(new FakeCurrentUser(), withPipeline: true, withHandler: true);
+        var (dispatcher, handler, store) = Build(Competitor, withPipeline: true, withHandler: true);
 
         var result = await dispatcher.SendAsync(Command, TestContext.Current.CancellationToken);
 
