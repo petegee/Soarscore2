@@ -282,3 +282,35 @@ See CLAUDE.md house-keeping rule 5.
   effective together — otherwise a declaration could pass against a table
   capture never sees. Found 2026-09-09 during
   `kanban/completed/tape-points-landing-seeds.md` WI-3.
+- [ ] The last-organiser guard's read-model count is race-tolerant.
+  `kanban/completed/authentication-and-authorisation.md` WI-7.
+  `RevokeRoleHandler` guards the last Organiser with
+  `IPeopleQuery.CountByRoleAsync(Organiser) == 1`
+  (`src/Soarscore.Application/Commands/People/RevokeRole.cs:51`) — a
+  cross-stream read guarding a UX deadlock, not an aggregate invariant (the
+  `BindParameter` `roundHasEntries` precedent). Two concurrent revokes of the
+  last two organisers can both read a count above one and both succeed, or a
+  concurrent grant can move the count under the second revoke so it fails
+  oddly (denied despite one organiser being left). Tolerated and documented in
+  the handler's header comment; the alternative — a read-check-write arbiter —
+  is exactly what LADR-0001 §4.4 forbids. Revisit only if the race is ever
+  witnessed in practice.
+- [ ] `PersonSummary`'s positional append ripples into fixtures.
+  `kanban/completed/authentication-and-authorisation.md` WI-6. `Roles` was
+  appended positionally to `PersonSummary`, so every fixture constructing
+  summaries positionally gained an argument — compile-time enforced (the
+  compiler lists the sites), but noted as the ripple class: each future
+  positional append to a read-model summary repeats it. If a summary grows
+  often, consider a named construction helper for fixtures before a third
+  append.
+- [ ] `CountByRoleAsync` is an in-memory count over the whole people read
+  model. `kanban/completed/authentication-and-authorisation.md` WI-7.
+  `DocumentPeopleQuery.CountByRoleAsync`
+  (`src/Soarscore.Infrastructure/People/DocumentPeopleQuery.cs:112`) loads
+  every `PersonSummary` and counts `Roles.Contains(role)` client-side —
+  deliberate, because roles fold as a JSON array and counting store-side would
+  ask each backend to translate JSON-collection containment (the per-store
+  divergence the in-memory pattern exists to avoid, per the adapter's doc
+  comment). Club-scale fine (≤ 20 pilots, a race-tolerant UX guard, not a hot
+  path); revisit if the people population grows past club scale or the count
+  ever leaves the RevokeRole path.

@@ -361,6 +361,32 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   `ApplyRawPenalties`' function comment documents this. Surface it if a rulebook
   or fixture ever records a points penalty against a lower-is-better raw score.
 
+## Authentication and authorisation
+
+Deferred by `kanban/completed/authentication-and-authorisation.md` (2026-09-16,
+WI-11).
+
+- **CORS for a direct-SPA (non-BFF) caller.** **Decided 2026-09-16**
+  (`kanban/completed/authentication-and-authorisation.md` WI-11). The planned
+  web front-end is a separate consuming system (NFR-3) expected to use an SPA
+  redirect/BFF flow, and the API's CORS surface today serves only the NdcScore
+  companion SPA's origins (`kanban/completed/cors-for-ndcscore-spa.md`). If a
+  future front-end calls the API directly from a browser origin with no BFF,
+  its CORS policy is a decision of that front-end story — the origin list is
+  knowable only once the consuming system exists. Do not "pre-open" CORS for a
+  caller nobody has named.
+- **Swagger UI stays anonymous under `oidc` in v1.** **Decided 2026-09-16**
+  (`kanban/completed/authentication-and-authorisation.md` WI-11). The OpenAPI
+  document
+  carries the bearer security scheme (WI-9), so Swagger UI can be exercised by
+  pasting a token; what is *not* wired is Swagger's interactive
+  authorization-code/PKCE dance against Auth0, which would let a browser user
+  sign in from the UI without ever holding a token. Deliberate: the UI is a
+  developer surface, the SPA/BFF flow is the real front door, and wiring an
+  OAuth2 redirect into Swagger is front-end-shape work that belongs with the
+  front-end story. Reopen if the club ever wants organiser-only ad-hoc API
+  poking without a token manager.
+
 ---
 
 ## Decisions that have since been taken up
