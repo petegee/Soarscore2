@@ -67,9 +67,23 @@ public static class EndpointRouteBuilderExtensions
     private static int StatusCodeFor(string code) => code switch
     {
         _ when code.EndsWith(".notFound", StringComparison.Ordinal) => StatusCodes.Status404NotFound,
+        // authentication-and-authorisation.md WI-9 step 8. auth.policyMissing
+        // is 500 deliberately: the pipeline fails closed (a message type with
+        // no policy row is a wiring bug, and the WI-10 totality test should
+        // make it unreachable — a 400 would read as the caller's fault).
+        "auth.notAuthenticated" => StatusCodes.Status401Unauthorized,
+        "auth.forbidden" => StatusCodes.Status403Forbidden,
+        "auth.capturePolicy.denied" => StatusCodes.Status403Forbidden,
+        // Security review 2026-09-16. 403 not 401: the identity itself
+        // validated — what is untrustworthy is the token's unverified email
+        // claim, which is the caller's token to fix at the IdP.
+        "auth.signIn.emailNotVerified" => StatusCodes.Status403Forbidden,
+        "auth.policyMissing" => StatusCodes.Status500InternalServerError,
         "eventStore.streamAlreadyExists" => StatusCodes.Status409Conflict,
         "eventStore.concurrencyConflict" => StatusCodes.Status409Conflict,
         "eventStore.uniqueConstraintViolation" => StatusCodes.Status409Conflict,
+        "person.lastOrganiser" => StatusCodes.Status409Conflict,
+        "person.roleAlreadyHeld" => StatusCodes.Status409Conflict,
         _ => StatusCodes.Status400BadRequest,
     };
 }

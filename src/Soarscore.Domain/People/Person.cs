@@ -7,6 +7,8 @@
 // §3). Registering is a one-off event that lets an organiser build a
 // competition's field from known people.
 
+using System.Collections.Immutable;
+
 namespace Soarscore.Domain.People;
 
 /// <summary>
@@ -58,9 +60,22 @@ public sealed record ClubAffiliation
 }
 
 /// <summary>
+/// One external identity-provider account bound to exactly one Person —
+/// glossary "Identity link" (approved 2026-09-15). A Person may hold several
+/// (several social accounts, or a social account plus a magic-link email); a
+/// link belongs to exactly one Person. As with the email uniqueness remark
+/// below, the one-link-one-Person arbiter across the population is the
+/// store's unique index, not anything this value object can check.
+/// </summary>
+public sealed record IdentityLink(string Provider, string Subject);
+
+/// <summary>
 /// The aggregate root. Referenced by id from Competitor records inside each
 /// Competition (aggregate-roots.md §3) — nothing downstream of registration
-/// lives here.
+/// lives here, except the competition-independent system-level authority and
+/// account data WI-3 added: Roles and identity links (glossary "Role",
+/// "Identity link"), which say who may act system-wide, never what they did
+/// in a contest.
 ///
 /// Person is never conceptually deleted (docs/aggregate-roots.md §2), so
 /// unlike ClassDefinitionRetired's tolerance of a null current projection,
@@ -77,6 +92,10 @@ public sealed record Person
     public required ContactDetails Contact { get; init; }
 
     public ClubAffiliation? Club { get; init; }
+
+    public ImmutableHashSet<PersonRole> Roles { get; init; } = ImmutableHashSet<PersonRole>.Empty;
+
+    public ImmutableArray<IdentityLink> Identities { get; init; } = ImmutableArray<IdentityLink>.Empty;
 
     /// <summary>The creation event. Every stream begins with exactly one of these.</summary>
     public static Person Create(PersonRegistered @event) => new()
@@ -97,6 +116,18 @@ public sealed record Person
 
     public Person Apply(PersonRenamed @event) => this with { Name = @event.Name };
 
+    public Person Apply(RoleGranted @event) => this with { Roles = Roles.Add(@event.Role) };
+
+    public Person Apply(RoleRevoked @event) => this with { Roles = Roles.Remove(@event.Role) };
+
+    // Fold tolerance for a duplicated event (WI-3): an IdentityLinked replay
+    // folds to no change instead of a second, identical link.
+    public Person Apply(IdentityLinked @event)
+    {
+        var link = new IdentityLink(@event.Provider, @event.Subject);
+        return Identities.Contains(link) ? this : this with { Identities = Identities.Add(link) };
+    }
+
     /// <summary>
     /// Generic replay entry point for code that only has the closed union type,
     /// not the concrete event type (e.g. folding a whole stream). Not what
@@ -110,6 +141,9 @@ public sealed record Person
             ContactDetailsChanged e => Require(current, e).Apply(e),
             ClubAffiliationChanged e => Require(current, e).Apply(e),
             PersonRenamed e => Require(current, e).Apply(e),
+            RoleGranted e => Require(current, e).Apply(e),
+            RoleRevoked e => Require(current, e).Apply(e),
+            IdentityLinked e => Require(current, e).Apply(e),
             _ => throw new ArgumentException($"Unknown PersonEvent subtype: {@event.GetType().Name}"),
         };
 
@@ -151,6 +185,33 @@ public sealed record Person
     public Result<ClubAffiliationChanged> ChangeClubAffiliation(ClubAffiliation? club, DateTimeOffset at) =>
         Result<ClubAffiliationChanged>.Success(new ClubAffiliationChanged(club, at));
 
+    // Roles and identity links — WI-3 (kanban/in-progress/authentication-and-authorisation.md).
+    // Same single-event-or-failure discipline as every decide here. Like email
+    // uniqueness, (Provider, Subject) uniqueness is only checkable against the
+    // rest of the population — the store's unique index stays the arbiter
+    // (IdentityLink remark above); this decide can only refuse a link this
+    // person already holds.
+    public Result<RoleGranted> GrantRole(PersonRole role, DateTimeOffset at) =>
+        Roles.Contains(role)
+            ? Result<RoleGranted>.Failure("person.roleAlreadyHeld", $"The {role} role is already held.")
+            : Result<RoleGranted>.Success(new RoleGranted(role, at));
+
+    public Result<RoleRevoked> RevokeRole(PersonRole role, DateTimeOffset at) =>
+        Roles.Contains(role)
+            ? Result<RoleRevoked>.Success(new RoleRevoked(role, at))
+            : Result<RoleRevoked>.Failure("person.roleNotHeld", $"The {role} role is not held.");
+
+    public Result<IdentityLinked> LinkIdentity(string provider, string subject, DateTimeOffset at)
+    {
+        var defect = ValidateIdentityLink(provider, subject);
+        return defect is not null
+            ? Result<IdentityLinked>.Failure(defect.Code, defect.Message)
+            : Identities.Contains(new IdentityLink(provider, subject))
+                ? Result<IdentityLinked>.Failure(
+                    "person.identityAlreadyLinked", "This identity is already linked to this person.")
+                : Result<IdentityLinked>.Success(new IdentityLinked(provider, subject, at));
+    }
+
     private static Defect? ValidateName(string name) =>
         string.IsNullOrWhiteSpace(name)
             ? new Defect("person.name.blank", "$.name", "Name must not be blank.")
@@ -165,6 +226,14 @@ public sealed record Person
             : IsPlausibleEmail(contact.Email)
                 ? null
                 : new Defect("person.email.invalid", "$.contact.email", "Email must be non-blank and structurally plausible.");
+
+    // Accepts null despite the non-nullable parameter types — ValidateContact's
+    // reasoning: a client that omits "provider"/"subject" from the request
+    // JSON binds one straight through to null here.
+    private static Defect? ValidateIdentityLink(string? provider, string? subject) =>
+        string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(subject)
+            ? new Defect("person.identity.blank", "$.identity", "Provider and subject must not be blank.")
+            : null;
 
     /// <summary>
     /// Not full RFC 5322 validation — one '@', a non-blank local part, a

@@ -556,6 +556,15 @@ public sealed record Competition
     /// <summary>Null until first configured; replaced whole by each TeamClassificationConfigured.</summary>
     public TeamClassificationConfiguration? TeamClassification { get; init; }
 
+    /// <summary>
+    /// Null until first configured; replaced whole by each
+    /// <see cref="CapturePolicyConfigured"/> — last-wins, the log is the audit
+    /// trail (TeamClassification's precedent). Null — never configured —
+    /// evaluates as OrganisersOnly, the safe default (D10); the default is the
+    /// evaluation's decision, not a value stored here.
+    /// </summary>
+    public CapturePolicy? CapturePolicy { get; init; }
+
     /// <summary>The creation event. Every stream begins with exactly one of these.</summary>
     public static Competition Create(CompetitionCreated @event) =>
         new()
@@ -580,6 +589,7 @@ public sealed record Competition
             ScoringTeamMemberships = [],
             ProtectionGroupMemberships = [],
             TeamClassification = null,
+            CapturePolicy = null,
         };
 
     // One overload per non-creation event — both the domain's own fold-by-type
@@ -760,6 +770,13 @@ public sealed record Competition
     public Competition Apply(TeamClassificationConfigured @event) =>
         this with { TeamClassification = @event.Configuration };
 
+    // Capture policy — authentication-and-authorisation.md WI-4. Latest-wins
+    // whole replacement (the TeamClassificationConfigured precedent above):
+    // reconfiguration is allowed at any time, including mid-contest (D10),
+    // and the log keeps every configuration.
+    public Competition Apply(CapturePolicyConfigured @event) =>
+        this with { CapturePolicy = @event.Policy };
+
     /// <summary>
     /// Shared navigation for ReflightGroupAppended, TaskRoundCompleted,
     /// TaskRoundAnnulled and TaskRoundReopened: find the Phase/Round/TaskRound
@@ -839,6 +856,7 @@ public sealed record Competition
             ProtectionGroupMemberAdded e => Require(current, e).Apply(e),
             ProtectionGroupMemberRemoved e => Require(current, e).Apply(e),
             TeamClassificationConfigured e => Require(current, e).Apply(e),
+            CapturePolicyConfigured e => Require(current, e).Apply(e),
             _ => throw new ArgumentException($"Unknown CompetitionEvent subtype: {@event.GetType().Name}"),
         };
 
@@ -3003,6 +3021,39 @@ public sealed record Competition
                 new TeamClassificationConfigured(
                     new TeamClassificationConfiguration { Enabled = enabled, Method = "bestThreeScoreSum" },
                     at));
+    }
+
+    // Instance decide function — authentication-and-authorisation.md WI-4
+    // (D10). Competition-level configuration, never class data (CLAUDE.md's
+    // core architectural law). Strict shape checks — the client says what it
+    // means: an AllowList names at least one capturer, and only an AllowList
+    // names capturers. Deliberately no gates (ConfigureTeamClassification's
+    // stance): reconfiguration is allowed at any time, including mid-contest —
+    // it changes who may enter, never what has been entered — and latest wins
+    // in the fold while the log keeps every configuration. Person existence is
+    // NOT checked here — Competition cannot read people; that is the handler's
+    // cross-aggregate read (WI-7, the CreateCompetition precedent).
+    public Result<CapturePolicyConfigured> ConfigureCapturePolicy(CapturePolicy policy, DateTimeOffset at)
+    {
+        // Null-tolerant on Capturers — nullable annotations are compile-time
+        // only, and a client that omits "capturers" from the request JSON
+        // binds one straight through to null (ValidateContact's reasoning):
+        // a null allow-list is an empty one.
+        var capturers = policy.Capturers ?? [];
+
+        var defect = policy.Mode == CapturePolicyMode.AllowList && capturers.Count == 0
+            ? new Defect(
+                "competition.capturePolicy.emptyAllowList", "$.policy.capturers",
+                "An AllowList policy must name at least one capturer — an empty one denies everyone but the organisers; configure OrganisersOnly instead.")
+            : policy.Mode != CapturePolicyMode.AllowList && capturers.Count > 0
+                ? new Defect(
+                    "competition.capturePolicy.capturersIgnored", "$.policy.capturers",
+                    $"Only an AllowList policy reads a capturer list; {policy.Mode} ignores it — send the list only with AllowList.")
+                : null;
+
+        return defect is not null
+            ? Result<CapturePolicyConfigured>.Failure(defect.Code, defect.Message)
+            : Result<CapturePolicyConfigured>.Success(new CapturePolicyConfigured(policy, at));
     }
 
     // One code per command rather than one shared code, so a caller can tell

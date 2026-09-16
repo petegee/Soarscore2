@@ -28,6 +28,17 @@
     <!-- Pinned to the AspNetCore.App runtime installed alongside the 10.0.110 SDK
          (LADR-0003 "API documentation": in-box, spec emitted as a build artefact). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <!-- authentication-and-authorisation.md WI-9: the one new package the story's
+         LADR-0003 allowance admits (in-box ASP.NET family). Pinned to the same
+         10.0.10 runtime as Microsoft.AspNetCore.OpenApi above. Its
+         Microsoft.IdentityModel.* token dependencies are pinned alongside (below)
+         rather than floated. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <!-- Transitive via JwtBearer (System.IdentityModel.Tokens.Jwt), pinned to match
+         rather than float independently (LADR-0003 "all versions pinned").
+         Referenced directly by Soarscore.Api: the mock persona seeder mints
+         tokens with JsonWebTokenHandler, not only validates them. -->
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.2" />
     <!-- Transitive via Fisher, pinned to match rather than float independently
          (LADR-0003 "all versions pinned"). Referenced directly by
          Soarscore.Infrastructure for the same reason Npgsql is — see its comment. -->

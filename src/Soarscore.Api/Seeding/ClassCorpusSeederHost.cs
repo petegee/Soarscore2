@@ -20,7 +20,9 @@
 // idempotent by content hash, so this costs sixteen no-op appends after the
 // first boot and survives container restarts and store re-creation alike.
 
+using Soarscore.Api.Auth;
 using Soarscore.Application;
+using Soarscore.Application.Auth;
 using Soarscore.Application.Seeding;
 
 namespace Soarscore.Api.Seeding;
@@ -52,6 +54,17 @@ public sealed class ClassCorpusSeederHost(
         }
 
         await using var scope = scopeFactory.CreateAsyncScope();
+        // System seeding is not a user request (D1/D3): the system actor is
+        // bound EXPLICITLY here, not by the carrier's default — RequestCaller
+        // fails closed to AnonymousCurrentUser, and the current-principal
+        // middleware never runs in a seeder scope to rebind it. With the
+        // system actor bound, the authorization pipeline allows this publish
+        // exactly as it would for an organiser. Under none-mode no carrier is
+        // registered (and no pipeline consults it), so there is nothing to bind.
+        if (scope.ServiceProvider.GetService<RequestCaller>() is { } caller)
+        {
+            caller.User = new SystemCurrentUser();
+        }
         var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
 
         var report = await ClassCorpusSeeder.SeedAsync(dispatcher, directory, cancellationToken);

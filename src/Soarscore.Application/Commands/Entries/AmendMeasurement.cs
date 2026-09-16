@@ -8,6 +8,7 @@
 // change (decided by the user 2026-08-18, amend-a-measurement.md decision 1):
 // recorded, enforced on nobody's role.
 
+using Soarscore.Application.Auth;
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
 using Soarscore.Domain;
@@ -16,6 +17,7 @@ using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Application.Commands.Entries;
 
+// IEntryScopedCommand — same implicit marker as OpenFlight.cs (WI-5).
 public sealed record AmendMeasurement(
     EntryId EntryRef,
     int FlightSequence,
@@ -24,7 +26,7 @@ public sealed record AmendMeasurement(
     string Reason,
     string By,
     string? Instrument = null,
-    bool ChangeInstrument = false) : ICommand<EntryId>;
+    bool ChangeInstrument = false) : ICommand<EntryId>, IEntryScopedCommand;
 
 public sealed class AmendMeasurementHandler(IEventStore eventStore, IClock clock)
     : ICommandHandler<AmendMeasurement, EntryId>

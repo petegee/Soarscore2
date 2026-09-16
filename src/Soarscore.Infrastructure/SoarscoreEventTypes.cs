@@ -40,6 +40,18 @@ internal static class SoarscoreEventTypes
         (typeof(ContactDetailsChanged), "contactDetailsChanged"),
         (typeof(ClubAffiliationChanged), "clubAffiliationChanged"),
 
+        // authentication-and-authorisation.md WI-3 defined the role and
+        // identity-link events — aliases are the [JsonDerivedType]
+        // discriminators their contracts carry — and WI-8 registered them
+        // here, where the discipline stated above applies as for every line
+        // in this list: a missing line fails at runtime on BOTH backends per
+        // LADR-0001 §4.8. WI-7's GrantRole/RevokeRole/LinkSignIn/BindIdentity
+        // already append these, so the lines are load-bearing from the day
+        // they land.
+        (typeof(RoleGranted), "roleGranted"),
+        (typeof(RoleRevoked), "roleRevoked"),
+        (typeof(IdentityLinked), "identityLinked"),
+
         // class-definition-adoption-steel-thread-plan.md WI-5.
         (typeof(ClassDefinitionPublished), "classDefinitionPublished"),
         (typeof(ClassDefinitionRetired), "classDefinitionRetired"),
@@ -81,6 +93,12 @@ internal static class SoarscoreEventTypes
         (typeof(GroupSpotsAssigned), "groupSpotsAdded"), // lane-assignment.md WI-4 — a missing line fails at runtime on BOTH backends per LADR-0001 §4.8.
         (typeof(InstrumentsDeclared), "instrumentsDeclared"),
         (typeof(InstrumentDeclarationCorrected), "instrumentDeclarationCorrected"), // tape-points-landing-seeds.md WI-3 — same rule.
+
+        // authentication-and-authorisation.md WI-4 defined CapturePolicyConfigured
+        // (D10) and WI-8 registered it — aliases are the [JsonDerivedType]
+        // discriminator, and a missing line fails at runtime on BOTH backends
+        // per LADR-0001 §4.8.
+        (typeof(CapturePolicyConfigured), "capturePolicyConfigured"),
 
         // teams-mvp.md WI-3 registered the seven team events; as above, a
         // missing line fails at runtime on BOTH backends per LADR-0001 §4.8.

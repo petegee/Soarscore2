@@ -9,8 +9,8 @@ namespace Soarscore.Application.Tests.Queries.People;
 
 public class PersonQueriesTests
 {
-    private static readonly PersonSummary Alex = new(PersonId.New(), "Alex Pilot", "alex@example.com", null, "Auckland", null);
-    private static readonly PersonSummary Alexandra = new(PersonId.New(), "Alexandra Novice", "alexandra@example.com", null, "Wellington", null);
+    private static readonly PersonSummary Alex = new(PersonId.New(), "Alex Pilot", "alex@example.com", null, "Auckland", null, []);
+    private static readonly PersonSummary Alexandra = new(PersonId.New(), "Alexandra Novice", "alexandra@example.com", null, "Wellington", null, []);
 
     private static IDispatcher BuildDispatcher(FakePeopleQuery peopleQuery)
     {

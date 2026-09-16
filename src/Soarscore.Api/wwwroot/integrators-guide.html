@@ -251,14 +251,21 @@ a human message, and <code>extensions.defects</code> carries validation
 defects when present. Status: codes ending <code>.notFound</code> →
 <strong>404</strong>; <code>eventStore.streamAlreadyExists</code> /
 <code>concurrencyConflict</code> /
-<code>uniqueConstraintViolation</code> → <strong>409</strong>; else
+<code>uniqueConstraintViolation</code> → <strong>409</strong>;
+<code>auth.notAuthenticated</code> → <strong>401</strong>;
+<code>auth.forbidden</code> / <code>auth.capturePolicy.denied</code> →
+<strong>403</strong>; <code>person.lastOrganiser</code> /
+<code>person.roleAlreadyHeld</code> → <strong>409</strong>;
+<code>auth.policyMissing</code> → <strong>500</strong> (see §3); else
 <strong>400</strong>. Every command has exactly one defect code per
 failure — you can branch on the code without parsing
 <code>detail</code>.</li>
-<li><strong>No auth.</strong> Auditability comes from the immutable
+<li><strong>Bearer authentication</strong> (see §3): every call carries a
+JWT; <em>which</em> identity is calling comes from the token, <em>who they
+are to SoarScore</em> is resolved server-side per request, and roles never
+live in tokens. Auditability comes from the immutable
 event log (readable via
-<code>GET /competition-event-log</code>); <code>by</code> fields record
-who acted, never enforced.</li>
+<code>GET /competition-event-log</code>).</li>
 <li><strong>OpenAPI</strong> is published
 (<code>/openapi/v1.json</code>).</li>
 </ul>
@@ -302,6 +309,25 @@ cheap; re-query after every change.</p>
 <tr>
 <td><code>/change-person-club-affiliation</code></td>
 <td>Update club.</td>
+</tr>
+<tr>
+<td><code>/link-sign-in</code></td>
+<td>Sign in: get-or-create the person for the validated token
+(identity link → email match → create). No body — identity comes
+from the token.</td>
+</tr>
+<tr>
+<td><code>/grant-role</code> / <code>/revoke-role</code></td>
+<td>Grant / revoke a role (Organiser, Competitor); revoking the last
+Organiser is refused.</td>
+</tr>
+<tr>
+<td><code>/configure-capture-policy</code></td>
+<td>Set who may enter scores for a competition (see §3).</td>
+</tr>
+<tr>
+<td><code>/bind-identity</code></td>
+<td>Bind an external identity (human or machine) to a person.</td>
 </tr>
 <tr>
 <td><code>/publish-class-definition</code></td>
@@ -463,6 +489,10 @@ required.</td>
 <td>Person read by <code>id</code>.</td>
 </tr>
 <tr>
+<td><code>/who-am-i</code></td>
+<td>The signed-in caller's PersonId + roles (see §3).</td>
+</tr>
+<tr>
 <td><code>/class-definitions</code></td>
 <td>List published class models.</td>
 </tr>
@@ -484,7 +514,7 @@ pairwise co-occurrence).</td>
 <td>The audit view: every event on the competition stream plus each
 entry stream — version, name, human summary;
 <code>&amp;includePayload=true</code> adds the full record (see
-§7.5).</td>
+§8.5).</td>
 </tr>
 <tr>
 <td><code>/entries</code></td>
@@ -523,8 +553,148 @@ prescribed-draw).</td>
 </tbody>
 </table>
 <hr />
+<h2 id="3-authentication-amp-authorisation">3. Authentication &amp;
+authorisation</h2>
+<p>Every call carries a <strong>bearer JWT</strong> in the
+<code>Authorization</code> header. The token says <em>which</em> identity
+is calling (<code>sub</code>, <code>email</code>); who that identity
+<em>is to SoarScore</em> (a <code>PersonId</code> and its roles) is
+resolved from the event-store read model on every request. Roles never
+live in tokens — a grant or revoke takes effect on the caller's next
+request, with no token-refresh dance.</p>
+<p><strong>401</strong> = no/invalid token (anonymous, expired, wrong
+audience). <strong>403</strong> = a valid identity, refused by policy.
+Both are ProblemDetails with a stable <code>title</code> code, exactly
+like every other refusal — branch on the code.</p>
+<h3 id="3-auth-error-codes">Error codes</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>auth.notAuthenticated</code></td>
+<td><strong>401</strong></td>
+<td>No token, an invalid/expired one, or a <code>sub</code> that names
+no identity. Get a valid token and retry.</td>
+</tr>
+<tr>
+<td><code>auth.forbidden</code></td>
+<td><strong>403</strong></td>
+<td>Authenticated, but this command needs a role the person does not
+hold.</td>
+</tr>
+<tr>
+<td><code>auth.capturePolicy.denied</code></td>
+<td><strong>403</strong></td>
+<td>The competition's capture policy does not admit this person as a
+scorer.</td>
+</tr>
+<tr>
+<td><code>auth.signIn.emailNotVerified</code></td>
+<td><strong>403</strong></td>
+<td>The token's <code>email</code> claim is present but not verified, so
+sign-in refuses to match or create a person on it. Fix the address at
+the identity provider and get a fresh token.</td>
+</tr>
+<tr>
+<td><code>auth.policyMissing</code></td>
+<td><strong>500</strong></td>
+<td>A fail-closed bug alarm (a command type with no policy) — you cannot
+work around it; report it.</td>
+</tr>
+<tr>
+<td><code>person.lastOrganiser</code></td>
+<td><strong>409</strong></td>
+<td>Refusing to revoke the only Organiser — no one would be left able
+to grant roles back.</td>
+</tr>
+<tr>
+<td><code>person.roleAlreadyHeld</code></td>
+<td><strong>409</strong></td>
+<td>Granting a role the person already holds.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-getting-a-token">Getting a token</h3>
+<ol type="1">
+<li><strong>SPA / BFF</strong>: redirect the user to the identity
+provider (Auth0), passing this API's identifier as the
+<code>audience</code>. The API validates the resulting JWT and never
+sees a password or a client secret.</li>
+<li><strong>Swagger UI</strong>: the <code>/swagger</code> page's
+<strong>Authorize</strong> button takes a pasted bearer token and applies
+it to every "try it out" call. Under a mock-mode deployment the persona
+tokens printed at startup are exactly what to paste.</li>
+<li><strong>Machine clients</strong>: the client-credentials grant
+against the tenant domain. The token's <code>sub</code> is the client id
+with <strong>no <code>|</code> separator</strong> — the client itself is
+the actor; there is no user delegation for machine tokens.</li>
+</ol>
+<pre class="http"><code>Authorization: Bearer &lt;token&gt;</code></pre>
+<p>Two sub shapes arrive at the API and both resolve through the same
+rule: <code>sub</code> containing <code>|</code> is an interactive user
+(<code>provider|subject</code>, e.g. <code>mock|pete</code>); a
+<code>sub</code> without one is a machine actor (provider
+<code>client-credentials</code>, subject = the client id).</p>
+<h3 id="3-actor-vocabulary">Actor vocabulary</h3>
+<ul>
+<li><strong>Roles</strong>: <code>Competitor</code> and
+<code>Organiser</code>, granted and revoked by an organiser
+(<code>/grant-role</code>, <code>/revoke-role</code>). Organiser can do
+everything; the last Organiser cannot be revoked. Who a person played at
+a contest (CD, scorer) is unrelated to what they may call.</li>
+<li><strong>Capture policy</strong> — per-competition configuration
+naming who may enter scores: <code>OrganisersOnly</code> (the default),
+<code>AnyRegisteredPerson</code>, or an explicit
+<code>AllowList</code> of people. An organiser always passes; the policy
+is reconfigurable mid-contest via
+<code>/configure-capture-policy</code>, and it gates <em>who may
+enter</em>, never <em>what has been entered</em> (NFR-4).</li>
+<li><strong><code>POST /link-sign-in</code></strong> — sign-in is
+get-or-create, and idempotent: identity link found → that person; else a
+person registered under the token's email → the identity links to that
+person; else the person is created from the token claims. Deployment
+config may list bootstrap emails
+(<code>Soarscore:Auth:BootstrapOrganisers</code>) whose holders land as
+Organisers on first sign-in. Every email-born decision — email-matched
+linking, creation, and the bootstrap list — requires the identity
+provider to vouch for the address (a verified <code>email</code>
+claim); an unverified one is refused with
+<code>auth.signIn.emailNotVerified</code>.</li>
+<li><strong><code>GET /who-am-i</code></strong> — resolves the caller's
+PersonId + roles. The one read a UI needs before rendering anything
+role-dependent: the token cannot tell you the PersonId.</li>
+</ul>
+<h3 id="3-integrator-recipe-m2m">Integrator recipe (M2M)</h3>
+<ol type="1">
+<li>Register the client on the identity-provider tenant (a machine
+application).</li>
+<li>Mint a client-credentials token (audience = this API's
+identifier).</li>
+<li>Have an organiser register the machine as a person
+(<code>POST /register-person</code> — "Field clock rig") and bind the
+identity: <code>POST /bind-identity</code> with provider
+<code>client-credentials</code> and subject = the client id.</li>
+<li>Allow-list that person on the competition:
+<code>POST /configure-capture-policy</code>, mode
+<code>AllowList</code>.</li>
+<li>Capture: <code>/open-entry</code> → <code>/open-flight</code> →
+<code>/capture-measurement</code> as the client. Results reads
+(<code>Authenticated</code> queries) need nothing beyond the token.</li>
+</ol>
+<blockquote>
+<p><strong>No scopes.</strong> Authority is competition configuration
+plus roles, never token claims — a client's reach is decided
+organiser-side and takes effect on its next request.</p>
+</blockquote>
+<hr />
 <h2
-id="3-use-case-1-ndc-organiser--scores-on-paper-entered-afterwards">3.
+id="4-use-case-1-ndc-organiser--scores-on-paper-entered-afterwards">4.
 Use-case 1: NDC organiser — scores on paper, entered afterwards</h2>
 <p>The whole competition ran at the club field on paper. The system is
 used <strong>retrospectively</strong> to compute and publish results.
@@ -660,7 +830,7 @@ and <code>metricGaps</code> name exactly what the paper still owes. It
 states facts, never a verdict — presence of gaps proves <em>not
 ready</em>; absence never proves ready.</p></li>
 <li><p><strong>Transcribed a whole round?</strong>
-<code>POST /complete-task-round</code> (see §3.10 below for the
+<code>POST /complete-task-round</code> (see §7.6 below for the
 lifecycle). Rounds may be completed out of order.</p></li>
 <li><p><strong>Read results at any point</strong> — provisional
 leaderboards are scored on what's present:
@@ -685,13 +855,13 @@ retrospective entry</h3>
 <code>sequence</code> — gaps are legal, duplicates are not
 (<code>openFlight.duplicateSequence</code>).</li>
 <li>If the paper draw was mis-transcribed and nobody has flown against
-it, see §4.9 (reject + re-prescribe). <code>prescribe-draw</code>
+it, see §5.9 (reject + re-prescribe). <code>prescribe-draw</code>
 requires <strong>no live phase</strong>, and rejection removes the phase
 entirely — re-prescribe with no other edit.</li>
 </ul>
 <hr />
 <h2
-id="4-use-case-2-national--international-organiser--set-up-in-advance-run-live">4.
+id="5-use-case-2-national--international-organiser--set-up-in-advance-run-live">5.
 Use-case 2: National / international organiser — set up in advance, run
 live</h2>
 <p>The competition is created days or weeks before the event; scores
@@ -898,7 +1068,7 @@ teams) and freezes the declaration
 <code>declared</code>).</li>
 </ol>
 <hr />
-<h2 id="5-use-case-3-import-a-realised-draw-from-another-system">5.
+<h2 id="6-use-case-3-import-a-realised-draw-from-another-system">6.
 Use-case 3: Import a realised draw from another system</h2>
 <p>When migrating mid-stream from Gliderscore or a spreadsheet — or an
 event ran day one outside the system — the paper/other-system draw is
@@ -909,16 +1079,16 @@ check warnings. The log preserves the provenance
 (<code>PrescribedBy</code>).</p>
 <p>The same pattern covers <strong>re-flights declared on
 paper</strong>: <code>append-reflight-group</code> with the members
-(§6.3), entries opened with role
+(§7.3), entries opened with role
 <code>Entitled</code>/<code>Filler</code>.</p>
 <hr />
-<h2 id="6-use-case-4-exceptions-to-the-normal-running">6. Use-case 4:
+<h2 id="7-use-case-4-exceptions-to-the-normal-running">7. Use-case 4:
 Exceptions to the normal running</h2>
 <p>Read §1 "no imposed ordering" first: everything below is legal
 whenever the fact is known, including after round completion or
 finalisation. The log is always the audit trail; nothing here is gated
 on anything being current.</p>
-<h3 id="61-withdrawal-post-withdraw-competitor">6.1 Withdrawal
+<h3 id="71-withdrawal-post-withdraw-competitor">7.1 Withdrawal
 (<code>POST /withdraw-competitor</code>)</h3>
 <p>Legal <strong>any time</strong> — including after draw acceptance and
 after finalisation. Effects: no new entries
@@ -927,7 +1097,7 @@ fields and reflight groups; spots read as vacant; completeness
 "expected" drops by one. <strong>Existing entries keep scoring</strong>
 — past scores are not touched. They can still be penalised and receive
 rulings/outcomes. Cannot be re-added to team/protection memberships.</p>
-<h3 id="62-annul-an-entry-post-annul-entry">6.2 Annul an entry
+<h3 id="72-annul-an-entry-post-annul-entry">7.2 Annul an entry
 (<code>POST /annul-entry</code>)</h3>
 <p><code>reason</code> + <code>by</code> required. The entry becomes a
 <strong>write dead-end</strong> — every further command on it fails
@@ -937,7 +1107,7 @@ excluded from normalisation. The "second attempt" is a
 Original never blocks). Re-annulment is allowed (jury revises; fold
 overwrites) — there is deliberately no un-annul.</p>
 <h3
-id="63-re-flights-append-reflight-group--assign-group-spots--open-entry--ruling">6.3
+id="73-re-flights-append-reflight-group--assign-group-spots--open-entry--ruling">7.3
 Re-flights (<code>/append-reflight-group</code> →
 <code>/assign-group-spots</code> → <code>/open-entry</code> →
 ruling)</h3>
@@ -1009,7 +1179,7 @@ to supersede (last-logged wins). If the class is silent and
 <code>score.reflightRequiresRuling</code> — that refusal is the designed
 prompt to the CD.</li>
 </ol>
-<h3 id="64-penalties-mis-behaviour-after-the-fact">6.4 Penalties
+<h3 id="74-penalties-mis-behaviour-after-the-fact">7.4 Penalties
 (mis-behaviour after the fact)</h3>
 <pre class="http"><code>POST /record-entry-penalty          (scope: Flight or Entry)
 POST /record-competition-penalty    (scope: TaskRound or Competition; competitorRef required)</code></pre>
@@ -1034,13 +1204,13 @@ score is still declared.</li>
 <li>No finalisation gate, no withdrawn check — the protest-after-contest
 case is the designed one.</li>
 </ul>
-<h3 id="65-pending-ties">6.5 Pending ties</h3>
+<h3 id="75-pending-ties">7.5 Pending ties</h3>
 <p>See use-case 2 Phase B step 4. Pending ties <strong>gate
 nothing</strong> — shared places are already assigned and the
 leaderboard is readable while a fly-off is pending. An
 <code>EqualPlaces</code> directive is settled (the shared place
 <em>is</em> the outcome) and never surfaces pending.</p>
-<h3 id="66-round-lifecycle--late-scores">6.6 Round lifecycle &amp; late
+<h3 id="76-round-lifecycle--late-scores">7.6 Round lifecycle &amp; late
 scores</h3>
 <pre><code>Drawn ──complete-task-round──&gt; Complete
 Drawn ──annul-task-round────&gt; Annulled
@@ -1060,7 +1230,7 @@ never reconcile it. There is <strong>no re-finalise today</strong>.</li>
 <li>No cross-round ordering check: rounds may complete out of order, or
 not at all.</li>
 </ul>
-<h3 id="67-mis-keyed-score-correction-amend-measurement">6.7 Mis-keyed
+<h3 id="77-mis-keyed-score-correction-amend-measurement">7.7 Mis-keyed
 score correction (<code>/amend-measurement</code>)</h3>
 <p>Capture is first-value-only
 (<code>captureMeasurement.alreadyCaptured</code>); every correction is
@@ -1073,7 +1243,7 @@ correction costs a re-query — nothing else. Launch timestamps are
 deliberately uncorrectable because no rule wants a launch instant;
 timing validity is class flag data, corrected by amendment like any
 measurement.</p>
-<h3 id="68-instrument-declaration-corrections">6.8 Instrument
+<h3 id="78-instrument-declaration-corrections">7.8 Instrument
 declaration corrections</h3>
 <p><code>POST /correct-instrument-declaration</code> — only after a
 declaration; whole-set replacement; <code>reason</code> required.
@@ -1081,7 +1251,7 @@ Retroactive by re-derivation: the leaderboard is re-derived per query
 from the declaration in force; the log keeps every declaration, so the
 audit is independent. <strong>Finalisation freezes composed scores from
 the declaration in force at finalisation time.</strong></p>
-<h3 id="69-draw-exceptions-acceptrejectredraw">6.9 Draw exceptions
+<h3 id="79-draw-exceptions-acceptrejectredraw">7.9 Draw exceptions
 (accept/reject/redraw)</h3>
 <pre class="http"><code>POST /reject-draw {&quot;competitionRef&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;reason&quot;:&quot;Group sizes wrong&quot;}
 POST /draw-phase {&quot;competitionId&quot;:{&quot;value&quot;:&quot;…&quot;},&quot;rounds&quot;:4,&quot;taskRefs&quot;:[&quot;F5J&quot;]}
@@ -1104,7 +1274,7 @@ rejected, read the audit view
 draw-history surface remains deferred — see
 <code>deferred-decisions.md</code>.)</li>
 </ul>
-<h3 id="610-score-read-exceptions">6.10 Score-read exceptions</h3>
+<h3 id="710-score-read-exceptions">7.10 Score-read exceptions</h3>
 <p>A few refusals exist <strong>on read</strong> by design; branch on
 the code:</p>
 <table>
@@ -1138,14 +1308,14 @@ destination.</td>
 </tbody>
 </table>
 <hr />
-<h2 id="7-use-case-5-building-a-ui-on-top-of-the-api">7. Use-case 5:
+<h2 id="8-use-case-5-building-a-ui-on-top-of-the-api">8. Use-case 5:
 Building a UI on top of the API</h2>
 <p>The API is deliberately small and intent-shaped: your UI drives it as
 a sequence of verbs, and all aggregation lives server-side. There are no
 'class-specific' branches to write — variance between classes is inside
 the published class model, and your UI reads the class definition to
 learn what to display.</p>
-<h3 id="71-read-the-class-definition-to-render-capture-forms">7.1 Read
+<h3 id="81-read-the-class-definition-to-render-capture-forms">8.1 Read
 the class definition to render capture forms</h3>
 <p><code>GET /class-definition?contentHash=&lt;hash&gt;</code> returns
 the class model: <code>parameters[]</code> (what the CD binds and what
@@ -1162,7 +1332,7 @@ its <code>MeasuredKind</code> (<code>Number</code> → numeric input;
 task; the server refuses it. Flag metrics (e.g.
 <code>launchedInWorkingTime</code>) render as validity checkboxes, not
 numbers.</p>
-<h3 id="72-screen-to-screen-map">7.2 Screen-to-screen map</h3>
+<h3 id="82-screen-to-screen-map">8.2 Screen-to-screen map</h3>
 <table>
 <thead>
 <tr>
@@ -1231,7 +1401,7 @@ commands</td>
 </tr>
 </tbody>
 </table>
-<h3 id="73-wire-behaviour-your-ui-must-honour">7.3 Wire behaviour your
+<h3 id="83-wire-behaviour-your-ui-must-honour">8.3 Wire behaviour your
 UI must honour</h3>
 <ol type="1">
 <li><strong>Never gate capture on anything temporal</strong> (NFR-4).
@@ -1283,14 +1453,14 @@ derive sequence positionally.</li>
 after a post-finalisation correction the two diverge — show the
 divergence (it is by design), never reconcile.</li>
 </ol>
-<h3 id="74-minimal-viable-ui">7.4 Minimal viable UI</h3>
+<h3 id="84-minimal-viable-ui">8.4 Minimal viable UI</h3>
 <p>Smallest viable scorer: draw review → per-group capture grid → round
 control → leaderboard. The capture grid polls
 <code>/task-round-recording</code> for gaps and posts
 <code>/open-entry</code> → <code>/open-flight</code> →
 <code>/capture-measurement</code> per gap. Everything else (CD console,
 teams, instruments) is optional and additive.</p>
-<h3 id="75-the-audit-view">7.5 The audit view</h3>
+<h3 id="85-the-audit-view">8.5 The audit view</h3>
 <p><code>GET /competition-event-log?id=&lt;guid&gt;</code> returns the
 immutable event log for a competition. The competition stream comes
 first, then every entry stream in contest order, <strong>grouped per
@@ -1316,11 +1486,18 @@ and task-round ("Bob Brown (#2) — task-round 0.1.2"); the competition
 stream's label is null. Unknown competition id →
 <code>competition.notFound</code> (404). Typical uses: a CD console
 "history" tab, a UI's debugging view of "why is the leaderboard like
-this", or reading back the reason behind a rejected draw (§6.9).</p>
+this", or reading back the reason behind a rejected draw (§7.9).</p>
 <hr />
-<h2 id="8-quick-reference-the-canonical-happy-path">8. Quick reference:
+<h2 id="9-quick-reference-the-canonical-happy-path">9. Quick reference:
 the canonical happy path</h2>
-<pre class="http"><code># Class (idempotent)
+<pre class="http"><code># Authenticate first — every call carries a bearer token (see §3)
+POST /link-sign-in                       → PersonId (get-or-create at sign-in)
+GET  /who-am-i                           → PersonId + roles
+POST /grant-role / /revoke-role          (organiser)
+POST /bind-identity                      (humans and machines)
+POST /configure-capture-policy           (who may enter scores — see §3)
+
+# Class (idempotent)
 POST /publish-class-definition          → contentHash
 
 # Setup

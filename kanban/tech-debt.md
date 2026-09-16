@@ -3,6 +3,31 @@
 Residual technical debt identified or intentionally deferred while implementing a feature.
 See CLAUDE.md house-keeping rule 5.
 
+- [x] Repo-root finders fail in linked worktrees. Every corpus lookup walked up
+  from `AppContext.BaseDirectory` testing `Directory.Exists(<root>/.git)`, but a
+  worktree's `.git` is a *file* (gitdir pointer), so the walk ran past the
+  worktree root to `/` — the documented pre-existing baseline of 9
+  `CatalogueDrawPropertyTests` + 1 `SeedCorpusIngestionTests` failures (and 6
+  BDD `SeedDefinitionLoader` failures per store) whenever tests ran from any
+  linked worktree. Found again — this time as a hard blocker, not a baseline —
+  on `api-cors` (2026-09-14), the first story worked in a worktree by design.
+  **Discharged by `kanban/completed/cors-for-ndcscore-spa.md` WI-4**: all five
+  finders (`AcceptanceFixture.cs`, `SeedingTheClassCatalogueSteps.cs`,
+  `CatalogueDrawPropertyTests.cs`, `SeedCorpusIngestionTests.cs`,
+  `ClassCorpusSeederTests.cs`) plus `tools/Soarscore.SeedData/Program.cs`'s
+  `FindRepoRoot` now accept `.git` as file-or-directory; every suite passes
+  green from the worktree host, no baseline failures remain. The duplication
+  of the helper itself is still debt: one `FindSeedJsonDirectory` shared by
+  the test projects would prevent the next divergence — see the separate
+  checklist entry below.
+- [ ] `FindSeedJsonDirectory` is copy-pasted across five test/tool sites.
+  Fixed for worktrees simultaneously by
+  `kanban/completed/cors-for-ndcscore-spa.md` WI-4, but as five separate
+  edits to byte-identical helpers (`AcceptanceFixture.cs`,
+  `SeedingTheClassCatalogueSteps.cs`, `CatalogueDrawPropertyTests.cs`,
+  `SeedCorpusIngestionTests.cs`, `ClassCorpusSeederTests.cs`). Consolidate
+  into one shared helper (e.g. in a common test-support package or the
+  SeedData tool) the next time any of them needs changing.
 - [x] Duplicate `TaskRoundState` enums. Two public enums share the name with different
   members: `Soarscore.Domain.Competitions` (`Competition.cs:105` — `Drawn`, `InProgress`,
   `Complete`, `Annulled`) and `Soarscore.Domain.Scoring` (`PhaseAggregator.cs:34` —
@@ -257,3 +282,35 @@ See CLAUDE.md house-keeping rule 5.
   effective together — otherwise a declaration could pass against a table
   capture never sees. Found 2026-09-09 during
   `kanban/completed/tape-points-landing-seeds.md` WI-3.
+- [ ] The last-organiser guard's read-model count is race-tolerant.
+  `kanban/completed/authentication-and-authorisation.md` WI-7.
+  `RevokeRoleHandler` guards the last Organiser with
+  `IPeopleQuery.CountByRoleAsync(Organiser) == 1`
+  (`src/Soarscore.Application/Commands/People/RevokeRole.cs:51`) — a
+  cross-stream read guarding a UX deadlock, not an aggregate invariant (the
+  `BindParameter` `roundHasEntries` precedent). Two concurrent revokes of the
+  last two organisers can both read a count above one and both succeed, or a
+  concurrent grant can move the count under the second revoke so it fails
+  oddly (denied despite one organiser being left). Tolerated and documented in
+  the handler's header comment; the alternative — a read-check-write arbiter —
+  is exactly what LADR-0001 §4.4 forbids. Revisit only if the race is ever
+  witnessed in practice.
+- [ ] `PersonSummary`'s positional append ripples into fixtures.
+  `kanban/completed/authentication-and-authorisation.md` WI-6. `Roles` was
+  appended positionally to `PersonSummary`, so every fixture constructing
+  summaries positionally gained an argument — compile-time enforced (the
+  compiler lists the sites), but noted as the ripple class: each future
+  positional append to a read-model summary repeats it. If a summary grows
+  often, consider a named construction helper for fixtures before a third
+  append.
+- [ ] `CountByRoleAsync` is an in-memory count over the whole people read
+  model. `kanban/completed/authentication-and-authorisation.md` WI-7.
+  `DocumentPeopleQuery.CountByRoleAsync`
+  (`src/Soarscore.Infrastructure/People/DocumentPeopleQuery.cs:112`) loads
+  every `PersonSummary` and counts `Roles.Contains(role)` client-side —
+  deliberate, because roles fold as a JSON array and counting store-side would
+  ask each backend to translate JSON-collection containment (the per-store
+  divergence the in-memory pattern exists to avoid, per the adapter's doc
+  comment). Club-scale fine (≤ 20 pilots, a race-tolerant UX guard, not a hot
+  path); revisit if the people population grows past club scale or the count
+  ever leaves the RevokeRole path.

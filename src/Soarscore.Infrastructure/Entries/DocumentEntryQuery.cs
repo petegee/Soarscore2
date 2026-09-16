@@ -41,6 +41,7 @@
 using JasperFx.Events.Documents;
 using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 
 namespace Soarscore.Infrastructure.Entries;
 
@@ -53,7 +54,8 @@ public sealed class DocumentEntryQuery(IDocumentSessionFactory sessions) : IEntr
         int? taskRoundOrdinal,
         GroupId? groupRef,
         CompetitorId? competitorRef,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        EntryId? entryRef = null)
     {
         await using var session = sessions.QuerySession();
 
@@ -62,7 +64,14 @@ public sealed class DocumentEntryQuery(IDocumentSessionFactory sessions) : IEntr
         // Only LINQ-to-Objects is applied to it below, so nothing else moves.
         var all = await session.Query<EntrySummary>().ToListAsync(cancellationToken);
 
-        IEnumerable<EntrySummary> results = all.Where(s => s.CompetitionRef == competitionRef);
+        // entryRef (authentication-and-authorisation.md WI-5) is a complete
+        // key on its own — EntryId is globally unique — so when it is
+        // supplied, competitionRef is not applied: the capture-policy policy
+        // passes default here (it does not yet know the entry's competition)
+        // and reads CompetitionRef off the returned row. See IEntryQuery.cs.
+        IEnumerable<EntrySummary> results = entryRef is { } singleEntry
+            ? all.Where(s => s.Id == singleEntry)
+            : all.Where(s => s.CompetitionRef == competitionRef);
 
         if (phaseOrdinal is not null)
         {

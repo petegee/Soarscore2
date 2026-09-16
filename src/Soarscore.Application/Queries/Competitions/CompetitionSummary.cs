@@ -37,4 +37,13 @@ public sealed record CompetitionSummary(
     /// draw-acceptance-redraw.md D8: DrawAccepted moves the summary forward,
     /// DrawRejected walks it back to "created".)
     /// </summary>
-    string State);
+    string State,
+    /// <summary>
+    /// The competition's configured capture policy (D10,
+    /// authentication-and-authorisation.md WI-5) — positional-parameter
+    /// append, deliberately without a default: a read-model row names every
+    /// column it carries. Null until CapturePolicyConfigured arrives;
+    /// FindCapturePolicyAsync's consumers evaluate null as OrganisersOnly
+    /// (D10's safe default).
+    /// </summary>
+    CapturePolicy? CapturePolicy);

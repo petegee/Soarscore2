@@ -235,7 +235,10 @@ public static class AcceptanceFixture
     private static string FindSeedJsonDirectory()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+        // .git is a *file* (gitdir pointer) in a linked worktree — this repo
+        // works in them (e.g. SoarScore2-f3k-literal) — so accept either shape
+        // or every worktree-hosted test run fails to find the seed corpus.
+        while (directory is not null && !IsRepositoryRoot(directory.FullName))
         {
             directory = directory.Parent;
         }
@@ -244,4 +247,7 @@ public static class AcceptanceFixture
             ? throw new InvalidOperationException("Could not find the repository root from the test's base directory.")
             : Path.Combine(directory.FullName, "tools", "Soarscore.SeedData", "json");
     }
+
+    private static bool IsRepositoryRoot(string path) =>
+        Directory.Exists(Path.Combine(path, ".git")) || File.Exists(Path.Combine(path, ".git"));
 }

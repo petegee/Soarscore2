@@ -19,6 +19,16 @@ public static class Commands
         app.MapCommand<ChangePersonContactDetails, PersonId>("/change-person-contact-details");
         app.MapCommand<ChangePersonClubAffiliation, PersonId>("/change-person-club-affiliation");
 
+        // authentication-and-authorisation.md WI-9 step 7: the sign-in,
+        // role and capture-policy verbs. No body field ever carries the
+        // caller's identity — it comes from the validated token (LinkSignIn
+        // takes no body at all).
+        app.MapCommand<LinkSignIn, LinkSignInResult>("/link-sign-in");
+        app.MapCommand<GrantRole, PersonId>("/grant-role");
+        app.MapCommand<RevokeRole, PersonId>("/revoke-role");
+        app.MapCommand<ConfigureCapturePolicy, CompetitionId>("/configure-capture-policy");
+        app.MapCommand<BindIdentity, PersonId>("/bind-identity");
+
         app.MapCommand<PublishClassDefinition, string>("/publish-class-definition");
 
         app.MapCommand<CreateCompetition, CompetitionId>("/create-competition");

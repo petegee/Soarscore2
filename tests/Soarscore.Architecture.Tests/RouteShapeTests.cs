@@ -19,7 +19,12 @@ public sealed class RouteShapeTests
     [Fact]
     public void Every_endpoint_is_GET_or_POST()
     {
+        // D8 (authentication-and-authorisation.md): Production refuses every
+        // auth mode but "oidc", so the composition is built in Development —
+        // the byte-identical none-mode default — with the same fake,
+        // unreachable store connection RouteShapeTests has always used.
         IEndpointRouteBuilder app = Composition.Build([
+            "--environment=Development",
             "--Soarscore:Store=postgres",
             "--ConnectionStrings:Soarscore=Host=127.0.0.1;Port=1;Database=archtest;Username=archtest;Password=archtest",
         ]);

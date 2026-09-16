@@ -9,7 +9,8 @@
 // finalise, record a penalty, record a reflight ruling, record a tie-break
 // outcome, define scoring teams
 // and protection groups with their memberships, configure team
-// classification. Twenty-six events total, mirroring aggregate-roots.md §3's
+// classification and, since authentication-and-authorisation.md WI-4, the
+// capture policy. Twenty-seven events total, mirroring aggregate-roots.md §3's
 // mutation list one-for-one plus teams-mvp.md's seven plus
 // tape-points-landing-seeds.md WI-3's declaration pair.
 //
@@ -52,6 +53,7 @@ namespace Soarscore.Domain.Competitions;
 [JsonDerivedType(typeof(ProtectionGroupMemberAdded), "protectionGroupMemberAdded")]
 [JsonDerivedType(typeof(ProtectionGroupMemberRemoved), "protectionGroupMemberRemoved")]
 [JsonDerivedType(typeof(TeamClassificationConfigured), "teamClassificationConfigured")]
+[JsonDerivedType(typeof(CapturePolicyConfigured), "capturePolicyConfigured")]
 public abstract record CompetitionEvent : IDomainEvent
 {
     private protected CompetitionEvent() { }
@@ -299,4 +301,15 @@ public sealed record ProtectionGroupMemberRemoved(
 /// </summary>
 public sealed record TeamClassificationConfigured(
     TeamClassificationConfiguration Configuration,
+    DateTimeOffset At) : CompetitionEvent;
+
+/// <summary>
+/// Per-competition capture policy configured — authentication-and-authorisation.md
+/// WI-4 (D10). Replaced whole — last-wins, the log is the audit trail (the
+/// TeamClassificationConfigured precedent). Reconfiguration is allowed at any
+/// time, including mid-contest: it changes *who may enter*, never *what has
+/// been entered*.
+/// </summary>
+public sealed record CapturePolicyConfigured(
+    CapturePolicy Policy,
     DateTimeOffset At) : CompetitionEvent;

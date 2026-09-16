@@ -173,7 +173,11 @@ static int Depth(JsonElement element) => element.ValueKind switch
 static string FindRepoRoot()
 {
     var directory = new DirectoryInfo(AppContext.BaseDirectory);
-    while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+    // .git is a *file* (gitdir pointer) in a linked worktree — accept either
+    // shape or every worktree run needs the manual first-argument fallback.
+    while (directory is not null
+           && !(Directory.Exists(Path.Combine(directory.FullName, ".git"))
+                || File.Exists(Path.Combine(directory.FullName, ".git"))))
         directory = directory.Parent;
     return directory?.FullName
            ?? throw new InvalidOperationException("Could not find the repository root; pass it as the first argument.");

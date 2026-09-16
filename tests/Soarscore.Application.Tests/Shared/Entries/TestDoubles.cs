@@ -8,6 +8,7 @@
 using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
+using Soarscore.Domain.Entries;
 
 namespace Soarscore.Application.Tests.Shared.Entries;
 
@@ -79,31 +80,37 @@ internal sealed class FakeEntryQuery : IEntryQuery
         int? taskRoundOrdinal,
         GroupId? groupRef,
         CompetitorId? competitorRef,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        EntryId? entryRef = null)
     {
-        IEnumerable<EntrySummary> query = _entries.Where(e => e.CompetitionRef == competitionRef);
+        // entryRef (authentication-and-authorisation.md WI-5) is a complete
+        // key on its own — mirrored from IEntryQuery.cs/DocumentEntryQuery.cs
+        // so the fake and the adapter cannot drift.
+        IEnumerable<EntrySummary> query = entryRef is { } singleEntry
+            ? _entries.Where(e => e.Id == singleEntry)
+            : _entries.Where(e => e.CompetitionRef == competitionRef);
 
-        if (phaseOrdinal is { } phase)
+        if (entryRef is null && phaseOrdinal is { } phase)
         {
             query = query.Where(e => e.PhaseOrdinal == phase);
         }
 
-        if (roundOrdinal is { } round)
+        if (entryRef is null && roundOrdinal is { } round)
         {
             query = query.Where(e => e.RoundOrdinal == round);
         }
 
-        if (taskRoundOrdinal is { } taskRound)
+        if (entryRef is null && taskRoundOrdinal is { } taskRound)
         {
             query = query.Where(e => e.TaskRoundOrdinal == taskRound);
         }
 
-        if (groupRef is { } group)
+        if (entryRef is null && groupRef is { } group)
         {
             query = query.Where(e => e.GroupRef == group);
         }
 
-        if (competitorRef is { } competitor)
+        if (entryRef is null && competitorRef is { } competitor)
         {
             query = query.Where(e => e.CompetitorRef == competitor);
         }

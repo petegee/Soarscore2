@@ -8,13 +8,20 @@
 // People/Person.cs), so it is the wire shape as well as the dispatch message —
 // no separate Api-layer DTO.
 
+using Soarscore.Application.Auth;
 using Soarscore.Application.Shared.People;
 using Soarscore.Domain;
 using Soarscore.Domain.People;
 
 namespace Soarscore.Application.Queries.People;
 
-public readonly record struct GetPerson(PersonId Id) : IQuery<Person>;
+// Self-or-organiser (security review 2026-09-16, D4 deviation): the marker
+// vocabulary says "Command" but the policy reads the coordinate, query or
+// command alike — the person's own record is theirs to read.
+public readonly record struct GetPerson(PersonId Id) : IQuery<Person>, ISelfPersonCommand
+{
+    PersonId ISelfPersonCommand.PersonRef => Id;
+}
 
 public sealed class GetPersonHandler(IEventStore eventStore) : IQueryHandler<GetPerson, Person>
 {

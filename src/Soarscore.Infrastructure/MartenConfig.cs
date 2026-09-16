@@ -49,6 +49,17 @@ public static class MartenConfig
             // one invariant the whole Inline-vs-async decision rests on.
             opts.Schema.For<PersonSummary>().UniqueIndex(x => x.Email);
 
+            // authentication-and-authorisation.md WI-8 — the identity rows join the
+            // people read model (LADR-0004 §D2: not a fifth read model). The
+            // compound computed unique index on (Provider, Subject) is the D5 link
+            // arbiter, mirroring the PersonSummary.Email index above: a second
+            // person claiming an already-linked identity fails INSIDE the append
+            // transaction, the adapter translates the violation into
+            // eventStore.uniqueConstraintViolation, and LinkSignIn's bounded retry
+            // resolves on it. Multi-column form per Marten's UniqueIndex(params
+            // Expression[]) — one index over both columns, not one index each.
+            opts.Schema.For<PersonIdentityRowDocument>().UniqueIndex(x => x.Provider, x => x.Subject);
+
             // jasperfx-shared-store-contracts.md WI-5: what gets registered here is
             // the per-store shim (Marten*Projection), not the store-agnostic fold it
             // derives from — Marten's registration API wants its own IProjection
@@ -63,6 +74,12 @@ public static class MartenConfig
             // rebuild-by-name call site. Pinning it keeps the name a property of the
             // read model rather than of whichever store-specific shim is wiring it.
             opts.Projections.Add(new MartenPersonSummaryProjection(), ProjectionLifecycle.Inline, "PersonSummaryProjection");
+
+            // authentication-and-authorisation.md WI-8 — the identity rows of the
+            // people read model (LADR-0004 §D2), the read side of the (Provider,
+            // Subject) arbiter declared above. Inline with the rest so the link is
+            // readable and arbitrated in the same transaction that appended it.
+            opts.Projections.Add(new MartenPersonIdentityProjection(), ProjectionLifecycle.Inline, "PersonIdentityProjection");
 
             // WI-5 (class-definition-adoption-steel-thread-plan.md): no unique index —
             // the content hash's uniqueness is already the Marten stream key

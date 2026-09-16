@@ -11,6 +11,15 @@
        (for IDispatcher) and Infrastructure (for AddSoarscoreInfrastructure). -->
 
   <ItemGroup>
+    <!-- authentication-and-authorisation.md WI-9: bearer validation (LADR-0003's
+         one allowed new package family). -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <!-- Referenced directly because WI-9's mock seeder MINTS the persona tokens
+         (JsonWebTokenHandler), not only validates them — the same
+         "referenced where used, pinned to match" rule as Microsoft.Data.Sqlite
+         in Infrastructure. Pinned to the exact version JwtBearer 10.0.10 pulls
+         transitively. -->
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <!-- UI only — the document still comes from Microsoft.AspNetCore.OpenApi
          above (Composition.cs wires UseSwaggerUI to /openapi/v1.json). -->

@@ -103,11 +103,19 @@ classDiagram
         +string method
     }
 
+    class CapturePolicy {
+        <<value object>>
+        +CapturePolicyMode mode
+        +personId[] capturers
+    }
+
     class Person {
         <<aggregate root>>
         +id id
         +string name
         +ContactDetails contact
+        +PersonRole[] roles
+        +IdentityLink[] identities
     }
 
     class Competitor {
@@ -233,6 +241,12 @@ classDiagram
         +string membershipNumber
     }
 
+    class IdentityLink {
+        <<value object>>
+        +string provider
+        +string subject
+    }
+
     class CompetitionClass {
         <<aggregate root>>
     }
@@ -278,6 +292,19 @@ classDiagram
         Competition
     }
 
+    class PersonRole {
+        <<enumeration>>
+        Competitor
+        Organiser
+    }
+
+    class CapturePolicyMode {
+        <<enumeration>>
+        OrganisersOnly
+        AnyRegisteredPerson
+        AllowList
+    }
+
     Competition "1" *-- "1" AdoptedRules : rulebook snapshot
     Competition "1" *-- "0..*" RulesAmendment : corrections
     Competition "1" *-- "0..*" ParameterBinding : choices made
@@ -290,6 +317,7 @@ classDiagram
     Competition "1" *-- "0..*" ScoringTeamMembership : team memberships
     Competition "1" *-- "0..*" ProtectionGroupMembership : protection memberships
     Competition "1" *-- "0..1" TeamClassificationConfiguration : team classification
+    Competition "1" *-- "0..1" CapturePolicy : capture policy
     Competition "1" *-- "0..*" Competitor : field
     Competition "1" *-- "1..*" Phase : has
     Competition "1" *-- "0..*" Penalty : records
@@ -310,6 +338,7 @@ classDiagram
 
     Competitor "*" --> "1" Person : registration of
     Person "1" *-- "0..1" ClubAffiliation : club
+    Person "1" *-- "0..*" IdentityLink : identities
     Competitor "1" --> "0..1" ScoringTeamMembership : scoring-team membership
     Competitor "1" --> "0..*" ProtectionGroupMembership : protection-group memberships
     ScoringTeamMembership "*" --> "1" ScoringTeam : of
@@ -334,6 +363,8 @@ classDiagram
     note for ProtectionGroup "Draw-only meaning: it never affects scores, normalisation, or classification"
     note for ScoringTeamMembership "contributes is the contribution eligibility — false for a member who competes alongside their team without contributing to it"
     note for TeamClassificationConfiguration "Competition-level configuration; method is a token from a closed vocabulary — the MVP member is bestThreeScoreSum"
+    note for IdentityLink "Value object owned by Person: one external identity-provider account bound to exactly one Person"
+    note for CapturePolicy "Value object owned by Competition: names who may enter which scores for this competition (organisers always pass); unset evaluates as OrganisersOnly"
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
     classDef external fill:#EEEEEE,stroke:#BDBDBD,stroke-width:1px,color:#555
