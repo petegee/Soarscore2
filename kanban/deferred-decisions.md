@@ -386,6 +386,21 @@ WI-11).
   OAuth2 redirect into Swagger is front-end-shape work that belongs with the
   front-end story. Reopen if the club ever wants organiser-only ad-hoc API
   poking without a token manager.
+- **D4's "every query is `Authenticated`" is narrowed: `FindPeople` is
+  organiser-only and `GetPerson` is self-or-organiser.** **Decided 2026-09-16**
+  (owner-approved amendment during the security review of PR #1 against the
+  auth story). D4's blanket rule let any validated token read the whole roster
+  (`/people`: every pilot's name, email, phone, home city, club and roles) and
+  any person's full aggregate (`/person`: contact details, membership number,
+  and — since WI-3/WI-6 — the raw `provider|subject` identity links). With
+  open IdP signups that is effectively a public roster plus IdP-subject dump.
+  The per-message policy table now maps `FindPeople` → `OrganiserPolicy` and
+  `GetPerson` → `SelfOrOrganiserPolicy` (the S kind's own semantics — one's
+  own record is one's own to read; `GetPerson` implements
+  `ISelfPersonCommand`). `WhoAmI` and every other query stay `Authenticated`,
+  and D4's per-query public-read opt-out (e.g. a public leaderboard) remains
+  with its backlog stub. The closed story's D4 text stands as history; where
+  the two disagree, this entry is the newer decision and wins.
 
 ---
 

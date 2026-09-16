@@ -16,6 +16,11 @@ Feature: Roles
     When Tama attempts to grant FieldRig the Competitor role
     Then the response is 403 refusing with auth.forbidden
 
+  Scenario: A competitor cannot read the roster
+    Given Tama has signed in
+    When Tama reads /people
+    Then the response is 403 refusing with auth.forbidden
+
   Scenario: Revoking the last organiser is refused
     Given Nova has signed in
     When Pete revokes Nova's Organiser role

@@ -172,5 +172,5 @@ public sealed class CapturePolicySteps
             .Which.Value.Number.Should().Be((decimal)secondSequence);
     }
 
-    internal sealed record LinkSignInView(PersonId PersonId, bool PersonCreated);
+    internal sealed record LinkSignInView(PersonId PersonId);
 }

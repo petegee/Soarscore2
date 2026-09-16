@@ -125,10 +125,27 @@ public class DispatcherAuthorizationTests
         services[typeof(IAuthorizationPipeline)] = new AuthorizationPipeline(new FakeCurrentUser(), provider);
         var dispatcher = new Dispatcher(provider);
 
-        var result = await dispatcher.QueryAsync(new FindPeople(null, null), TestContext.Current.CancellationToken);
+        var result = await dispatcher.QueryAsync(new WhoAmI(), TestContext.Current.CancellationToken);
 
         result.IsFailure.Should().BeTrue();
         result.Code.Should().Be("auth.notAuthenticated");
+    }
+
+    [Fact]
+    public async Task The_roster_query_is_organiser_only()
+    {
+        // Security review 2026-09-16 (D4 deviation): FindPeople left the A kind
+        // for OrganiserPolicy — an authenticated competitor is a 403, the
+        // roster's contact details and roles are not theirs to read.
+        var services = new Dictionary<Type, object>();
+        var provider = new FakeServiceProvider(services);
+        services[typeof(IAuthorizationPipeline)] = new AuthorizationPipeline(Competitor, provider);
+        var dispatcher = new Dispatcher(provider);
+
+        var result = await dispatcher.QueryAsync(new FindPeople(null, null), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("auth.forbidden");
     }
 
     [Fact]

@@ -12,7 +12,11 @@
 //     when present, TokenValidationParameters are pinned to issuer + audience
 //     + key instead of Authority metadata retrieval — the same mechanism
 //     mock uses, which is what makes mock and WI-10's acceptance suite one
-//     thing rather than two.
+//     thing rather than two. Production is the exception (security review
+//     2026-09-16): that key's material ships in this repo
+//     (appsettings.Development.json), so validating Production tokens against
+//     it would let anyone who has read the repo mint valid "Auth0" tokens for
+//     arbitrary identities — Production refuses the combination (D8).
 //   - An unknown mode value is a config typo, thrown at boot.
 //   - Development + "none" (the default) validates to nothing — the
 //     byte-identical composition every existing test runs under.
@@ -71,6 +75,22 @@ internal sealed record AuthSettings
                 $"Soarscore:Auth:Mode is {(rawMode is null or "" ? "not set" : $"'{rawMode}'")} — "
                 + "Production refuses every mode but \"oidc\" (authentication-and-authorisation.md D8): "
                 + "a release deployment that wanted to dodge auth gets this loud crash, not a silently open or mock-keyed API.");
+        }
+
+        // Security review 2026-09-16 (H2): under "oidc" the Mock block's static
+        // SigningKey is a test/dev pinning mechanism whose material ships in
+        // this repo — validating Production tokens against it means anyone
+        // with the repo can mint arbitrary identities. Production refuses the
+        // combination; the pinned path stays legal in every other environment
+        // (the acceptance suite's).
+        if (isProduction && mode == AuthMode.Oidc
+            && !string.IsNullOrWhiteSpace(configuration["Soarscore:Auth:Mock:SigningKey"]))
+        {
+            throw new InvalidOperationException(
+                "Soarscore:Auth:Mock:SigningKey is set under mode \"oidc\" — the static key is a test/dev "
+                + "pinning mechanism whose material ships in this repo, so validating Production tokens "
+                + "against it means anyone with the repo can mint arbitrary identities. Production refuses "
+                + "it (authentication-and-authorisation.md D8, security review 2026-09-16).");
         }
 
         var bootstrap = configuration.GetSection("Soarscore:Auth:BootstrapOrganisers").Get<string[]>() ?? [];

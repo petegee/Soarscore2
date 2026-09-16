@@ -3,6 +3,11 @@
 // current-principal middleware (Composition) binds the JwtBearer-validated
 // ClaimsPrincipal to it and resolves the identity in the same pass.
 //
+// The token supplies sub/email/name plus email_verified — the last is the
+// IdP's vouching for the address, and it is the only claim beyond sub that
+// an email-born decision (D5's email-match link and create arms, D3's
+// bootstrap grant) is allowed to act on (security review 2026-09-16).
+//
 // The sub claim is parsed on the FIRST '|': "provider|subject" is an
 // interactive identity; a sub WITHOUT '|' is a client-credentials (machine)
 // token — the client itself is the actor, provider "client-credentials",
@@ -93,6 +98,13 @@ public sealed class HttpCurrentUser(IPeopleQuery peopleQuery) : ICurrentUser
     public string? Subject => subject;
 
     public string? Email => principal?.FindFirstValue("email");
+
+    // MapInboundClaims is false, so the wire claim name is "email_verified".
+    // JwtBearer surfaces claim values as strings and an IdP boolean may
+    // arrive as "True"/"true" — bool.TryParse handles both; a missing or
+    // unparseable claim reads as unverified (fail closed, security review
+    // 2026-09-16).
+    public bool EmailVerified => bool.TryParse(principal?.FindFirstValue("email_verified"), out var verified) && verified;
 
     public string? Name => principal?.FindFirstValue("name");
 

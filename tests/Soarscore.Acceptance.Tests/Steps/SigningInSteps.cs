@@ -77,6 +77,16 @@ public sealed class SigningInSteps
         _response.EnsureSuccessStatusCode();
     }
 
+    [When(@"^a caller whose token email is not verified signs in$")]
+    public async Task WhenAnUnverifiedEmailCallerSignsIn()
+    {
+        // The per-scenario newcomer identity, minted with email_verified =
+        // false: no person exists under its email, so this is the create arm
+        // the verification gate refuses (security review 2026-09-16).
+        _response = await SignInAsync(
+            TestJwt.ForIdentityWithoutVerifiedEmail(_newcomerSub, _newcomerEmail, "Aroha"));
+    }
+
     // ----------------------------------------------------------------- Then
 
     [Then(@"^the response is 401 refusing with auth\.notAuthenticated$")]
@@ -86,19 +96,22 @@ public sealed class SigningInSteps
         (await AuthApi.ProblemTitleAsync(_response)).Should().Be("auth.notAuthenticated");
     }
 
-    [Then(@"^the sign-in creates the person$")]
-    public async Task ThenTheSignInCreatesThePerson()
+    [Then(@"^the response is 403 refusing with auth\.signIn\.emailNotVerified$")]
+    public async Task ThenTheResponseIs403RefusingWithEmailNotVerified()
     {
-        var result = await AuthApi.ReadAsync<LinkSignInView>(_response!);
-        result.PersonCreated.Should().BeTrue();
-        _newcomerPersonId = result.PersonId;
+        _response!.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await AuthApi.ProblemTitleAsync(_response)).Should().Be("auth.signIn.emailNotVerified");
     }
 
-    [Then(@"^the sign-in does not create a person$")]
-    public async Task ThenTheSignInDoesNotCreateAPerson()
+    // The response carries no created/linked distinction — an account-existence
+    // oracle removed by the security review 2026-09-16; the who-am-i and
+    // "returns the same person" steps carry the identity resolution coverage.
+    [Then(@"^the sign-in returns the person$")]
+    public async Task ThenTheSignInReturnsThePerson()
     {
         var result = await AuthApi.ReadAsync<LinkSignInView>(_response!);
-        result.PersonCreated.Should().BeFalse();
+        result.PersonId.Should().NotBeNull();
+        _newcomerPersonId = result.PersonId;
     }
 
     [Then(@"^returns the same person$")]
@@ -131,7 +144,7 @@ public sealed class SigningInSteps
     }
 
     // The wire shapes — read with the server's own serialiser options.
-    private sealed record LinkSignInView(PersonId PersonId, bool PersonCreated);
+    private sealed record LinkSignInView(PersonId PersonId);
 
     private sealed record WhoAmIView(bool IsAuthenticated, PersonId? PersonId, IReadOnlyList<PersonRole> Roles, string? Name);
 }

@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Composition.cs": {
-    "mtime": 1789463584.716528,
-    "seen": 1789465892.1431541,
-    "ast_hash": "e0b3d6f26d2e35e3734869ab67741a55",
+    "mtime": 1789534520.7055702,
+    "seen": 1789535034.9508274,
+    "ast_hash": "cc552e676899d3f1bae67441e5e1954d",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Program.cs": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Routing/EndpointRouteBuilderExtensions.cs": {
-    "mtime": 1789463649.295368,
-    "seen": 1789465892.1431785,
-    "ast_hash": "7cd65d664e40f03aa5ebbd875a4693e6",
+    "mtime": 1789532308.652507,
+    "seen": 1789535034.9508655,
+    "ast_hash": "affaec70288dcea2fe8feac5b0f39378",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Soarscore.Api.csproj": {
@@ -372,9 +372,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/People/GetPerson.cs": {
-    "mtime": 1787269098.0940032,
-    "seen": 1789345393.7092688,
-    "ast_hash": "0e70ae935e0a98335c02fe2045547758",
+    "mtime": 1789533778.607144,
+    "seen": 1789535034.952366,
+    "ast_hash": "defec61c37efa8d86b461b296c6bc07d",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/People/IPeopleQuery.cs": {
@@ -4308,9 +4308,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Seeding/ClassCorpusSeederHost.cs": {
-    "mtime": 1789463767.0880759,
-    "seen": 1789465892.1431804,
-    "ast_hash": "689ca1ad014f6f09aa17a3fbeed66fc7",
+    "mtime": 1789534604.2013946,
+    "seen": 1789535034.9508672,
+    "ast_hash": "524adc9241a9194e2c522ce104f93827",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Seeding/ClassCorpusSeeder.cs": {
@@ -4368,9 +4368,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/wwwroot/integrators-guide.html": {
-    "mtime": 1789464601.6125774,
-    "seen": 1789465892.1574502,
-    "ast_hash": "d72739db175344ccd38730a369e58fb6",
+    "mtime": 1789532581.1258836,
+    "seen": 1789535034.964941,
+    "ast_hash": "be021f81d72066b885dcc7bac8be70d4",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/Competitions/EventLogSummariser.cs": {
@@ -4434,21 +4434,21 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CommandPolicyTable.cs": {
-    "mtime": 1789457706.5947354,
-    "seen": 1789458469.031844,
-    "ast_hash": "15cb7317e86097acbcd84b8edf9eac88",
+    "mtime": 1789533791.2681153,
+    "seen": 1789535034.9509637,
+    "ast_hash": "e53d66f7167044c35973b73c825a6bc0",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CommandScopes.cs": {
-    "mtime": 1789453356.5248632,
-    "seen": 1789456696.620305,
-    "ast_hash": "b43f35fe556e0c84afe33963648a43ee",
+    "mtime": 1789533803.2500877,
+    "seen": 1789535034.9509652,
+    "ast_hash": "7c8584456f18e0463ad2ea211a4af0c8",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CurrentUser.cs": {
-    "mtime": 1789457561.866769,
-    "seen": 1789458469.0318644,
-    "ast_hash": "c44721cc033da104a7729f40fe4376e5",
+    "mtime": 1789532205.6007428,
+    "seen": 1789535034.9509668,
+    "ast_hash": "da7c9cb86cacc81f5987bb7192bb1ac3",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/Policies/AuthenticatedPolicy.cs": {
@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Auth/AuthenticatedPolicyTests.cs": {
-    "mtime": 1789453788.1320164,
-    "seen": 1789456696.6271534,
-    "ast_hash": "c617697cc68fd51972cf785d945fd733",
+    "mtime": 1789533810.2530718,
+    "seen": 1789535034.9586012,
+    "ast_hash": "a7459062f1737fd98616c9cdbd3f2a8d",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Auth/CapturePolicyPolicyTests.cs": {
@@ -4506,9 +4506,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Auth/DispatcherAuthorizationTests.cs": {
-    "mtime": 1789454810.6806107,
-    "seen": 1789456696.627156,
-    "ast_hash": "732d74e01550f6d045b9d877eef5dbcc",
+    "mtime": 1789533813.8520634,
+    "seen": 1789535034.9586391,
+    "ast_hash": "fec5146adec291a451739804ec6a5fd4",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Auth/OrganiserPolicyTests.cs": {
@@ -4524,9 +4524,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Auth/TestDoubles.cs": {
-    "mtime": 1789457725.3377311,
-    "seen": 1789458469.039044,
-    "ast_hash": "680327fe9af6b3ad856754da7648f28f",
+    "mtime": 1789532413.2962675,
+    "seen": 1789535034.9586754,
+    "ast_hash": "cf3e899c3e8554f60ac691351b56d164",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Queries/People/PersonIdentityProjectionTests.cs": {
@@ -4596,9 +4596,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/People/LinkSignIn.cs": {
-    "mtime": 1789458099.1096444,
-    "seen": 1789458469.0326736,
-    "ast_hash": "d579cd40d17617569cce47e3bc1d95da",
+    "mtime": 1789534064.8115299,
+    "seen": 1789535034.951824,
+    "ast_hash": "387d293f5c0299762c60ed1377fa29b5",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/People/RevokeRole.cs": {
@@ -4626,9 +4626,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/People/LinkSignInHandlerTests.cs": {
-    "mtime": 1789458190.5716233,
-    "seen": 1789458469.0396595,
-    "ast_hash": "cca67b98559fbff5e99de287a29d2fdf",
+    "mtime": 1789534227.766187,
+    "seen": 1789535034.9593463,
+    "ast_hash": "37c7be6b1288fe3a720bbc4ed67c9a83",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/People/RoleCommandsHandlerTests.cs": {
@@ -4656,9 +4656,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/AuthSettings.cs": {
-    "mtime": 1789463936.0707326,
-    "seen": 1789465892.1431458,
-    "ast_hash": "9da086bed2b0e3861a76c8355d30a7c7",
+    "mtime": 1789533146.132591,
+    "seen": 1789535034.9507601,
+    "ast_hash": "4b21323aa100d11beec09772bc70c2f7",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/BearerSecurityScheme.cs": {
@@ -4668,9 +4668,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/HttpCurrentUser.cs": {
-    "mtime": 1789463402.9379752,
-    "seen": 1789465892.1431482,
-    "ast_hash": "6b4aa793547a35e4a51798e359382de2",
+    "mtime": 1789532231.0276847,
+    "seen": 1789535034.9507828,
+    "ast_hash": "66d95d509514949f92f4f43d1b37ed8e",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/MockAuthOptions.cs": {
@@ -4680,21 +4680,21 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/MockPersonaSeederHost.cs": {
-    "mtime": 1789463889.3950381,
-    "seen": 1789465892.1431499,
-    "ast_hash": "642650b8a525530c60f69c960335d34f",
+    "mtime": 1789534624.2513523,
+    "seen": 1789535034.9508028,
+    "ast_hash": "36e4dbceea0bbc4fae47652acf1ee5e8",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/MockTokens.cs": {
-    "mtime": 1789463380.7250295,
-    "seen": 1789465892.1431503,
-    "ast_hash": "2cda54424d2c4a30e67a01b884979a9a",
+    "mtime": 1789532329.8704584,
+    "seen": 1789535034.9508042,
+    "ast_hash": "64e58c1fb25273655a10ffee238134ff",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/RequestCaller.cs": {
-    "mtime": 1789463425.2419207,
-    "seen": 1789465892.143151,
-    "ast_hash": "d91c05f8770fbf59db28d0e83e288239",
+    "mtime": 1789534456.0857062,
+    "seen": 1789535034.9508052,
+    "ast_hash": "4747b4730dd4011641b686141720206a",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/appsettings.Development.json": {
@@ -4704,9 +4704,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Architecture.Tests/CompositionGuardTests.cs": {
-    "mtime": 1789464803.80155,
-    "seen": 1789465892.1527052,
-    "ast_hash": "3fd62009b774216f0b4bfca36a2c136d",
+    "mtime": 1789533266.9293146,
+    "seen": 1789535034.9600403,
+    "ast_hash": "6998b0943682f55794e7c1ae490271a9",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Parallelism.cs": {
@@ -4716,9 +4716,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/CapturePolicySteps.cs": {
-    "mtime": 1789511816.4415698,
-    "seen": 1789512819.2640536,
-    "ast_hash": "aab263b42350a7b820326d72f9701e3d",
+    "mtime": 1789534134.687383,
+    "seen": 1789535034.9579554,
+    "ast_hash": "519e05557ceda6ea9c81d33c8a1f1eab",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/IntegrationsSteps.cs": {
@@ -4728,15 +4728,15 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/RolesSteps.cs": {
-    "mtime": 1789511557.3513756,
-    "seen": 1789512819.2642963,
-    "ast_hash": "5f84ea938ca14e943068637ed8f17cfb",
+    "mtime": 1789534125.3864024,
+    "seen": 1789535034.95821,
+    "ast_hash": "26fb11f16be1231623012dcf9db802b2",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/SigningInSteps.cs": {
-    "mtime": 1789511627.636535,
-    "seen": 1789512819.2643685,
-    "ast_hash": "b65a1d16a66e26bfdcc75e395d67d910",
+    "mtime": 1789534209.4992254,
+    "seen": 1789535034.9582825,
+    "ast_hash": "27a93b47a64f3ac4d97a54132caa1d5c",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/AuthAcceptanceFixture.cs": {
@@ -4758,9 +4758,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/TestJwt.cs": {
-    "mtime": 1789512133.8046834,
-    "seen": 1789512819.264644,
-    "ast_hash": "fd07c678e8b129d2898a3141a55b05ff",
+    "mtime": 1789532365.074378,
+    "seen": 1789535034.9586003,
+    "ast_hash": "44903355af98945f001cfaa72f156db3",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Auth/AuthorizationPipelinePropertyTests.cs": {

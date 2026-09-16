@@ -28,6 +28,15 @@ public interface ICurrentUser
     // roles-never-live-in-tokens rule.
     string? Name { get; }
 
+    // Security review 2026-09-16: the port's email-born decisions — D5's
+    // email-match link arm and create arm in LinkSignIn, and D3's bootstrap
+    // grant on the config-listed emails — act on the token's email, so the
+    // IdP must vouch for the address (its email_verified claim). Roles and
+    // identity never come from claims, but email-matching does, and an
+    // unverified email is an attacker-chosen string: anyone can register it
+    // at the IdP and present it as someone else's address.
+    bool EmailVerified { get; }
+
     PersonId? PersonId { get; }    // null until linked
 
     IReadOnlyList<PersonRole> Roles { get; }
@@ -56,6 +65,10 @@ public sealed record SystemCurrentUser : ICurrentUser
 
     public string? Name => null;
 
+    // No email-born decisions run as the system actor, but it is not an
+    // attacker either — there is no unverified claim to distrust.
+    public bool EmailVerified => true;
+
     public PersonId? PersonId => null;
 
     public IReadOnlyList<PersonRole> Roles { get; init; } = [PersonRole.Organiser];
@@ -82,6 +95,8 @@ public sealed record AnonymousCurrentUser : ICurrentUser
     public string? Email => null;
 
     public string? Name => null;
+
+    public bool EmailVerified => false;
 
     public PersonId? PersonId => null;
 

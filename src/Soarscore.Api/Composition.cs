@@ -179,8 +179,9 @@ public static class Composition
         {
             // D2: one HttpCurrentUser per request, bound by the middleware
             // below. RequestCaller is the per-scope carrier — its comment
-            // explains the indirection (the seeder hosts' scopes never run
-            // the middleware and must keep the system actor).
+            // explains the indirection (its default fails closed to an
+            // unauthenticated actor; the seeder hosts bind the system actor
+            // explicitly).
             builder.Services.AddScoped<HttpCurrentUser>();
             builder.Services.AddScoped<RequestCaller>();
             builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<RequestCaller>().User);

@@ -1,10 +1,13 @@
 // authentication-and-authorisation.md WI-10 — the acceptance suite's token
 // minter (D11's "TestJwt" helper): HS256 against the same static signing key
 // and issuer the mock-mode host validates with, so the suite and the shipped
-// mock path are one mechanism. Only sub/email/name ride the token — roles
-// never do (D2), exactly the Api's own MockTokens shape. People carry
-// sub = "mock|<slug>" (matching the seeded identity link); the machine actor
-// carries a bare client id with no | — D12's client-credentials rule.
+// mock path are one mechanism. Only sub/email/name/email_verified ride the
+// token — roles never do (D2), exactly the Api's own MockTokens shape.
+// email_verified is minted true so every persona exercises the verified path
+// the email-born decisions require; ForIdentityWithoutVerifiedEmail mints the
+// unverified shape the security review of 2026-09-16 gate refuses. People
+// carry sub = "mock|<slug>" (matching the seeded identity link); the machine
+// actor carries a bare client id with no | — D12's client-credentials rule.
 //
 // MockAuthOptions.Issuer is internal to the Api, so the one string it pins is
 // restated here and both files say so — WI-9's MockAuthOptions comment
@@ -59,18 +62,29 @@ public static class TestJwt
     public static string ForSecondProvider(AuthPersona persona) =>
         Mint($"google-oauth2|{persona.Slug}-alt", persona.Email, persona.Name);
 
+    /// <summary>
+    /// A token whose email claim is present but NOT verified (security review
+    /// 2026-09-16): the IdP has not vouched for the address, so every
+    /// email-born decision — email-matched linking, creation, the bootstrap
+    /// grant — must refuse it with auth.signIn.emailNotVerified.
+    /// </summary>
+    public static string ForIdentityWithoutVerifiedEmail(string sub, string? email, string? name) =>
+        Mint(sub, email, name, emailVerified: false);
+
     public static string ForMachine() => Mint(AuthActors.MachineClientId, null, AuthActors.MachineClientId);
 
     /// <summary>A machine token for an ad-hoc client id — sub without | (D12).</summary>
     public static string ForMachine(string clientId) => Mint(clientId, null, clientId);
 
-    private static string Mint(string sub, string? email, string? name)
+    private static string Mint(string sub, string? email, string? name, bool emailVerified = true)
     {
         var claims = new List<Claim> { new("sub", sub) };
         if (email is not null)
         {
             claims.Add(new Claim("email", email));
         }
+
+        claims.Add(new Claim("email_verified", emailVerified ? "true" : "false"));
 
         if (name is not null)
         {

@@ -1,9 +1,9 @@
 // Marker interfaces carrying the coordinates the per-command policies need —
 // authentication-and-authorisation.md §Per-command policy table. Implemented
-// explicitly by the existing command records (no property renames): where a
-// record's own coordinate already has the marker's name (OpenEntry's
+// explicitly by the existing command and query records (no property renames):
+// where a record's own coordinate already has the marker's name (OpenEntry's
 // CompetitionRef, the entry commands' EntryRef) the interface is satisfied
-// implicitly; where it differs (the person commands' Id) a one-line explicit
+// implicitly; where it differs (the person messages' Id) a one-line explicit
 // implementation bridges the vocabulary. SelfOrOrganiserPolicy reads
 // ISelfPersonCommand; CapturePolicyPolicy reads the other two (D10).
 
@@ -13,7 +13,7 @@ using Soarscore.Domain.People;
 
 namespace Soarscore.Application.Auth;
 
-/// <summary>A command addressed at one person's own record — self = the acting PersonId equals <see cref="PersonRef"/>.</summary>
+/// <summary>A command or query addressed at one person's own record — self = the acting PersonId equals <see cref="PersonRef"/>.</summary>
 public interface ISelfPersonCommand
 {
     PersonId PersonRef { get; }

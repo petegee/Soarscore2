@@ -21,6 +21,18 @@
 // so GrantRole's person.roleAlreadyHeld refusal cannot fire — the folded
 // state IS the idempotence check. On the create arm there is no stream yet,
 // so the grant rides the same NoStream append as the registration.
+//
+// Verification gate (security review 2026-09-16): every email-born decision
+// here — the email-match link arm, the create arm, and the bootstrap grant —
+// requires the IdP to vouch for the address (ICurrentUser.EmailVerified,
+// from the token's email_verified claim). An unverified email is an
+// attacker-chosen string, so it can neither match an existing person nor
+// create one nor claim a bootstrap grant; sign-in refuses with
+// auth.signIn.emailNotVerified. Arm 1 (identity link found) is unaffected —
+// no email decided it — except that the bootstrap grant rides it, so an
+// UNVERIFIED bootstrap-listed email fails sign-in there too: loud, per D8,
+// because presenting a listed email unverified is exactly the takeover
+// shape the gate exists for.
 
 using Soarscore.Application.Auth;
 using Soarscore.Application.Queries.People;
@@ -33,7 +45,9 @@ namespace Soarscore.Application.Commands.People;
 // No body fields — identity comes from ICurrentUser, never from request JSON.
 public sealed record LinkSignIn : ICommand<LinkSignInResult>;
 
-public sealed record LinkSignInResult(PersonId PersonId, bool PersonCreated);
+// No created/linked distinction in the response — an account-existence oracle
+// (security review 2026-09-16); clients use /who-am-i.
+public sealed record LinkSignInResult(PersonId PersonId);
 
 public sealed class LinkSignInHandler(
     IEventStore eventStore,
@@ -77,7 +91,7 @@ public sealed class LinkSignInHandler(
             {
                 var granted = await ApplyBootstrapGrantAsync(match.PersonId, cancellationToken);
                 return granted.IsSuccess
-                    ? Result<LinkSignInResult>.Success(new LinkSignInResult(match.PersonId, false))
+                    ? Result<LinkSignInResult>.Success(new LinkSignInResult(match.PersonId))
                     : Result<LinkSignInResult>.Failure(granted.Code!, granted.Message!, granted.Defects);
             }
         }
@@ -90,6 +104,19 @@ public sealed class LinkSignInHandler(
             return Result<LinkSignInResult>.Failure(
                 "auth.signIn.emailRequired",
                 "Sign-in requires an email claim — it is how the identity is matched to, or creates, a person.");
+        }
+
+        // Security review 2026-09-16: the email is present but the IdP has
+        // not vouched for it. An unverified email claim cannot match an
+        // existing person (arm 2) or create one (arm 3) — either would let
+        // anyone who can register a victim's address at the IdP take over
+        // their person record. Arm 1 above is unaffected: the identity link
+        // decided it, not the email.
+        if (!currentUser.EmailVerified)
+        {
+            return Result<LinkSignInResult>.Failure(
+                "auth.signIn.emailNotVerified",
+                "The token's email claim is not verified — the identity provider must vouch for the address before it can match an existing person or create one.");
         }
 
         // Arm 2 — a person already registered under this email: link the
@@ -134,7 +161,7 @@ public sealed class LinkSignInHandler(
 
         var granted = await ApplyBootstrapGrantAsync(personId, cancellationToken);
         return granted.IsSuccess
-            ? Result<LinkSignInResult>.Success(new LinkSignInResult(personId, false))
+            ? Result<LinkSignInResult>.Success(new LinkSignInResult(personId))
             : Result<LinkSignInResult>.Failure(granted.Code!, granted.Message!, granted.Defects);
     }
 
@@ -185,7 +212,7 @@ public sealed class LinkSignInHandler(
         var append = await eventStore.AppendAsync(id.Value, ExpectedVersion.NoStream, events, cancellationToken);
         return append.IsFailure
             ? Result<LinkSignInResult>.Failure(append.Code!, append.Message!, append.Defects)
-            : Result<LinkSignInResult>.Success(new LinkSignInResult(id, true));
+            : Result<LinkSignInResult>.Success(new LinkSignInResult(id));
     }
 
     // The D3 bootstrap step for arms 1 and 2 — the person's stream already
@@ -199,6 +226,19 @@ public sealed class LinkSignInHandler(
         if (!IsBootstrapEmail(currentUser.Email))
         {
             return Result<PersonId>.Success(personId);
+        }
+
+        // Security review 2026-09-16: a bootstrap-listed email presented
+        // without the IdP's vouching is exactly the takeover shape — refuse
+        // loudly (D8), not with a silent skip. Through arm 1 this failure
+        // fails the whole sign-in, which is intended: arm 1's identity was
+        // already linked, so nothing else about it is untrustworthy, but the
+        // grant must not ride an unverified address.
+        if (!currentUser.EmailVerified)
+        {
+            return Result<PersonId>.Failure(
+                "auth.signIn.emailNotVerified",
+                "The token's email claim is not verified — the identity provider must vouch for the address before it can claim a bootstrap grant.");
         }
 
         var loaded = await PersonLoader.LoadAsync(eventStore, personId, cancellationToken);

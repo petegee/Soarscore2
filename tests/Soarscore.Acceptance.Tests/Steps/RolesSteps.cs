@@ -2,6 +2,8 @@
 // acting principal is a persona token; every target is a PersonId resolved by
 // a sign-in (D2: roles and personhood come from the read model, and this
 // feature proves a revoke bites on the next call, with the same token).
+// The roster check is the security review of 2026-09-16's D4 deviation —
+// /people is organiser-only.
 
 using AwesomeAssertions;
 using Reqnroll;
@@ -93,6 +95,10 @@ public sealed class RolesSteps
             TestJwt.ForPerson(AuthActors.Competitor), "/grant-role", new GrantRole(personId, PersonRole.Competitor));
     }
 
+    [When(@"^Tama reads /people$")]
+    public async Task WhenTamaReadsPeople() =>
+        _response = await AuthApi.GetAsync(TestJwt.ForPerson(AuthActors.Competitor), "/people");
+
     [When(@"^FieldRig renames herself$")]
     public async Task WhenFieldRigRenamesHerself() => await RenameRigAsync();
 
@@ -150,7 +156,7 @@ public sealed class RolesSteps
         }
     }
 
-    private sealed record LinkSignInView(PersonId PersonId, bool PersonCreated);
+    private sealed record LinkSignInView(PersonId PersonId);
 
     private sealed record WhoAmIView(bool IsAuthenticated, PersonId? PersonId, IReadOnlyList<PersonRole> Roles, string? Name);
 }

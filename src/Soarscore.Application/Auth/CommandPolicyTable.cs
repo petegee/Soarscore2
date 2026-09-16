@@ -2,8 +2,9 @@
 // §Per-command policy table, "the literal, hand-written Dictionary<Type,
 // ICommandPolicy> from the §Per-command policy table": one explicit
 // registration per message, no assembly scanning (house style — the mapping
-// is inspectable by reading it). Policy kinds: A = Authenticated (every
-// query, D4), O = Organiser, S = self-or-organiser, C = capture policy (D10).
+// is inspectable by reading it). Policy kinds: A = Authenticated (queries by
+// default, D4), O = Organiser, S = self-or-organiser, C = capture policy
+// (D10).
 //
 // The pipeline FAILS CLOSED: a message type absent from this table denies
 // with auth.policyMissing (AuthorizationPipeline.cs). Totality — every mapped
@@ -82,7 +83,7 @@ public static class CommandPolicyTable
         [typeof(AnnulEntry)] = new OrganiserPolicy(),              // rulings, not capture
         [typeof(RecordEntryPenalty)] = new OrganiserPolicy(),      // rulings, not capture
 
-        // ---- Queries — D4: authenticated principal required -------------------
+        // ---- Queries — D4: authenticated principal by default -----------------
         [typeof(FindClassDefinitions)] = new AuthenticatedPolicy(),
         [typeof(GetClassDefinition)] = new AuthenticatedPolicy(),
         [typeof(FindCompetitions)] = new AuthenticatedPolicy(),
@@ -91,8 +92,13 @@ public static class CommandPolicyTable
         [typeof(GetDrawProtectionDiagnostics)] = new AuthenticatedPolicy(),
         [typeof(GetTeamRosters)] = new AuthenticatedPolicy(),
         [typeof(FindEntries)] = new AuthenticatedPolicy(),
-        [typeof(FindPeople)] = new AuthenticatedPolicy(),
-        [typeof(GetPerson)] = new AuthenticatedPolicy(),
+        // Security review 2026-09-16, D4 deviation: the roster carries every
+        // pilot's contact details and roles — organiser-only.
+        [typeof(FindPeople)] = new OrganiserPolicy(),
+        // Self-service for one's own record — the S kind's exact semantics,
+        // same as RenamePerson; organiser for anyone's (security review
+        // 2026-09-16, D4 deviation).
+        [typeof(GetPerson)] = new SelfOrOrganiserPolicy(),
         [typeof(GetPendingTieBreaks)] = new AuthenticatedPolicy(),
         [typeof(ScoreCompetition)] = new AuthenticatedPolicy(),
         [typeof(ScoreTeamStandings)] = new AuthenticatedPolicy(),

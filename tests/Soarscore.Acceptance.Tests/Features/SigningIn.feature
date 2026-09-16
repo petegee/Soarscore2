@@ -10,22 +10,26 @@ Feature: Signing in
 
   Scenario: A first sign-in creates the person and links the identity
     When Aroha signs in
-    Then the sign-in creates the person
+    Then the sign-in returns the person
     And /who-am-i resolves the newcomer to that person holding no roles
 
   Scenario: Repeating a sign-in is idempotent
     Given Aroha has signed in
     When Aroha signs in again
-    Then the sign-in does not create a person
+    Then the sign-in returns the person
     And returns the same person
 
   Scenario: A second provider with the same email links to the existing person
     Given Aroha has signed in
     When the same email signs in through google-oauth2
-    Then the sign-in does not create a person
+    Then the sign-in returns the person
     And returns the same person
 
   Scenario: A bootstrap-listed email lands with the Organiser role
     When Nova signs in
-    Then the sign-in does not create a person
+    Then the sign-in returns the person
     And /who-am-i shows Nova holding the Organiser role
+
+  Scenario: An unverified email claim cannot sign in
+    When a caller whose token email is not verified signs in
+    Then the response is 403 refusing with auth.signIn.emailNotVerified

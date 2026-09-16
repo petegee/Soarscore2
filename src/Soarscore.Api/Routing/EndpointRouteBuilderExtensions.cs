@@ -74,6 +74,10 @@ public static class EndpointRouteBuilderExtensions
         "auth.notAuthenticated" => StatusCodes.Status401Unauthorized,
         "auth.forbidden" => StatusCodes.Status403Forbidden,
         "auth.capturePolicy.denied" => StatusCodes.Status403Forbidden,
+        // Security review 2026-09-16. 403 not 401: the identity itself
+        // validated — what is untrustworthy is the token's unverified email
+        // claim, which is the caller's token to fix at the IdP.
+        "auth.signIn.emailNotVerified" => StatusCodes.Status403Forbidden,
         "auth.policyMissing" => StatusCodes.Status500InternalServerError,
         "eventStore.streamAlreadyExists" => StatusCodes.Status409Conflict,
         "eventStore.concurrencyConflict" => StatusCodes.Status409Conflict,

@@ -2,8 +2,10 @@
 // step 5 (D11). HS256, signed with the config-pinned static SigningKey,
 // issuer/audience per MockAuthOptions, sub = "mock|<slug>" so the standard
 // provider|subject parsing rule resolves the seeded identity link unchanged.
-// Only sub/email/name ride the token — roles never do (D2), in mock just as
-// in production.
+// Only sub/email/name/email_verified ride the token — roles never do (D2), in
+// mock just as in production. email_verified is minted true so mock-mode
+// sign-ins exercise the verified path the email-born decisions require
+// (security review 2026-09-16).
 
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -28,6 +30,7 @@ internal static class MockTokens
                 new Claim("sub", $"mock|{persona.Slug}"),
                 new Claim("email", persona.Email),
                 new Claim("name", persona.Name),
+                new Claim("email_verified", "true"),
             ]),
         });
 }

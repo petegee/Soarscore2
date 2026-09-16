@@ -15,7 +15,7 @@ namespace Soarscore.Application.Tests.Auth;
 
 public class AuthenticatedPolicyTests
 {
-    private static readonly FindPeople Query = new(Email: null, Name: null);
+    private static readonly WhoAmI Query = new();
 
     private static readonly AuthenticatedPolicy Policy = new();
 

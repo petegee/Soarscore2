@@ -7,9 +7,10 @@
 // Seeding walks the REAL command path through IDispatcher: RegisterPerson
 // (the organiser's manual pre-registration), BindIdentity (provider "mock",
 // subject = the persona slug), then GrantRole per configured role. The
-// scope's ICurrentUser resolves to SystemCurrentUser (RequestCaller's
-// default — the middleware never runs in this scope), which carries Organiser,
-// so the authorization pipeline allows exactly what an organiser would have
+// system actor (SystemCurrentUser, which carries Organiser) is bound
+// EXPLICITLY to the scope below — the middleware never runs in this scope
+// and RequestCaller's default fails closed to AnonymousCurrentUser — so the
+// authorization pipeline allows exactly what an organiser would have
 // appended. Real store events; roles come from the seeded store data, never
 // claims.
 //
@@ -18,6 +19,7 @@
 // re-granted. A seeding failure is a bug or a config error — StartAsync
 // propagates and the host fails fast (the ClassCorpusSeederHost precedent).
 
+using Soarscore.Application.Auth;
 using Soarscore.Application;
 using Soarscore.Application.Commands.People;
 using Soarscore.Application.Queries.People;
@@ -35,6 +37,13 @@ internal sealed class MockPersonaSeederHost(
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
+        // System seeding is not a user request (D1/D3): bind the system actor
+        // explicitly — the carrier's default is anonymous, not authority.
+        // (The carrier exists only under mock/oidc; none-mode has no pipeline.)
+        if (scope.ServiceProvider.GetService<RequestCaller>() is { } caller)
+        {
+            caller.User = new SystemCurrentUser();
+        }
         var dispatcher = scope.ServiceProvider.GetRequiredService<IDispatcher>();
         var people = scope.ServiceProvider.GetRequiredService<IPeopleQuery>();
 

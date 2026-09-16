@@ -18,7 +18,11 @@ internal sealed record FakeCurrentUser(
     string? Provider = null,
     string? Subject = null,
     string? Email = null,
-    string? Name = null) : ICurrentUser
+    string? Name = null,
+    // Defaults to verified (security review 2026-09-16): the shapes the
+    // truth tables walk make no email-born decision, and the sign-in tests
+    // that do opt out explicitly.
+    bool EmailVerified = true) : ICurrentUser
 {
     // The port's property type is IReadOnlyList — the positional array is the
     // fake's convenience, projected once here.

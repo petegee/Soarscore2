@@ -4,7 +4,10 @@
 // crash at boot (InvalidOperationException naming Soarscore:Auth:Mode), never
 // a silently open or mock-keyed API. The misconfiguration cases (mock without
 // its signing key, oidc without its domain/audience) throw in every
-// environment, and "oidc" — and only "oidc" — is Production-legal.
+// environment, and "oidc" — and only "oidc" — is Production-legal — but it
+// too refuses Soarscore:Auth:Mock:SigningKey in Production (security review
+// 2026-09-16: that key's material ships in this repo), while the same
+// pinning boots and still pins in Development.
 //
 // House style: direct Composition.Build calls, the RouteShapeTests /
 // HandlerRegistrationTests pattern (fake, unreachable store connection —
@@ -14,6 +17,10 @@
 // ships a development key) is present in the test's content root.
 
 using AwesomeAssertions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Soarscore.Api;
 using Xunit;
 
@@ -28,6 +35,13 @@ public sealed class CompositionGuardTests
     // turn the positive oidc case into a store test.
     private const string StoreArgs =
         "--Soarscore:Store=postgres --ConnectionStrings:Soarscore=Host=127.0.0.1;Port=1;Database=archtest;Username=archtest;Password=archtest";
+
+    // The dev key appsettings.Development.json ships — used verbatim by the
+    // oidc+static-key tests below: the exact material the security review of
+    // 2026-09-16 flagged, and a real ≥ 32-byte base64 key (the mock-mode
+    // tests' short literals never reach ParseSigningKey, so they stay short).
+    private const string DevSigningKey =
+        "CWXAris6K9JZ7Jl0Yndf0RyozBB3jkfdjpuWjnLvx4LmQaKc6GijFxPkBlYj7Xpk";
 
     [Fact]
     public void Production_refuses_an_unset_auth_mode()
@@ -71,6 +85,45 @@ public sealed class CompositionGuardTests
              + StoreArgs).Split(' '));
 
         boot.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Production_refuses_oidc_pinned_to_the_static_signing_key()
+    {
+        // Security review 2026-09-16 (H2): the static key's material ships in
+        // this repo, so a Production deployment that inherited it would let
+        // anyone who has read the repo mint valid "Auth0" tokens for arbitrary
+        // identities — the same loud crash as the other refused
+        // misconfigurations, even though the mode itself is Production-legal.
+        var boot = () => Composition.Build(
+            ("--environment=Production --Soarscore:Auth:Mode=oidc "
+             + "--Soarscore:Auth:Domain=example.eu.auth0.com --Soarscore:Auth:Audience=soarscore-api "
+             + $"--Soarscore:Auth:Mock:SigningKey={DevSigningKey} " + StoreArgs).Split(' '));
+
+        boot.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Soarscore:Auth:Mock:SigningKey*");
+    }
+
+    [Fact]
+    public void Development_boots_oidc_pinned_to_the_static_signing_key()
+    {
+        // The pinned path is the test/dev mechanism (WI-10's acceptance suite
+        // pins with it): the exact configuration Production just refuses boots
+        // here and still pins — domain issuer, audience, symmetric key. The
+        // explicit SigningKey override keeps the test deterministic about the
+        // content root (same reasoning as the missing-key case below).
+        var app = Composition.Build(
+            ("--environment=Development --Soarscore:Auth:Mode=oidc "
+             + "--Soarscore:Auth:Domain=example.eu.auth0.com --Soarscore:Auth:Audience=soarscore-api "
+             + $"--Soarscore:Auth:Mock:SigningKey={DevSigningKey} " + StoreArgs).Split(' '));
+
+        var jwt = app.Services.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme).TokenValidationParameters;
+
+        jwt.ValidIssuer.Should().Be("https://example.eu.auth0.com/");
+        jwt.ValidAudience.Should().Be("soarscore-api");
+        jwt.IssuerSigningKey.Should().BeOfType<SymmetricSecurityKey>()
+            .Which.Key.Should().Equal(Convert.FromBase64String(DevSigningKey));
     }
 
     [Fact]

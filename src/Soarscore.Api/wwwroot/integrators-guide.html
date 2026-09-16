@@ -595,6 +595,13 @@ hold.</td>
 scorer.</td>
 </tr>
 <tr>
+<td><code>auth.signIn.emailNotVerified</code></td>
+<td><strong>403</strong></td>
+<td>The token's <code>email</code> claim is present but not verified, so
+sign-in refuses to match or create a person on it. Fix the address at
+the identity provider and get a fresh token.</td>
+</tr>
+<tr>
 <td><code>auth.policyMissing</code></td>
 <td><strong>500</strong></td>
 <td>A fail-closed bug alarm (a command type with no policy) — you cannot
@@ -654,7 +661,11 @@ person registered under the token's email → the identity links to that
 person; else the person is created from the token claims. Deployment
 config may list bootstrap emails
 (<code>Soarscore:Auth:BootstrapOrganisers</code>) whose holders land as
-Organisers on first sign-in.</li>
+Organisers on first sign-in. Every email-born decision — email-matched
+linking, creation, and the bootstrap list — requires the identity
+provider to vouch for the address (a verified <code>email</code>
+claim); an unverified one is refused with
+<code>auth.signIn.emailNotVerified</code>.</li>
 <li><strong><code>GET /who-am-i</code></strong> — resolves the caller's
 PersonId + roles. The one read a UI needs before rendering anything
 role-dependent: the token cannot tell you the PersonId.</li>

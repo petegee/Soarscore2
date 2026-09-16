@@ -1,10 +1,13 @@
 // authentication-and-authorisation.md WI-7. Covers LinkSignInHandler directly
 // against the People fakes — all four resolution paths (identity hit, email
 // hit, create, no email claim), the D3 bootstrap grant on each arm that can
-// carry it, and D5's bounded retry: the (provider, subject) unique index is
+// carry it, D5's bounded retry: the (provider, subject) unique index is
 // the arbiter, so a violation means a concurrent sign-in won the race and the
 // resolution re-runs exactly once before propagating. Streams are read back
-// through ReadStreamAsync — the port, not a store internals peek.
+// through ReadStreamAsync — the port, not a store internals peek. The
+// verification gate (security review 2026-09-16) is covered on the arms it
+// guards: an unverified email blocks the email-match link arm, the create
+// arm, and the bootstrap grant.
 
 using AwesomeAssertions;
 using Soarscore.Application.Auth;
@@ -43,8 +46,13 @@ public class LinkSignInHandlerTests
         return id;
     }
 
-    private static FakeCurrentUser SignedIn(string email, string provider = "google-oauth2", string subject = "sub-1", string? name = "Pete Moss") =>
-        new(IsAuthenticated: true, Provider: provider, Subject: subject, Email: email, Name: name);
+    private static FakeCurrentUser SignedIn(
+        string email,
+        string provider = "google-oauth2",
+        string subject = "sub-1",
+        string? name = "Pete Moss",
+        bool emailVerified = true) =>
+        new(IsAuthenticated: true, Provider: provider, Subject: subject, Email: email, Name: name, EmailVerified: emailVerified);
 
     // ---- Arm 3: create ------------------------------------------------------
 
@@ -57,7 +65,6 @@ public class LinkSignInHandlerTests
         var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.PersonCreated.Should().BeTrue();
 
         var stream = Stream(store, result.Value.PersonId.Value);
         stream.Should().HaveCount(2);
@@ -108,7 +115,7 @@ public class LinkSignInHandlerTests
         var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEquivalentTo(new LinkSignInResult(personId, false));
+        result.Value.Should().BeEquivalentTo(new LinkSignInResult(personId));
         Stream(store, personId.Value).Should().HaveCount(1);   // no new events
     }
 
@@ -158,7 +165,7 @@ public class LinkSignInHandlerTests
         var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEquivalentTo(new LinkSignInResult(personId, false));
+        result.Value.Should().BeEquivalentTo(new LinkSignInResult(personId));
         var stream = Stream(store, personId.Value);
         stream.Should().HaveCount(2);
         stream[1].Should().BeOfType<IdentityLinked>().Which
@@ -202,6 +209,56 @@ public class LinkSignInHandlerTests
         stream[2].Should().BeOfType<RoleGranted>().Which.Role.Should().Be(PersonRole.Organiser);
     }
 
+    // ---- Verification gate: an unverified email decides nothing -------------
+    // (security review 2026-09-16 — every email-born arm refuses first)
+
+    [Fact]
+    public async Task An_unverified_email_cannot_link_to_the_person_registered_under_it()
+    {
+        var store = new FakeEventStore();
+        var people = new FakePeopleQuery();
+        // Arm 2's shape: a person already registered under the token's email
+        // (read-model row only — the guard must fire before any stream I/O).
+        people.Seed(new PersonSummary(PersonId.New(), "Pete Moss", "pete@example.org", null, null, null, []));
+        var handler = Handler(store, people, SignedIn("pete@example.org", emailVerified: false));
+
+        var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("auth.signIn.emailNotVerified");
+        (await store.ReadAllAsync(0, 100, TestContext.Current.CancellationToken)).Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task An_unverified_email_cannot_create_a_person()
+    {
+        var store = new FakeEventStore();
+        var handler = Handler(store, new FakePeopleQuery(), SignedIn("pete@example.org", emailVerified: false));
+
+        var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("auth.signIn.emailNotVerified");
+        (await store.ReadAllAsync(0, 100, TestContext.Current.CancellationToken)).Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task An_unverified_bootstrap_listed_email_fails_sign_in_without_granting_the_role()
+    {
+        var store = new FakeEventStore();
+        var people = new FakePeopleQuery();
+        var personId = SeedPerson(store, "pete@example.org");
+        people.SeedIdentity("google-oauth2", "sub-1", personId);   // arm 1: identity already linked
+        var handler = Handler(store, people, SignedIn("pete@example.org", emailVerified: false),
+            new AuthBootstrap(["pete@example.org"]));
+
+        var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("auth.signIn.emailNotVerified");
+        Stream(store, personId.Value).Should().HaveCount(1);       // registration only — no RoleGranted
+    }
+
     // ---- D5: the unique index is the arbiter; retry the resolution once -----
 
     [Fact]
@@ -227,7 +284,7 @@ public class LinkSignInHandlerTests
         var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEquivalentTo(new LinkSignInResult(winnerId, false)); // resolved, not created
+        result.Value.Should().BeEquivalentTo(new LinkSignInResult(winnerId)); // resolved, not created
         people.IdentityLookups.Should().Be(2);                  // the resolution re-ran: missed, then hit the winner
         store.AppendCalls.Should().Be(1);                       // only the rejected create — the retry resolved without appending
         Stream(inner, winnerId.Value).Should().HaveCount(2);    // the winner's stream is untouched
