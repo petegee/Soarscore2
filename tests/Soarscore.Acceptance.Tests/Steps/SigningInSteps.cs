@@ -27,15 +27,18 @@ public sealed class SigningInSteps
     // creates the person" is true no matter which order the facts run in.
     private readonly string _newcomerSub = $"mock|aroha-{Guid.NewGuid():N}";
     private readonly string _secondProviderSub;
+    private readonly string _thirdProviderSub;
     private readonly string _newcomerEmail;
 
     private PersonId _newcomerPersonId;
+    private PersonId _preRegisteredPersonId;
     private HttpResponseMessage? _response;
 
     public SigningInSteps()
     {
         var id = Guid.NewGuid().ToString("N");
         _secondProviderSub = $"google-oauth2|aroha-{id}-alt";
+        _thirdProviderSub = $"microsoft|aroha-{id}-third";
         _newcomerEmail = $"aroha-{id}@example.org";
     }
 
@@ -67,14 +70,32 @@ public sealed class SigningInSteps
     [Given(@"^Aroha has signed in$")]
     public async Task GivenArohaHasSignedIn() => await WhenThePersonaSignsIn("Aroha");
 
+    [Given(@"^an organiser has pre-registered a person under Aroha's email$")]
+    public async Task GivenAnOrganiserHasPreRegisteredAPersonUnderArohasEmail()
+    {
+        // D5 arm 2's legitimate half: organiser pre-registration (RegisterPerson
+        // is organiser-only), the person holding no identity links — the shape
+        // the email-match arm still links on first sign-in.
+        // /register-person returns the bare PersonId — {"value": "<guid>"} on
+        // the wire (LinkSignInResult's nested shape is why its own view reads
+        // PersonId directly).
+        var registered = await AuthApi.PostCommandAsync<PersonIdView>(
+            TestJwt.ForPerson(AuthActors.Organiser),
+            "/register-person",
+            new RegisterPerson("Pre Registered", new ContactDetails { Email = _newcomerEmail }, null));
+        _preRegisteredPersonId = new PersonId(registered.Value);
+    }
+
     [When(@"^Aroha signs in again$")]
     public async Task WhenArohaSignsInAgain() => await WhenThePersonaSignsIn("Aroha");
 
     [When(@"^the same email signs in through google-oauth2$")]
     public async Task WhenTheSameEmailSignsInThroughASecondProvider()
     {
+        // Refused under secure-automatic-identity-linking.md: the person the
+        // email matches already holds Aroha's first sign-in — the Then asserts
+        // the 409, so no EnsureSuccessStatusCode here.
         _response = await SignInAsync(TestJwt.ForIdentity(_secondProviderSub, _newcomerEmail, "Aroha"));
-        _response.EnsureSuccessStatusCode();
     }
 
     [When(@"^a caller whose token email is not verified signs in$")]
@@ -85,6 +106,18 @@ public sealed class SigningInSteps
         // the verification gate refuses (security review 2026-09-16).
         _response = await SignInAsync(
             TestJwt.ForIdentityWithoutVerifiedEmail(_newcomerSub, _newcomerEmail, "Aroha"));
+    }
+
+    [When(@"^Aroha sets their contact email to the bootstrap organiser's address$")]
+    public async Task WhenArohaSetsTheirContactEmailToTheBootstrapOrganisersAddress()
+    {
+        // The attack shape (secure-automatic-identity-linking.md): the
+        // contact email is D5's email-match key and D3's bootstrap key, so a
+        // self-edit claiming Nova's address is exactly what must refuse.
+        _response = await AuthApi.PostAsync(
+            TestJwt.ForIdentity(_newcomerSub, _newcomerEmail, "Aroha"),
+            "/change-person-contact-details",
+            new ChangePersonContactDetails(_newcomerPersonId, new ContactDetails { Email = AuthActors.Bootstrap.Email }));
     }
 
     // ----------------------------------------------------------------- Then
@@ -103,6 +136,20 @@ public sealed class SigningInSteps
         (await AuthApi.ProblemTitleAsync(_response)).Should().Be("auth.signIn.emailNotVerified");
     }
 
+    [Then(@"^the response is 403 refusing with auth\.contact\.emailOwnership$")]
+    public async Task ThenTheResponseIs403RefusingWithEmailOwnership()
+    {
+        _response!.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await AuthApi.ProblemTitleAsync(_response)).Should().Be("auth.contact.emailOwnership");
+    }
+
+    [Then(@"^the response is 409 refusing with auth\.signIn\.explicitLinkRequired$")]
+    public async Task ThenTheResponseIs409RefusingWithExplicitLinkRequired()
+    {
+        _response!.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await AuthApi.ProblemTitleAsync(_response)).Should().Be("auth.signIn.explicitLinkRequired");
+    }
+
     // The response carries no created/linked distinction — an account-existence
     // oracle removed by the security review 2026-09-16; the who-am-i and
     // "returns the same person" steps carry the identity resolution coverage.
@@ -119,6 +166,26 @@ public sealed class SigningInSteps
     {
         var result = AuthApi.ReadAsync<LinkSignInView>(_response!).GetAwaiter().GetResult();
         result.PersonId.Should().Be(_newcomerPersonId);
+    }
+
+    [Then(@"^the sign-in returns the pre-registered person$")]
+    public void ThenTheSignInReturnsThePreRegisteredPerson()
+    {
+        var result = AuthApi.ReadAsync<LinkSignInView>(_response!).GetAwaiter().GetResult();
+        result.PersonId.Should().Be(_preRegisteredPersonId);
+    }
+
+    [Then(@"^/who-am-i resolves the refused identity to no person$")]
+    public async Task ThenWhoAmIResolvesTheRefusedIdentityToNoPerson()
+    {
+        // The 409 linked nothing: the refused identity still resolves to an
+        // authenticated-but-unlinked caller — nobody's person, no roles.
+        var view = await AuthApi.ReadAsync<WhoAmIView>(
+            await AuthApi.GetAsync(TestJwt.ForIdentity(_secondProviderSub, _newcomerEmail, "Aroha"), "/who-am-i"));
+
+        view.IsAuthenticated.Should().BeTrue();
+        view.PersonId.Should().BeNull();
+        view.Roles.Should().BeEmpty();
     }
 
     [Then(@"^/who-am-i resolves the newcomer to that person holding no roles$")]
@@ -147,4 +214,6 @@ public sealed class SigningInSteps
     private sealed record LinkSignInView(PersonId PersonId);
 
     private sealed record WhoAmIView(bool IsAuthenticated, PersonId? PersonId, IReadOnlyList<PersonRole> Roles, string? Name);
+
+    private sealed record PersonIdView(Guid Value);
 }

@@ -602,6 +602,22 @@ sign-in refuses to match or create a person on it. Fix the address at
 the identity provider and get a fresh token.</td>
 </tr>
 <tr>
+<td><code>auth.contact.emailOwnership</code></td>
+<td><strong>403</strong></td>
+<td>A person tried to set their contact email to an address other than
+their verified token email (or their stored address). Contact email is
+an identity-match key — keep it unchanged, verify the new address at the
+identity provider, or ask an organiser.</td>
+</tr>
+<tr>
+<td><code>auth.signIn.explicitLinkRequired</code></td>
+<td><strong>409</strong></td>
+<td>The verified email matches a person that already has a linked
+sign-in. Automatic linking would merge accounts, so it is refused; ask
+an organiser to bind the identity explicitly
+(<code>/bind-identity</code>). Nothing was linked.</td>
+</tr>
+<tr>
 <td><code>auth.policyMissing</code></td>
 <td><strong>500</strong></td>
 <td>A fail-closed bug alarm (a command type with no policy) — you cannot
@@ -658,14 +674,21 @@ enter</em>, never <em>what has been entered</em> (NFR-4).</li>
 <li><strong><code>POST /link-sign-in</code></strong> — sign-in is
 get-or-create, and idempotent: identity link found → that person; else a
 person registered under the token's email → the identity links to that
-person; else the person is created from the token claims. Deployment
-config may list bootstrap emails
-(<code>Soarscore:Auth:BootstrapOrganisers</code>) whose holders land as
-Organisers on first sign-in. Every email-born decision — email-matched
-linking, creation, and the bootstrap list — requires the identity
-provider to vouch for the address (a verified <code>email</code>
-claim); an unverified one is refused with
-<code>auth.signIn.emailNotVerified</code>.</li>
+person, but <strong>only while that person holds no other sign-in
+yet</strong> (organiser pre-registration; a person that already signs in
+is refused with <code>auth.signIn.explicitLinkRequired</code> — ask an
+organiser to bind the identity via <code>/bind-identity</code>); else the
+person is created from the token claims. Deployment config may list
+bootstrap emails (<code>Soarscore:Auth:BootstrapOrganisers</code>) whose
+holders land as Organisers on first sign-in. Every email-born decision —
+email-matched linking, creation, and the bootstrap list — requires the
+identity provider to vouch for the address (a verified
+<code>email</code> claim); an unverified one is refused with
+<code>auth.signIn.emailNotVerified</code>. Relatedly, a person may
+self-edit their contact email only to their verified token address (or
+leave it unchanged); anything else is refused with
+<code>auth.contact.emailOwnership</code>, because the stored address is
+an identity-match key.</li>
 <li><strong><code>GET /who-am-i</code></strong> — resolves the caller's
 PersonId + roles. The one read a UI needs before rendering anything
 role-dependent: the token cannot tell you the PersonId.</li>

@@ -1,7 +1,10 @@
 // authentication-and-authorisation.md WI-7 (D5). Sign-in is get-or-create,
 // resolved in three arms: identity link first (the common path — this token
 // has signed in before), then the token's email (link the identity to the
-// person already registered under it), then create from the token claims.
+// person registered under it — but ONLY while that person holds no identity
+// links yet, secure-automatic-identity-linking.md; a person that already
+// signs in refuses with auth.signIn.explicitLinkRequired and an organiser
+// links such identities explicitly), then create from the token claims.
 // No body fields: the identity comes from ICurrentUser, never from request
 // JSON — a caller can spoof a body, never the validated token.
 //
@@ -120,7 +123,10 @@ public sealed class LinkSignInHandler(
         }
 
         // Arm 2 — a person already registered under this email: link the
-        // identity to that person's stream.
+        // identity to that person's stream. The guard inside
+        // LinkToExistingPersonAsync limits this to a person with no identity
+        // links yet — the organiser pre-registration path (security review
+        // 2026-09-17).
         var existing = await peopleQuery.FindByEmailAsync(email, cancellationToken);
         if (existing is { } person)
         {
@@ -134,8 +140,9 @@ public sealed class LinkSignInHandler(
     }
 
     // Arm 2: the email-matched person's stream is loaded (fold + version),
-    // the identity is decided onto it, appended Exact — then the bootstrap
-    // check runs against the freshly linked person, per the WI-7 flow order.
+    // the no-existing-identities guard runs, the identity is decided onto it,
+    // appended Exact — then the bootstrap check runs against the freshly
+    // linked person, per the WI-7 flow order.
     private async Task<Result<LinkSignInResult>> LinkToExistingPersonAsync(
         PersonId personId, string? provider, string? subject, CancellationToken cancellationToken)
     {
@@ -146,6 +153,25 @@ public sealed class LinkSignInHandler(
         }
 
         var (folded, version) = loaded.Value;
+
+        // Security review 2026-09-17 (secure-automatic-identity-linking.md):
+        // the email-match arm links only a person with NO identity links yet —
+        // the organiser pre-registration path. A person that already signs in
+        // one way must not absorb another identity by email match alone: the
+        // stored contact email this arm matched is self-editable data (the
+        // ContactDetailsPolicy bounds edits, but it is still not a possession
+        // proof), and a merge here would hand the new identity — and any D3
+        // bootstrap grant riding it — to a person someone else controls. An
+        // organiser links such identities explicitly (/bind-identity). No
+        // events are appended and the matched PersonId is not returned; the
+        // caller resolves themself through /who-am-i.
+        if (!folded.Identities.IsEmpty)
+        {
+            return Result<LinkSignInResult>.Failure(
+                "auth.signIn.explicitLinkRequired",
+                "The verified email matches a person that already has a linked sign-in — automatic linking would merge accounts. Ask an organiser to link this identity explicitly.");
+        }
+
         var link = folded.LinkIdentity(provider!, subject!, clock.UtcNow);
         if (link.IsFailure)
         {

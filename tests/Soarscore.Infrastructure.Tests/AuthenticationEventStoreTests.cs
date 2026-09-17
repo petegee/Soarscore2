@@ -159,7 +159,44 @@ public abstract class AuthenticationEventStoreTests<TFixture>(TFixture fixture) 
         match!.PersonId.Should().Be(id);
     }
 
-    // ---- 4. Roles fold onto the summary and are countable and joinable -----
+    // ---- 4. Concurrent first-links: the expected version decides ------------
+
+    [Fact]
+    public async Task Two_sign_ins_linking_a_pre_registered_person_at_the_same_expected_version_allow_only_the_first()
+    {
+        // secure-automatic-identity-linking.md: two identities matched the
+        // same pre-registered person while it held no identity links — both
+        // read version 1 and both decide to link. The first append commits;
+        // the second's Exact(1) misses the now-version-2 stream and fails
+        // rather than silently attaching a second identity. The caller's
+        // retry then resolves through LinkSignIn's guard (the person now has
+        // identities → auth.signIn.explicitLinkRequired).
+        var id = PersonId.New();
+        var registered = await fixture.EventStore.AppendAsync(
+            id.Value, ExpectedVersion.NoStream,
+            [Registered(id, "race@identity.test")],
+            TestContext.Current.CancellationToken);
+        registered.IsSuccess.Should().BeTrue();
+
+        var first = await fixture.EventStore.AppendAsync(
+            id.Value, ExpectedVersion.Exact(1),
+            [Linked("google-oauth2", "sub-race-a")],
+            TestContext.Current.CancellationToken);
+        first.IsSuccess.Should().BeTrue();
+
+        var second = await fixture.EventStore.AppendAsync(
+            id.Value, ExpectedVersion.Exact(1),
+            [Linked("microsoft", "sub-race-b")],
+            TestContext.Current.CancellationToken);
+        second.IsFailure.Should().BeTrue();
+        second.Code.Should().Be("eventStore.concurrencyConflict");
+
+        var read = await fixture.EventStore.ReadStreamAsync(id.Value, 0, TestContext.Current.CancellationToken);
+        read.Value.Should().HaveCount(2);
+        read.Value.OfType<IdentityLinked>().Should().ContainSingle();
+    }
+
+    // ---- 5. Roles fold onto the summary and are countable and joinable -----
 
     [Fact]
     public async Task Roles_fold_onto_the_summary_are_counted_and_ride_the_identity_join()
@@ -211,7 +248,7 @@ public abstract class AuthenticationEventStoreTests<TFixture>(TFixture fixture) 
         match.Roles.Should().BeEquivalentTo([PersonRole.Organiser]);
     }
 
-    // ---- 5. The capture policy round-trips on the competitions summary ------
+    // ---- 6. The capture policy round-trips on the competitions summary ------
 
     [Fact]
     public async Task CapturePolicyConfigured_round_trips_on_the_competitions_summary_and_reconfiguration_wins()
@@ -261,7 +298,7 @@ public abstract class AuthenticationEventStoreTests<TFixture>(TFixture fixture) 
         widened.Capturers.Should().BeEmpty();
     }
 
-    // ---- 6. The entryRef filter — the capture-policy policy's one lookup ----
+    // ---- 7. The entryRef filter — the capture-policy policy's one lookup ----
 
     [Fact]
     public async Task EntryQuery_entryRef_filter_is_the_complete_key_and_ignores_the_competition_filter()

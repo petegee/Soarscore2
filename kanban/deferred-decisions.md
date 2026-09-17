@@ -386,6 +386,28 @@ WI-11).
   OAuth2 redirect into Swagger is front-end-shape work that belongs with the
   front-end story. Reopen if the club ever wants organiser-only ad-hoc API
   poking without a token manager.
+- **D5's email-second arm and the S kind's contact-details authority are
+  narrowed.** **Decided 2026-09-17** (owner-approved amendment from the
+  security review of PR #1; worked in
+  `kanban/in-progress/secure-automatic-identity-linking.md`). D5's
+  get-or-create let any verified token's email link onto the person
+  registered under it — but that stored contact email was freely
+  self-editable (`ChangePersonContactDetails` was plain self-or-organiser),
+  so a linked person could point it at the bootstrap-listed organiser's
+  address before that person ever signed in and capture the organiser's
+  first verified sign-in — its `IdentityLinked` and `RoleGranted(Organiser)`
+  both — onto their own person. The `email_verified` gate (2026-09-16)
+  vouches for the incoming claim, never the stored match, so it did not
+  close this. Two changes: the email-match arm now links only a person with
+  **no identity links yet** (organiser pre-registration; a person that
+  already signs in refuses with `auth.signIn.explicitLinkRequired` 409 — no
+  events, no bootstrap grant, no PersonId in the response; cross-provider
+  linking becomes an organiser `/bind-identity` act), and self-service
+  contact-email changes accept only the stored address unchanged or the
+  IdP-verified token email (`ContactDetailsPolicy`,
+  `auth.contact.emailOwnership` 403; organisers unrestricted). D3's
+  bootstrap rule itself is unchanged. The closed story's D5 text stands as
+  history; where the two disagree, this entry wins.
 - **D4's "every query is `Authenticated`" is narrowed: `FindPeople` is
   organiser-only and `GetPerson` is self-or-organiser.** **Decided 2026-09-16**
   (owner-approved amendment during the security review of PR #1 against the

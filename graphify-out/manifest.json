@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Routing/EndpointRouteBuilderExtensions.cs": {
-    "mtime": 1789532308.652507,
-    "seen": 1789535034.9508655,
-    "ast_hash": "affaec70288dcea2fe8feac5b0f39378",
+    "mtime": 1789595413.5391161,
+    "seen": 1789596178.1295302,
+    "ast_hash": "c9807a07fd3b0c57b4ab71223a9980b5",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Soarscore.Api.csproj": {
@@ -2292,9 +2292,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1789512787.3471467,
-    "seen": 1789512819.2705605,
-    "ast_hash": "2f8d5006e958a6876742cba38dde7e8d",
+    "mtime": 1789595596.9342873,
+    "seen": 1789596178.1444619,
+    "ast_hash": "424ff37d93380837d2ecc8e8ef7a7c73",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -4368,9 +4368,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/wwwroot/integrators-guide.html": {
-    "mtime": 1789532581.1258836,
-    "seen": 1789535034.964941,
-    "ast_hash": "be021f81d72066b885dcc7bac8be70d4",
+    "mtime": 1789595431.733133,
+    "seen": 1789596178.1444979,
+    "ast_hash": "27dc0d14121ca420102173178ed6e649",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Queries/Competitions/EventLogSummariser.cs": {
@@ -4434,9 +4434,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CommandPolicyTable.cs": {
-    "mtime": 1789533791.2681153,
-    "seen": 1789535034.9509637,
-    "ast_hash": "e53d66f7167044c35973b73c825a6bc0",
+    "mtime": 1789595403.8511071,
+    "seen": 1789596178.1296453,
+    "ast_hash": "39c4a5fa65f47f4a072fcb4a805c532d",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CommandScopes.cs": {
@@ -4596,9 +4596,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/People/LinkSignIn.cs": {
-    "mtime": 1789534064.8115299,
-    "seen": 1789535034.951824,
-    "ast_hash": "387d293f5c0299762c60ed1377fa29b5",
+    "mtime": 1789595370.3110757,
+    "seen": 1789596178.1305783,
+    "ast_hash": "80d8ff196e9186d828304d52354102c7",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/People/RevokeRole.cs": {
@@ -4626,9 +4626,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/People/LinkSignInHandlerTests.cs": {
-    "mtime": 1789534227.766187,
-    "seen": 1789535034.9593463,
-    "ast_hash": "37c7be6b1288fe3a720bbc4ed67c9a83",
+    "mtime": 1789595444.9091454,
+    "seen": 1789596178.1385438,
+    "ast_hash": "0d3efb2501da25f685d014f66f1eca14",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/People/RoleCommandsHandlerTests.cs": {
@@ -4650,9 +4650,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Infrastructure.Tests/AuthenticationEventStoreTests.cs": {
-    "mtime": 1789461047.367855,
-    "seen": 1789461563.8190315,
-    "ast_hash": "a621ba0dacf9f2238fbc19829d506668",
+    "mtime": 1789595589.6342807,
+    "seen": 1789596178.140983,
+    "ast_hash": "79a219563ea35e4661e0fa19ba0d0a80",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/AuthSettings.cs": {
@@ -4734,9 +4734,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/SigningInSteps.cs": {
-    "mtime": 1789534209.4992254,
-    "seen": 1789535034.9582825,
-    "ast_hash": "27a93b47a64f3ac4d97a54132caa1d5c",
+    "mtime": 1789595948.8616161,
+    "seen": 1789596178.1371863,
+    "ast_hash": "eae20a20d2ec4e59d5c8fa84b1ec1c69",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/AuthAcceptanceFixture.cs": {
@@ -4827,6 +4827,24 @@
     "mtime": 1789512799.7991745,
     "seen": 1789512819.2695367,
     "ast_hash": "cf54e71d0302599cb9e6f2acb1802430",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Auth/Policies/ContactDetailsPolicy.cs": {
+    "mtime": 1789595616.2573054,
+    "seen": 1789596178.1297271,
+    "ast_hash": "b7b0f2d0ced0c5e7a9cc8e10732a9bf9",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Application.Tests/Auth/ContactDetailsPolicyTests.cs": {
+    "mtime": 1789595483.6381817,
+    "seen": 1789596178.13773,
+    "ast_hash": "0bdd8afe1ba13174ac35d61c11bf8b80",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/secure-automatic-identity-linking.md": {
+    "mtime": 1789595217.008942,
+    "seen": 1789596178.1444633,
+    "ast_hash": "76bd3f874a92cdd89e56a9e60dfb5271",
     "semantic_hash": ""
   }
 }

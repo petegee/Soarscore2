@@ -259,6 +259,42 @@ public class LinkSignInHandlerTests
         Stream(store, personId.Value).Should().HaveCount(1);       // registration only — no RoleGranted
     }
 
+    // ---- Arm 2 guard: a person that already has a sign-in is not absorbable
+    //      by email match (secure-automatic-identity-linking.md) -------------
+
+    [Fact]
+    public async Task An_email_matching_a_person_that_already_has_an_identity_refuses_automatic_linking()
+    {
+        var store = new FakeEventStore();
+        var people = new FakePeopleQuery();
+        var personId = SeedPerson(store, "pete@example.org", new IdentityLinked("auth0", "existing-sub", Now));
+        people.Seed(new PersonSummary(personId, "Pete Moss", "pete@example.org", null, null, null, []));
+        var handler = Handler(store, people, SignedIn("pete@example.org", provider: "google-oauth2", subject: "sub-9"));
+
+        var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("auth.signIn.explicitLinkRequired");
+        Stream(store, personId.Value).Should().HaveCount(2);   // registration + the existing link; nothing appended
+    }
+
+    [Fact]
+    public async Task The_email_match_refusal_carries_no_bootstrap_grant()
+    {
+        var store = new FakeEventStore();
+        var people = new FakePeopleQuery();
+        var personId = SeedPerson(store, "pete@example.org", new IdentityLinked("auth0", "existing-sub", Now));
+        people.Seed(new PersonSummary(personId, "Pete Moss", "pete@example.org", null, null, null, []));
+        var handler = Handler(store, people, SignedIn("pete@example.org", provider: "google-oauth2", subject: "sub-9"),
+            new AuthBootstrap(["pete@example.org"]));
+
+        var result = await handler.HandleAsync(new LinkSignIn(), TestContext.Current.CancellationToken);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("auth.signIn.explicitLinkRequired");
+        Stream(store, personId.Value).Should().NotContain(e => e is RoleGranted);
+    }
+
     // ---- D5: the unique index is the arbiter; retry the resolution once -----
 
     [Fact]

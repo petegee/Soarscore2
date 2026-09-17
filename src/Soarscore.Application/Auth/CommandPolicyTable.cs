@@ -32,7 +32,10 @@ public static class CommandPolicyTable
         // ---- People (commands) -------------------------------------------------
         [typeof(RegisterPerson)] = new OrganiserPolicy(),          // manual pre-registration; self-service is LinkSignIn (WI-7)
         [typeof(RenamePerson)] = new SelfOrOrganiserPolicy(),
-        [typeof(ChangePersonContactDetails)] = new SelfOrOrganiserPolicy(),
+        // secure-automatic-identity-linking.md (security review 2026-09-17):
+        // the S kind plus the email-ownership guard — the contact email is
+        // D5's email-match key and D3's bootstrap key.
+        [typeof(ChangePersonContactDetails)] = new ContactDetailsPolicy(),
         [typeof(ChangePersonClubAffiliation)] = new SelfOrOrganiserPolicy(),
 
         // ---- Authentication (WI-7) ---------------------------------------------
