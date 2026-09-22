@@ -1,7 +1,8 @@
-// Validate() — the twenty-two adoption checks (17–19: tie-break ladder,
+// Validate() — the twenty-four adoption checks (17–19: tie-break ladder,
 // kanban/in-progress/tie-break-policy-in-class-definition.md WI-2; 20:
 // kanban/completed/permitted-scopes-on-penalty-definitions.md#wi-2; 22:
-// kanban/in-progress/metric-absence-semantics.md#wi-2).
+// kanban/in-progress/metric-absence-semantics.md#wi-2; 23–24:
+// kanban/in-progress/add-recorded-predicate.md#wi-2).
 // kanban/completed/class-definition-adoption-steel-thread-plan.md
 // WI-2, LADR-0002 §4 ("deserialise -> Validate -> canonicalise+hash -> append"),
 // docs/high-level-architecture.md "Validated at adoption" (the numbered, canonical
@@ -38,6 +39,7 @@
 using System.Collections.Immutable;
 using Soarscore.Domain;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Application.Commands.CompetitionClasses;
 
@@ -73,6 +75,8 @@ public static class ClassDefinitionValidation
         CheckEqualPlacesStandsAlone(definition, defects);
         CheckBestDroppedScoreRequiresDropPolicy(definition, defects);
         CheckWhenNotRecordedKindMatches(definition, defects);
+        CheckIsRecordedConfinedToFlightGate(definition, defects);
+        CheckWhenNotRecordedNotOnIsRecordedReferencedMetric(definition, defects);
 
         return defects;
     }
@@ -99,6 +103,17 @@ public static class ClassDefinitionValidation
 
             foreach (var (predPath, predicate) in AllPredicates(taskPath, task))
             {
+                if (predicate is IsRecorded recorded)
+                {
+                    if (!declared.Contains(recorded.MetricRef))
+                    {
+                        defects.Add(new Defect("class-definition.check-1.unresolved-metric-ref", $"{predPath}.metricRef",
+                            $"Metric '{recorded.MetricRef}' is not declared on task '{task.Code}'."));
+                    }
+
+                    continue;
+                }
+
                 if (predicate is not Comparison comparison)
                 {
                     continue;
@@ -594,6 +609,63 @@ public static class ClassDefinitionValidation
                     defects.Add(new Defect("class-definition.check-22.when-not-recorded-kind-mismatch",
                         $"{taskPath}.metrics[{m}].whenNotRecorded",
                         $"Metric '{metric.Name}' on task '{task.Code}' declares a whenNotRecorded assumption of kind '{assumed.Kind}', but the metric's kind is '{metric.Kind}'."));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 23 — an IsRecorded predicate is legal only inside the task's
+    /// flightValidWhen gate (kanban/in-progress/add-recorded-predicate.md#wi-2,
+    /// settled decision 2). Per-term evaluation at the validWhen and
+    /// ConditionalTerm.When sites could reach an absent metric and throw
+    /// (Comparison treats absence as a throw, not a false); the gate is the one
+    /// site whose evaluation is zero-or-interpret, never a throw — the
+    /// interpreter's gate decision. Nesting inside the gate's AllOf tree is
+    /// legal: the children's paths keep the flightValidWhen prefix.
+    /// </summary>
+    private static void CheckIsRecordedConfinedToFlightGate(ClassDefinition definition, List<Defect> defects)
+    {
+        foreach (var (taskPath, _, task) in AllTasks(definition))
+        {
+            foreach (var (predPath, predicate) in AllPredicates(taskPath, task))
+            {
+                if (predicate is not IsRecorded
+                    || predPath.StartsWith($"{taskPath}.flightValidWhen", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                defects.Add(new Defect("class-definition.check-23.is-recorded-outside-flight-gate", predPath,
+                    $"A recordedness predicate (IsRecorded) is legal only inside the flightValidWhen gate of task '{task.Code}', not at '{predPath}'."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check 24 — a metric referenced by an IsRecorded predicate must not
+    /// declare whenNotRecorded (kanban/in-progress/add-recorded-predicate.md
+    /// #wi-2, settled decision 5): "absence resolves to a value" and "absence
+    /// fails the flight" cannot both hold for one metric — a
+    /// self-contradictory declaration, the same style as check 22's kind
+    /// match, refused at adoption. The refusal is what keeps
+    /// PredicateEvaluator's IsRecorded arm a plain dictionary lookup with no
+    /// recordedness plumbing anywhere.
+    /// </summary>
+    private static void CheckWhenNotRecordedNotOnIsRecordedReferencedMetric(ClassDefinition definition, List<Defect> defects)
+    {
+        foreach (var (taskPath, _, task) in AllTasks(definition))
+        {
+            var isRecordedReferenced = FlightMetricResolution.IsRecordedReferencedMetrics(task);
+
+            for (var m = 0; m < task.Metrics.Length; m++)
+            {
+                var metric = task.Metrics[m];
+                if (metric.WhenNotRecorded is not null && isRecordedReferenced.Contains(metric.Name))
+                {
+                    defects.Add(new Defect("class-definition.check-24.assumption-on-is-recorded-metric",
+                        $"{taskPath}.metrics[{m}].whenNotRecorded",
+                        $"Metric '{metric.Name}' on task '{task.Code}' is referenced by an IsRecorded predicate and declares a whenNotRecorded assumption: its absence cannot both resolve to a value and fail the flight (5.5.11.7 e — 'the AMRT does not record any Start Height data' — a recordedness rule, not a value rule)."));
                 }
             }
         }

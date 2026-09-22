@@ -24,4 +24,4 @@ Feature: Seeing what is recorded
     Given an F5J competition under way with 6 competitors and 4 drawn rounds
     And every competitor has flown round 1 except the last, whose flight was captured with its flight time alone
     When the contest director asks what is recorded for round 1
-    Then that flight is shown missing its six other metrics in the task's declared order
+    Then that flight is shown missing its five other metrics in the task's declared order

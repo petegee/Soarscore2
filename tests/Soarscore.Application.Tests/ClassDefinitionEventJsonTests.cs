@@ -49,4 +49,29 @@ public class ClassDefinitionEventJsonTests
 
         json.Should().Contain("\"$kind\":\"classDefinitionPublished\"");
     }
+
+    // add-recorded-predicate.md WI-5: the third Predicate subtype rides the
+    // same event-JSON contract — $kind: "isRecorded", metricRef carried —
+    // through the real NDC F5J definition (85c-nz-f5j-ndc), whose flight gate
+    // carries recorded("startHeight") (5.5.11.7 e, carried by NZ.0.3 c).
+
+    [Fact]
+    public void IsRecorded_predicate_round_trips_with_its_kind_discriminator_and_metricRef()
+    {
+        var definition = Corpus.All.Single(c => c.FileName == "85c-nz-f5j-ndc").Definition;
+        ClassDefinitionEvent published = new ClassDefinitionPublished(
+            ClassDefinitionHashing.ComputeContentHash(definition), definition, DateTimeOffset.UtcNow);
+
+        var json = JsonSerializer.Serialize(published, SoarscoreEventJson.Options);
+
+        json.Should().Contain("\"$kind\":\"isRecorded\"");
+
+        var reread = JsonSerializer.Deserialize<ClassDefinitionEvent>(json, SoarscoreEventJson.Options);
+        JsonSerializer.Serialize(reread, SoarscoreEventJson.Options).Should().Be(json);
+
+        var gate = reread.Should().BeOfType<ClassDefinitionPublished>().Which
+            .Definition.Phases.SelectMany(p => p.Tasks).Single(t => t.Code == "D").FlightValidWhen;
+        gate.Should().BeOfType<AllOf>().Which.Children
+            .OfType<IsRecorded>().Should().ContainSingle().Which.MetricRef.Should().Be("startHeight");
+    }
 }

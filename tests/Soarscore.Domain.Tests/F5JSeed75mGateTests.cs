@@ -95,7 +95,6 @@ public class F5JSeed75mGateTests
     {
         entry = MetricAbsenceFixtures.Capture(entry, 1, "flightTime", MeasuredValue.Of(600m), task.Metrics);
         entry = MetricAbsenceFixtures.Capture(entry, 1, "startHeight", MeasuredValue.Of(200m), task.Metrics);
-        entry = MetricAbsenceFixtures.Capture(entry, 1, "startHeightRecorded", MeasuredValue.Of(true), task.Metrics);
         entry = MetricAbsenceFixtures.Capture(entry, 1, "landingDistance", MeasuredValue.Of(1m), task.Metrics);
         entry = MetricAbsenceFixtures.Capture(entry, 1, "overflySeconds", MeasuredValue.Of(0m), task.Metrics);
         entry = MetricAbsenceFixtures.Capture(entry, 1, "touchedByCompetitor", MeasuredValue.Of(false), task.Metrics);
@@ -112,7 +111,6 @@ public class F5JSeed75mGateTests
     {
         ["flightTime"] = MeasuredValue.Of(600m),
         ["startHeight"] = MeasuredValue.Of(200m),
-        ["startHeightRecorded"] = MeasuredValue.Of(true),
         ["landingDistance"] = MeasuredValue.Of(1m),
         ["overflySeconds"] = MeasuredValue.Of(0m),
         ["touchedByCompetitor"] = MeasuredValue.Of(false),

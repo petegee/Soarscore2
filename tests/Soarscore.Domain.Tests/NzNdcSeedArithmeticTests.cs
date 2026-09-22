@@ -132,7 +132,7 @@ public class NzNdcSeedArithmeticTests
         var task = ResolveF5jNdcTaskD();
 
         var result = FlightInterpreter.Interpret(task, 1, F5jNdcMetrics(
-            flightTime: 600, startHeight: 200, overfly: 0, touched: false, heightRecorded: true, within75m: true, landing: 1));
+            flightTime: 600, startHeight: 200, overfly: 0, touched: false, within75m: true, landing: 1));
 
         result.Score.Should().Be(550m);
     }
@@ -146,7 +146,7 @@ public class NzNdcSeedArithmeticTests
         var task = ResolveF5jNdcTaskD();
 
         var result = FlightInterpreter.Interpret(task, 1, F5jNdcMetrics(
-            flightTime: 600, startHeight: 200, overfly: 30, touched: false, heightRecorded: true, within75m: true, landing: 1));
+            flightTime: 600, startHeight: 200, overfly: 30, touched: false, within75m: true, landing: 1));
 
         result.Score.Should().Be(500m);
     }
@@ -158,7 +158,7 @@ public class NzNdcSeedArithmeticTests
         var task = ResolveF5jNdcTaskD();
 
         var result = FlightInterpreter.Interpret(task, 1, F5jNdcMetrics(
-            flightTime: 600, startHeight: 200, overfly: 61, touched: false, heightRecorded: true, within75m: true, landing: 1));
+            flightTime: 600, startHeight: 200, overfly: 61, touched: false, within75m: true, landing: 1));
 
         result.Score.Should().Be(0m);
     }
@@ -170,7 +170,7 @@ public class NzNdcSeedArithmeticTests
         var task = ResolveF5jNdcTaskD();
 
         var result = FlightInterpreter.Interpret(task, 1, F5jNdcMetrics(
-            flightTime: 600, startHeight: 200, overfly: 0, touched: false, heightRecorded: true, within75m: false, landing: 1));
+            flightTime: 600, startHeight: 200, overfly: 0, touched: false, within75m: false, landing: 1));
 
         result.Score.Should().Be(0m);
     }
@@ -223,11 +223,10 @@ public class NzNdcSeedArithmeticTests
     }
 
     private static Dictionary<string, MeasuredValue> F5jNdcMetrics(
-        decimal flightTime, decimal startHeight, decimal overfly, bool touched, bool heightRecorded, bool within75m, decimal landing) => new()
+        decimal flightTime, decimal startHeight, decimal overfly, bool touched, bool within75m, decimal landing) => new()
     {
         ["flightTime"] = MeasuredValue.Of(flightTime),
         ["startHeight"] = MeasuredValue.Of(startHeight),
-        ["startHeightRecorded"] = MeasuredValue.Of(heightRecorded),
         ["landingDistance"] = MeasuredValue.Of(landing),
         ["overflySeconds"] = MeasuredValue.Of(overfly),
         ["touchedByCompetitor"] = MeasuredValue.Of(touched),

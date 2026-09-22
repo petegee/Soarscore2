@@ -25,6 +25,14 @@ namespace Soarscore.Domain.Tests;
 /// MEASUREMENTS are tolerated, missing PARAMETER bindings and undeclared
 /// referenced metrics (tier 3) are not.
 ///
+/// WI-5 of kanban/in-progress/add-recorded-predicate.md adds the recordedness
+/// half: the IsRecorded-referenced carve-out (a blank gate metric is the
+/// gate's false — the flight zeroes per 5.5.11.7 e, it never pends), pinned
+/// here at the orchestrator (the pending-vs-zeroed distinction only exists
+/// where FlightMetricResolution.InterpretAllFlights applies the tier table)
+/// over the F5J-NDC-shaped RecordednessFixtures. Its three named CsCheck
+/// invariants live in IsRecordedPredicatePropertyTests.cs.
+///
 /// The three named CsCheck invariants (Transparency, Explicit-wins, and the
 /// Pending-then-filled sweep) live in MetricAbsenceSemanticsPropertyTests.cs.
 ///
@@ -320,6 +328,146 @@ public class MetricAbsenceSemanticsTests
 
         var group = MetricAbsenceFixtures.Score(task, classDef, withBogus);
         group.Results[MetricAbsenceFixtures.RowKey(0)].RawScore.Should().Be(50m);
+    }
+
+    // ============ WI-5 of kanban/in-progress/add-recorded-predicate.md: the recordedness carve-out ============
+    // The pending-vs-zeroed distinction only exists at the orchestrator
+    // (FlightMetricResolution.InterpretAllFlights applies the tier table);
+    // FlightInterpreter alone cannot tell a capture gap from a gate. Shapes
+    // live in RecordednessFixtures (IsRecordedPredicatePropertyTests.cs); the
+    // three named CsCheck invariants are in IsRecordedPredicatePropertyTests.cs.
+
+    [Fact]
+    public void Recordedness_an_absent_IsRecorded_referenced_metric_zeroes_the_flight_and_never_pends()
+    {
+        // 5.5.11.7 e (carried by NZ.0.3 c): with everything but the start
+        // height recorded, the height's absence is the gate's false — the
+        // flight is cancelled and recorded as a zero: State Valid, score 0, no
+        // term contributions, NO awaited diagnostic. The read-side distinction
+        // follows: a Valid-at-zero row with nothing to await — blank ⇒ zero,
+        // typed ⇒ valid, one input.
+        var task = RecordednessFixtures.Task;
+        var entry = RecordednessCapturedFlight();
+
+        var flight = FlightMetricResolution.InterpretAllFlights(entry, RecordednessFixtures.Resolved()).Single();
+        flight.Result.State.Should().Be(FlightResultState.Valid, "the blank height is the gate's false, not a capture gap");
+        flight.Result.Awaited.Should().BeNull("absence of an IsRecorded-referenced metric is never awaited");
+        flight.Score.Should().Be(0m);
+        flight.TermContributions.Should().BeEmpty();
+
+        var row = MetricAbsenceFixtures.Score(task, RecordednessFixtures.Class(task), entry)
+            .Results[MetricAbsenceFixtures.RowKey(0)];
+        row.State.Should().Be(TaskResultState.Valid);
+        row.RawScore.Should().Be(0m);
+        row.AwaitingCapture.Should().BeEmpty("the read model must not ask for a capture the gate has already judged");
+        row.Selection.Should().NotBeNull();
+        row.Selection!.Flights.Should().ContainSingle().Which.Score.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Recordedness_an_absent_ordinary_referenced_metric_still_pends_with_its_awaited_diagnostic()
+    {
+        // The carve-out is carved OUT of tier 2, not over it: a blank
+        // flightTime — an ordinary referenced metric — still pends with its
+        // awaited diagnostic, height recorded or not.
+        var entry = RecordednessCapturedFlight(withFlightTime: false, withStartHeight: true);
+
+        var flight = FlightMetricResolution.InterpretAllFlights(entry, RecordednessFixtures.Resolved()).Single();
+        flight.Result.State.Should().Be(FlightResultState.Pending);
+        flight.Result.Awaited.Should().Be(new PendingFlightDiagnostic(1, "flightTime"));
+        flight.Score.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Recordedness_both_missing_pends_on_the_first_declared_order_ordinary_metric_then_zeroes_on_its_arrival()
+    {
+        // Blank start height AND blank flight time (5.5.11.7 e's shape and
+        // settled decision 6 together): pend first on the ordinary metric —
+        // flightTime, first in declared order (flightTime, startHeight,
+        // landingDistance, …) among absent ORDINARY referenced metrics, the
+        // gate being already determinately false — and when that capture
+        // arrives, exactly the zeroed state: Valid, 0, no contributions, no
+        // awaited diagnostic.
+        var pendingEntry = RecordednessCapturedFlight(withFlightTime: false);
+
+        var pending = FlightMetricResolution.InterpretAllFlights(pendingEntry, RecordednessFixtures.Resolved()).Single();
+        pending.Result.State.Should().Be(FlightResultState.Pending, "settled decision 6: pend on the ordinary metric first");
+        pending.Result.Awaited.Should().Be(new PendingFlightDiagnostic(1, "flightTime"));
+
+        var captured = pendingEntry.CaptureMeasurement(
+            1, "flightTime", MeasuredValue.Of(120m), RecordednessFixtures.Now, RecordednessFixtures.Task.Metrics);
+        captured.IsSuccess.Should().BeTrue();
+        var zeroed = FlightMetricResolution.InterpretAllFlights(pendingEntry.Apply(captured.Value), RecordednessFixtures.Resolved()).Single();
+
+        zeroed.Result.State.Should().Be(FlightResultState.Valid, "the gate was already determinately false — the capture arrival resolves it to the 5.5.11.7 e zero");
+        zeroed.Score.Should().Be(0m);
+        zeroed.TermContributions.Should().BeEmpty();
+        zeroed.Result.Awaited.Should().BeNull();
+    }
+
+    [Fact]
+    public void Recordedness_the_awaited_walk_skips_the_absent_recordedness_metric()
+    {
+        // flightTime recorded; startHeight AND landingDistance blank. The
+        // tier-2 walk passes OVER the absent startHeight (declared before
+        // landingDistance) — its absence is the gate's false, not a gap — and
+        // pends on landingDistance. Without the carve-out it would pend on
+        // startHeight.
+        var entry = RecordednessCapturedFlight(withLandingDistance: false);
+
+        var flight = FlightMetricResolution.InterpretAllFlights(entry, RecordednessFixtures.Resolved()).Single();
+        flight.Result.State.Should().Be(FlightResultState.Pending);
+        flight.Result.Awaited.Should().Be(new PendingFlightDiagnostic(1, "landingDistance"),
+            "the awaited walk skips the IsRecorded-referenced startHeight and names the first absent ordinary metric");
+    }
+
+    [Fact]
+    public void Recordedness_the_gate_s_other_clauses_still_combine_a_present_height_with_a_false_75m_flag_zeroes_through_that_arm()
+    {
+        // The recordedness arm is one conjunct among the gate's value clauses:
+        // with the height recorded and landedWithin75m false, the flight
+        // zeroes through THAT arm — the same zeroed state, different conjunct.
+        var entry = RecordednessCapturedFlight(withStartHeight: true, within75m: false);
+
+        var flight = FlightMetricResolution.InterpretAllFlights(entry, RecordednessFixtures.Resolved()).Single();
+        flight.Result.State.Should().Be(FlightResultState.Valid);
+        flight.Result.Awaited.Should().BeNull("a failed value clause is a gate fact, never a capture gap");
+        flight.Score.Should().Be(0m);
+        flight.TermContributions.Should().BeEmpty();
+    }
+
+    // ------------------------------------------- recordedness fixture helpers
+
+    /// <summary>
+    /// One flight of the recordedness shape: the demands are captured at
+    /// compliant values (flightTime 120, startHeight 200, landingDistance 1)
+    /// unless the corresponding flag turns them off — a blank being exactly
+    /// the absence the tier table acts on — and the three exception metrics
+    /// are always captured at their compliant values so the only gate arm in
+    /// play is the recordedness one unless a test states otherwise.
+    /// </summary>
+    private static Entry RecordednessCapturedFlight(
+        bool withFlightTime = true,
+        bool withStartHeight = false,
+        bool withLandingDistance = true,
+        bool within75m = true)
+    {
+        var entry = MetricAbsenceFixtures.OpenEntry(flightCount: 1);
+
+        if (withFlightTime)
+            entry = MetricAbsenceFixtures.Capture(entry, 1, "flightTime", MeasuredValue.Of(120m), RecordednessFixtures.Task.Metrics);
+
+        if (withStartHeight)
+            entry = MetricAbsenceFixtures.Capture(entry, 1, "startHeight", MeasuredValue.Of(200m), RecordednessFixtures.Task.Metrics);
+
+        if (withLandingDistance)
+            entry = MetricAbsenceFixtures.Capture(entry, 1, "landingDistance", MeasuredValue.Of(1m), RecordednessFixtures.Task.Metrics);
+
+        entry = MetricAbsenceFixtures.Capture(entry, 1, "overflySeconds", MeasuredValue.Of(0m), RecordednessFixtures.Task.Metrics);
+        entry = MetricAbsenceFixtures.Capture(entry, 1, "touchedByCompetitor", MeasuredValue.Of(false), RecordednessFixtures.Task.Metrics);
+        entry = MetricAbsenceFixtures.Capture(entry, 1, "landedWithin75m", MeasuredValue.Of(within75m), RecordednessFixtures.Task.Metrics);
+
+        return entry;
     }
 }
 

@@ -314,3 +314,13 @@ See CLAUDE.md house-keeping rule 5.
   comment). Club-scale fine (≤ 20 pilots, a race-tolerant UX guard, not a hot
   path); revisit if the people population grows past club scale or the count
   ever leaves the RevokeRole path.
+- [ ] `CorsPreflightSmokeTests` fail on a clean worktree. Found while running
+  the acceptance suite for `kanban/completed/add-recorded-predicate.md`
+  (2026-09-22): both `CorsPreflightSmokeTests` cases fail at HEAD with the
+  default `SOARSCORE_TEST_STORE=sqlite` — `appsettings.Development.json`
+  ships `Soarscore:Cors:Origins: ["http://localhost:5173"]` and
+  WebApplicationFactory runs in Development, so "no origins configured" is
+  false and the non-empty array shadows the `SOARSCORE_CORS_ORIGINS` alias
+  branch (`Composition.cs` only consults the alias when the array is empty).
+  Unrelated to that story (no CORS surface touched); fix either the test's
+  environment forcing or the config-merging assumption.

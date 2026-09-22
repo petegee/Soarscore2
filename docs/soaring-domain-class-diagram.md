@@ -1021,6 +1021,23 @@ classDiagram
     %% 2..* children, because a one-element conjunction is a wrapper around its
     %% own child and the notation's `all(<p>, <p>, …)` cannot write one.
 
+    class IsRecorded {
+        <<value object>>
+        +string metricRef
+    }
+    %% The subject is a measurement's recordedness, not its value: true iff the
+    %% flight's measurements carry the named metric — either input form
+    %% fulfils it — and absence is the gate's false, not a capture gap
+    %% (tier 2) and not an error (tier 3), because the class itself declares
+    %% that absence invalidates the flight. 5.5.11.7 e ("the AMRT does not
+    %% record any Start Height data", carried by NZ.0.3 c) is the rule that
+    %% forced it: the only prior encoding was an assumed companion flag whose
+    %% "recorded" side needed a second input the captured height could
+    %% contradict. The referenced metric must stay unassumed (adoption
+    %% check 24) — absence cannot both resolve to a value and fail the flight
+    %% — which is what makes evaluation a plain presence lookup with no
+    %% recordedness plumbing anywhere.
+
     class TaskTiming {
         <<value object>>
         +WorkingTimeKind kind
@@ -1158,6 +1175,7 @@ classDiagram
 
     Predicate <|-- Comparison
     Predicate <|-- AllOf
+    Predicate <|-- IsRecorded
 
     Task "1" *-- "1..*" MetricDefinition : records
     Task "1" *-- "1" FlightSelection : which flights count
@@ -1209,6 +1227,7 @@ classDiagram
     note for Band "Bands are cumulative: 1 pt/s to 600 s then -1 pt/s scores 599 at 601 s."
     note for Normalisation "Direction is per task: F3B Speed inverts, because the lowest time wins."
     note for Predicate "Two gates, different outcomes: validWhen decides whether the TASK has a result at all; flightValidWhen zeroes one flight while leaving it selectable."
+    note for IsRecorded "Legal only inside flightValidWhen (adoption check 23) — the one place a class may declare absence itself invalid (5.5.11.7 e, carried by NZ.0.3 c); per-term evaluation at validWhen or a conditional's when could reach an absent metric. Widens with the first rule that cites recordedness elsewhere."
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
 ```

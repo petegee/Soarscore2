@@ -836,11 +836,23 @@ launches can be read nowhere else.
 
 ```
 <metric> <op> <metric|literal>          op ∈  <  <=  >  >=  ==
+recorded(<metric>)
 all(<p>, <p>, …)
 ```
 
+**`recorded(m)`** is `Predicate.IsRecorded` (F31) — stored as
+`{"$kind": "isRecorded", "metricRef": "m"}` — a predicate about whether the
+flight carries a measurement for the metric, never about what that measurement
+reads: its subject is the recordedness of an observation (`5.5.11.7 e`, "the
+AMRT does not record any Start Height data", carried by `NZ.0.3 c`). Absence of
+the metric evaluates `false` — a flight missing only it is flown, cancelled and
+recorded as a zero score, not pending and not an error — so the metric it
+references must stay unassumed (adoption check 24): absence cannot both resolve
+to a value and fail the flight. It is legal only inside `flightValidWhen`
+(adoption check 23), refused anywhere else.
+
 `all(…)` is `Predicate.allOf` (F3) — a conjunction, usable both in `when` and in
-`validWhen`. Exactly one of {leaf comparison, `allOf`} is populated.
+`validWhen`. Exactly one of {leaf comparison, `recorded`, `allOf`} is populated.
 
 **There is no `any`.** All twelve multi-condition sites in the six original
 classes are conjunctions, and F3F and the three NZ classes added no disjunction
@@ -866,6 +878,14 @@ predicates. It stays statically validatable at adoption.
   `F3K.9.3`'s Task C cascade (an airborne model in the preparation period zeroes
   the *next* attempt) as something the notation should express: the timekeeper
   records the next attempt's flag, and `flightValidWhen` reads it.
+- **Recordedness is a flight-gate word.** `recorded(<metric>)` is legal only
+  inside `flightValidWhen` (adoption check 23): `validWhen` and a conditional
+  term's `when` cannot gate on whether a measurement was captured, because
+  per-term evaluation there could reach an absent metric. The flight gate is
+  the one place a class may declare absence itself invalid (`5.5.11.7 e`'s
+  unrecorded start height); elsewhere absence is a capture gap or an assumed
+  value, never an evaluable fact. It widens with the first rule that cites
+  recordedness elsewhere.
 - **One rule is knowingly not implemented.** `F3K.7` limits the sum of scored
   flight times per task to `workingTime − scoredFlightCount` seconds, which binds
   on Tasks D, G and I — a perfect Task G is 595 s, not 600 s. Writing it needs a
@@ -1726,3 +1746,20 @@ the one-directional group/normalise agreement (§5) and the D1 staging law for
 penalty effects (§3) — and nothing in them needed new notation: the stage a
 recorded penalty lands at is chosen by the recording, which is event data, so
 there is still nothing for a class-side clause to say.
+
+---
+
+## 16. Finding F31 — the recordedness predicate
+
+F29–F30 came from stories that extended the model without needing a keyword.
+F31 is the model-sync line's first one — and the predicate vocabulary's first
+new subtype since the Comparison/AllOf split: an owner requirement voiced
+through the NdcScore organiser experience (the NDC F5J class) that entering the
+day's scores must be one input per fact. The model gained a predicate reading a
+metric's **recordedness** — whether a flight carries a measurement for it at
+all — and rule 2 made the notation follow
+(`kanban/in-progress/add-recorded-predicate.md`, docs approved 2026-09-22).
+
+| # | Extension | Forced by |
+|---|---|---|
+| F31 | `recorded(<metric>)` — `Predicate.IsRecorded` | `5.5.11.7 e` — "the AMRT does not record any Start Height data", carried by `NZ.0.3 c` — whose subject is the recordedness of the observation, not a value; the prior encoding was an assumed companion flag whose "recorded" side needed a second input the captured height could contradict |

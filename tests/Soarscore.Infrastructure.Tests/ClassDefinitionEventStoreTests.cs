@@ -119,6 +119,33 @@ public abstract class ClassDefinitionEventStoreTests<TFixture>(TFixture fixture)
         stream.Value.Should().ContainSingle();
     }
 
+    // add-recorded-predicate.md WI-5: the third Predicate subtype through the
+    // same store round-trip — the NDC F5J definition (85c-nz-f5j-ndc) carries
+    // recorded("startHeight") at its flight gate (5.5.11.7 e, carried by
+    // NZ.0.3 c), as `{"$kind": "isRecorded", "metricRef": "startHeight"}` in
+    // the event JSON.
+
+    private static readonly ClassDefinition RecordednessDefinition =
+        Corpus.All.Single(c => c.FileName == "85c-nz-f5j-ndc").Definition;
+
+    [Fact]
+    public async Task Publish_then_GetClassDefinition_round_trips_the_IsRecorded_predicate()
+    {
+        var handler = new PublishClassDefinitionHandler(fixture.EventStore, new SystemClock());
+        var published = await handler.HandleAsync(new PublishClassDefinition(RecordednessDefinition), TestContext.Current.CancellationToken);
+        published.IsSuccess.Should().BeTrue();
+
+        var getHandler = new GetClassDefinitionHandler(fixture.EventStore);
+        var fetched = await getHandler.HandleAsync(new GetClassDefinition(published.Value), TestContext.Current.CancellationToken);
+        fetched.IsSuccess.Should().BeTrue();
+
+        ClassDefinitionHashing.ComputeContentHash(fetched.Value).Should().Be(published.Value);
+
+        var gate = fetched.Value.Phases.SelectMany(p => p.Tasks).Single(t => t.Code == "D").FlightValidWhen;
+        gate.Should().BeOfType<AllOf>().Which.Children
+            .OfType<IsRecorded>().Should().ContainSingle().Which.MetricRef.Should().Be("startHeight");
+    }
+
     [Fact]
     public async Task Class_library_read_model_dropped_and_fully_replayed_lands_identical()
     {

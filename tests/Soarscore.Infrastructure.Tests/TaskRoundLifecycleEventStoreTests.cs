@@ -139,7 +139,6 @@ public abstract class TaskRoundLifecycleEventStoreTests<TFixture>(TFixture fixtu
 
         await CaptureAsync("flightTime", MeasuredValue.Of(flightTime));
         await CaptureAsync("startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync("startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync("overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync("touchedByCompetitor", MeasuredValue.Of(false));
         await CaptureAsync("landingDistance", MeasuredValue.Of(100m)); // beyond the last row -> Rest(0)

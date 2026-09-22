@@ -258,7 +258,7 @@ public static class SeedF5kNdc
         Name = "Poker",                                                        // NZ.3.16.35
         Metrics = [.. FlightMetrics,
                    Metric.Number("targetTime", "s", RoundingMode.Truncate, 0.1m,
-                       declared: true)],                                       // NZ.3.16.35 d: the target is announced before each launch
+                       declaredBeforeLaunch: true)],                                       // NZ.3.16.35 d: the target is announced before each launch
         Flights = new AllFlights(),                                            // NZ.3.16.35: max 3 flights to achieve up to three targets
         Timing = new()
         {

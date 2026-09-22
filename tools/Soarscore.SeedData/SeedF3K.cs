@@ -111,7 +111,7 @@ public static class SeedF3K
         Code = "E",
         Name = "Poker — variable target time",                                 // F3K.11.5
         Metrics = [.. FlightMetrics,
-                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 1, declared: true)],  // F3K.11.5 announced before release
+                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 1, declaredBeforeLaunch: true)],  // F3K.11.5 announced before release
         Flights = new BestNFlights { Count = 3 },
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = NumberOrParam.Param("workingTime.E") },
         Score = [ScoreTerm.When(Predicate.GreaterThanOrEqual("flightTime", "targetTime"),

@@ -343,7 +343,6 @@ public sealed class CapturingAScoreSteps
         var measurements = entry.Flights[0].Measurements;
         measurements.Should().ContainSingle(m => m.Metric == "flightTime");
         measurements.Should().Contain(m => m.Metric == "startHeight");
-        measurements.Should().Contain(m => m.Metric == "startHeightRecorded");
         measurements.Should().Contain(m => m.Metric == "overflySeconds");
         measurements.Should().Contain(m => m.Metric == "touchedByCompetitor");
         measurements.Should().Contain(m => m.Metric == "landingDistance");
@@ -448,8 +447,6 @@ public sealed class CapturingAScoreSteps
     {
         await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
             new CaptureMeasurement(_entryId, 1, "startHeight", MeasuredValue.Of(0m)));
-        await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
-            new CaptureMeasurement(_entryId, 1, "startHeightRecorded", MeasuredValue.Of(true)));
         await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",
             new CaptureMeasurement(_entryId, 1, "overflySeconds", MeasuredValue.Of(0m)));
         await ApiClient.PostCommandAsync<EntryId>(Client, "/capture-measurement",

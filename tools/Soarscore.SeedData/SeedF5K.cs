@@ -245,7 +245,7 @@ public static class SeedF5K
         Code = "E",
         Name = "Poker",                                                        // 5.5.10.2
         Metrics = [.. FlightMetrics,
-                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 1, declared: true)],  // 5.5.10.2 announced to, and recorded by, the timekeeper
+                   Metric.Number("targetTime", "s", RoundingMode.Truncate, 1, declaredBeforeLaunch: true)],  // 5.5.10.2 announced to, and recorded by, the timekeeper
         Flights = new AllFlights(),
         Timing = new()
         {

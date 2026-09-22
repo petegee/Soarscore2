@@ -205,7 +205,6 @@ public class TapeLandingScaleProofTests
         ["landingDistance"] = MeasuredValue.Of(landingDistance),
         ["overflySeconds"] = MeasuredValue.Of(0m),
         ["startHeight"] = MeasuredValue.Of(0m),
-        ["startHeightRecorded"] = MeasuredValue.Of(true),
         ["touchedByCompetitor"] = MeasuredValue.Of(false),
         ["restedWithin75m"] = MeasuredValue.Of(true),
         ["landedInDefinedArea"] = MeasuredValue.Of(true),
@@ -797,19 +796,19 @@ public class TapeLandingScaleProofTests
         (from cents in Gen.Int[0, 2500]
          from overfly in Gen.Int[0, 3].Select(i => new decimal[] { 0m, 60m, 61m, 120m }[i])
          from rested in Gen.Bool
-         from heightRecorded in Gen.Bool
-         select (d: cents / 100m, overfly, rested, heightRecorded)).Sample(t =>
+         select (d: cents / 100m, overfly, rested)).Sample(t =>
          {
              foreach (var (validWhen, name) in new[] { (f3jValidWhen!, "F3J"), (f5jValidWhen!, "F5J") })
              {
                   var metrics = BaseMetrics(t.d);
                   metrics["overflySeconds"] = MeasuredValue.Of(t.overfly);
                   metrics["restedWithin75m"] = MeasuredValue.Of(t.rested);
-                  metrics["startHeightRecorded"] = MeasuredValue.Of(t.heightRecorded);
                   // WI-1 kanban/in-progress/f5j-christchurch-parallel-run-witness.md:
                   // canonical F5J's flightValidWhen also gates landedWithin75m
                   // (5.5.11.7 d); hold it compliant so this property keeps
-                  // sweeping overfly/height-recorded against the landing value.
+                  // sweeping overfly against the landing value. Its
+                  // recordedness gate (5.5.11.7 e, Predicate.IsRecorded) passes
+                  // because BaseMetrics always captures startHeight.
                   metrics["landedWithin75m"] = MeasuredValue.Of(true);
                  var task = TaskWith([new ConstantTerm { Value = 1m }], ImmutableArray<MetricDefinition>.Empty)
                      with { FlightValidWhen = validWhen };

@@ -30,10 +30,13 @@ public static class SeedF5jNdc
     // ---- metricSet f5jFlight -----------------------------------------------
     // SeedF5J's flight metrics verbatim, plus landedWithin75m (NZ.0.3 h).
     // flightTime, startHeight and landingDistance are demanded observations —
-    // no assumption; startHeightRecorded deliberately assumes NOTHING: 5.5.11.7 e
-    // (carried by NZ.0.3 c) cancels a flight whose AMRT records no Start Height
-    // data, and NZ.0.3 f restates the start-height deduction as core scoring, so
-    // an uncaptured height must pend the flight, never fabricate validity.
+    // no assumption. startHeight stays a demanded Number with NO assumption:
+    // with the flight gate reading its recordedness (Predicate.IsRecorded) it
+    // can no longer pend — its only absence path is the gate, which zeroes the
+    // flight per 5.5.11.7 e (carried by NZ.0.3 c). Blank ⇒ zero, typed ⇒ valid:
+    // ONE input. The rejected second-input encoding — a startHeightRecorded
+    // demanded Flag the organiser had to tick alongside the height — is gone
+    // (kanban/in-progress/add-recorded-predicate.md).
     // overflySeconds, touchedByCompetitor and landedWithin75m are the rulebook's
     // recorded EXCEPTIONS, so absence resolves to compliance.
 
@@ -41,10 +44,6 @@ public static class SeedF5jNdc
     [
         Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),                 // 5.5.11.12 b truncated to the nearest second
         Metric.Number("startHeight", "m", RoundingMode.Truncate, 1),                // 5.5.11.12 d truncated to the nearest metre
-        Metric.Flag("startHeightRecorded"),                                         // 5.5.11.7 e "the AMRT does not record any Start Height data"
-                                                                                //   (5.5.11.12 d is the truncation rule, not the zeroing one)
-                                                                                //   NO whenNotRecorded: the recorded height is demanded — an
-                                                                                //   uncaptured height pends the flight (WI-4)
         Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),         // 5.5.11.12 i — the rules state no capture precision, and a
                                                                                 //   MetricDefinition precision is not coverable by a Parameter
                                                                                 //   (F12 residual). Chosen, not cited.
@@ -110,7 +109,7 @@ public static class SeedF5jNdc
         // 5.5.11.12 g says "a zero score will be recorded".
         FlightValidWhen = Predicate.All(
             Predicate.LessThanOrEqual("overflySeconds", 60),                                        // 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
-            Predicate.Is("startHeightRecorded", true),                                 // 5.5.11.7 e
+            Predicate.IsRecorded("startHeight"),   // 5.5.11.7 e (carried by NZ.0.3 c)
             Predicate.Is("landedWithin75m", true)),                                    // NZ.0.3 h; FAI 5.5.11.7 d
         Score =
         [
