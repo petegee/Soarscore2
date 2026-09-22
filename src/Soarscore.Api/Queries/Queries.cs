@@ -17,6 +17,7 @@ public static class Queries
     {
         app.MapQuery<FindPeople, IReadOnlyList<PersonSummary>>("/people");
         app.MapQuery<GetPerson, Person>("/person");
+        app.MapQuery<WhoAmI, CurrentUserView>("/who-am-i");
 
         app.MapQuery<FindClassDefinitions, IReadOnlyList<ClassDefinitionSummary>>("/class-definitions");
         app.MapQuery<GetClassDefinition, ClassDefinition>("/class-definition");

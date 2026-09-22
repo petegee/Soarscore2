@@ -16,12 +16,16 @@
 // task's predicates and score terms AND declared without a whenNotRecorded
 // assumed value — absence on the other missing metrics is not a capture gap
 // at all, since an assumed metric resolves to its declared value and an
-// unreferenced one scoring never reads. Referenced-ness comes from the
-// Domain's FlightMetricResolution.ReferencedMetrics walk at the handler — the
-// same resolution point the engine resolves absences with, never a
-// re-derivation here. The task's declared metrics also ride the view with
-// their optional assumed value (DeclaredMetricView), so a consumer can mark a
-// metric optional and show what absence resolves to.
+// unreferenced one scoring never reads. One further carve-out
+// (add-recorded-predicate.md WI-3): a metric an IsRecorded predicate reads is
+// also not awaited — its absence is the gate's false, the flight zeroes
+// (5.5.11.7 e: blank ⇒ zero, typed ⇒ valid), a fact and never an await;
+// MissingMetrics still lists it, the column stays demanded. Referenced-ness
+// comes from the Domain's FlightMetricResolution.ReferencedMetrics walk at
+// the handler — the same resolution point the engine resolves absences with,
+// never a re-derivation here. The task's declared metrics also ride the view
+// with their optional assumed value (DeclaredMetricView), so a consumer can
+// mark a metric optional and show what absence resolves to.
 //
 // Field spots follow the same law (lane-assignment.md WI-5): the recorded
 // assignment is stated as recorded, spot-ordered; empty means *unassigned* —
@@ -53,7 +57,10 @@ namespace Soarscore.Application.Queries.Scoring;
 /// actually awaits: referenced by the task's predicates/score terms and
 /// declared without an assumed value — the engine pends the flight naming the
 /// first of these (declared order) and fills in as each capture arrives
-/// (kanban/in-progress/metric-absence-semantics.md WI-3). Absence on the rest
+/// (kanban/in-progress/metric-absence-semantics.md WI-3). AwaitingCapture is
+/// also NOT the IsRecorded-referenced metrics — absence on those is the
+/// gate's false and the flight zeroes (5.5.11.7 e), never an await
+/// (kanban/in-progress/add-recorded-predicate.md WI-3). Absence on the rest
 /// either resolves to its declared assumed value or scoring never reads it.
 /// Both lists state facts; neither is a verdict.</summary>
 public sealed record FlightGapsView(
@@ -216,12 +223,16 @@ public sealed class GetTaskRoundRecordingHandler(IEventStore eventStore, IEntryQ
         // The referenced set is the Domain's structural walk
         // (FlightMetricResolution — kanban/in-progress/metric-absence-semantics.md
         // WI-3): one resolution point, the same notion of "read by scoring" the
-        // engine resolves absences with, never a re-derivation here.
+        // engine resolves absences with, never a re-derivation here. The
+        // recordedness set (the metrics the IsRecorded predicates read) rides
+        // along for the same reason — absence on those is the gate's false,
+        // a fact and not a capture gap (add-recorded-predicate.md WI-3).
         var referencedMetrics = FlightMetricResolution.ReferencedMetrics(taskDefinition);
+        var isRecordedReferencedMetrics = FlightMetricResolution.IsRecordedReferencedMetrics(taskDefinition);
 
         var groupViews = RecordingCore.ComputeGroupViews(
             competition, query.PhaseOrdinal, query.RoundOrdinal, query.TaskRoundOrdinal,
-            groups, entries, taskDefinition.Metrics, referencedMetrics);
+            groups, entries, taskDefinition.Metrics, referencedMetrics, isRecordedReferencedMetrics);
 
         return Result<TaskRoundRecordingView>.Success(new TaskRoundRecordingView(
             query.CompetitionRef,
@@ -244,7 +255,11 @@ public sealed class GetTaskRoundRecordingHandler(IEventStore eventStore, IEntryQ
 /// Within the gaps, MissingMetrics is the recorded fact and AwaitingCapture
 /// the subset scoring awaits (kanban/in-progress/metric-absence-semantics.md
 /// WI-3) — the referenced set and the declared assumptions arrive as inputs,
-/// so no absence semantics is derived here.
+/// so no absence semantics is derived here. AwaitingCapture also excludes the
+/// IsRecorded-referenced metrics (add-recorded-predicate.md WI-3, settled
+/// decision 7): their absence is the gate's false — the flight zeroes, it
+/// does not pend — while MissingMetrics keeps listing them, the column
+/// staying demanded.
 /// </summary>
 internal static class RecordingCore
 {
@@ -256,7 +271,8 @@ internal static class RecordingCore
         ImmutableArray<Group> groups,
         IReadOnlyDictionary<EntryId, Entry> entries,
         ImmutableArray<MetricDefinition> declaredMetrics,
-        IReadOnlySet<string> referencedMetrics)
+        IReadOnlySet<string> referencedMetrics,
+        IReadOnlySet<string> isRecordedReferencedMetrics)
     {
         var competitorsById = competition.Competitors.ToDictionary(c => c.Id);
 
@@ -305,7 +321,11 @@ internal static class RecordingCore
                             // an assumed value; absence on an assumed metric
                             // resolves to the assumption, absence on an
                             // unreferenced one scoring never reads
-                            // (metric-absence-semantics.md WI-3).
+                            // (metric-absence-semantics.md WI-3). An
+                            // IsRecorded-referenced metric is also excluded:
+                            // its absence is the gate's false, not an await
+                            // (add-recorded-predicate.md WI-3) — MissingMetrics
+                            // still lists it.
                             var absent = declaredMetrics
                                 .Where(metric => !flight.Measurements.Any(m => m.Metric == metric.Name))
                                 .ToImmutableArray();
@@ -314,7 +334,8 @@ internal static class RecordingCore
                                 [.. absent.Select(metric => metric.Name)],
                                 [.. absent
                                     .Where(metric => referencedMetrics.Contains(metric.Name)
-                                                  && metric.WhenNotRecorded is null)
+                                                  && metric.WhenNotRecorded is null
+                                                  && !isRecordedReferencedMetrics.Contains(metric.Name))
                                     .Select(metric => metric.Name)]);
                         })
                         .Where(gaps => !gaps.MissingMetrics.IsEmpty)

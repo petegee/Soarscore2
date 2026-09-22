@@ -436,6 +436,97 @@ public class FlightInterpreterTests
             .Should().Throw<ArgumentException>();
     }
 
+    // ----------------- IsRecorded (kanban/in-progress/add-recorded-predicate.md WI-5)
+
+    [Fact]
+    public void PredicateEvaluator_IsRecorded_present_returns_true_whatever_the_input_form()
+    {
+        // Presence by metric name (metric-absence-semantics.md owner decision
+        // 9): a Number reading and a Flag both fulfil the recordedness fact —
+        // the arm is a plain dictionary lookup with no recordedness plumbing,
+        // sound because check 24 keeps the assumption loop from ever inserting
+        // a value for one of these metrics.
+        var gate = new IsRecorded { MetricRef = "startHeight" };
+
+        PredicateEvaluator.Evaluate(gate, new Dictionary<string, MeasuredValue>
+        {
+            ["startHeight"] = MeasuredValue.Of(220m),
+        }).Should().BeTrue();
+
+        PredicateEvaluator.Evaluate(gate, new Dictionary<string, MeasuredValue>
+        {
+            ["startHeight"] = MeasuredValue.Of(true),
+        }).Should().BeTrue();
+    }
+
+    [Fact]
+    public void PredicateEvaluator_IsRecorded_absent_returns_false()
+    {
+        // Absence is the predicate's false — an evaluable fact, never the
+        // throw a Comparison treats absence as (5.5.11.7 e "the AMRT does not
+        // record any Start Height data").
+        var gate = new IsRecorded { MetricRef = "startHeight" };
+
+        PredicateEvaluator.Evaluate(gate, new Dictionary<string, MeasuredValue>()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void FlightInterpreter_IsRecorded_gate_absent_height_zeroes_the_flight()
+    {
+        // 5.5.11.7 e via FlightValidWhen: with no start height recorded the
+        // gate is false — the flight is cancelled and recorded as a zero
+        // score: State Valid (still flown), score 0, no term contributions.
+        var task = RecordednessGateTask();
+
+        var result = FlightInterpreter.Interpret(task, 1, new Dictionary<string, MeasuredValue>
+        {
+            ["flightTime"] = MeasuredValue.Of(120m),
+        });
+
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(0m);
+        result.TermContributions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void FlightInterpreter_IsRecorded_gate_present_height_scores_normally()
+    {
+        var task = RecordednessGateTask();
+
+        var result = FlightInterpreter.Interpret(task, 1, new Dictionary<string, MeasuredValue>
+        {
+            ["flightTime"] = MeasuredValue.Of(120m),
+            ["startHeight"] = MeasuredValue.Of(200m),
+        });
+
+        result.Result.State.Should().Be(FlightResultState.Valid);
+        result.Score.Should().Be(120m);
+    }
+
+    [Fact]
+    public void FlightInterpreter_IsRecorded_nested_in_AllOf_gate_follows_the_recordedness_arm()
+    {
+        // The comparison beside it passes both times; the recordedness arm
+        // decides the gate.
+        var present = FlightInterpreter.Interpret(RecordednessAllOfGateTask(), 1, new Dictionary<string, MeasuredValue>
+        {
+            ["flightTime"] = MeasuredValue.Of(120m),
+            ["startHeight"] = MeasuredValue.Of(200m),
+            ["landedWithin75m"] = MeasuredValue.Of(true),
+        });
+        present.Result.State.Should().Be(FlightResultState.Valid);
+        present.Score.Should().Be(120m);
+
+        var absent = FlightInterpreter.Interpret(RecordednessAllOfGateTask(), 1, new Dictionary<string, MeasuredValue>
+        {
+            ["flightTime"] = MeasuredValue.Of(120m),
+            ["landedWithin75m"] = MeasuredValue.Of(true),
+        });
+        absent.Result.State.Should().Be(FlightResultState.Valid);
+        absent.Score.Should().Be(0m);
+        absent.TermContributions.Should().BeEmpty();
+    }
+
     // ------------------------------------------------------ helpers
 
     private static ResolvedTask ResolveF3BTaskA()
@@ -486,4 +577,38 @@ public class FlightInterpreterTests
             ["minPerGroup"] = MeasuredValue.Of(5m),
         }, []);
     }
+
+    // The recordedness-gate tasks: the FlightZeroingTaskGateTests
+    // MakeTwoGateTask discipline — a synthetic ResolvedTask whose flight gate
+    // is class data the engine reads generically.
+
+    private static ResolvedTask RecordednessGateTask() =>
+        MakeRecordednessGateTask(new IsRecorded { MetricRef = "startHeight" });
+
+    private static ResolvedTask RecordednessAllOfGateTask() =>
+        MakeRecordednessGateTask(new AllOf
+        {
+            Children = ImmutableArray.Create<Predicate>(
+                new IsRecorded { MetricRef = "startHeight" },
+                new Comparison
+                {
+                    LeftMetricRef = "landedWithin75m",
+                    Op = Comparator.EqualTo,
+                    RightValue = MeasuredValue.Of(true),
+                }),
+        });
+
+    private static ResolvedTask MakeRecordednessGateTask(Predicate gate) => new(
+        Code: "RG", Name: "Recordedness gate",
+        Metrics: ImmutableArray<MetricDefinition>.Empty,
+        Flights: new LastFlight(),
+        Timing: new ResolvedTiming(WorkingTimeKind.Fixed, null, null, null),
+        Group: null, Normalise: null, ValidWhen: null, FlightValidWhen: gate,
+        RawScore: null, Reflight: null,
+        Score: ImmutableArray.Create<ScoreTerm>(new RateTerm
+        {
+            MetricRef = "flightTime", Rate = 1, Cap = null, CapScope = CapScope.PerFlight
+        }),
+        ScoreNormalised: ImmutableArray<ScoreTerm>.Empty
+    );
 }

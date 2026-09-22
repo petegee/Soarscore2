@@ -14,6 +14,7 @@
 using System.Collections.Immutable;
 using AwesomeAssertions;
 using CsCheck;
+using Soarscore.Domain.Entries;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
@@ -266,7 +267,101 @@ public class FlightZeroingTaskGateTests
         });
     }
 
+    // ------------------------------------ recordedness zeroing (add-recorded-predicate.md WI-5)
+
+    /// <summary>
+    /// The recordedness zero stays selected at zero (settled decision 5's
+    /// re-evaluation consistency, kanban/in-progress/add-recorded-predicate.md
+    /// WI-5): the flight with no start height recorded (5.5.11.7 e) is FLOWN —
+    /// it interprets to State Valid at score 0 and is the entry's selected
+    /// flight for the round, consuming its slot. Under LastFlight selection the
+    /// zeroed flight IS the selection and its predecessor is not promoted (the
+    /// F3K.9.3 precedent); under AllFlights it sits in the selection at 0.
+    /// Proved through the real pipeline (ScoreGroup → InterpretAllFlights →
+    /// SelectAndScore), not asserted from the interpreter.
+    /// </summary>
+    [Fact]
+    public void Recordedness_gate_zeroed_flight_is_the_selected_flight_at_zero()
+    {
+        var task = RecordednessFixtures.Task with { Flights = new LastFlight() };
+        var classDef = RecordednessFixtures.Class(task);
+
+        // Flight 1: a clean 200 m-launch round — 600 + 50 − 100 = 550.
+        // Flight 2: everything but the start height recorded → the 5.5.11.7 e zero.
+        var entry = MetricAbsenceFixtures.OpenEntry(flightCount: 2);
+        entry = CaptureRecordednessRound(entry, 1, flightTime: 600m, startHeight: 200m, landing: 1m);
+        entry = CaptureRecordednessRound(entry, 2, flightTime: 600m, startHeight: null, landing: 1m);
+
+        var row = MetricAbsenceFixtures.Score(task, classDef, entry).Results[MetricAbsenceFixtures.RowKey(0)];
+
+        row.State.Should().Be(TaskResultState.Valid);
+        row.RawScore.Should().Be(0m, "the zeroed flight is the LastFlight selection — its predecessor is not promoted (F3K.9.3)");
+        row.Selection.Should().NotBeNull();
+        row.Selection!.Flights.Should().ContainSingle();
+        ScoreOf(row, 2).Should().Be(0m);
+        row.AwaitingCapture.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// ... and the clamp cannot un-zero it: ranked by flightTime the
+    /// height-less 300 s flight ranks longest, takes the 240 s target, and
+    /// ClampAndRecompute's guard re-evaluates the gate on the flight's
+    /// post-insertion metrics — where the assumption loop can never have
+    /// inserted a start height (check 24), so the recordedness arm is still
+    /// false and the zero stands whatever the clamped flight time would have
+    /// scored.
+    /// </summary>
+    [Fact]
+    public void Recordedness_gate_zeroed_flight_survives_the_target_clamp()
+    {
+        var task = RecordednessFixtures.Task with
+        {
+            Flights = new BestNFlights
+            {
+                Count = 2,
+                RankByMetric = "flightTime",
+                Targets = TargetAssignment.AnyOrder,
+                // Written ascending: rank 0 (longest) takes the largest.
+                TargetValues = [120m, 240m],
+            },
+        };
+        var classDef = RecordednessFixtures.Class(task);
+
+        // Three flights, ranked by flightTime: the height-less 300 s flight
+        // ranks longest and is selected BestN-2 beside the 200 s flight —
+        // whose 200 s clamps to its 120 s target.
+        var entry = MetricAbsenceFixtures.OpenEntry(flightCount: 3);
+        entry = CaptureRecordednessRound(entry, 1, flightTime: 200m, startHeight: 0m, landing: 1m);
+        entry = CaptureRecordednessRound(entry, 2, flightTime: 100m, startHeight: 0m, landing: 1m);
+        entry = CaptureRecordednessRound(entry, 3, flightTime: 300m, startHeight: null, landing: 1m);
+
+        var row = MetricAbsenceFixtures.Score(task, classDef, entry).Results[MetricAbsenceFixtures.RowKey(0)];
+
+        row.State.Should().Be(TaskResultState.Valid);
+        row.Selection!.Flights.Should().HaveCount(2, "the zeroed flight is FLOWN and consumes a BestN slot");
+        ScoreOf(row, 3).Should().Be(0m, "the clamp re-evaluates the gate on the post-insertion metrics — no height was inserted, so the zero stands");
+        ScoreOf(row, 1).Should().Be(170m, "the countable flight clamps 200→120: 120 flight + 0 height + 50 landing");
+        row.RawScore.Should().Be(170m);
+        row.AwaitingCapture.Should().BeEmpty();
+    }
+
     // ------------------------------------------------------ helpers
+
+    /// <summary>
+    /// Capture one recordedness-shape flight's demands through the Entry
+    /// decide function; a null startHeight is the blank — the recordedness
+    /// absence the gate judges. The exception metrics are left blank too: the
+    /// shape's assumptions resolve them compliant, exactly as capture leaves
+    /// them.
+    /// </summary>
+    private static Entry CaptureRecordednessRound(Entry entry, int sequence, decimal flightTime, decimal? startHeight, decimal landing)
+    {
+        entry = MetricAbsenceFixtures.Capture(entry, sequence, "flightTime", MeasuredValue.Of(flightTime), RecordednessFixtures.Task.Metrics);
+        if (startHeight is { } height)
+            entry = MetricAbsenceFixtures.Capture(entry, sequence, "startHeight", MeasuredValue.Of(height), RecordednessFixtures.Task.Metrics);
+        entry = MetricAbsenceFixtures.Capture(entry, sequence, "landingDistance", MeasuredValue.Of(landing), RecordednessFixtures.Task.Metrics);
+        return entry;
+    }
 
     private static decimal ScoreOf(TaskResult result, int sequence) =>
         result.Selection!.Flights.Single(f =>

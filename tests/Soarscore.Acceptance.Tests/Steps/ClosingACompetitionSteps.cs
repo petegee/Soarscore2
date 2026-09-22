@@ -369,7 +369,6 @@ public sealed class ClosingACompetitionSteps
 
         await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(flightTime));
         await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
         await CaptureAsync(entryId, "landingDistance", MeasuredValue.Of(100m)); // beyond the last row -> Rest(0)

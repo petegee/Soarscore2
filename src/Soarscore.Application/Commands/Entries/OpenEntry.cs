@@ -46,6 +46,7 @@
 // addressed task-round's TaskRef is read from the Competition aggregate this
 // handler already had to load.
 
+using Soarscore.Application.Auth;
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
 using Soarscore.Application.Queries.Entries;
@@ -60,11 +61,15 @@ namespace Soarscore.Application.Commands.Entries;
 // means the entry's own round, so every existing caller is unchanged. Reason
 // is required exactly when CountsForRoundOrdinal is set (D4); the Competition
 // decide owns that rule, not this record.
+// ICompetitionScopedCommand (authentication-and-authorisation.md WI-5): the
+// record's own CompetitionRef satisfies the marker implicitly — no rename, no
+// bridge. The capture policy (D10) reads the competition's policy straight
+// off this coordinate.
 public sealed record OpenEntry(
     CompetitionId CompetitionRef, int PhaseOrdinal, int RoundOrdinal,
     int TaskRoundOrdinal, GroupId GroupRef, CompetitorId CompetitorRef,
     ReflightRole Role = ReflightRole.Original,
-    int? CountsForRoundOrdinal = null, string? Reason = null) : ICommand<EntryId>;
+    int? CountsForRoundOrdinal = null, string? Reason = null) : ICommand<EntryId>, ICompetitionScopedCommand;
 
 public sealed class OpenEntryHandler(IEventStore eventStore, IEntryQuery entryQuery, IClock clock)
     : ICommandHandler<OpenEntry, EntryId>

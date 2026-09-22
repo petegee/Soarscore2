@@ -42,6 +42,7 @@ using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
+using Soarscore.Domain.Scoring;
 using Soarscore.SeedData;
 using Xunit;
 
@@ -257,9 +258,12 @@ public class TaskRoundRecordingPropertyTests
             }
 
             // ---- act ---------------------------------------------------------
+            // add-recorded-predicate.md WI-3 adds the recordedness set; the
+            // generated shapes declare no IsRecorded predicates, so it is empty.
             var view = RecordingCore.ComputeGroupViews(
                 world.Competition, PhaseOrdinal, RoundOrdinal, TaskRoundOrdinal,
-                [world.Group], entriesById, declaredMetrics, referencedMetrics);
+                [world.Group], entriesById, declaredMetrics, referencedMetrics,
+                ImmutableHashSet<string>.Empty);
 
             // ---- P1: buckets partition expected ------------------------------
             view.Should().ContainSingle();
@@ -307,6 +311,111 @@ public class TaskRoundRecordingPropertyTests
         sawSoleAnnulledEntry.Should().BeTrue("the generator should produce competitors whose only entry is annulled");
         sawReflightDoubleEntry.Should().BeTrue("the generator should produce competitors holding two live entries");
         sawNoiseEntry.Should().BeTrue("the generator should produce entries at wrong coordinates/groups");
+    }
+
+    // --------------------------------------- the recordedness carve-out (story WI-3 item 3)
+
+    /// <summary>
+    /// WI-5 of kanban/in-progress/add-recorded-predicate.md, the F5J-NDC-shaped
+    /// case through the real handler inputs: the referenced and recordedness
+    /// sets come from the Domain's walks over the real NDC F5J task D
+    /// (85c-nz-f5j-ndc), exactly as GetTaskRoundRecordingHandler passes them. A
+    /// flight with only flightTime recorded: blank startHeight sits under
+    /// MissingMetrics — the column stays demanded (blank ⇒ zero, typed ⇒
+    /// valid, one input) — and never under AwaitingCapture, because its absence
+    /// is the gate's false (5.5.11.7 e), not a capture gap; landingDistance, an
+    /// ordinary awaited metric, keeps its awaiting fact untouched, and the
+    /// assumed exceptions stay out of AwaitingCapture as they always were.
+    /// The generated property above covers the general masks; this pins the
+    /// real seed's shape.
+    /// </summary>
+    [Fact]
+    public void Recordedness_gate_facts_show_under_missing_metrics_and_never_under_awaiting_capture()
+    {
+        var taskDefinition = SeedF5jNdc.Definition.Phases.SelectMany(p => p.Tasks).Single(t => t.Code == "D");
+        var referencedMetrics = FlightMetricResolution.ReferencedMetrics(taskDefinition);
+        var isRecordedReferencedMetrics = FlightMetricResolution.IsRecordedReferencedMetrics(taskDefinition);
+
+        // The handler inputs this test proves the view honours.
+        isRecordedReferencedMetrics.Should().ContainSingle().Which.Should().Be("startHeight",
+            "the recordedness walk is the story's WI-1 output — startHeight's only absence path is the gate");
+        referencedMetrics.Should().Contain("landingDistance",
+            "landingDistance is the ordinary awaited metric the view must keep reporting");
+
+        var competitorId = CompetitorId.New();
+        var competition = new Competition
+        {
+            Id = CompetitionId.New(),
+            Name = "Recordedness view",
+            Location = "Nowhere",
+            StartDate = new DateOnly(2026, 9, 22),
+            EndDate = new DateOnly(2026, 9, 22),
+            EvaluatorVersion = "1.0.0",
+            Competitors =
+            [
+                new Competitor
+                {
+                    Id = competitorId,
+                    PersonRef = PersonId.New(),
+                    CompetitorNumber = 1,
+                    RegisteredAt = Now,
+                },
+            ],
+            Phases = [],
+            AdoptedRules = new AdoptedRules
+            {
+                Definition = SeedF5jNdc.Definition,
+                SourceClassId = "content-hash-recordedness-view",
+                SourceVersion = SeedF5jNdc.Definition.Version!,
+                AdoptedAt = Now,
+            },
+        };
+
+        var groupRef = GroupId.New();
+        var group = new Group { Id = groupRef, Ordinal = 1, CompetitorRefs = [competitorId] };
+
+        var entry = new Entry
+        {
+            Id = EntryId.New(),
+            CompetitionRef = competition.Id,
+            PhaseOrdinal = PhaseOrdinal,
+            RoundOrdinal = RoundOrdinal,
+            TaskRoundOrdinal = TaskRoundOrdinal,
+            GroupRef = groupRef,
+            CompetitorRef = competitorId,
+            Role = ReflightRole.Original,
+            Flights =
+            [
+                new Flight
+                {
+                    Sequence = 1,
+                    Measurements =
+                    [
+                        new Measurement
+                        {
+                            Metric = "flightTime",
+                            Value = MeasuredValue.Of(600m),
+                            CapturedAt = Now,
+                        },
+                    ],
+                },
+            ],
+        };
+
+        var view = RecordingCore.ComputeGroupViews(
+            competition, PhaseOrdinal, RoundOrdinal, TaskRoundOrdinal,
+            [group], new Dictionary<EntryId, Entry> { [entry.Id] = entry },
+            taskDefinition.Metrics, referencedMetrics, isRecordedReferencedMetrics);
+
+        view.Should().ContainSingle();
+        var gaps = view[0].MetricGaps.Should().ContainSingle().Which.Flights.Should().ContainSingle().Which;
+
+        gaps.Sequence.Should().Be(1);
+        gaps.MissingMetrics.Should().Equal(
+            new[] { "startHeight", "landingDistance", "overflySeconds", "touchedByCompetitor", "landedWithin75m" },
+            "MissingMetrics is the pure recorded fact, in declared order — the startHeight column stays demanded");
+        gaps.AwaitingCapture.Should().Equal(new[] { "landingDistance" },
+            "startHeight's absence is the gate's false (5.5.11.7 e) — a fact, never an await; landingDistance is the ordinary awaited metric, untouched");
     }
 
     // ------------------------------------------------------------------ world

@@ -5,6 +5,7 @@
 // IClock, never the caller; Metric/Value are the timekeeper's raw
 // observation, validated and rounded by Entry.CaptureMeasurement (WI-4).
 
+using Soarscore.Application.Auth;
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
 using Soarscore.Domain;
@@ -13,8 +14,9 @@ using Soarscore.Domain.PublishedClassDefinition;
 
 namespace Soarscore.Application.Commands.Entries;
 
+// IEntryScopedCommand — same implicit marker as OpenFlight.cs (WI-5).
 public sealed record CaptureMeasurement(
-    EntryId EntryRef, int FlightSequence, string Metric, MeasuredValue Value, string? Instrument = null) : ICommand<EntryId>;
+    EntryId EntryRef, int FlightSequence, string Metric, MeasuredValue Value, string? Instrument = null) : ICommand<EntryId>, IEntryScopedCommand;
 
 public sealed class CaptureMeasurementHandler(IEventStore eventStore, IClock clock)
     : ICommandHandler<CaptureMeasurement, EntryId>

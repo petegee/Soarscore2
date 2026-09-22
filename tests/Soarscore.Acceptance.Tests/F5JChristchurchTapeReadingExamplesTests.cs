@@ -324,7 +324,6 @@ public sealed class F5JChristchurchTapeReadingExamplesTests
 
         await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(400m));
         await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(touched));
         await CaptureAsync(entryId, "landingDistance", MeasuredValue.Of(reading), Instrument);
@@ -345,7 +344,6 @@ public sealed class F5JChristchurchTapeReadingExamplesTests
     {
         await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(400m));
         await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
     }

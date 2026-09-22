@@ -109,14 +109,14 @@ public sealed class Rows
 public static class Metric
 {
     public static MetricDefinition Number(
-        string name, string unit, RoundingMode mode, decimal precision, bool declared = false,
+        string name, string unit, RoundingMode mode, decimal precision, bool declaredBeforeLaunch = false,
         decimal? whenNotRecorded = null) => new()
     {
         Name = name,
         Kind = MeasuredKind.Number,
         Unit = unit,
         Precision = new Rounding(mode, precision),
-        DeclaredBeforeLaunch = declared,
+        DeclaredBeforeLaunch = declaredBeforeLaunch,
         WhenNotRecorded = whenNotRecorded is null ? null : MeasuredValue.Of(whenNotRecorded.Value),
     };
 
@@ -183,6 +183,9 @@ public static class Predicate
         Op = Comparator.EqualTo,
         RightValue = MeasuredValue.Of(value),
     };
+
+    /// <summary>Presence-gated validity — <c>recorded(<metric>)</c> (kanban/in-progress/add-recorded-predicate.md): the flight zeroes when no measurement is recorded (5.5.11.7 e "the AMRT does not record any Start Height data").</summary>
+    public static IsRecorded IsRecorded(string metric) => new() { MetricRef = metric };
 
     /// <summary>A comparison whose right-hand side is another metric.</summary>
     public static Comparison GreaterThanOrEqual(string metric, string otherMetric) => new()

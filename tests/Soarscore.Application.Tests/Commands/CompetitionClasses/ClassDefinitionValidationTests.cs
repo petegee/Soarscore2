@@ -13,6 +13,7 @@ using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.SeedData;
 using Xunit;
 using static Soarscore.Application.Tests.Shared.CompetitionClasses.ClassDefinitionFixtures;
+using Predicate = Soarscore.Domain.PublishedClassDefinition.Predicate;
 
 namespace Soarscore.Application.Tests.Commands.CompetitionClasses;
 
@@ -604,6 +605,180 @@ public class ClassDefinitionValidationTests
             var defects = ClassDefinitionValidation.Validate(definition);
             defects.Should().BeEmpty($"{fileName} is part of the model's own test corpus and must validate clean");
         }
+    }
+
+    // Checks 23–24 and the check-1 extension (kanban/in-progress/
+    // add-recorded-predicate.md#wi-2): one negative fixture per numbered check,
+    // each built from the minimal baseline, mutated to break exactly the one
+    // construct that check guards — Minimal()'s declared flightTime keeps every
+    // other check quiet.
+
+    [Fact]
+    public void Check1_IsRecorded_over_an_undeclared_metric_is_refused_at_its_metricRef()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            FlightValidWhen = new IsRecorded { MetricRef = "bogus" },
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-1.unresolved-metric-ref");
+        defect.Path.Should().Be("$.phases[0].tasks[0].flightValidWhen.metricRef");
+    }
+
+    [Fact]
+    public void Check1_IsRecorded_over_an_undeclared_metric_is_refused_nested_in_the_gate()
+    {
+        // The comparison beside it resolves, so the only defect is the
+        // recordedness one — nested paths still carry the flightValidWhen
+        // prefix (check 23's legality does not exempt check 1).
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            FlightValidWhen = new AllOf
+            {
+                Children =
+                [
+                    new IsRecorded { MetricRef = "bogus" },
+                    new Comparison { LeftMetricRef = "flightTime", Op = Comparator.GreaterThan, RightValue = MeasuredValue.Of(0m) },
+                ],
+            },
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-1.unresolved-metric-ref");
+        defect.Path.Should().Be("$.phases[0].tasks[0].flightValidWhen.children[0].metricRef");
+    }
+
+    [Fact]
+    public void Check23_IsRecorded_in_validWhen_is_refused()
+    {
+        // Settled decision 2: flightValidWhen-only (v1) — the validWhen site
+        // evaluates per-term against selected flights and could reach an absent
+        // metric, which a Comparison treats as a throw, never a false.
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            ValidWhen = new IsRecorded { MetricRef = "flightTime" },
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-23.is-recorded-outside-flight-gate");
+        defect.Path.Should().Be("$.phases[0].tasks[0].validWhen");
+    }
+
+    [Fact]
+    public void Check23_IsRecorded_in_a_conditional_term_s_when_is_refused()
+    {
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Score =
+            [
+                new RateTerm { MetricRef = "flightTime", Rate = 1 },
+                new ConditionalTerm
+                {
+                    When = new IsRecorded { MetricRef = "flightTime" },
+                    Then = new ConstantTerm { Value = 1 },
+                },
+            ],
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-23.is-recorded-outside-flight-gate");
+        defect.Path.Should().Be("$.phases[0].tasks[0].score[1].when");
+    }
+
+    [Fact]
+    public void Check23_IsRecorded_at_the_flight_gate_top_level_and_nested_in_its_AllOf_validate_clean()
+    {
+        // The gate is the one site whose evaluation is zero-or-interpret,
+        // never a throw — the interpreter's gate decision — and nesting inside
+        // its AllOf tree is legal because the children's paths keep the
+        // flightValidWhen prefix.
+        var topLevel = Minimal();
+        var topTask = topLevel.Phases[0].Tasks[0] with
+        {
+            FlightValidWhen = new IsRecorded { MetricRef = "flightTime" },
+        };
+        topLevel = WithSingleTask(topLevel, topTask);
+        ClassDefinitionValidation.Validate(topLevel).Should().BeEmpty();
+
+        var nested = Minimal();
+        var nestedTask = nested.Phases[0].Tasks[0] with
+        {
+            FlightValidWhen = new AllOf
+            {
+                Children =
+                [
+                    new IsRecorded { MetricRef = "flightTime" },
+                    new Comparison { LeftMetricRef = "flightTime", Op = Comparator.GreaterThan, RightValue = MeasuredValue.Of(0m) },
+                ],
+            },
+        };
+        nested = WithSingleTask(nested, nestedTask);
+        ClassDefinitionValidation.Validate(nested).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Check24_whenNotRecorded_on_an_IsRecorded_referenced_metric_is_refused()
+    {
+        // Settled decision 5: "absence resolves to a value" and "absence fails
+        // the flight" cannot both hold for one metric — the self-contradiction
+        // whose refusal keeps the evaluator a plain dictionary lookup. The
+        // assumption is kind-matched (check 22) so it fires alone.
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" },
+                new MetricDefinition { Name = "startHeight", Kind = MeasuredKind.Number, Unit = "m", WhenNotRecorded = MeasuredValue.Of(0m) },
+            ],
+            FlightValidWhen = new IsRecorded { MetricRef = "startHeight" },
+        };
+        definition = WithSingleTask(definition, task);
+
+        var defects = ClassDefinitionValidation.Validate(definition);
+
+        var defect = defects.Should().ContainSingle().Which;
+        defect.Code.Should().Be("class-definition.check-24.assumption-on-is-recorded-metric");
+        defect.Path.Should().Be("$.phases[0].tasks[0].metrics[1].whenNotRecorded");
+    }
+
+    [Fact]
+    public void Check24_whenNotRecorded_on_an_unrelated_metric_is_accepted()
+    {
+        // The walk is over the IsRecorded-referenced set: an assumption on a
+        // metric no recordedness predicate reads is the check-22 world's
+        // ordinary assumption, untouched by check 24.
+        var definition = Minimal();
+        var task = definition.Phases[0].Tasks[0] with
+        {
+            Metrics =
+            [
+                new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" },
+                new MetricDefinition { Name = "startHeight", Kind = MeasuredKind.Number, Unit = "m" },
+                new MetricDefinition { Name = "touchedByCompetitor", Kind = MeasuredKind.Flag, WhenNotRecorded = MeasuredValue.Of(false) },
+            ],
+            FlightValidWhen = new IsRecorded { MetricRef = "startHeight" },
+        };
+        definition = WithSingleTask(definition, task);
+
+        ClassDefinitionValidation.Validate(definition).Should().BeEmpty();
     }
 
 }

@@ -449,7 +449,8 @@ public class GroupSpotsPropertyTests
                 competition.Phases[0].Rounds.SelectMany(r => r.TaskRounds[0].Groups).ToImmutableArray(),
                 new Dictionary<EntryId, Entry>(),
                 taskDefinition.Metrics,
-                FlightMetricResolution.ReferencedMetrics(taskDefinition));
+                FlightMetricResolution.ReferencedMetrics(taskDefinition),
+                FlightMetricResolution.IsRecordedReferencedMetrics(taskDefinition));
 
             view.Length.Should().Be(2);
             view[0].GroupRef.Should().Be(assigned.Value.GroupRef);

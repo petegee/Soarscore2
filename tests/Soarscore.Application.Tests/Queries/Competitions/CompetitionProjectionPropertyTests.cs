@@ -49,7 +49,8 @@ public class CompetitionProjectionPropertyTests
             new DateOnly(2020, 1, 1).AddDays(endOffset),
             className,
             classContentHash,
-            state);
+            state,
+            null);
 
     [Fact]
     public void Any_out_of_scope_event_type_against_any_summary_leaves_it_unchanged()

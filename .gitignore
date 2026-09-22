@@ -21,6 +21,12 @@ gliderscore/
 # dotnet test artifact directories (gs-divergences.md report, TRX, coverage)
 TestResults/
 
+# Machine-specific dev settings (CORS origins for the local SPA, absolute
+# seed-corpus path, dev personas) — copy appsettings.Development.json.example
+# to appsettings.Development.json and edit to your machine. Untracked so CI
+# and other machines never see one developer's paths or dev origins.
+src/Soarscore.Api/appsettings.Development.json
+
 # Local dev event store — created by src/Soarscore.Api/appsettings.json's
 # Data Source=soarscore.db on first run
 src/Soarscore.Api/*.db

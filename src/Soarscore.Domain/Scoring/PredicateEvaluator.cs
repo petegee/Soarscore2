@@ -1,7 +1,7 @@
 // PredicateEvaluator — kanban/completed/scoring-service-plan.md WI-3 (shared).
 //
-// Evaluates Predicates (Comparison / AllOf) against a set of resolved
-// measurements. Used by FlightInterpreter (flightValidWhen, score-term
+// Evaluates Predicates (Comparison / AllOf / IsRecorded) against a set of
+// resolved measurements. Used by FlightInterpreter (flightValidWhen, score-term
 // conditionals) and FlightSelector (validWhen).
 
 using Soarscore.Domain.PublishedClassDefinition;
@@ -25,6 +25,15 @@ public static class PredicateEvaluator
         {
             Comparison c => EvaluateComparison(c, measurements),
             AllOf a => a.Children.All(child => Evaluate(child, measurements)),
+            // kanban/in-progress/add-recorded-predicate.md WI-1: presence by metric
+            // name — either input form fulfils it (metric-absence-semantics.md owner
+            // decision 9). The plain lookup IS the pre-insertion evaluation: adoption
+            // check 24 refuses whenNotRecorded on any metric an IsRecorded references,
+            // so the assumption loop in FlightMetricResolution can never insert a value
+            // for one of these metrics — the dictionary here contains such a metric iff
+            // the digest-resolved measurements did, including FlightSelector's
+            // re-evaluation on clamped copies.
+            IsRecorded r => measurements.ContainsKey(r.MetricRef),
             _ => throw new ArgumentException($"Unknown Predicate subtype: {predicate.GetType().Name}")
         };
     }

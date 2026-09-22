@@ -161,4 +161,116 @@ public class PersonDecideTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Club.Should().BeNull();
     }
+
+    [Fact]
+    public void GrantRole_of_a_role_not_yet_held_succeeds_with_the_expected_event()
+    {
+        var person = Registered();
+        var at = DateTimeOffset.UtcNow;
+
+        var result = person.GrantRole(PersonRole.Organiser, at);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new RoleGranted(PersonRole.Organiser, at));
+    }
+
+    [Fact]
+    public void GrantRole_of_a_second_distinct_role_succeeds()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var person = Registered().Apply(new RoleGranted(PersonRole.Competitor, at));
+
+        var result = person.GrantRole(PersonRole.Organiser, at);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new RoleGranted(PersonRole.Organiser, at));
+    }
+
+    [Fact]
+    public void GrantRole_of_a_role_already_held_fails_with_a_stable_code()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var person = Registered().Apply(new RoleGranted(PersonRole.Competitor, at));
+
+        var result = person.GrantRole(PersonRole.Competitor, at);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("person.roleAlreadyHeld");
+    }
+
+    [Fact]
+    public void RevokeRole_of_a_held_role_succeeds_with_the_expected_event()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var person = Registered().Apply(new RoleGranted(PersonRole.Competitor, at));
+
+        var result = person.RevokeRole(PersonRole.Competitor, at);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new RoleRevoked(PersonRole.Competitor, at));
+    }
+
+    [Fact]
+    public void RevokeRole_of_a_role_not_held_fails_with_a_stable_code()
+    {
+        var result = Registered().RevokeRole(PersonRole.Organiser, DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("person.roleNotHeld");
+    }
+
+    [Fact]
+    public void LinkIdentity_with_a_new_provider_and_subject_succeeds_with_the_expected_event()
+    {
+        var person = Registered();
+        var at = DateTimeOffset.UtcNow;
+
+        var result = person.LinkIdentity("auth0", "auth0|12345", at);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new IdentityLinked("auth0", "auth0|12345", at));
+    }
+
+    [Fact]
+    public void LinkIdentity_with_the_same_subject_under_a_different_provider_succeeds()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var person = Registered().Apply(new IdentityLinked("auth0", "auth0|12345", at));
+
+        var result = person.LinkIdentity("google-oauth2", "auth0|12345", at);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new IdentityLinked("google-oauth2", "auth0|12345", at));
+    }
+
+    [Fact]
+    public void LinkIdentity_of_an_already_linked_identity_fails_with_a_stable_code()
+    {
+        var at = DateTimeOffset.UtcNow;
+        var person = Registered().Apply(new IdentityLinked("auth0", "auth0|12345", at));
+
+        var result = person.LinkIdentity("auth0", "auth0|12345", at);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("person.identityAlreadyLinked");
+    }
+
+    // Reference-type non-null parameters are only a compile-time hint — a
+    // client that omits "provider"/"subject" from the JSON body binds one
+    // straight through to null, so the domain must reject it rather than NRE
+    // (the Register null-contact precedent above).
+    [Theory]
+    [InlineData(null, "auth0|12345")]
+    [InlineData("", "auth0|12345")]
+    [InlineData("   ", "auth0|12345")]
+    [InlineData("auth0", null)]
+    [InlineData("auth0", "")]
+    [InlineData("auth0", "   ")]
+    public void LinkIdentity_with_a_blank_provider_or_subject_fails_with_a_stable_code(string? provider, string? subject)
+    {
+        var result = Registered().LinkIdentity(provider!, subject!, DateTimeOffset.UtcNow);
+
+        result.IsFailure.Should().BeTrue();
+        result.Code.Should().Be("person.identity.blank");
+    }
 }

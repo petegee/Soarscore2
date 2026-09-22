@@ -90,6 +90,10 @@ A reading scale is the graduated instrument a landing was measured with — e.g.
 
 An assumed value is what a metric declared by the competition class resolves to when a flight records no measurement for it — the class's statement of what absence means. It encodes how contest scoring is actually observed: officials record exceptions, not compliance — the out-of-bounds landing, the touched model, the overfly — so a clean flight is recorded as its measurements only, and the declared assumption makes that absence informative rather than an error. Explicit capture always wins: a recorded measurement, or a correction to one, is an observation and displaces the assumption; absence is the only trigger. The assumption is declared in the class beside the metric it belongs to and must be the same kind of value the metric is — an observation for an observation, a number for a number. It is interpreted when scores are computed, never captured as though it were a measurement, so the raw record stays honest: it holds what was actually observed, and nothing else.
 
+## Presence-gated validity / recordedness
+
+Presence-gated validity is a predicate fact about whether a flight carries a measurement for a metric at all — the recordedness of an observation, never its value. It lets a class say "an unrecorded X fails the flight" without declaring an assumed value for X and without a companion flag whose only job is to echo that X was captured — the predicate reads the flight's measurements directly, and absence of the metric an IsRecorded predicate references is simply its false. That absence is informative, declared by the class rather than discovered by the system: never a capture gap (tier 2) and never an error (tier 3), and the reference demands the metric stay unassumed (adoption check 24) — absence cannot both resolve to a value and fail the flight. Its model is F5J's cancellation clause, "the AMRT does not record any Start Height data" (5.5.11.7 e, carried by NZ.0.3 c): the flight is cancelled and recorded as a zero score, yet it was still flown. (kanban/in-progress/add-recorded-predicate.md.)
+
 ## Pending Flight Result
 
 A pending flight result is the result of a flight that is missing a captured value for a metric the class declares and has given no assumed value for. At that point in time it contributes nothing, exactly as *no result* does — everything around it scores, and it is ignored when deciding who won the group — but it is a different statement about the flight: no result says the flight ended without one, pending says the flight's result is waiting on a measurement still to come. The distinction is data, not cosmetics: reporting can tell "three flights awaiting capture in this group" apart from genuine no-results, and when the awaited measurement is captured the result fills in the next time scores are computed. Pending is a state of an incomplete record, not an error — the system scores what can be scored at any moment, and loud failures are reserved for a class definition that does not hold together.
@@ -109,3 +113,15 @@ A result is not always a number. A flight that was never validly completed has *
 Finalisation is the moment results stop being a live calculation and become a declared fact. During a contest, scores are derived afresh from the raw record every time they are asked for. When a phase closes, the Contest Director finalises it: the results are captured as they stood and, where a flyoff follows, the qualifiers are named — which is what records the cut that was actually applied. Finalising the competition captures the final classification.
 
 Captured results answer "what was declared", never "what is the score": the raw measurements and the competition's own copy of the rules remain the source of truth, so a finalised result can always be re-derived and compared against what was published. If an error comes to light afterwards the competition is reopened, the correction recorded, and the competition re-finalised — both result sets are kept, and nothing is overwritten.
+
+## Identity link
+
+The binding between one external identity-provider account (a provider and its subject id) and exactly one Person. A Person may hold several identity links (several social accounts, or a social account and a magic-link email); a link belongs to exactly one Person. Established at first sign-in or by an organiser.
+
+## Role
+
+A system-level authority held by a Person, independent of any competition. For v1: *Competitor* and *Organiser*; the Contest Director's authority folds into Organiser. Roles are granted and revoked by organisers.
+
+## Capture policy
+
+Per-competition configuration naming who may enter which scores for that competition: organisers only, any registered person, or an explicit allow-list of People (organisers always pass). The core interprets the policy generically; it never branches on who is acting beyond applying it.

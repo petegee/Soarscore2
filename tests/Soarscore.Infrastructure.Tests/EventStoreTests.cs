@@ -128,7 +128,13 @@ public abstract class EventStoreTests<TFixture>(TFixture fixture) : IClassFixtur
         await fixture.RebuildProjectionAsync("PersonSummaryProjection", TestContext.Current.CancellationToken);
 
         var afterRebuild = await fixture.PeopleQuery.FindByEmailAsync("katherine@replay.test", TestContext.Current.CancellationToken);
-        afterRebuild.Should().Be(before);
+        // Deep content equality, not record Be: PersonSummary carries
+        // IReadOnlyList<PersonRole> Roles since authentication-and-authorisation.md
+        // WI-6, and record Equals degrades to reference equality on collection
+        // members — every store read materialises a fresh list, so two
+        // deserialised summaries can never be reference-equal on it. What this
+        // test has always proved is that the replay lands the same *document*.
+        afterRebuild.Should().BeEquivalentTo(before);
     }
 }
 

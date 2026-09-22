@@ -451,7 +451,6 @@ public sealed class ScoringTeamsSteps
             // zero to the raw score (this file's header) — raw == flightTime.
             await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(FlightTimes[competitorOrdinal - 1]));
             await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));
-            await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
             await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
             await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
             await CaptureAsync(entryId, "landingDistance", MeasuredValue.Of(100m)); // beyond the last row -> Rest(0)

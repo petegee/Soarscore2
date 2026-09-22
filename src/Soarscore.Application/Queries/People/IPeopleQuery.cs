@@ -30,4 +30,36 @@ public interface IPeopleQuery
     /// the result; the caller renders what it has.
     /// </summary>
     Task<IReadOnlyList<PersonSummary>> FindByIdsAsync(IReadOnlyList<PersonId> ids, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One validated token's identity resolved against the read model (D2,
+    /// authentication-and-authorisation.md WI-5): roles never live in tokens,
+    /// so the WI-9 current-user middleware calls this per request and a role
+    /// grant takes effect on the next request with no token-refresh dance.
+    /// Null when no identity link matches the (provider, subject) pair.
+    /// Returns the full <see cref="PersonIdentityMatch"/> join — WI-8's
+    /// adapter swap retired the interim WI-5 port shape.
+    /// </summary>
+    Task<PersonIdentityMatch?> FindIdentityAsync(string provider, string subject, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// How many people hold a role — WI-7's RevokeRole last-organiser guard
+    /// (revoking the only organiser would strand the system's authority; the
+    /// count is a cross-stream read guarding a UX deadlock, not an aggregate
+    /// invariant, and is race-tolerant — WI-7/tech-debt.md).
+    /// </summary>
+    Task<int> CountByRoleAsync(PersonRole role, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// The full join <see cref="IPeopleQuery.FindIdentityAsync"/> returns
+/// (authentication-and-authorisation.md WI-6): one
+/// <see cref="PersonIdentityRow"/> — the (provider, subject) link, read by the
+/// unique compound index — joined to that person's <see cref="PersonSummary"/>
+/// for its roles. Two document reads, performed and documented in the adapter
+/// (DocumentPeopleQuery, WI-8); the projection folds that produce the two
+/// documents are PersonIdentityProjection.Apply and PeopleProjection.Apply.
+/// The row and this join are part of the people read model, not a fifth read
+/// model (LADR-0004 §D2).
+/// </summary>
+public sealed record PersonIdentityMatch(PersonId PersonId, IReadOnlyList<PersonRole> Roles);

@@ -10,6 +10,7 @@
 
 using Soarscore.Application.Queries.Competitions;
 using Soarscore.Domain;
+using Soarscore.Domain.Competitions;
 
 namespace Soarscore.Application.Tests.Shared.Competitions;
 
@@ -90,6 +91,18 @@ internal sealed class FakeCompetitionsQuery : ICompetitionsQuery
 
         return Task.FromResult<IReadOnlyList<CompetitionSummary>>(query.ToList());
     }
+
+    // WI-5 port addition (authentication-and-authorisation.md). A seeded
+    // dictionary: a missing key reads as "no configured policy", exactly what
+    // the real read returns for a competition that never had one — and the
+    // capture-policy policy evaluates that as OrganisersOnly (D10).
+    private readonly Dictionary<CompetitionId, CapturePolicy?> _capturePolicies = [];
+
+    public void SeedCapturePolicy(CompetitionId competitionRef, CapturePolicy? policy) =>
+        _capturePolicies[competitionRef] = policy;
+
+    public Task<CapturePolicy?> FindCapturePolicyAsync(CompetitionId competitionRef, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_capturePolicies.GetValueOrDefault(competitionRef));
 }
 
 /// <summary>Hand-written fake (LADR-0003 "Doubles") — resolves handlers from a fixed dictionary, no real DI container.</summary>

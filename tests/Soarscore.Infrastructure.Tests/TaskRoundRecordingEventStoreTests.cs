@@ -6,11 +6,14 @@
 //
 // F5J (30-f5j) throughout, for the same two reasons the scoring tests give:
 // literal MinPerGroup 6 makes a 6-pilot field draw to exactly one group, and
-// its task declares seven real metrics — so "captures only flightTime" leaves a
-// concrete six-metric gap list whose order is the task's declared order:
-// startHeight, startHeightRecorded, landingDistance, overflySeconds,
-// touchedByCompetitor, landedWithin75m (the last added by
-// f5j-christchurch-parallel-run-witness.md WI-1, 5.5.11.7 d).
+// its task declares six real metrics — so "captures only flightTime" leaves a
+// concrete five-metric gap list whose order is the task's declared order:
+// startHeight, landingDistance, overflySeconds, touchedByCompetitor,
+// landedWithin75m (the last added by f5j-christchurch-parallel-run-witness.md
+// WI-1, 5.5.11.7 d). startHeight sits on MissingMetrics as the recorded fact
+// but NOT on AwaitingCapture: its absence is the recordedness gate's false —
+// the flight zeroes (5.5.11.7 e), it does not pend
+// (add-recorded-predicate.md WI-3).
 
 using AwesomeAssertions;
 using Soarscore.Application;
@@ -38,7 +41,7 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
     // SeedF5J's FlightMetrics minus flightTime, in declared order.
     private static readonly string[] NonFlightTimeMetrics =
     [
-        "startHeight", "startHeightRecorded", "landingDistance", "overflySeconds", "touchedByCompetitor",
+        "startHeight", "landingDistance", "overflySeconds", "touchedByCompetitor",
         "landedWithin75m",
     ];
 
@@ -139,7 +142,6 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
         }
 
         await CaptureAsync("startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync("startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync("landingDistance", MeasuredValue.Of(100m));
         await CaptureAsync("overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync("touchedByCompetitor", MeasuredValue.Of(false));
@@ -210,7 +212,7 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
     // ---- 3. Partial transcription names its missing metrics ----------------
 
     [Fact]
-    public async Task A_flight_capturing_only_flightTime_is_reported_missing_the_other_six_metrics_in_declared_order()
+    public async Task A_flight_capturing_only_flightTime_is_reported_missing_the_other_five_metrics_in_declared_order()
     {
         var (competitionId, competitors) = await SetUpAsync(fixture, "partial-capture", 6, 1);
         var group = await SingleGroupOfRound1Async(fixture, competitionId);
@@ -234,6 +236,12 @@ public abstract class TaskRoundRecordingEventStoreTests<TFixture>(TFixture fixtu
         var flightGaps = gaps.Flights.Should().ContainSingle().Subject;
         flightGaps.Sequence.Should().Be(1);
         flightGaps.MissingMetrics.Should().Equal(NonFlightTimeMetrics);
+
+        // AwaitingCapture excludes the IsRecorded-referenced startHeight
+        // (add-recorded-predicate.md WI-3: its absence is the gate's false —
+        // 5.5.11.7 e zero, not a pend) and the assumed flags; only the
+        // ordinary unassumed referenced metric is awaited.
+        flightGaps.AwaitingCapture.Should().Equal(["landingDistance"]);
     }
 
     // ---- 4. Withdrawal after recording removes them everywhere --------------

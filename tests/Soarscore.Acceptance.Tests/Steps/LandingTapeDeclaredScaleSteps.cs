@@ -160,7 +160,6 @@ public sealed class LandingTapeDeclaredScaleSteps
 
             await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(400m));
             await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));
-            await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
             await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
             await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
             // f5j-christchurch-parallel-run-witness.md WI-1: canonical F5J
@@ -188,7 +187,6 @@ public sealed class LandingTapeDeclaredScaleSteps
 
         await CaptureAsync(entryId, "flightTime", MeasuredValue.Of(400m));
         await CaptureAsync(entryId, "startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync(entryId, "startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync(entryId, "overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync(entryId, "touchedByCompetitor", MeasuredValue.Of(false));
         // f5j-christchurch-parallel-run-witness.md WI-1: see above — the 75 m

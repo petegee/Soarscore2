@@ -139,14 +139,15 @@ public sealed record ExactlyNInOrder : FlightSelection
 // ------------------------------------------------------------------ predicates
 
 /// <summary>
-/// Two subtypes, so "exactly one of {leaf comparison, allOf} is populated" is
-/// unrepresentable rather than checked at adoption. There is still no anyOf:
-/// every multi-condition site in the eleven definitions is a conjunction, and
-/// disjunction is readmitted with the first rule that cites it.
+/// Three subtypes, so "exactly one of {leaf comparison, recordedness, allOf}
+/// is populated" is unrepresentable rather than checked at adoption. There is
+/// still no anyOf: every multi-condition site in the eleven definitions is a
+/// conjunction, and disjunction is readmitted with the first rule that cites it.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$kind")]
 [JsonDerivedType(typeof(Comparison), "comparison")]
 [JsonDerivedType(typeof(AllOf), "allOf")]
+[JsonDerivedType(typeof(IsRecorded), "isRecorded")]
 public abstract record Predicate
 {
     private protected Predicate() { }
@@ -168,6 +169,12 @@ public sealed record AllOf : Predicate
 {
     /// <summary>2..* — a one-element conjunction is a wrapper around its own child.</summary>
     public required ImmutableArray<Predicate> Children { get; init; }
+}
+
+/// <summary>Presence-gated validity (kanban/in-progress/add-recorded-predicate.md): true iff the flight's measurements carry the named metric — the rule's subject is the RECORDEDNESS of an observation, not a value (5.5.11.7 e "the AMRT does not record any Start Height data"). Wire shape: { "$kind": "isRecorded", "metricRef": "startHeight" }. Legal only inside flightValidWhen (adoption check 23).</summary>
+public sealed record IsRecorded : Predicate
+{
+    public required string MetricRef { get; init; }
 }
 
 // ---------------------------------------------------------------- score terms

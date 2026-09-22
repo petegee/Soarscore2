@@ -1237,27 +1237,24 @@ public sealed class ReplayDriver(HttpClient client)
         // derivation, beside the parity launchHeight arm above. GS's
         // FlightScoreDeduction column carries the start height on an F5J
         // fixture ("misleadingly named", ladder.py:26-27), and the seed reads
-        // it as startHeight/startHeightRecorded: a flown row with a positive
-        // payload captures startHeight = payload and startHeightRecorded =
-        // true; a flown row with a zero payload would capture
-        // startHeightRecorded = false (the rulebook zeroes such a flight —
-        // 5.5.11.7 e — and the seed's flightValidWhen gate implements exactly
-        // that outcome). The zero-payload arm never fires on the witness pair
-        // (all 162 flown non-cancelled rows carry 66–271 m — a provenance
-        // note). The mutual exclusion with the launchHeight arm is by
-        // DEFINITION CONTENT, not driver branching: the F5J seed declares
-        // startHeight, the fixture's own GS-mirrored definition declares
-        // launchHeight — never both — so parity stays numerically unchanged.
+        // it as startHeight: a flown row with a positive payload captures
+        // startHeight = payload — the capture itself satisfies the recordedness
+        // gate (5.5.11.7 e via Predicate.IsRecorded). A flown row with a zero
+        // payload captures NOTHING: startHeight absent is the gate's false —
+        // the flight is cancelled and recorded as a zero score (5.5.11.7 e),
+        // still FLOWN. One input, no companion flag (the rejected
+        // startHeightRecorded encoding is gone — add-recorded-predicate.md).
+        // The zero-payload arm never fires on the witness pair (all 162 flown
+        // non-cancelled rows carry 66–271 m — a provenance note). The mutual
+        // exclusion with the launchHeight arm is by DEFINITION CONTENT, not
+        // driver branching: the F5J seed declares startHeight, the fixture's
+        // own GS-mirrored definition declares launchHeight — never both — so
+        // parity stays numerically unchanged.
         if (declared.Contains("startHeight"))
         {
             if (row.FlightScoreDeduction > 0m)
             {
                 captures.Add(new SlotCapture("startHeight", row.FlightScoreDeduction, Flight: 1));
-                captures.Add(SlotCapture.Flag("startHeightRecorded", true, 1));
-            }
-            else
-            {
-                captures.Add(SlotCapture.Flag("startHeightRecorded", false, 1));
             }
         }
 

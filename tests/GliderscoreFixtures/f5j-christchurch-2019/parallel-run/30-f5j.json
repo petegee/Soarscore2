@@ -28,14 +28,8 @@
       {
         "metric": "startHeight",
         "source": "Scores.FlightScoreDeduction",
-        "derivation": "P2 re-expression under the seed's metric name: a flown row with a positive payload captures startHeight = payload. GS's FlightScoreDeduction column carries the start height on an F5J fixture ('misleadingly named', ladder.py:26-27).",
-        "justification": "FAI 5.5.11.12 d — 'The recorded Start Height in metres shall be truncated to the nearest metre' — the recorded quantity exists on every flown row here (66–271 m); 5.5.11.12 e prices it (half a point per metre to 200 m, three points above). The seed's two-rate bands are byte-identical to GS's deduction."
-      },
-      {
-        "metric": "startHeightRecorded",
-        "source": "Scores.FlightScoreDeduction",
-        "derivation": "P2 re-expression beside startHeight: a flown row with a positive payload captures startHeightRecorded = true; a flown row with a zero payload would capture startHeightRecorded = false (never exercised here — every flown row carries 66–271 m). The seed declares no whenNotRecorded for this flag, so the derivation covers every flown row and no flight runs Pending.",
-        "justification": "FAI 5.5.11.7 e — 'the AMRT does not record any Start Height data' cancels the flight — and the seed's flightValidWhen gate implements exactly that outcome: a height-less flight scores zero on both sides."
+        "derivation": "P2 re-expression under the seed's metric name: a flown row with a positive payload captures startHeight = payload — the capture itself satisfies the seed's recordedness gate (Predicate.IsRecorded, add-recorded-predicate.md); a flown row with a zero payload would capture NOTHING, startHeight absent being the gate's false — the flight is cancelled and recorded as a zero score, still FLOWN (never exercised here — every flown row carries 66–271 m). GS's FlightScoreDeduction column carries the start height on an F5J fixture ('misleadingly named', ladder.py:26-27).",
+        "justification": "FAI 5.5.11.12 d — 'The recorded Start Height in metres shall be truncated to the nearest metre' — the recorded quantity exists on every flown row here (66–271 m); 5.5.11.12 e prices it (half a point per metre to 200 m, three points above). The seed's two-rate bands are byte-identical to GS's deduction. The height-less-zero outcome is FAI 5.5.11.7 e — 'the AMRT does not record any Start Height data' cancels the flight — carried by the seed's flightValidWhen recordedness gate (add-recorded-predicate.md: the rejected startHeightRecorded companion flag is gone)."
       }
     ],
     "declaredInstruments": [

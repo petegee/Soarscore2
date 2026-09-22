@@ -8,9 +8,21 @@
 // IEventStore, not this interface — this exists solely for the cross-stream
 // listing/filtering a single stream cannot answer.
 
+using Soarscore.Domain.Competitions;
+
 namespace Soarscore.Application.Queries.Competitions;
 
 public interface ICompetitionsQuery
 {
     Task<IReadOnlyList<CompetitionSummary>> SearchAsync(DateOnly? onOrAfter, string? classContentHash, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The competition's configured capture policy (D10,
+    /// authentication-and-authorisation.md WI-5) — the capture-policy policy's
+    /// one read. Null when none has been configured (or the competition itself
+    /// is missing): the policy evaluates null as OrganisersOnly, the safe
+    /// default, and the handler's authoritative *.notFound is still reachable
+    /// through the organiser half.
+    /// </summary>
+    Task<CapturePolicy?> FindCapturePolicyAsync(CompetitionId competitionRef, CancellationToken cancellationToken = default);
 }

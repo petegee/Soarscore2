@@ -100,10 +100,11 @@ data** — their flight result is recorded by the Scorer beside them, and
 the pilot *reads* the draw and results. Pilots do **not** self-score (a conflict of
 interest), so they remain an indirect user by design.
 
-That is a statement about the roles at a contest, not a capability Soarscore
-polices. Under [NFR-3](non-functional-requirements.md#nfr-3--core-system-only)
-the system has no user interface of its own, so whether a given consuming system
-lets a competitor key in what they observed is **that system's policy question —
-one Soarscore neither enables nor forbids**. What Soarscore guarantees instead is
-that whoever does the recording is not made to do it in any particular order or
-at any particular moment ([NFR-4](non-functional-requirements.md#nfr-4--no-imposed-ordering-on-score-capture)).
+Whether a given person may enter scores is **per-competition capture policy** —
+competition configuration decided by the organiser (owner decision
+2026-09-14). The default policy keeps score entry with the organisers; a
+competition may widen it to named scorers or to every registered person. The
+'Multiple Hats' rule stands unchanged: the software's Organiser role covers
+the Contest Director's officiating authority for v1, and who may *enter*
+scores is governed by the competition's capture policy, not by the role a
+person played at the contest.

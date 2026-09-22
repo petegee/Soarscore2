@@ -19,6 +19,7 @@
 // removed it, since no rule wants a launch instant and the classes that care
 // about launch timing declare a metric instead. The only timestamp is IClock's.
 
+using Soarscore.Application.Auth;
 using Soarscore.Application.Shared.Competitions;
 using Soarscore.Application.Shared.Entries;
 using Soarscore.Domain;
@@ -26,7 +27,11 @@ using Soarscore.Domain.Entries;
 
 namespace Soarscore.Application.Commands.Entries;
 
-public sealed record OpenFlight(EntryId EntryRef, int? Sequence = null) : ICommand<EntryId>;
+// IEntryScopedCommand (authentication-and-authorisation.md WI-5): the record's
+// own EntryRef satisfies the marker implicitly. The capture policy (D10)
+// resolves the competition through the entry index (IEntryQuery.FindAsync's
+// entryRef filter).
+public sealed record OpenFlight(EntryId EntryRef, int? Sequence = null) : ICommand<EntryId>, IEntryScopedCommand;
 
 public sealed class OpenFlightHandler(IEventStore eventStore, IClock clock) : ICommandHandler<OpenFlight, EntryId>
 {

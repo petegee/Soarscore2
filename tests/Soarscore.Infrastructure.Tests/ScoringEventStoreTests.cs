@@ -29,9 +29,10 @@
 // touchedByCompetitor to values that contribute zero (startHeight 0m inside
 // the first band's zero-width interval, overflySeconds 0, touchedByCompetitor
 // false, landingDistance beyond the table's last row -> the Rest(0) bucket),
-// and startHeightRecorded true (FlightValidWhen requires it). That leaves raw
-// score == flightTime exactly (Rate term, rate 1, no cap reached), so the
-// normalised-score formula used by NormalisationEngine
+// and the captured startHeight satisfies the recordedness gate (5.5.11.7 e via
+// Predicate.IsRecorded, add-recorded-predicate.md — a typed height is a valid
+// flight). That leaves raw score == flightTime exactly (Rate term, rate 1, no
+// cap reached), so the normalised-score formula used by NormalisationEngine
 // (WinnerScore * raw / winnerRaw) can be replicated in test code and compared
 // for exact decimal equality, not just "some number came back".
 
@@ -146,7 +147,6 @@ public abstract class ScoringEventStoreTests<TFixture>(TFixture fixture) : IClas
 
         await CaptureAsync("flightTime", MeasuredValue.Of(flightTime));
         await CaptureAsync("startHeight", MeasuredValue.Of(0m));
-        await CaptureAsync("startHeightRecorded", MeasuredValue.Of(true));
         await CaptureAsync("overflySeconds", MeasuredValue.Of(0m));
         await CaptureAsync("touchedByCompetitor", MeasuredValue.Of(false));
         await CaptureAsync("landingDistance", MeasuredValue.Of(100m)); // beyond the last row -> Rest(0)
