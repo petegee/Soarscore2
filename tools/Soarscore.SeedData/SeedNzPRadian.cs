@@ -1,6 +1,6 @@
 // NZ Class P — ALES Radian (or similar 2 m all-foam electric glider)
-// Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.15, plus
-//            NZ.2.4.6, NZ.2.8, NZ.1.6)
+// Rule refs: NZMAA Flying Rules, Section 5: Soaring, October 2024 Rev 3.0
+//            (NZ.7.7, plus NZ.4.17, NZ.3.6)
 //
 // Class N's shape with a 7
 // minute target and a 200 m limit, written out in full rather than derived from
@@ -8,9 +8,12 @@
 // are two classes. That is a real cost of PhaseDefinition owning its tasks, and
 // it is worth seeing.
 //
-// Its own contribution to the corpus is a gap rather than an extension: NZ.3.15
+// Its own contribution to the corpus is a gap rather than an extension: NZ.7.7(d)
 // makes group scoring a CD choice, and no ParameterRef slot can reach a
 // Normalisation. See the foot of this file.
+//
+// The 75 m flight cancellation (NZ.4.13(c)) does NOT reach this class — same
+// reading as Class N; see the SeedNzNAles123 header.
 
 using Soarscore.Domain.PublishedClassDefinition;
 
@@ -24,45 +27,44 @@ public static class SeedNzPRadian
         Name = "Duration",
         Metrics =
         [
-            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.15.1 f; no precision stated (F12 residual)
-            Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.3.15.1 e; no capture precision stated
-            // The three flags are the NZMAA observation protocol's recorded
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.7.7(e)(vi); no precision stated (F12 residual)
+            Metric.Number("landingDistance", "m", RoundingMode.Truncate, 0.1m),     // NZ.7.7(e)(v); no capture precision stated
+            // The two flags are the NZMAA observation protocol's recorded
             // EXCEPTIONS; absence resolves to compliance.
-            Metric.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.3.15.1 g — the restart (watch stops, landing points lost) is
+            Metric.Flag("motorRestarted", whenNotRecorded: false),                  // NZ.7.7(e)(vii) — the restart (watch stops, landing points lost) is
                                                                                 //   what is recorded; absence ⇒ no restart
-            Metric.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.3.15.1 j, read per NZ.3.13.1 j — see below; absence ⇒
+            Metric.Flag("airborneAtRoundEnd", whenNotRecorded: false),              // NZ.7.7(e)(x), read per NZ.7.5(k) — see below; absence ⇒
                                                                                 //   landed within the round
-            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6 — the outside-75m cancellation is what is recorded;
-                                                                                //   absence ⇒ within
         ],
-        Flights = new LastFlight(),                                            // NZ.1.6 one official flight per round
+        Flights = new LastFlight(),                                            // NZ.3.6 one official flight per round
         Timing = new()
         {
             Kind = WorkingTimeKind.Fixed,
-            WorkingTime = NumberOrParam.Param("roundDuration"),                // NZ.3.15.1 k
+            WorkingTime = NumberOrParam.Param("roundDuration"),                // NZ.7.7(e)(xi)
             MaxLaunches = 1,
         },
 
         // no group: individual scoring, so there is no scoring group; a
         //   group-scored Class P is not writable — see the note at the foot.
-        // NO normalise (F25). NZ.3.15.1 i: "the final score is the total of all
+        // NO normalise (F25). NZ.7.7(e)(ix): "the final score is the total of all
         //   points over three flights". This is the NDC-eligible form of the class.
+        // No flightValidWhen gate: the 75 m cancellation does not reach this
+        //   class (see the header).
 
-        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6
         Score =
         [
             // Cumulative bands: 450 s scores 420x1 + 30x(−1) = 390.
-            ScoreTerm.Piecewise("flightTime",                                          // NZ.3.15.1 c
+            ScoreTerm.Piecewise("flightTime",                                          // NZ.7.7(e)(iii)
                 Bands.From(0)
-                     .UpTo(420, 1)                                             // NZ.3.15.1 c "one point for each second flown up to 7 minutes (i.e. 420 points)"
-                     .Rest(-1)),                                               // NZ.3.15.1 c "then one point lost for each second flown over
+                     .UpTo(420, 1)                                             // NZ.7.7(e)(iii) "one point for each second flown up to 7 minutes (i.e. 420 points)"
+                     .Rest(-1)),                                               // NZ.7.7(e)(iii) "then one point lost for each second flown over
                                                                                //   this time"
 
             ScoreTerm.When(
                 Predicate.All(
-                    Predicate.Is("motorRestarted", false),                        // NZ.3.15.1 g "landing points will be lost"
-                    Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.3.15.1 j, read per NZ.3.13.1 j — see below
-                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.15.1 e
+                    Predicate.Is("motorRestarted", false),                        // NZ.7.7(e)(vii) "landing points will be lost"
+                    Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.7.7(e)(x), read per NZ.7.5(k) — see below
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.7.7(e)(v)
                        Rows.UpTo(7, 50)
                            .Then(15, 25)
                            .Rest(0))),
@@ -73,26 +75,26 @@ public static class SeedNzPRadian
     {
         Name = "ALES Radian (2 m all-foam electric glider)",
         FaiDesignation = "",                                                   // a national class; no FAI designation
-        Version = "NZMAA Section 5 Soaring, March 2024",
-        // no finalRanking: one phase, so SinglePhase (NZ.3.15 has no fly-off)
+        Version = "NZMAA Section 5 Soaring, October 2024 Rev 3.0",
+        // no finalRanking: one phase, so SinglePhase (NZ.7.7 has no fly-off)
 
         Parameters =
         [
             Params.Number("roundDuration", "s", boundAt: ParameterBindingPoint.BeforeFlying),
-                                                                               // NZ.3.15.1 k "decided by the CD taking into account the number
+                                                                               // NZ.7.7(e)(xi) "decided by the CD taking into account the number
                                                                                //   of competitors, weather conditions etc. For example each
                                                                                //   round could be 1 hour" (F12)
         ],
 
         Reflight = new()
         {
-            EntitledScores = ReflightSelection.NotPermitted,                    // NZ.3.15.1 h "no re-flights are permitted"
-            OthersScore = ReflightSelection.NotPermitted,                       // NZ.3.15.1 h
-            // no minNewGroup: NZ.3.15.1 h permits no re-flight, so no new group is
+            EntitledScores = ReflightSelection.NotPermitted,                    // NZ.7.7(e)(viii) "no re-flights are permitted"
+            OthersScore = ReflightSelection.NotPermitted,                       // NZ.7.7(e)(viii)
+            // no minNewGroup: NZ.7.7(e)(viii) permits no re-flight, so no new group is
             //   ever formed and the field is INAPPLICABLE, not unstated (F26)
         },
 
-        // no penalty definitions — every consequence in NZ.3.15 is derived from
+        // no penalty definitions — every consequence in NZ.7.7 is derived from
         // something measured
 
         Phases =
@@ -105,10 +107,10 @@ public static class SeedNzPRadian
                 {
                     Kind = CompositionKind.FixedSequence,
                     TasksPerRound = 1,
-                    MaxRounds = 3,                                              // NZ.3.15 "three 7 minutes flights over 3 rounds"
+                    MaxRounds = 3,                                              // NZ.7.7 "three 7 minutes flights over 3 rounds"
                 },
-                Validity = new() { MinRounds = 3 },                             // NZ.3.15
-                // no drop: NZ.3.15.1 i "each flight counts"
+                Validity = new() { MinRounds = 3 },                             // NZ.7.7
+                // no drop: NZ.7.7(e)(ix) "each flight counts"
                 // no tie-breaking: the NZ rules state none anywhere
                 //   (docs/rules/nz/00-nz-general-rules.md:117), and Pete's
                 //   2026-09-04 ruling fixes what that silence left open:
@@ -122,10 +124,10 @@ public static class SeedNzPRadian
     };
 
     // ---- RULES QUERY, not a model gap --------------------------------------
-    // NZ.3.15.1 j reads: "The model must be airborne at the end of the round the
+    // NZ.7.7(e)(x) reads: "The model must be airborne at the end of the round the
     // flight time for the flight & landing to count." As written that requires a
     // model to be STILL FLYING for its landing to score, which cannot be meant.
-    // The parallel Class N clause NZ.3.13.1 j says the opposite and makes sense:
+    // The parallel Class N clause NZ.7.5(k) says the opposite and makes sense:
     // "if the model is still airborne at the end of the round the flight time
     // stops at that point as well as no landing points awarded."
     // This definition follows Class N. The reading should be confirmed with the
@@ -133,7 +135,7 @@ public static class SeedNzPRadian
     // rule 1 the rule document itself is NOT to be edited to match.
     //
     // ---- unresolved --------------------------------------------------------
-    // GROUP SCORING IS A CD CHOICE AND IS NOT WRITABLE. NZ.3.15 preamble: "A
+    // GROUP SCORING IS A CD CHOICE AND IS NOT WRITABLE. NZ.7.7 preamble: "A
     // Contest Director may decide to mass launch groups of pilots … The CD may use
     // group scoring in this instance but points will not be eligible for any
     // record claims or NDC." Whether the task normalises is therefore bound at

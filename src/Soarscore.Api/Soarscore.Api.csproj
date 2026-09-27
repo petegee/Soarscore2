@@ -31,4 +31,8 @@
     <ProjectReference Include="..\Soarscore.Infrastructure\Soarscore.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="appsettings.Development.json" />
+  </ItemGroup>
+
 </Project>

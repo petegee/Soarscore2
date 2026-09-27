@@ -10,11 +10,12 @@ copy of it. Never answer a rule question from memory — always land on a cited
 source ref.
 
 **Two rulebooks, two bodies.** `docs/rules/` is the **FAI Sporting Code** (CIAM).
-`docs/rules/nz/` is the **NZMAA** *Flying Rules, Section 5: Soaring* — the New
-Zealand national classes, which are **not** FAI classes and do not inherit from
-the FAI general rules. Refs are written `NZ.3.12.3` to keep them apart, because
-the clause numbering collides (both rulebooks have a §2.4). The skill is still
-named `fai-rules` for continuity; the corpus is broader than the name.
+`docs/rules/nz/` is the **NZMAA** *Flying Rules, Section 5: Soaring* (October
+2024, Rev 3.0) — the New Zealand national classes, which are **not** FAI classes
+and do not inherit from the FAI general rules. Refs are written `NZ.7.4(d)(iii)`
+to keep them apart, because the clause numbering collides (both rulebooks have a
+§2.4). The skill is still named `fai-rules` for continuity; the corpus is
+broader than the name.
 
 ## The corpus
 
@@ -62,15 +63,17 @@ They are 100k+ tokens each. Use the script — it prints one section:
 .claude/skills/fai-rules/scripts/fai-rule.sh show 5.5.11.12    # F5J scoring
 .claude/skills/fai-rules/scripts/fai-rule.sh show F3J.10.5     # F3J landing table
 .claude/skills/fai-rules/scripts/fai-rule.sh show C.16.2.6     # CIAM starting order
-.claude/skills/fai-rules/scripts/fai-rule.sh show NZ.3.12.3    # NZ Class M scoring
+.claude/skills/fai-rules/scripts/fai-rule.sh show NZ.7.4       # NZ Class M (whole clause; cite letters: (b)(viii) etc.)
 .claude/skills/fai-rules/scripts/fai-rule.sh find "landing bonus" f3
-.claude/skills/fai-rules/scripts/fai-rule.sh toc nz 3.12
+.claude/skills/fai-rules/scripts/fai-rule.sh toc nz 7
 .claude/skills/fai-rules/scripts/fai-rule.sh check-links
 ```
 
 The volume is inferred from the ref: `F3*`→F3 Soaring 2025, `5.5.*`→F5 Electric
-2026, `C.*`→CIAM General Rules 2026, `NZ.*`→NZMAA Section 5 Soaring 2024.
-`show` includes sub-sections (`show 5.5.12.11` also prints `.11.1` and `.11.2`).
+2026, `C.*`→CIAM General Rules 2026, `NZ.*`→NZMAA Section 5 Soaring (October
+2024 Rev 3.0). `show` takes a clause number (`NZ.7.4`, `NZ.4.13`) and prints the
+whole clause including its lettered sub-items; sub-clause letters are cited in
+prose (`NZ.4.13(c)`), not in the script ref.
 `check-links` covers both the FAI and the NZ condensed docs.
 
 ## Invariants — **FAI classes only**
@@ -97,21 +100,21 @@ class-specific. Assume nothing carries across; check the map.
 >
 > | FAI invariant | NZ reality |
 > |---|---|
-> | Best raw result scores 1000 | **Classes N and P do not normalise at all** (`NZ.3.13.1 i`, `NZ.3.15.1 i`) — raw points are summed |
-> | Round score = normalised group score | **Class M adds its landing bonus AFTER normalising** (`NZ.3.12.1 e`, `NZ.3.12.3 d`), so the round score is not purely a normalised value |
+> | Best raw result scores 1000 | **Classes N and P do not normalise at all** (`NZ.7.5(j)`, `NZ.7.7(e)(ix)`) — raw points are summed |
+> | Round score = normalised group score | **Class M adds its landing bonus AFTER normalising** (`NZ.7.4(b)(v)`, `NZ.7.4(d)(iv)`), so the round score is not purely a normalised value |
 > | Every class has a drop-worst | **None of M, N or P states one.** All flights count |
 > | Penalties deducted from the final aggregate | The NZ classes state per-round zeroes, not aggregate deductions |
 > | Re-flights follow the common pattern | **N and P permit none at all**; M grants one and never says which score counts |
 >
 > Also: the launch-height and motor-run limits that name the ALES classes
-> (200 m, 123 m, 20 s, 30 s) are enforced by onboard hardware (`NZ.2.8`) and are
+> (200 m, 123 m, 20 s, 30 s) are enforced by onboard hardware (`NZ.4.17`) and are
 > **not scoring data** — no metric, no parameter, no penalty.
 
 ## Rules for working with this corpus
 
 - **Both `source-docs/` trees are read-only.** They track the sport, not the
   product. Never edit them, and never edit `docs/rules/` — FAI or NZ — to fit a
-  software or MVP decision. `NZ.3.15.1 j` is a live example: the clause is
+  software or MVP decision. `NZ.7.7(e)(x)` is a live example: the clause is
   self-contradictory, the class definition works around it, and the rule doc is
   left as written for the NZMAA to fix.
 - **Don't edit `docs/rules/` without asking.** Per CLAUDE.md, agents ask before

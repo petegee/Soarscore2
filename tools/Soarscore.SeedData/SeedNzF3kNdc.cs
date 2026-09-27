@@ -1,10 +1,13 @@
 // NZ F3K — RC Hand-Launch Gliders, NDC format
-// Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.0.2 / NZ.0.2.1);
-//            FAI Sporting Code Volume F3 Soaring 2025 ed.2 (F3K.x), which S5 §3.8.1
-//            nominates as *the* F3K rulebook — NZ.0.2 is its only NZ variation.
+// Rule refs: NZMAA Flying Rules, Section 5: Soaring, October 2024 Rev 3.0
+//            (NZ.2.2 / NZ.2.3); FAI Sporting Code Volume F3 Soaring 2025 ed.2
+//            (F3K.x), whose tasks NZ.2.2(c) nominates as *the* task source —
+//            NZ.2.2 is the only NZ variation. (The March 2024 edition carried
+//            the FAI-F3K nomination at §3.8.1; Rev 3.0 dropped that clause and
+//            the nomination now lives in the NDC tasks text itself.)
 //
-// NZ.0.2 varies the scoring frame, not the tasks: catalogue B/D/G/H only, "Total is
-// sum of raw scores" (NZ.0.2.1 a) — no per-group normalisation, therefore no
+// NZ.2.2 varies the scoring frame, not the tasks: catalogue B/D/G/H only, "Total is
+// sum of raw scores" (NZ.2.3(a)) — no per-group normalisation, therefore no
 // drop-worst — and timing recorded to 0.1 s truncated ("59.99 seconds is recorded at
 // 59.9 seconds"), already the F3K metric precision. Everything else is FAI F3K,
 // carried wholesale per the ruling of 2026-08-30: re-flights (F3K.9.6), group
@@ -12,7 +15,7 @@
 //
 // F3K.10's "minimum of five rounds each with different tasks" cannot carry — the
 // NDC catalogue has only 4 tasks, so the FAI round structure is unachievable and is
-// varied away by NZ.0.2's catalogue restriction. The round count is fixed at 4, one
+// varied away by NZ.2.2's catalogue restriction. The round count is fixed at 4, one
 // per task, by ruling (the Class M NDC / F5J NDC shape).
 
 using System.Collections.Immutable;
@@ -23,21 +26,21 @@ namespace Soarscore.SeedData;
 public static class SeedNzF3kNdc
 {
     // ---- metricSet f3kFlight -----------------------------------------------
-    // Same as SeedF3K, with the NZ.0.2.1 a timing citation alongside F3K.7 —
+    // Same as SeedF3K, with the NZ.2.3(a) timing citation alongside F3K.7 —
     // same Truncate / 0.1 s precision. flightTime is the demanded observation —
     // no assumption; the two flags are the recorded EXCEPTIONS of F3K.9.3 and
-    // F3K.7 (carried wholesale by NZ.0.2), so absence resolves to compliance.
+    // F3K.7 (carried wholesale by NZ.2.2), so absence resolves to compliance.
 
     private static ImmutableArray<MetricDefinition> FlightMetrics =>
     [
-        Metric.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7; NZ.0.2.1 a recorded to 0.1 s, truncated
-        Metric.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 (carried by NZ.0.2) — "lands later ⇒ that flight will
+        Metric.Number("flightTime", "s", RoundingMode.Truncate, 0.1m),  // F3K.7; NZ.2.3(a) recorded to 0.1 s, truncated
+        Metric.Flag("landedWithinWindow", whenNotRecorded: true),       // F3K.9.3 (carried by NZ.2.2) — "lands later ⇒ that flight will
                                                                     //   score zero" is what is recorded; absence ⇒ within the window
-        Metric.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 (carried by NZ.0.2) — the early-launch zero is what is
+        Metric.Flag("launchedInWorkingTime", whenNotRecorded: true),    // F3K.7 (carried by NZ.2.2) — the early-launch zero is what is
                                                                     //   recorded; absence ⇒ in time
     ];
 
-    // ---- tasks: B, D, G, H only (NZ.0.2.1 a) -------------------------------
+    // ---- tasks: B, D, G, H only (NZ.2.3(a)) -------------------------------
 
     private static TaskDefinition TaskB => new()
     {
@@ -48,13 +51,13 @@ public static class SeedNzF3kNdc
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = NumberOrParam.Param("workingTime.B") },
         Group = new() { MinPerGroup = 5 },                                     // F3K.9.1 carries (ruling); governs the draw —
                                                                                //   its normalisation sentence is superseded by
-                                                                               //   NZ.0.2.1 a's raw-sum total
-        // NO normalise (F25): NZ.0.2.1 a "Total is sum of raw scores" — there is no
+                                                                               //   NZ.2.3(a)'s raw-sum total
+        // NO normalise (F25): NZ.2.3(a) "Total is sum of raw scores" — there is no
         //   normalisation scale anywhere in this class.
         FlightValidWhen = Predicate.All(
             Predicate.Is("landedWithinWindow", true),                                  // F3K.9.3
             Predicate.Is("launchedInWorkingTime", true)),                              // F3K.7
-        Score = [ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.B"))],  // F3K.11.2; NZ.0.2.1 b worked example 55 + 85 = 140
+        Score = [ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("maxFlight.B"))],  // F3K.11.2; NZ.2.3(b) worked example 55 + 85 = 140
     };
 
     // SeedF3K's D inherits A's score term through `like`; this definition
@@ -92,7 +95,7 @@ public static class SeedNzF3kNdc
     // No cap on the term: the assigned target IS the cap. `rankBy flightTime`
     // (F16) is load-bearing — F3K.11.8 assigns targets to the four longest
     // FLIGHTS, and no flight has a score until a target has been assigned, so
-    // the default ranking (by score) is circular here. Worked example NZ.0.2.1 e:
+    // the default ranking (by score) is circular here. Worked example NZ.2.3(e):
     // 569.
     private static TaskDefinition TaskH => new()
     {
@@ -121,15 +124,15 @@ public static class SeedNzF3kNdc
     {
         Name = "RC Hand-Launch Gliders (NDC format)",
         FaiDesignation = "F3K",                                                // S5 §3.8.1: this rulebook class IS FAI F3K
-        Version = "NZMAA Section 5 Soaring, March 2024",
-        // no finalRanking: one phase, so SinglePhase (NZ.0.2 has no fly-off)
+        Version = "NZMAA Section 5 Soaring, October 2024 Rev 3.0",
+        // no finalRanking: one phase, so SinglePhase (NZ.2.2 has no fly-off)
 
-        // NZ.0.2.1 b restates both the 10- and 7-minute variants; nothing else in
+        // NZ.2.3(b) restates both the 10- and 7-minute variants; nothing else in
         // B/D/G/H is a parameter (D/G/H working times are literal 600).
         Parameters =
         [
-            Params.Number("workingTime.B", "s", 600, [420, 600], ParameterBindingPoint.PerRound),  // F3K.11.2; NZ.0.2.1 b
-            Params.Number("maxFlight.B", "s", 240, [180, 240], ParameterBindingPoint.PerRound),    // F3K.11.2; NZ.0.2.1 b
+            Params.Number("workingTime.B", "s", 600, [420, 600], ParameterBindingPoint.PerRound),  // F3K.11.2; NZ.2.3(b)
+            Params.Number("maxFlight.B", "s", 240, [180, 240], ParameterBindingPoint.PerRound),    // F3K.11.2; NZ.2.3(b)
         ],
 
         Reflight = new()
@@ -183,10 +186,10 @@ public static class SeedNzF3kNdc
                     Kind = CompositionKind.ChooseFromCatalogue,
                     TasksPerRound = 1,
                     RequireDistinctTaskPerRound = true,                        // ruling: 4 rounds, one per task (B, D, G, H each once)
-                    MaxRounds = 4,                                             // ruling; NZ.0.2 is silent, NZ.0.3/NZ.3.12.7 state 4
+                    MaxRounds = 4,                                             // ruling; NZ.2.2 is silent, NZ.2.4/NZ.7.4(h) state 4
                 },
                 Validity = new() { MinRounds = 4 },                            // ruling
-                // no drop: NZ.0.2.1 a "Total is sum of raw scores" — a dropped
+                // no drop: NZ.2.3(a) "Total is sum of raw scores" — a dropped
                 //   round would contradict it
                 // no tie-breaking: the NZ rules state none anywhere
                 //   (docs/rules/nz/00-nz-general-rules.md:117), and Pete's
@@ -195,7 +198,7 @@ public static class SeedNzF3kNdc
                 //   every placing
                 TieBreaks = [new EqualPlaces()],                               // Pete 2026-09-04: ties stand equal, every placing
                                                                                //   encoding: kanban/completed/tie-break-policy-in-class-definition.md
-                Tasks = [TaskB, TaskD, TaskG, TaskH],                          // NZ.0.2.1 a catalogue B/D/G/H only
+                Tasks = [TaskB, TaskD, TaskG, TaskH],                          // NZ.2.3(a) catalogue B/D/G/H only
             },
         ],
     };
@@ -208,7 +211,7 @@ public static class SeedNzF3kNdc
     };
 
     // ---- arithmetic check --------------------------------------------------
-    // NZ.0.2 states no maxima to check against (unlike NZ.3.12.7 c), so the
+    // NZ.2.2 states no maxima to check against (unlike NZ.7.4(h)(iii)), so the
     // identity to verify is the raw-sum one: the contest total is exactly the
     // sum of the per-round raw scores, no normalisation rescale and no discard.
     // The per-round maxima are the FAI task numbers quoted verbatim:

@@ -2,22 +2,24 @@
 
 Class N's shape with a 7-minute target and a 200 m limit, on a restricted
 airframe. Inherits [00-nz-general-rules.md](00-nz-general-rules.md) and
-[nz-ales-general-rules.md](nz-ales-general-rules.md). Source refs `NZ.3.15.x`
-(NZMAA Section 5: Soaring, March 2024).
+[nz-ales-general-rules.md](nz-ales-general-rules.md). Source refs `NZ.7.7(...)`
+(NZMAA Section 5: Soaring, **October 2024 Rev 3.0**; general clauses cited as
+`NZ.3.x` / `NZ.4.x`).
 
-Stated intent (`NZ.3.15`): "to provide a simple set of rules for a fun event.
+Stated intent (`NZ.7.7(b)`): "to provide a simple set of rules for a fun event.
 Open to Radian electric gliders or equivalent 2m all foam models. Major
 modifications to the aircraft may lead to condemnation by your fellow pilots."
 
-Objective: "to fly three 7 minutes flights over 3 rounds with a bonus for
-landing. Launch height is limited to 200m and motor run time to 30 seconds."
+Objective (`NZ.7.7(c)`): "to fly three 7 minutes flights over 3 rounds with a
+bonus for landing. Launch height is limited to 200m and motor run time to 30
+seconds."
 
 ---
 
 ## 1. Pilot assignment to groups (the draw) — **and the open problem**
 
 Individually scored by default. But the preamble makes the *scoring basis itself*
-a CD choice:
+a CD choice (`NZ.7.7(d)`):
 
 > "A Contest Director may decide to mass launch groups of pilots to add to the
 > fun of the event. The CD may use group scoring in this instance but points will
@@ -35,29 +37,30 @@ variant the rulebook gives no separate clause numbering to split them on.
 > Left open.
 
 Round duration is set by the CD, "for example each round could be 1 hour"
-(`NZ.3.15.1 k`) — a `no default` parameter.
+(`NZ.7.7(e)(xi)`) — a `no default` parameter.
 
 ---
 
-## 2. Launch (`NZ.3.15.1 d, f, g`)
+## 2. Launch (`NZ.7.7(e)(iv)`, `(vi)`, `(vii)`)
 
 - Launch height limited to **200 m**, controlled by an **Altimeter switch placed
-  in line with the throttle channel** (`NZ.3.15.1 d`, and `NZ.2.8`).
+  in line with the throttle channel** (`NZ.7.7(e)(iv)`, and `NZ.4.17`).
 - Maximum motor run **30 seconds**, controlled by the onboard switch.
 - Timing starts from the moment the model leaves the launcher's hand, and stops
-  as soon as it touches the ground.
+  as soon as it touches the ground (`NZ.7.7(e)(vi)`).
 - **The motor may not be restarted**; if it is, the watch is stopped immediately
-  and landing points are lost (`NZ.3.15.1 g`).
+  and landing points are lost (`NZ.7.7(e)(vii)`).
 
 No restrictions on motor, airframe or battery chemistry beyond the 2 m all-foam
-class limit; batteries may be recharged or swapped between flights.
+class limit; batteries may be recharged or swapped between flights
+(`NZ.7.7(e)(i)`, `(ii)`).
 
 ---
 
 ## 3. Data the timer / helper collects
 
-As Class N. **Landing bonus** (`NZ.3.15.1 e`), identical to Class N and again
-**not** the `NZ.2.4.5` electric table:
+As Class N. **Landing bonus** (`NZ.7.7(e)(v)`), identical to Class N and again
+**not** the `NZ.4.13` electric table:
 
 | Nose at rest | Pts |
 |---|---|
@@ -67,9 +70,16 @@ As Class N. **Landing bonus** (`NZ.3.15.1 e`), identical to Class N and again
 
 The April 2018 revision changed this measurement to the **nose** of the model.
 
+**The 75 m flight cancellation does not reach this class.** It is `NZ.4.13(c)`,
+scoped to classes that adopt the electric precision-landing table (see
+[00-nz-general-rules.md §3](00-nz-general-rules.md#3-landing-nz411nz413)); this
+class uses its own three-step bonus and never references that table. Outside
+15 m the bonus is zero; the flight stands. (The superseded March 2024 edition
+carried the rule as a general clause and was read as reaching this class.)
+
 ---
 
-## 4. The task (`NZ.3.15.1 c`)
+## 4. The task (`NZ.7.7(e)(iii)`)
 
 - **+1 point per second** flown, up to 7 minutes — **420 points**.
 - **−1 point per second** flown over that time.
@@ -78,7 +88,7 @@ Cumulative: a 450 s flight scores `420×1 + 30×(−1)` = **390**.
 
 ---
 
-## 5. Score (`NZ.3.15.1 i`)
+## 5. Score (`NZ.7.7(e)(ix)`)
 
 ```
 round score = flight points + landing bonus
@@ -87,10 +97,10 @@ final score = sum of the three round scores
 
 **No normalisation** in the individual form: "Each flight counts. The final score
 is the total of all points over three flights." See
-[class-n-ales123.md §5](class-n-ales123.md#5-score-nz3131-i) — this is the second
+[class-n-ales123.md §5](class-n-ales123.md#5-score-nz75j) — this is the second
 of the two classes behind finding F25.
 
-**NDC** (`NZ.3.15.2`): "Group scored contest results are not eligible for NDC
+**NDC** (`NZ.7.7(f)`): "Group scored contest results are not eligible for NDC
 contests." Which is the rulebook confirming that the individual form is the
 default and the group form is the variant.
 
@@ -98,18 +108,18 @@ default and the group form is the variant.
 
 ## 6. Rounds
 
-**Three rounds, all count, no discard** (`NZ.3.15`, `NZ.3.15.1 i`).
+**Three rounds, all count, no discard** (`NZ.7.7(c)`, `NZ.7.7(e)(ix)`).
 
 ---
 
-## 7. Re-flights (`NZ.3.15.1 h`)
+## 7. Re-flights (`NZ.7.7(e)(viii)`)
 
 **"No re-flights are permitted."** As Class N — a definite rule, not a silence
 (finding F26).
 
 ---
 
-## 8. A defect in the rule text — `NZ.3.15.1 j`
+## 8. A defect in the rule text — `NZ.7.7(e)(x)`
 
 The clause reads, verbatim:
 
@@ -118,7 +128,7 @@ The clause reads, verbatim:
 
 As written this requires a model to be **still flying** for its landing to score,
 which cannot be meant — a landing bonus presupposes a landing. The parallel
-Class N clause `NZ.3.13.1 j` states the sensible rule and the opposite one:
+Class N clause `NZ.7.5(k)` states the sensible rule and the opposite one:
 
 > "If the model is still airborne at the end of the round the flight time stops
 > at that point as well as no landing points awarded."
@@ -146,9 +156,11 @@ the fix belongs in their rulebook, not in ours.
 
 Deep-links into the verbatim extracted rule text (see
 [source-docs/](source-docs/)). The official NZMAA PDF remains authoritative.
+Sub-clause letters are cited in the link text; they all live under one heading.
 
-- Class P: [`NZ.3.15`](source-docs/nzmaa-s5-soaring-2024.md#315-class-p-ales-radian-or-similar-2m-all-foam-electric-glider)
-- Contest rules: [`NZ.3.15.1`](source-docs/nzmaa-s5-soaring-2024.md#3151-contest-rules)
-- NDC eligibility: [`NZ.3.15.2`](source-docs/nzmaa-s5-soaring-2024.md#3152-ndc-rules)
-- Altitude limiters: [`NZ.2.8`](source-docs/nzmaa-s5-soaring-2024.md#28-altitude-limiters--provisional)
-- The 75 m rule: [`NZ.2.4.6`](source-docs/nzmaa-s5-soaring-2024.md#246-the-flight-is-cancelled-and-recorded-as-a-zero-score-if-during-landing-the-nose-of-the-model)
+- Class P: [`NZ.7.7`](source-docs/nzmaa-s5-soaring-2024.md#77-class-p--ales-radian-or-similar-2m-all-foam-electric-glider)
+  — (a)–(d) intent, objective, group-scoring option; (e) contest rules
+  (i)–(xi); (f) NDC eligibility
+- Altitude limiters: [`NZ.4.17`](source-docs/nzmaa-s5-soaring-2024.md#417-altitude-limiters)
+- Electric landing table (and its 75 m cancellation — **does not reach this
+  class**): [`NZ.4.13`](source-docs/nzmaa-s5-soaring-2024.md#413-precision-landings-for-electric-events)

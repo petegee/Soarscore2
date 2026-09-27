@@ -151,7 +151,7 @@ group. No other class has this.
 
 ---
 
-# NZ national classes (NZMAA Section 5: Soaring, March 2024)
+# NZ national classes (NZMAA Section 5: Soaring, October 2024 Rev 3.0)
 
 A **separate rulebook by a separate body**, not FAI variations. Refs are written
 `NZ.<clause>`. Docs live in `docs/rules/nz/`; definitions in `tools/Soarscore.SeedData/`.
@@ -169,7 +169,7 @@ structural, not numeric — see the warning table in `SKILL.md`.
 | **Rounds** | not stated (NDC: 4) | 3, all count | 3, all count |
 | **Drop-worst** | **none** | **none** | **none** |
 | **Fly-off** | none | none | none |
-| **Landing bonus** | `NZ.2.4.5` table, 50→5 over 10 m | 50 / 25 / 0 at 7 m / 15 m | 50 / 25 / 0 at 7 m / 15 m |
+| **Landing bonus** | `NZ.4.13` table, 50→5 over 10 m | 50 / 25 / 0 at 7 m / 15 m | 50 / 25 / 0 at 7 m / 15 m |
 | **Bonus applied** | **after normalising** | in the raw score | in the raw score |
 | **Re-flights** | entitled, **outcome unstated** | **none permitted** | **none permitted** |
 | **Launch limit** | 200 m / 30 s | 123 m / 20 s | 200 m / 30 s |
@@ -180,26 +180,27 @@ Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.m
 
 | Topic | Where |
 |---|---|
-| The 75 m rule — flight cancelled, zero score | `NZ.2.4.6` → `nz/00-nz-general-rules.md#3-landing-nz24` |
-| Electric precision landing table (10 m, 50→5) | `NZ.2.4.5` → same |
-| Gliding precision landing table (15 m, 100→30) | `NZ.2.4.4` — **not used by M, N or P** |
-| Altitude Limiter Switch; the 10% overrun zero | `NZ.2.8` → `nz/00-nz-general-rules.md#5-altitude-limiters-nz28` |
-| One official flight per round | `NZ.1.6` |
-| Repeat attempts — **tow-launched classes only**, so not ALES | `NZ.1.6.1` |
-| Flight annulment | `NZ.1.7` |
-| Contestants meeting (when CD-announced values bind) | `NZ.2.5.1` |
-| NZ variations to FAI classes, and NDC formats for them | PREFACE, `NZ.0.0` — **not modelled** |
+| The 75 m rule — flight cancelled, zero score; **electric precision-landing classes only (M)** | `NZ.4.13(c)` → `nz/00-nz-general-rules.md#3-landing-nz411nz413` |
+| Electric precision landing table (10 m, 50→5) | `NZ.4.13` → same |
+| Gliding precision landing table (15 m, 100→30) | `NZ.4.12` — **not used by M, N or P** |
+| Altitude Limiter Switch; the 10% overrun zero | `NZ.4.17` → `nz/00-nz-general-rules.md#5-altitude-limiters-nz417` |
+| One official flight per round | `NZ.3.6` |
+| Repeat attempts — **tow-launched classes only**, so not ALES | `NZ.3.6(b)` |
+| Flight annulment | `NZ.3.7` |
+| Contestants meeting (when CD-announced values bind) | `NZ.4.14(a)` |
+| NZ adaptations to FAI classes, and NDC formats for them | `NZ.1.2`–`1.8`, `NZ.2` — **not modelled** |
 
 ## Traps
 
-- **`NZ.3.12.7` (Class M NDC) is a different pipeline, not a different number** —
+- **`NZ.7.4(h)` (Class M NDC) is a different pipeline, not a different number** —
   four rounds, raw sum, no normalisation. Modelled as its own class definition
   (`SeedNzMNdc.cs`). Its stated maxima (650/round, 2600 total) are a useful
   arithmetic check.
-- **`NZ.3.12.7 b` cross-references §3.13.1 and §3.13.7 c where it means §3.12.1
-  and §3.12.7 c** — stale numbering from the Jan 2013 revision.
-- **`NZ.3.15.1 j` is self-contradictory** (says a Class P model must be *airborne*
-  for its landing to count). The Class N equivalent `NZ.3.13.1 j` states the
+- **`NZ.7.4(h)(ii)` cross-references "3.13.1" and "3.13.7.c" where it means
+  §7.4(b)–(g) and §7.4(h)(iii)** — stale numbering, present in the March 2024
+  edition too (where it meant §3.12.1 and §3.12.7 c).
+- **`NZ.7.7(e)(x)` is self-contradictory** (says a Class P model must be *airborne*
+  for its landing to count). The Class N equivalent `NZ.7.5(k)` states the
   sensible rule. Flagged, not fixed — see `nz/class-p-radian.md#8`.
 - **Class P group scoring is a CD option** the model cannot currently express;
   the definition writes the individual form. See `nz/class-p-radian.md#1`.

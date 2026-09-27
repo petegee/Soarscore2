@@ -167,7 +167,7 @@ See CLAUDE.md house-keeping rule 5.
   yields −5, and no test covers a below-origin launch (`FlightInterpreterTests`
   exercises +15 m and exactly-at-NLH only). Found 2026-09-04 during the NZ NDC
   seed work (`kanban/completed/nz-ndc-seed-classes.md`), which encodes
-  `SeedF5kNdc`'s symmetric NZ.3.16.29 bands with positive below-origin rates —
+  `SeedF5kNdc`'s symmetric NZ.7.8(hh)(ii)ands with positive below-origin rates —
   correct under the evaluator as it is — and locks them in
   `NzNdcSeedArithmeticTests`. Two fixes are possible: signed-width integration in
   the engine (then `SeedF5K` is correct as written and `SeedF5kNdc`'s below bands
@@ -181,7 +181,7 @@ See CLAUDE.md house-keeping rule 5.
   bonus", `docs/competition-class-notation.md`) — the engine never implemented
   it. `EvaluatePiecewise` now multiplies the accumulated rate × width by the
   walk direction, `SeedF5K` is correct as written (no data change), and
-  `SeedF5kNdc`'s below bands flipped to negative rates with the NZ.3.16.29
+  `SeedF5kNdc`'s below bands flipped to negative rates with the NZ.7.8(hh)
   table passing unchanged — the tripwire fired on exactly the bonus rows
   between the engine fix and the seed flip, as designed. The failing-test-first
   prescription was followed: the two new `FlightInterpreterTests` below-origin

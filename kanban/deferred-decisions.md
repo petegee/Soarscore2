@@ -199,16 +199,16 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
 
 - **No fly-offs and no tie-breaking in the NZ NDC pipelines.** **Decided
   2026-09-04** (`kanban/completed/nz-ndc-seed-classes.md`, Interpretation 1).
-  `NZ.0.3 d` and `NZ.3.16.37 a+c` fix the contest score at the raw sum of four
-  rounds; an FAI-style fly-off (`5.5.11.13` / `NZ.3.16.27`) would nullify that
+  `NZ.2.4(d)` and `NZ.7.8(mm)(i)+c` fix the contest score at the raw sum of four
+  rounds; an FAI-style fly-off (`5.5.11.13` / `NZ.7.8(ff)`) would nullify that
   total, so `SeedF5jNdc` and `SeedF5kNdc` are single-phase with no promotion
   and no drop, as `SeedNzF3kNdc` already was (Pete's 2026-08-30 ruling). X5J
-  needs no decision — `NZ.3.14` states no fly-off. **Amended 2026-09-04
+  needs no decision — `NZ.7.6` states no fly-off. **Amended 2026-09-04
   (Pete's ruling): there are never any fly-offs in NZ NDC — not even the
-  tie-break fly-off.** `NZ.3.16.26` a's fly-off half does not carry into the
+  tie-break fly-off.** `NZ.7.8(ee)` a's fly-off half does not carry into the
   F5K NDC, superseding the story's Interpretation 2 and the "still binding"
   carry this entry first recorded. The best-dropped-score half of `3.16.26` a
-  is doubly dead — vacuous at a fixed four rounds with no discard (`3.16.25 b`
+  is doubly dead — vacuous at a fixed four rounds with no discard (`7.8(dd)(ii)`
   can never fire) and refused by adoption check 19 regardless. **Amended again
   2026-09-04 (Pete's ruling): NZ has NO tie-breaking at all — ties are never
   broken, announced equal ("1st equal") at EVERY placing — covering all eight
@@ -216,9 +216,27 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   ruling is required); the eight NZ seeds ship the new `EqualPlaces` directive
   — the "ties are never broken" rung the model had withheld until a rulebook
   context stated one — with adoption check 21 (it must stand alone) and no
-  `PendingTieBreak` (nothing is pending). `UndefinedRequiresRuling` remains
+  `PendingTieBreak` (nothing is pending).   `UndefinedRequiresRuling` remains
   for genuine silence: F5L and FAI General `C.15.6.1`. Reopen only if NZMAA
-  amends `NZ.0.3` / `NZ.3.16.37` / `NZ.3.16.26`.
+  amends `NZ.2.4` / `NZ.7.8(mm)` / `NZ.7.8(ee)`.
+
+- **The ALES 200 NDC format is scored without the 75 m flight cancellation.**
+  **Decided 2026-09-27** (Joe Wurts, senior MFNZ Soaring SIG member, verbal
+  ruling). The rulebook clause `NZ.4.13(c)` cancels a flight landing more than
+  75 m from the designated spot, and reaches Class M through the electric
+  precision-landing table the class adopts (`NZ.7.4(c)(ii)`); the parent
+  definition (`SeedNzMAles200`) encodes it as a `flightValidWhen` gate. The NDC
+  definition (`SeedNzMNdc`) deliberately drops both the flag and the gate: an
+  outside-75 m landing forfeits the landing bonus and keeps its flight points.
+  This contradicts the published rulebook as written — the ruling is local
+  practice, not rulebook text — and `docs/rules/nz/` is untouched by it
+  (house-keeping rule 1). Note also the companion corpus decision taken the
+  same day: the corpus moved to the October 2024 Rev 3.0 edition, which scopes
+  the 75 m rule to electric precision-landing classes only, so Classes N and P
+  are no longer subject to it at all (they had been, under the March edition's
+  standalone-clause placement). Reopen if the NZMAA next revises Section 5, if
+  the SIG ruling is confirmed in writing in different terms, or if it is
+  withdrawn.
 
 ## GliderScore replay harness
 

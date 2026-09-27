@@ -73,7 +73,7 @@ and no existing real data that needs to be preserved, or migrated.
   See House-keeping rule 1.
 - `docs/rules/nz/` — the **NZMAA** New Zealand rules, same structure and same
   read-only discipline. A *separate rulebook by a separate body*, not FAI
-  variations; refs are written `NZ.3.12.3`. The FAI cross-class invariants do
+  variations; refs are written `NZ.7.4(d)(iii)`. The FAI cross-class invariants do
   not hold for these classes — the `fai-rules` skill lists how.
 - `docs/soaring-domain-glossary.md`, `docs/soaring-domain-class-diagram.md` —
   the domain concepts and their relationships. Approval required to change.

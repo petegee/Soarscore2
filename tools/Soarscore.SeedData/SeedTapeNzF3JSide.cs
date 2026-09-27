@@ -1,7 +1,7 @@
 // NZ F3J-side landing tape — the F3J-graduated side of the club's standard
 // double-sided tape.
 //
-// Scale clause: NZ.2.4.4 (docs/rules/nz/source-docs/nzmaa-s5-soaring-2024.md:497-513),
+// Scale clause: NZ.4.12 (docs/rules/nz/source-docs/nzmaa-s5-soaring-2024.md:540-565),
 // row-for-row identical to F3J.10.5 (docs/rules/f3j.md:38-55). The marks below
 // are that table READ BACKWARDS: each mark's band is the set of distances the
 // table awards that mark's reading for — 100 <- [0, 0.2], 99 <- (0.2, 0.4],
@@ -18,9 +18,9 @@
 // tape's boundaries {0.2, 0.4 ... 2.0, 3, 4 ... 15} refine each table's:
 //   - identity: 50-f3j (F3J.10.5), 60-f5l (5.5.12.11.2) — {0.2 ... 15}
 //   - 20-f3b (F3B.2.3 d) — {1 ... 15}
-//   - 30-f5j, 85c-nz-f5j-ndc (5.5.11.12 h); 86-nz-x5j (NZ.2.4.5);
-//     80-nz-m-ales200, 81-nz-m-ndc (NZ.3.12.2 b, table at NZ.2.4.5) — {1 ... 10}
-//   - 83-nz-n-ales123 (NZ.3.13.1 e), 85-nz-p-radian (NZ.3.15.1 e) — {7, 15}
+//   - 30-f5j, 85c-nz-f5j-ndc (5.5.11.12 h); 86-nz-x5j (NZ.4.13);
+//     80-nz-m-ales200, 81-nz-m-ndc (NZ.7.4(c)(ii), table at NZ.4.13) — {1 ... 10}
+//   - 83-nz-n-ales123 (NZ.7.5(f)), 85-nz-p-radian (NZ.7.7(e)(v)) — {7, 15}
 // Refuses (unit mismatch — a metre scale cannot score a unitless metric):
 // 40-f5k, 85d-nz-f5k-ndc (lookup over intrinsic flight.sequence).
 // No pairing to compose (no LookupTerm at all):
@@ -37,7 +37,7 @@ namespace Soarscore.SeedData;
 
 public static class SeedTapeNzF3JSide
 {
-    // NZ.2.4.4 read backwards — cf. SeedF3J.LandingRows (F3J.10.5), the same
+    // NZ.4.12 read backwards — cf. SeedF3J.LandingRows (F3J.10.5), the same
     // twenty-three boundaries. One rulebook table, one scale: had this been
     // transcribed twice, a drifted mark would still emit, still compose and
     // still produce a plausible number — the F22/F24 failure shape

@@ -9,7 +9,7 @@
 #   fai-rule.sh check-links           verify every docs/rules anchor resolves
 #
 #   <ref> examples: F3B.1.5  F3J.10.5  F3K.9.6  5.5.11.12  5.5.12.11.1  C.16.2.6
-#                   NZ.3.12.3  NZ.2.4.5            (New Zealand national classes)
+#                   NZ.7.4  NZ.4.13            (New Zealand national classes)
 #   <vol>          : f3 | f5 | ciam | nz   (inferred from <ref> in `show`)
 
 set -euo pipefail
@@ -42,7 +42,7 @@ volume_of_ref() {
     5.5*)      echo f5 ;;
     C.*|c.*)   echo ciam ;;
     NZ.*|nz.*) echo nz ;;
-    *)         die "cannot infer volume from ref '$1' (expected F3B.1.5, 5.5.11.12, C.16.2.6 or NZ.3.12.3)" ;;
+    *)         die "cannot infer volume from ref '$1' (expected F3B.1.5, 5.5.11.12, C.16.2.6 or NZ.7.4)" ;;
   esac
 }
 

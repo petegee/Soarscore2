@@ -179,7 +179,7 @@ Consequences, accepted knowingly:
   claims to implement. This is consistent with the trust model — the deployment is
   unauthenticated and there is no score sign-off — and the event log gives auditability
   of *what happened*, never of *what was intended*.
-- **The core stays free of a field it could never interpret.** `F3K.7`, `NZ.3.12.3` and
+- **The core stays free of a field it could never interpret.** `F3K.7`, `NZ.7.4(d)(iii)` and
   a club bylaw are all legitimate; any format the core recognised would be a
   class-specific assumption in the core.
 

@@ -649,9 +649,9 @@ classDiagram
     %% minNewGroupSize is nullable, and absent is not "unstated". Where the
     %% rulebook is silent the class declares a no-default Parameter and the
     %% field holds a ParameterRef — F3B, F5L (5.5.12.9) and NZ Class M
-    %% (NZ.3.12.5 l) all do. Absent means the field is INAPPLICABLE because no
+    %% (NZ.7.4(f)(xii)) all do. Absent means the field is INAPPLICABLE because no
     %% new group is ever formed: NZ Classes N and P permit no re-flight at all
-    %% (NZ.3.13.1 h, NZ.3.15.1 h — F26), and F3F.1.5 re-flies one pilot into
+    %% (NZ.7.5(i), NZ.7.7(e)(viii) — F26), and F3F.1.5 re-flies one pilot into
     %% the running order. Zero is never correct; it would assert that a group
     %% of none is an acceptable minimum. Adoption rejects a populated
     %% minNewGroupSize where both selections are NotPermitted.
@@ -1030,7 +1030,7 @@ classDiagram
     %% fulfils it — and absence is the gate's false, not a capture gap
     %% (tier 2) and not an error (tier 3), because the class itself declares
     %% that absence invalidates the flight. 5.5.11.7 e ("the AMRT does not
-    %% record any Start Height data", carried by NZ.0.3 c) is the rule that
+    %% record any Start Height data", carried by NZ.2.4(c)) is the rule that
     %% forced it: the only prior encoding was an assumed companion flag whose
     %% "recorded" side needed a second input the captured height could
     %% contradict. The referenced metric must stay unassumed (adoption
@@ -1047,7 +1047,7 @@ classDiagram
     }
     %% workingTime is populated if and only if kind is Fixed; under
     %% UntilAllFlightsComplete the working time is not a class datum at all —
-    %% the round ends when the last flight does (F3K.9.3, F3F.1.7, NZ.3.12.1 h).
+    %% the round ends when the last flight does (F3K.9.3, F3F.1.7, NZ.7.4(b)(viii)).
     %% Drawing that as two subtypes was considered and declined: it is one
     %% sentence about one nullable field, where ScoreTerm's and
     %% FlightSelection's constraints are tables, and two classes carrying one
@@ -1227,7 +1227,7 @@ classDiagram
     note for Band "Bands are cumulative: 1 pt/s to 600 s then -1 pt/s scores 599 at 601 s."
     note for Normalisation "Direction is per task: F3B Speed inverts, because the lowest time wins."
     note for Predicate "Two gates, different outcomes: validWhen decides whether the TASK has a result at all; flightValidWhen zeroes one flight while leaving it selectable."
-    note for IsRecorded "Legal only inside flightValidWhen (adoption check 23) — the one place a class may declare absence itself invalid (5.5.11.7 e, carried by NZ.0.3 c); per-term evaluation at validWhen or a conditional's when could reach an absent metric. Widens with the first rule that cites recordedness elsewhere."
+    note for IsRecorded "Legal only inside flightValidWhen (adoption check 23) — the one place a class may declare absence itself invalid (5.5.11.7 e, carried by NZ.2.4(c)); per-term evaluation at validWhen or a conditional's when could reach an absent metric. Widens with the first rule that cites recordedness elsewhere."
 
     classDef aggregateRoot fill:#FFE873,stroke:#E5B700,stroke-width:2px,color:#1A1A1A
 ```
@@ -1503,7 +1503,7 @@ stage reads anything new from `AdoptedRules` for it.
   only where the resolved class rule is silent. Where the rulebook speaks
   (every other selection), recording a competing ruling is refused: the CD is
   not above the rulebook. F3B Task C (`F3B.1.5 e` names Tasks A/B only), F5L
-  (`5.5.12.9` grants the re-flight and stops) and NZ Class M (`NZ.3.12.5 l`,
+  (`5.5.12.9` grants the re-flight and stops) and NZ Class M (`NZ.7.4(f)(xii)`,
   likewise) are the silences that forced it
   (kanban/in-progress/reflight-scoring-rulings.md).
 - **Finalisation captures, it does not compute.** Results are derived on demand

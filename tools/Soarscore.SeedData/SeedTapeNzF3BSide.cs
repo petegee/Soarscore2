@@ -3,7 +3,7 @@
 //
 // Scale clause: F3B.2.3 d (docs/rules/f3b.md:45-56), the rulebook landing
 // table, READ BACKWARDS — 100 <- [0, 1], 95 <- (1, 2], ... 30 <- (14, 15] —
-// exactly as the F3J side is NZ.2.4.4 read backwards. The inversion is
+// exactly as the F3J side is NZ.4.12 read backwards. The inversion is
 // well-defined because the table's awards are strictly decreasing.
 //
 // Evidence (WI-0 question b, resolved 2026-09-09 — do not re-open without new
@@ -26,9 +26,9 @@
 //
 // Composes (boundaries {1 ... 15} refine each table's):
 //   - identity: 20-f3b (F3B.2.3 d)
-//   - 30-f5j, 85c-nz-f5j-ndc (5.5.11.12 h); 86-nz-x5j (NZ.2.4.5);
-//     80-nz-m-ales200, 81-nz-m-ndc (NZ.3.12.2 b, table at NZ.2.4.5) — {1 ... 10}
-//   - 83-nz-n-ales123 (NZ.3.13.1 e), 85-nz-p-radian (NZ.3.15.1 e) — {7, 15}
+//   - 30-f5j, 85c-nz-f5j-ndc (5.5.11.12 h); 86-nz-x5j (NZ.4.13);
+//     80-nz-m-ales200, 81-nz-m-ndc (NZ.7.4(c)(ii), table at NZ.4.13) — {1 ... 10}
+//   - 83-nz-n-ales123 (NZ.7.5(f)), 85-nz-p-radian (NZ.7.7(e)(v)) — {7, 15}
 // Refuses, loudly (a reading of 95 here means (1, 2], which F3J splits five
 // ways — that side of the tape cannot score this class):
 // 50-f3j (F3J.10.5), 60-f5l (5.5.12.11.2) — straddledBand.

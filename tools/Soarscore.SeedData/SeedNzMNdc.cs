@@ -1,8 +1,8 @@
 // NZ Class M — ALES 200, NDC format
-// Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.3.12.7,
-//            which incorporates NZ.3.12.1-3.12.6 except for the scoring)
+// Rule refs: NZMAA Flying Rules, Section 5: Soaring, October 2024 Rev 3.0
+//            (NZ.7.4(h), which incorporates NZ.7.4(b)–(g) except for the scoring)
 //
-// NZ.3.12.7 is the National
+// NZ.7.4(h) is the National
 // Decentralized Contest format of the same rulebook class as ALES 200. It fixes
 // the round count at four, fixes the target time at ten minutes, and — the reason
 // it cannot be a parameter binding on the parent — scores "the sum of the four
@@ -12,6 +12,17 @@
 // CompetitionClass. Additive, and consistent with the law in CLAUDE.md. The cost
 // is recorded in notation §12: nothing in the model says these two definitions
 // are one class in the rulebook.
+//
+// DEVIATION FROM THE RULEBOOK — the 75 m flight cancellation. NZ.4.13(c) would
+// otherwise reach this class (it adopts the electric precision-landing table via
+// NZ.7.4(c)(ii), which is what scopes NZ.4.13(c)); the parent definition
+// (SeedNzMAles200) carries it as a flightValidWhen gate. Per Joe Wurts (senior
+// MFNZ Soaring SIG member), verbal ruling 2026-09-27, the NZ NDC format is scored
+// WITHOUT the 75 m zero: an outside-75 m landing forfeits the landing bonus and
+// keeps its flight points. This definition therefore has NO landedWithin75m flag
+// and NO flightValidWhen gate. Recorded in kanban/deferred-decisions.md — revisit
+// if the NZMAA next revises Section 5 or if the ruling is withdrawn. The rule
+// documents are untouched (house-keeping rule 1); this is a product decision.
 
 using Soarscore.Domain.PublishedClassDefinition;
 
@@ -25,42 +36,47 @@ public static class SeedNzMNdc
         Name = "Thermal Duration (NDC)",
         Metrics =
         [
-            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.3.12.3 a
-            Metric.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.2.4.5
-            // The three flags are the NZMAA observation protocol's recorded
-            // EXCEPTIONS (NZ.2.4.6, NZ.3.12.2 d/e — see the parent class for the
-            // full protocol reading); absence resolves to compliance.
-            Metric.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.3.12.2 d — conjunctive; see the parent for the full clause
-            Metric.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.3.12.2 e "touches either the pilot or his helper"
-            Metric.Flag("landedWithin75m", whenNotRecorded: true),                  // NZ.2.4.6
+            Metric.Number("flightTime", "s", RoundingMode.Truncate, 1),             // NZ.7.4(d)(i)
+            Metric.Number("landingDistance", "m", RoundingMode.Ceiling, 1),         // NZ.4.13
+            // The two flags are the NZMAA observation protocol's recorded
+            // EXCEPTIONS (NZ.7.4(c)(iv)/(v) — see the parent class for the
+            // full protocol reading); absence resolves to compliance. The
+            // parent's third flag, landedWithin75m (NZ.4.13(c)), is deliberately
+            // absent here — see the DEVIATION note in the header.
+            Metric.Flag("damagedAndNotSafelyFlyable", whenNotRecorded: false),      // NZ.7.4(c)(iv) — conjunctive; see the parent for the full clause
+            Metric.Flag("touchedByCompetitor", whenNotRecorded: false),             // NZ.7.4(c)(v) "touches either the pilot or his helper"
         ],
-        Flights = new LastFlight(),                                            // NZ.1.6
+        Flights = new LastFlight(),                                            // NZ.3.6
         Timing = new()
         {
-            Kind = WorkingTimeKind.UntilAllFlightsComplete,                    // NZ.3.12.1 h
+            Kind = WorkingTimeKind.UntilAllFlightsComplete,                    // NZ.7.4(b)(viii)
             MaxLaunches = 1,
         },
 
-        // no group: NZ.3.12.7 c scores raw, so nothing in this task reads the
+        // no group: NZ.7.4(h)(iii) scores raw, so nothing in this task reads the
         //   group — it affects the running order and never a score.
-        // NO normalise (F25). NZ.3.12.7 c: "for NDC only, scoring will be the sum
+        // NO normalise (F25). NZ.7.4(h)(iii): "for NDC only, scoring will be the sum
         //   of the four rounds Raw Scores." Because nothing normalises, the landing
         //   bonus belongs in the RAW score here — the parent's ScoreNormalised list
         //   would have no stage to land at, and adoption rejects it (check 14).
         //   Same rulebook class, opposite answer to F24's question.
+        //
+        // No flightValidWhen gate: NZ.4.13(c) would otherwise apply here, but
+        //   the NZ NDC format is scored without it — see the DEVIATION note in
+        //   the header (Joe Wurts, senior MFNZ Soaring SIG member,
+        //   2026-09-27).
 
-        FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.2.4.6
         Score =
         [
-            ScoreTerm.Piecewise("flightTime",                                          // NZ.3.12.3 b
+            ScoreTerm.Piecewise("flightTime",                                          // NZ.7.4(d)(ii)
                 Bands.From(0)
-                     .UpTo(600, 1)                                             // NZ.3.12.7 a 10 minute target;
-                                                                               //   NZ.3.12.7 c i "flight time max is 10min (600 points)"
-                     .Rest(-1)),                                               // NZ.3.12.1 n
+                     .UpTo(600, 1)                                             // NZ.7.4(h)(i) 10 minute target;
+                                                                               //   NZ.7.4(h)(iv) "flight time max is 10min (600 points)"
+                     .Rest(-1)),                                               // NZ.7.4(b)(xiv)
 
-            ScoreTerm.When(Predicate.All(Predicate.Is("damagedAndNotSafelyFlyable", false),            // NZ.3.12.2 d
-                         Predicate.Is("touchedByCompetitor", false)),                  // NZ.3.12.2 e
-                   ScoreTerm.Lookup("landingDistance",                                 // NZ.3.12.2 b, table at NZ.2.4.5
+            ScoreTerm.When(Predicate.All(Predicate.Is("damagedAndNotSafelyFlyable", false),            // NZ.7.4(c)(iv)
+                         Predicate.Is("touchedByCompetitor", false)),                  // NZ.7.4(c)(v)
+                   ScoreTerm.Lookup("landingDistance",                                 // NZ.7.4(c)(ii), table at NZ.4.13
                        Rows.UpTo(1, 50)
                            .Then(2, 45)
                            .Then(3, 40)
@@ -79,29 +95,29 @@ public static class SeedNzMNdc
     {
         Name = "ALES 200 (NDC format)",
         FaiDesignation = "",
-        Version = "NZMAA Section 5 Soaring, March 2024",
-        // no finalRanking: one phase, so SinglePhase (NZ.3.12.7 has no fly-off)
+        Version = "NZMAA Section 5 Soaring, October 2024 Rev 3.0",
+        // no finalRanking: one phase, so SinglePhase (NZ.7.4(h) has no fly-off)
 
-        // No targetTime parameter: NZ.3.12.7 a fixes the rounds at "4 rounds, each
-        // of 10 minutes", so the parent's CD discretion (NZ.3.12.1 g) does not
+        // No targetTime parameter: NZ.7.4(h)(i) fixes the rounds at "4 rounds, each
+        // of 10 minutes", so the parent's CD discretion (NZ.7.4(b)(vii)) does not
         // apply and the turning point is a rule constant again.
         Parameters =
         [
-            Params.Number("minNewGroup"),                                      // NZ.3.12.5 l states no minimum for a re-flight group (F12),
+            Params.Number("minNewGroup"),                                      // NZ.7.4(f)(xii) states no minimum for a re-flight group (F12),
         ],                                                                     //   as the parent
 
         Reflight = new()
         {
-            EntitledScores = ReflightSelection.UndefinedRequiresRuling,         // NZ.3.12.5 l, as the parent
-            OthersScore = ReflightSelection.UndefinedRequiresRuling,            // NZ.3.12.5 l
-            MinNewGroupSize = NumberOrParam.Param("minNewGroup"),               // NZ.3.12.5 l, as the parent (F12)
+            EntitledScores = ReflightSelection.UndefinedRequiresRuling,         // NZ.7.4(f)(xii), as the parent
+            OthersScore = ReflightSelection.UndefinedRequiresRuling,            // NZ.7.4(f)(xii)
+            MinNewGroupSize = NumberOrParam.Param("minNewGroup"),               // NZ.7.4(f)(xii), as the parent (F12)
         },
 
         Penalties =
         [
-            ZeroRound("launchOutsideBuzzerWindow"),                             // NZ.3.12.1 h
-            ZeroRound("landedOutsideFieldBounds"),                              // NZ.3.12.4 a
-            // no launchHeightExceeded: NZ.2.8.3/2.8.6 are a CD discretion — see the parent
+            ZeroRound("launchOutsideBuzzerWindow"),                             // NZ.7.4(b)(viii)
+            ZeroRound("landedOutsideFieldBounds"),                              // NZ.7.4(e)(i)
+            // no launchHeightExceeded: NZ.4.17(c)/2.8.6 are a CD discretion — see the parent
         ],
 
         Phases =
@@ -114,10 +130,10 @@ public static class SeedNzMNdc
                 {
                     Kind = CompositionKind.FixedSequence,
                     TasksPerRound = 1,
-                    MaxRounds = 4,                                              // NZ.3.12.7 a "an NDC contest will comprise 4 rounds"
+                    MaxRounds = 4,                                              // NZ.7.4(h)(i) "an NDC contest will comprise 4 rounds"
                 },
-                Validity = new() { MinRounds = 4 },                             // NZ.3.12.7 a
-                // no drop: NZ.3.12.7 c "the sum of the four rounds"
+                Validity = new() { MinRounds = 4 },                             // NZ.7.4(h)(i)
+                // no drop: NZ.7.4(h)(iii) "the sum of the four rounds"
                 // no tie-breaking: the NZ rules state none anywhere
                 //   (docs/rules/nz/00-nz-general-rules.md:117), and Pete's
                 //   2026-09-04 ruling fixes what that silence left open:
@@ -137,7 +153,7 @@ public static class SeedNzMNdc
     };
 
     // ---- arithmetic check --------------------------------------------------
-    // NZ.3.12.7 c states its own maxima, which is rare and useful:
+    // NZ.7.4(h)(iv)–(v) state their own maxima, which is rare and useful:
     //   "Flight time max is 10min (600 points) plus landing max of 50. Max round
     //    score of 650."  ->  600 + 50 = 650, per the score block above.
     //   "Max NDC score is 2600 points"  ->  4 x 650 = 2600, per maxRounds 4 and no

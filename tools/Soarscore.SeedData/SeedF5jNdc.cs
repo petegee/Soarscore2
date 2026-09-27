@@ -1,19 +1,20 @@
 // NZ F5J — RC Electric Powered Thermal Duration Gliders, NDC format
-// Rule refs: NZMAA Flying Rules, Section 5: Soaring, March 2024 (NZ.0.3);
+// Rule refs: NZMAA Flying Rules, Section 5: Soaring, October 2024 Rev 3.0
+//            (NZ.2.4);
 //            FAI Sporting Code Volume F5 Electric 2026 ed.2 (5.5.11.x), carried
-//            wholesale by NZ.0.3 c "Contest rules as per FAI Section 4 –
+//            wholesale by NZ.2.4(c) "Contest rules as per FAI Section 4 –
 //            Aeromodelling Volume F5 Radio Control Electric Powered Model Aircraft".
 //
-// NZ.0.3 varies the scoring frame, not the tasks: the task, its metrics, the two
-// scoring tables of 5.5.11.12 (NZ.0.3 f restates both numbers), the re-flight rule
-// (5.5.11.6) and the penalty schedule all carry per NZ.0.3 c. What changes is the
-// pipeline — NZ.0.3 b fixes the contest at 4 rounds, NZ.0.3 d disregards
+// NZ.2.4 varies the scoring frame, not the tasks: the task, its metrics, the two
+// scoring tables of 5.5.11.12 (NZ.2.4(f) restates both numbers), the re-flight rule
+// (5.5.11.6) and the penalty schedule all carry per NZ.2.4(c). What changes is the
+// pipeline — NZ.2.4(b) fixes the contest at 4 rounds, NZ.2.4(d) disregards
 // 5.5.11.12.m (normalisation) and scores "the sum of the Raw Scores from the four
 // rounds", and the FAI fly-off (5.5.11.13) is varied away: it would nullify the
 // stated raw-sum total, so there is no second phase, no promotion and no drop.
-// NZ.0.3 e demands the 10:00 working time be "strictly and accurately enforced" —
+// NZ.2.4(e) demands the 10:00 working time be "strictly and accurately enforced" —
 // an operational duty on the contest, not a different number, so the task's 600 s
-// stands. NZ.0.3 h "No points if landing more than 75m from the landing spot"
+// stands. NZ.2.4(h) "No points if landing more than 75m from the landing spot"
 // restates FAI 5.5.11.7 d; SeedF5J does not encode it, so this definition makes it
 // explicit.
 //
@@ -28,12 +29,12 @@ namespace Soarscore.SeedData;
 public static class SeedF5jNdc
 {
     // ---- metricSet f5jFlight -----------------------------------------------
-    // SeedF5J's flight metrics verbatim, plus landedWithin75m (NZ.0.3 h).
+    // SeedF5J's flight metrics verbatim, plus landedWithin75m (NZ.2.4(h)).
     // flightTime, startHeight and landingDistance are demanded observations —
     // no assumption. startHeight stays a demanded Number with NO assumption:
     // with the flight gate reading its recordedness (Predicate.IsRecorded) it
     // can no longer pend — its only absence path is the gate, which zeroes the
-    // flight per 5.5.11.7 e (carried by NZ.0.3 c). Blank ⇒ zero, typed ⇒ valid:
+    // flight per 5.5.11.7 e (carried by NZ.2.4(c)). Blank ⇒ zero, typed ⇒ valid:
     // ONE input. The rejected second-input encoding — a startHeightRecorded
     // demanded Flag the organiser had to tick alongside the height — is gone
     // (kanban/in-progress/add-recorded-predicate.md).
@@ -48,20 +49,20 @@ public static class SeedF5jNdc
                                                                                 //   MetricDefinition precision is not coverable by a Parameter
                                                                                 //   (F12 residual). Chosen, not cited.
         Metric.Number("overflySeconds", "s", RoundingMode.Truncate, 1,
-            whenNotRecorded: 0),                                               // 5.5.11.12 g, k (carried by NZ.0.3 c) — seconds past working
+            whenNotRecorded: 0),                                               // 5.5.11.12 g, k (carried by NZ.2.4(c)) — seconds past working
                                                                                 //   time are what the timekeeper records; a flight landing
                                                                                 //   within time has none
-        Metric.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j (carried by NZ.0.3 c) — the touch forfeits the
+        Metric.Flag("touchedByCompetitor", whenNotRecorded: false),                 // 5.5.11.12 j (carried by NZ.2.4(c)) — the touch forfeits the
                                                                                 //   bonus; absence ⇒ no touch
-        Metric.Flag("landedWithin75m", whenNotRecorded: true),                      // NZ.0.3 h "No points if landing more than 75m from the
+        Metric.Flag("landedWithin75m", whenNotRecorded: true),                      // NZ.2.4(h) "No points if landing more than 75m from the
                                                                                 //   landing spot"; FAI 5.5.11.7 d — the FAI seed omits it
-                                                                                //   (0.3 h restates 5.5.11.7 d for the NDC, so it is
+                                                                                //   (2.4(h) restates 5.5.11.7 d for the NDC, so it is
                                                                                 //   encoded here); the outside-75m zero is what is recorded,
                                                                                 //   absence ⇒ within
     ];
 
-    // The two scoring tables of 5.5.11.12, carried per NZ.0.3 c and restated by
-    // NZ.0.3 f: start height "as per 5.5.11.12.e", landing "max of 50 as per
+    // The two scoring tables of 5.5.11.12, carried per NZ.2.4(c) and restated by
+    // NZ.2.4(f): start height "as per 5.5.11.12.e", landing "max of 50 as per
     // 5.5.11.12.h" (notation §7.1). Declared once, used by the one task.
 
     private static ImmutableArray<Band> StartHeightBands =>                    // 5.5.11.12 e
@@ -96,10 +97,10 @@ public static class SeedF5jNdc
             WorkingTime = 600,                                                 // 5.5.11.8.2 b working time 10 minutes
             PreparationTime = 300,                                             // 5.5.11.8.2 a "competitors are entitled to five (5) minutes preparation time"
         },
-        Group = new() { MinPerGroup = 6, MinEnforcement = MinEnforcement.Should },  // 5.5.11.8.1 a) "should" carries per NZ.0.3 c and governs the DRAW only — SHOULD-level minimum (cf. advisory 5.5.11.14.1 d)-e)): warn, don't refuse
+        Group = new() { MinPerGroup = 6, MinEnforcement = MinEnforcement.Should },  // 5.5.11.8.1 a) "should" carries per NZ.2.4(c) and governs the DRAW only — SHOULD-level minimum (cf. advisory 5.5.11.14.1 d)-e)): warn, don't refuse
                                                                                //   its normalisation sentences (5.5.11.12 l/m) are
-                                                                               //   superseded by NZ.0.3 d's raw-sum total
-        // NO normalise (F25): NZ.0.3 d "Disregard 5.5.11.12.m and score the sum
+                                                                               //   superseded by NZ.2.4(d)'s raw-sum total
+        // NO normalise (F25): NZ.2.4(d) "Disregard 5.5.11.12.m and score the sum
         //   of the Raw Scores from the four rounds" — there is no normalisation
         //   scale anywhere in this class.
         // All three conditions zero THE FLIGHT, not one term (F17). Written as
@@ -109,8 +110,8 @@ public static class SeedF5jNdc
         // 5.5.11.12 g says "a zero score will be recorded".
         FlightValidWhen = Predicate.All(
             Predicate.LessThanOrEqual("overflySeconds", 60),                                        // 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
-            Predicate.IsRecorded("startHeight"),   // 5.5.11.7 e (carried by NZ.0.3 c)
-            Predicate.Is("landedWithin75m", true)),                                    // NZ.0.3 h; FAI 5.5.11.7 d
+            Predicate.IsRecorded("startHeight"),   // 5.5.11.7 e (carried by NZ.2.4(c))
+            Predicate.Is("landedWithin75m", true)),                                    // NZ.2.4(h); FAI 5.5.11.7 d
         Score =
         [
             ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points
@@ -131,9 +132,9 @@ public static class SeedF5jNdc
     public static ClassDefinition Definition => new()
     {
         Name = "RC Electric Powered Thermal Duration Gliders (NDC format)",
-        FaiDesignation = "F5J",                                                // NZ.0.3 c: this rulebook class IS FAI F5J
-        Version = "NZMAA Section 5 Soaring, March 2024",
-        // no finalRanking: NZ.0.3 b + d fix the contest at four rounds scored as
+        FaiDesignation = "F5J",                                                // NZ.2.4(c): this rulebook class IS FAI F5J
+        Version = "NZMAA Section 5 Soaring, October 2024 Rev 3.0",
+        // no finalRanking: NZ.2.4(b) + d fix the contest at four rounds scored as
         //   their raw sum; the FAI fly-off (5.5.11.13) would nullify that and is
         //   varied away — one phase, so SinglePhase
 
@@ -142,7 +143,7 @@ public static class SeedF5jNdc
         //   literal 6 (5.5.11.8), not a binding.
         Reflight = new()
         {
-            EntitledScores = ReflightSelection.Replacement,                     // 5.5.11.6 carries per NZ.0.3 c
+            EntitledScores = ReflightSelection.Replacement,                     // 5.5.11.6 carries per NZ.2.4(c)
             OthersScore = ReflightSelection.BetterOf,                           // 5.5.11.6
             MinNewGroupSize = 6,                                                // 5.5.11.6 — 6, not the 4 used by F3J/F3K/F5K
         },
@@ -191,10 +192,10 @@ public static class SeedF5jNdc
                 {
                     Kind = CompositionKind.FixedSequence,
                     TasksPerRound = 1,
-                    MaxRounds = 4,                                             // NZ.0.3 b "A NDC contest will comprise 4 rounds"
+                    MaxRounds = 4,                                             // NZ.2.4(b) "A NDC contest will comprise 4 rounds"
                 },
-                Validity = new() { MinRounds = 4 },                            // NZ.0.3 b — the four rounds; no fewer makes the stated sum
-                // no drop: NZ.0.3 d "the sum of the Raw Scores from the four
+                Validity = new() { MinRounds = 4 },                            // NZ.2.4(b) — the four rounds; no fewer makes the stated sum
+                // no drop: NZ.2.4(d) "the sum of the Raw Scores from the four
                 //   rounds" — a dropped round would contradict it
                 // no tie-breaks: 5.5.11.13 h covers fly-off placing only and
                 //   there is no fly-off here; the NZ rules state none anywhere
@@ -217,7 +218,7 @@ public static class SeedF5jNdc
 
     // ---- arithmetic check --------------------------------------------------
     // Per-round max: 600 flight (5.5.11.12 c) + 50 landing (5.5.11.12 h) - 0
-    //   start-height deduction at a 0 m launch (5.5.11.12 e) = 650. NZ.0.3 d
+    //   start-height deduction at a 0 m launch (5.5.11.12 e) = 650. NZ.2.4(d)
     //   scores the raw sum of the four rounds: 4 x 650 = 2600.
     // Realistically a perfect round is not launched at 0 m: a 200 m launch costs
     //   100 (0.5/m to 200 m), so a perfect 200 m-launch round scores 550.
