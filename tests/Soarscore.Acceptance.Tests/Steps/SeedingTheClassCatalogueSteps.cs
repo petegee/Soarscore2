@@ -46,7 +46,10 @@ public sealed class SeedingTheClassCatalogueSteps
         _catalogue.Should().NotBeNull("the When step must have queried the catalogue first");
 
         var files = Directory.GetFiles(_corpusDirectory, "*.json");
-        files.Should().HaveCount(16, "the corpus count is pinned by the seed tool; the catalogue must carry all of it");
+        // 17 = Corpus.ExpectedCount's twin (bumped by nz-class-h-thermal-2m-seed in
+        // the commit that added 87-nz-h-thermal-2m); the seed tool pins the
+        // canonical literal.
+        files.Should().HaveCount(17, "the corpus count is pinned by the seed tool; the catalogue must carry all of it");
 
         foreach (var file in files)
         {

@@ -161,20 +161,21 @@ structural, not numeric — see the warning table in `SKILL.md`.
 
 ## Contest shape
 
-| | M — ALES 200 | N — ALES 123 | P — ALES Radian |
-|---|---|---|---|
-| **Scoring basis** | man-on-man, **normalised ×1000** | **raw points, no normalisation** | **raw points, no normalisation** |
-| **Target time** | **CD-announced**, 10 min recommended | 6 min (360 pts) | 7 min (420 pts) |
-| **Over-target** | −1 pt/s | −1 pt/s | −1 pt/s |
-| **Rounds** | not stated (NDC: 4) | 3, all count | 3, all count |
-| **Drop-worst** | **none** | **none** | **none** |
-| **Fly-off** | none | none | none |
-| **Landing bonus** | `NZ.4.13` table, 50→5 over 10 m | 50 / 25 / 0 at 7 m / 15 m | 50 / 25 / 0 at 7 m / 15 m |
-| **Bonus applied** | **after normalising** | in the raw score | in the raw score |
-| **Re-flights** | entitled, **outcome unstated** | **none permitted** | **none permitted** |
-| **Launch limit** | 200 m / 30 s | 123 m / 20 s | 200 m / 30 s |
+| | M — ALES 200 | N — ALES 123 | P — ALES Radian | H — Thermal 2 Metre |
+|---|---|---|---|---|
+| **Scoring basis** | man-on-man, **normalised ×1000** | **raw points, no normalisation** | **raw points, no normalisation** | **raw points, no normalisation** |
+| **Target time** | **CD-announced**, 10 min recommended | 6 min (360 pts) | 7 min (420 pts) | **five fixed targets** 3/4/5/6/7 min |
+| **Over-target** | −1 pt/s | −1 pt/s | −1 pt/s | −1 pt/s, **all forfeited beyond 60 s over** |
+| **Rounds** | not stated (NDC: 4) | 3, all count | 3, all count | 5, one per target, **pilot-scheduled any order** |
+| **Drop-worst** | **none** | **none** | **none** | **none** |
+| **Fly-off** | none | none | none | none |
+| **Landing bonus** | `NZ.4.13` table, 50→5 over 10 m | 50 / 25 / 0 at 7 m / 15 m | 50 / 25 / 0 at 7 m / 15 m | **50 / 0 at 15 m**, own single-step rule |
+| **Bonus applied** | **after normalising** | in the raw score | in the raw score | in the raw score |
+| **Re-flights** | entitled, **outcome unstated** | **none permitted** | **none permitted** | **un stated in class; `NZ.3.6(b)` grounds reach it (tow-launched)** — outcome unstated |
+| **Launch limit** | 200 m / 30 s | 123 m / 20 s | 200 m / 30 s | none (hand tow / pulley tow; no winch) |
 
-Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.md`.
+Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.md`,
+`nz/class-h-thermal-2m.md`.
 
 ## Cross-class NZ rules
 
@@ -182,10 +183,10 @@ Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.m
 |---|---|
 | The 75 m rule — flight cancelled, zero score; **electric precision-landing classes only (M)** | `NZ.4.13(c)` → `nz/00-nz-general-rules.md#3-landing-nz411nz413` |
 | Electric precision landing table (10 m, 50→5) | `NZ.4.13` → same |
-| Gliding precision landing table (15 m, 100→30) | `NZ.4.12` — **not used by M, N or P** |
+| Gliding precision landing table (15 m, 100→30) | `NZ.4.12` — **not used by M, N, P or H** (H states its own 50/0 single-step bonus) |
 | Altitude Limiter Switch; the 10% overrun zero | `NZ.4.17` → `nz/00-nz-general-rules.md#5-altitude-limiters-nz417` |
 | One official flight per round | `NZ.3.6` |
-| Repeat attempts — **tow-launched classes only**, so not ALES | `NZ.3.6(b)` |
+| Repeat attempts — **tow-launched classes only**, so **not** ALES — but **Class H IS tow-launched** and the grounds reach it | `NZ.3.6(b)` |
 | Flight annulment | `NZ.3.7` |
 | Contestants meeting (when CD-announced values bind) | `NZ.4.14(a)` |
 | NZ adaptations to FAI classes, and NDC formats for them | `NZ.1.2`–`1.8`, `NZ.2` — **not modelled** |
@@ -204,3 +205,7 @@ Pointers: `nz/class-m-ales200.md`, `nz/class-n-ales123.md`, `nz/class-p-radian.m
   sensible rule. Flagged, not fixed — see `nz/class-p-radian.md#8`.
 - **Class P group scoring is a CD option** the model cannot currently express;
   the definition writes the individual form. See `nz/class-p-radian.md#1`.
+- **`NZ.5.5(e)(iii)`'s forfeit is a cliff, not a clamp** — against the 3-minute
+  target, 240 s scores 120 and 241 s scores 0 ("more than 60 secs more than the
+  target time"). Owner reading 2026-09-27: the forfeit takes the landing bonus
+  with it (`nz/class-h-thermal-2m.md#8`).

@@ -1386,9 +1386,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/CatalogueDrawPropertyTests.cs": {
-    "mtime": 1790462908.8261127,
-    "seen": 1790468515.1176622,
-    "ast_hash": "93f514ad8437a467bebc05775cacdf57",
+    "mtime": 1790485987.8195696,
+    "seen": 1790486110.9940138,
+    "ast_hash": "7d0f5aa028352fce20b6174249b0b5b8",
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/ClassDefinitionFoldTests.cs": {
@@ -1674,9 +1674,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/ScoringCorpusPropertyTests.cs": {
-    "mtime": 1789207382.168489,
-    "seen": 1790468515.1177425,
-    "ast_hash": "cf21e7a64aec759b4bb1c26c225cd9b8",
+    "mtime": 1790485987.8195696,
+    "seen": 1790486110.996125,
+    "ast_hash": "f08191d834db20bfb3d09e930a54a990",
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/ScoringServiceAnnulmentTests.cs": {
@@ -1830,9 +1830,9 @@
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/Corpus.cs": {
-    "mtime": 1789207382.170489,
-    "seen": 1790468515.1177986,
-    "ast_hash": "745811f37c6b182fed9210968175db43",
+    "mtime": 1790485987.8195696,
+    "seen": 1790486110.997558,
+    "ast_hash": "7df97ad991a687f785baf794993b6e14",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/Json.cs": {
@@ -1920,9 +1920,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/fai-rules/SKILL.md": {
-    "mtime": 1790466736.6327841,
-    "seen": 1790468515.1178305,
-    "ast_hash": "a34710457c37976c5d826c39d28bdd8c",
+    "mtime": 1790485987.8185697,
+    "seen": 1790486110.9983826,
+    "ast_hash": "cbfc40bd9baa6a7834c38300522e7dd6",
     "semantic_hash": ""
   },
   ".claude/skills/fai-rules/references/compliance-check.md": {
@@ -1932,9 +1932,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/fai-rules/references/rule-map.md": {
-    "mtime": 1790466769.0538933,
-    "seen": 1790468515.117833,
-    "ast_hash": "34c4f43c97b703d395ded9aab90e0686",
+    "mtime": 1790485987.8185697,
+    "seen": 1790486110.9984248,
+    "ast_hash": "6adb799ffcc500af752788300e379969",
     "semantic_hash": ""
   },
   ".github/workflows/build-and-test.yml": {
@@ -3924,8 +3924,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1787602198.395002,
-    "seen": 1790468515.1169894,
+    "mtime": 1790485987.8318384,
+    "seen": 1790486110.9748132,
     "ast_hash": "396399cd4c2741d760af1e1ed731b5e4",
     "semantic_hash": ""
   },
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/TapeLandingScaleProofTests.cs": {
-    "mtime": 1790462908.8271127,
-    "seen": 1790468515.1177547,
-    "ast_hash": "c9054cbda27e3eaf3e1477eee1de2357",
+    "mtime": 1790485987.8195696,
+    "seen": 1790486110.9964163,
+    "ast_hash": "2615bba0d0628e321871f7cad96ec623",
     "semantic_hash": ""
   },
   "tests/Soarscore.Infrastructure.Tests/InstrumentDeclarationEventStoreTests.cs": {
@@ -4320,9 +4320,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/SeedingTheClassCatalogueSteps.cs": {
-    "mtime": 1790462908.8221126,
-    "seen": 1790468515.1175134,
-    "ast_hash": "75cab8f34fe5c66e9698cb59e292b3a7",
+    "mtime": 1790485987.8185697,
+    "seen": 1790486110.9897573,
+    "ast_hash": "0a073853cc57cf37f1817aa3049dd5cd",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Seeding/ClassCorpusSeederTests.cs": {
@@ -4899,6 +4899,30 @@
     "mtime": 1790480181.2874947,
     "seen": 1790480202.6192923,
     "ast_hash": "8cd2592b6022cb0cf6c06d626a24dc41",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Domain.Tests/NzClassHSeedArithmeticTests.cs": {
+    "mtime": 1790485987.8318384,
+    "seen": 1790486110.9950807,
+    "ast_hash": "8ea79d7ff5eae80ce71027035ff97152",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/SeedNzHThermal2m.cs": {
+    "mtime": 1790485987.8318384,
+    "seen": 1790486110.9979937,
+    "ast_hash": "2e63cc1a045bc46fe9539094b8ac6889",
+    "semantic_hash": ""
+  },
+  "docs/rules/nz/class-h-thermal-2m.md": {
+    "mtime": 1790485987.8318384,
+    "seen": 1790486110.9992878,
+    "ast_hash": "b06738cdd11d2f13ee9ee5599ab7c748",
+    "semantic_hash": ""
+  },
+  "kanban/in-progress/nz-class-h-thermal-2m-seed.md": {
+    "mtime": 1790485987.8318384,
+    "seen": 1790486111.002729,
+    "ast_hash": "1c4375fd63d8e4c76c80d31e358ae85f",
     "semantic_hash": ""
   }
 }

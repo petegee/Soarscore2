@@ -233,7 +233,9 @@ public class TapeLandingScaleProofTests
 
         // The story's hard boundary: no class definition changes, no new class
         // seed, no 31-f5j-tape-points variant from this story or its consumer.
-        Corpus.All.Should().HaveCount(16);
+        // (17 = Corpus.ExpectedCount's twin, bumped by
+        // nz-class-h-thermal-2m-seed in the commit that added 87-nz-h-thermal-2m.)
+        Corpus.All.Should().HaveCount(17);
         Corpus.All.Select(c => c.FileName).Should().NotContain("31-f5j-tape-points");
     }
 

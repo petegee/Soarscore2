@@ -33,7 +33,8 @@ docs/rules/
     nz-ales-general-rules.md common to Classes M, N, P
     class-m-ales200.md       ─┐ per-class: AUTHORITATIVE on every number
     class-n-ales123.md        │
-    class-p-radian.md        ─┘
+    class-p-radian.md         │
+    class-h-thermal-2m.md    ─┘
     source-docs/             verbatim NZMAA text — same read-only discipline
 ```
 

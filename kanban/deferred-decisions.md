@@ -238,6 +238,28 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   the SIG ruling is confirmed in writing in different terms, or if it is
   withdrawn.
 
+- **NZ Class H (Thermal 2 Metre) — three settled calls.** **Decided 2026-09-27**
+  (Pete; `kanban/completed/nz-class-h-thermal-2m-seed.md`). **(a) The
+  `NZ.3.6(b)` repeat-attempt grounds reach Class H** (it is the first modelled
+  tow-launched NZ class) **but nothing is encoded**: the grounds state no
+  scoring outcome, so `SeedNzHThermal2m` carries
+  `UndefinedRequiresRuling`/`UndefinedRequiresRuling` with the `minNewGroup`
+  no-default parameter and **`MaxLaunches` unset** — a repeat is CD workflow,
+  its recorded evidence an additional attempt that `LastFlight` selection
+  ignores. Don't "fix" the unset `MaxLaunches` to 1 or 2: the `(c)(vii)`
+  once-per-official-flight limit and its interference exception are not
+  enforceable as a single launch count, and the CD-frees-it shape was
+  considered and declined. **(b) `NZ.5.5(d)(iii)`'s contest-time expiry is
+  contest flow, not scoring** — `contestTime` is a no-default parameter no
+  scoring stage consumes (the F3F unconsumed-parameter precedent); don't add
+  expiry gating to the scoring pipeline. **(c) The `(e)(iii)` >60 s forfeit is
+  a whole-flight forfeit** — flight points AND landing bonus, a cliff not a
+  clamp (240 s against the 3-minute target scores 120, 241 s scores 0); the
+  "flight points only, landing survives" alternative was considered and
+  rejected. Validity is also fixed at five (`MinRounds = 5`, the `(d)(ii)`
+  "required to complete" reading) — a weather-truncated contest scores invalid,
+  accepted. Reopen on an NZMAA revision of Section 5.
+
 ## GliderScore replay harness
 
 - **Exact-decimal oracle comparison stands; GliderScore's binary64 raw artefacts are
