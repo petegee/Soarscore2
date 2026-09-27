@@ -123,7 +123,8 @@ public static class ParameterResolver
             RawScore: task.RawScore,
             Reflight: task.Reflight,
             Score: ResolveScoreTerms(task.Score, bindings, declaredParameters),
-            ScoreNormalised: ResolveScoreTerms(task.ScoreNormalised, bindings, declaredParameters)
+            ScoreNormalised: ResolveScoreTerms(task.ScoreNormalised, bindings, declaredParameters),
+            FloorAtZero: task.FloorAtZero
         );
     }
 

@@ -165,6 +165,18 @@ public static class SeedF5kNdc
         //   anywhere in this class.
         RawScore = new(RoundingMode.Truncate, 0.1m),                           // F12 residual: raw-score rounding unstated; 0.1 s per NZ.7.8(mm)(iv)
         FlightValidWhen = FlightValidWhen,                                     // NZ.7.8(l)(ii)/(iv); 7.8(z)(ii); 7.8(w)(iv)
+
+        // NZ.7.8(c)(iv): "If the total of all points is negative, the score is
+        //   zero (0)". Stated inside (c)'s per-launch breakdown but floored at
+        //   the TASK-ROUND grain — (c)'s trailing sentence ("The score is the
+        //   accumulation of the flight times, adjusted for penalties and
+        //   bonuses for launch altitude and any other penalties") reads the
+        //   accumulated score, FAI F5K 5.5.10.15 floors the raw task result
+        //   (Σ over launches), and tasks A/C's multi-launch sums are where the
+        //   grains would differ. Owner decision 2026-09-27,
+        //   kanban/completed/minimum-score-floor.md WI-3.
+        FloorAtZero = true,
+
         Score =
         [
             // 1 pt/s. NZ.7.8(ll)(i) "Maximum total flight time used for

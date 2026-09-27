@@ -205,6 +205,28 @@ public sealed record TaskDefinition
     /// <summary>Rounding of the raw score, before normalising (F4b). Only F5K sets it.</summary>
     public Rounding? RawScore { get; init; }
 
+    /// <summary>
+    /// The rulebook-stated floor at zero for the task's raw score — true only
+    /// where the class's own rules state it (each seed cites its clause in a
+    /// comment: "cite what you encode"). Absent (null) means NO floor: the
+    /// raw score passes through as scored, negatives included
+    /// (deferred-decisions D4, 2026-08-28) — this datum is the
+    /// rulebook-stated route, never an engine policy
+    /// (kanban/completed/minimum-score-floor.md).
+    ///
+    /// Grain: the TASK-ROUND score — floored once at the end of the raw stage
+    /// after raw penalties, not per flight (owner decision 2026-09-27; the
+    /// corpus's floor clauses all floor the accumulated score — FAI F5J
+    /// 5.5.11.12 f sits above the group-score sentences l/m, FAI F5K
+    /// 5.5.10.15 floors the raw task result, NZ.7.8(c)(iv)'s trailing
+    /// sentence reads the same way). The floor acts AFTER raw penalties, so
+    /// "any penalty points applied in the round will remain effective"
+    /// (5.5.11.12 f) — a penalty that pushed the score to the floor is
+    /// embodied in the recorded 0, not cancelled. Additive (NFR-2); omitted
+    /// by the canonical JSON when absent.
+    /// </summary>
+    public bool? FloorAtZero { get; init; }
+
     /// <summary>Overrides the class default for this task only (F19).</summary>
     public ReflightRule? Reflight { get; init; }
 

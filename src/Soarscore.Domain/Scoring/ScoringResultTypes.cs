@@ -312,7 +312,9 @@ public sealed record ResolvedTask(
     Rounding? RawScore,
     ReflightRule? Reflight,
     ImmutableArray<ScoreTerm> Score,
-    ImmutableArray<ScoreTerm> ScoreNormalised
+    ImmutableArray<ScoreTerm> ScoreNormalised,
+    /// <summary>Carried as-is — nothing to resolve (TaskDefinition.FloorAtZero's doc).</summary>
+    bool? FloorAtZero = null
 );
 
 public sealed record ResolvedTiming(

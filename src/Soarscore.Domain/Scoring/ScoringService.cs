@@ -167,6 +167,27 @@ public static class ScoringService
             // OR-accumulate into FinalCompetitorScore (D-B2).
             taskResult = applied.Result with { Disqualified = applied.Disqualified };
 
+            // 2d. Floor the task-round score where the definition states it
+            //     (kanban/in-progress/minimum-score-floor.md WI-2) — e.g.
+            //     F5J 5.5.11.12 f "where the score is negative (below zero), a
+            //     zero score will be recorded". AFTER the raw penalties above,
+            //     so the rulebook's "any penalty points applied in the round
+            //     will remain effective" holds: a penalty that pushed the
+            //     score to the floor is embodied in the recorded 0, not
+            //     cancelled. Gated on the task's FloorAtZero datum — a task
+            //     without it keeps the identity pass-through of
+            //     deferred-decisions D4 (its negative raws pass untouched;
+            //     comp 121's −2026 oracle), and NormalisationEngine's
+            //     normalised-grain clamp is untouched. `<= 0m` with a literal
+            //     0m, per the clamp's -0.0 lesson
+            //     (kanban/completed/normalisation-lower-clamp.md D3).
+            if (resolvedTask.FloorAtZero == true
+                && taskResult.State == TaskResultState.Valid
+                && taskResult.RawScore <= 0m)
+            {
+                taskResult = taskResult with { RawScore = 0m };
+            }
+
             taskResults[competitorRef] = taskResult;
         }
 

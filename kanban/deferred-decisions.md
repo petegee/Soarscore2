@@ -284,6 +284,12 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   clamp (every task whose `Normalise` is non-null, both directions). If a
   future fixture ever witnesses a negative pass-through raw, that is a new
   triaged divergence, not a reason to floor here.
+  **Amended 2026-09-27** (`kanban/completed/minimum-score-floor.md`): the
+  identity default stands, but the engine now floors where a task's
+  `FloorAtZero` definition datum states it — the rulebook-stated route
+  (e.g. F5J 5.5.11.12 f; NZ.7.8(c)(iv)), not the engine policy this decision
+  refused. Comp 121's fixture-local definition states no datum, so its −2026
+  oracle is untouched.
 
 - **The parallel-run comparator runs the ranking and score-cell grains only;
   the parity comparator's conservation and team grains are deliberately not

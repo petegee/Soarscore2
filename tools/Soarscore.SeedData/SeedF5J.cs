@@ -106,6 +106,16 @@ public static class SeedF5J
             Predicate.IsRecorded("startHeight"),   // 5.5.11.7 e
             Predicate.Is("landedWithin75m", true)),                                    // 5.5.11.7 d (WI-1 kanban/in-progress/
                                                                                  //   f5j-christchurch-parallel-run-witness.md; cf. SeedF5jNdc.cs:107)
+
+        // 5.5.11.12 f: "Where the score is negative (below zero), a zero score
+        //   will be recorded. Note that any penalty points applied in the round
+        //   will remain effective." The floor acts at the task-round grain,
+        //   BEFORE the group-score sentences l/m consume the raw — so
+        //   normalisation consumes the floored value and an all-negative group
+        //   cannot invert through the ratio (owner decision 2026-09-27,
+        //   kanban/completed/minimum-score-floor.md WI-3).
+        FloorAtZero = true,
+
         Score =
         [
             ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points

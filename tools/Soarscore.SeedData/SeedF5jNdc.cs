@@ -112,6 +112,15 @@ public static class SeedF5jNdc
             Predicate.LessThanOrEqual("overflySeconds", 60),                                        // 5.5.11.12 g "zero score … for overflying by more than one (1) minute"
             Predicate.IsRecorded("startHeight"),   // 5.5.11.7 e (carried by NZ.2.4(c))
             Predicate.Is("landedWithin75m", true)),                                    // NZ.2.4(h); FAI 5.5.11.7 d
+
+        // 5.5.11.12 f via NZ.2.4(f) "Scoring as per 5.5.11.12": "Where the score
+        //   is negative (below zero), a zero score will be recorded. Note that
+        //   any penalty points applied in the round will remain effective."
+        //   Task-round grain — one flight per round in this class, so the
+        //   per-round and per-launch readings coincide
+        //   (kanban/completed/minimum-score-floor.md WI-3).
+        FloorAtZero = true,
+
         Score =
         [
             ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points
