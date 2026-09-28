@@ -80,7 +80,7 @@ public sealed class Rows
         return list;
     }
 
-    public Rows Then(decimal upTo, decimal points)
+    public Rows ThenUpTo(decimal upTo, decimal points)
     {
         _rows.Add(new LookupRow(upTo, points));
         return this;

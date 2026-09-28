@@ -79,9 +79,16 @@ public static class SeedX5j
                          Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.7.6(c)(vi) "no landing points are
                                                                                //   awarded"
                    ScoreTerm.Lookup("landingDistance",                                 // NZ.7.6(c)(v), table at NZ.4.13
-                       Rows.UpTo(1, 50).Then(2, 45).Then(3, 40).Then(4, 35)
-                           .Then(5, 30).Then(6, 25).Then(7, 20).Then(8, 15)
-                           .Then(9, 10).Then(10, 5)
+                       Rows.UpTo(1, 50)
+                           .ThenUpTo(2, 45)
+                           .ThenUpTo(3, 40)
+                           .ThenUpTo(4, 35)
+                           .ThenUpTo(5, 30)
+                           .ThenUpTo(6, 25)
+                           .ThenUpTo(7, 20)
+                           .ThenUpTo(8, 15)
+                           .ThenUpTo(9, 10)
+                           .ThenUpTo(10, 5)
                            .Rest(0))),
         ],
     };

@@ -92,7 +92,7 @@ public sealed class TapeMarks
 
     public static TapeMarks UpTo(decimal upTo, decimal reading) => new(upTo, reading);
 
-    public TapeMarks Then(decimal upTo, decimal reading)
+    public TapeMarks ThenUpTo(decimal upTo, decimal reading)
     {
         if (upTo <= 0)
             throw new InvalidOperationException($"tape-mark: UpTo must be positive, was {upTo}.");

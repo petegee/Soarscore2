@@ -1,6 +1,6 @@
 # Story — Paper-convention encodings: an entered 0 on landing scores zero; a flight that reaches the horn earns no landing
 
-**Status:** Backlog (raised 2026-09-27, unblocking NdcScore
+**Status:** In progress (raised 2026-09-27, unblocking NdcScore
 `kanban/blocked/ss_landing-zero-scores-no-landing-points.md` and
 `kanban/blocked/ss_f5j-flight-time-cap-at-959.md` — one ambiguity family,
 one design answer: **the definition interprets paper language**). Sibling

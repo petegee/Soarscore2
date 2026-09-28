@@ -283,7 +283,7 @@ public class MetricAbsenceSemanticsTests
             Score =
             [
                 ScoreTerm.Rate("flightTime", 1, cap: NumberOrParam.Param("cap")),
-                ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0)),
+                ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).ThenUpTo(10, 25).Rest(0)),
                 ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),
             ],
         };
@@ -511,7 +511,7 @@ internal static class MetricAbsenceFixtures
         Score =
         [
             ScoreTerm.Rate("flightTime", 1),
-            ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0)),
+            ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).ThenUpTo(10, 25).Rest(0)),
             ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),
         ],
     };

@@ -167,7 +167,7 @@ public static class SeedF5K
             // −20 total over three launches. Character-identical to Task E's rows
             // and deliberately not one shared list — see the note there.
             ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
-                Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),
+                Rows.UpTo(1, 0).ThenUpTo(2, -10).Rest(-20)),
 
             PilotAreaDeduction,                                                // 5.5.10.6 h
             OverflyDeduction,                                                  // 5.5.10.12 flight penalty a
@@ -292,7 +292,7 @@ public static class SeedF5K
             // states the two totals separately, and naming them one table would
             // assert an agreement the rulebook does not make.
             ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
-                Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),                       // 5.5.10.2 Task E: 2nd launch −10, 3rd a further −20,
+                Rows.UpTo(1, 0).ThenUpTo(2, -10).Rest(-20)),                       // 5.5.10.2 Task E: 2nd launch −10, 3rd a further −20,
                                                                                //   −30 total over three launches
             PilotAreaDeduction,
             OverflyDeduction,

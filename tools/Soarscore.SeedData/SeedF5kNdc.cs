@@ -222,7 +222,7 @@ public static class SeedF5kNdc
             // sequence number. Character-identical to Task E's rows and
             // deliberately not one shared list — see the note there.
             ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
-                Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),                       // NZ.7.8(ll)(ii)
+                Rows.UpTo(1, 0).ThenUpTo(2, -10).Rest(-20)),                       // NZ.7.8(ll)(ii)
 
             LaunchAdjustment,                                                  // NZ.7.8(hh)(v)–(vii)
         ],
@@ -315,7 +315,7 @@ public static class SeedF5kNdc
             // per-launch INCREMENT (−30 total). Same pattern as SeedF5K
             // Tasks B/E.
             ScoreTerm.Lookup(Intrinsic.FlightSequence,                                 // intrinsic ref (F6)
-                Rows.UpTo(1, 0).Then(2, -10).Rest(-20)),                       // NZ.7.8(ll)(v)
+                Rows.UpTo(1, 0).ThenUpTo(2, -10).Rest(-20)),                       // NZ.7.8(ll)(v)
         ],
     };
 

@@ -543,7 +543,7 @@ internal static class RecordednessFixtures
             ScoreTerm.Piecewise("startHeight", Bands.From(0).UpTo(200, -0.5m).Rest(-3)), // 5.5.11.12 e, cumulative
             ScoreTerm.When(
                 Predicate.All(Predicate.Equal("overflySeconds", 0), Predicate.Is("touchedByCompetitor", false)),
-                ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).Then(10, 25).Rest(0))), // 5.5.11.12 h
+                ScoreTerm.Lookup("landingDistance", Rows.UpTo(5, 50).ThenUpTo(10, 25).Rest(0))), // 5.5.11.12 h
         ],
     };
 

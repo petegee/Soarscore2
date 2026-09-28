@@ -66,7 +66,7 @@ public static class SeedNzPRadian
                     Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.7.7(e)(x), read per NZ.7.5(k) — see below
                    ScoreTerm.Lookup("landingDistance",                                 // NZ.7.7(e)(v)
                        Rows.UpTo(7, 50)
-                           .Then(15, 25)
+                           .ThenUpTo(15, 25)
                            .Rest(0))),
         ],
     };

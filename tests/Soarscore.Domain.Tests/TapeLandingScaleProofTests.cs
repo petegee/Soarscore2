@@ -919,11 +919,11 @@ public class TapeLandingScaleProofTests
             .Code.Should().Be("tapeComposition.repeatedReading");
 
         // The SeedData builder makes the same shapes unwritable at authoring.
-        Action repeat = () => TapeMarks.UpTo(1m, 5m).Then(2m, 5m).OffTape(0m);
+        Action repeat = () => TapeMarks.UpTo(1m, 5m).ThenUpTo(2m, 5m).OffTape(0m);
         repeat.Should().Throw<InvalidOperationException>().WithMessage("*distinct*");
         Action collide = () => TapeMarks.UpTo(1m, 0m).OffTape(0m);
         collide.Should().Throw<InvalidOperationException>().WithMessage("*repeats a mark*");
-        Action descend = () => TapeMarks.UpTo(2m, 90m).Then(1m, 95m).OffTape(0m);
+        Action descend = () => TapeMarks.UpTo(2m, 90m).ThenUpTo(1m, 95m).OffTape(0m);
         descend.Should().Throw<InvalidOperationException>().WithMessage("*ascend*");
     }
 
