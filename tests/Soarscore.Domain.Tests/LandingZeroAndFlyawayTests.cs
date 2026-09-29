@@ -12,7 +12,7 @@ using ScoreTerm = Soarscore.Domain.PublishedClassDefinition.ScoreTerm;
 namespace Soarscore.Domain.Tests;
 
 /// <summary>
-/// WI-6 of kanban/in-progress/landing-zero-and-flyaway-encoding.md: the pins
+/// WI-6 of kanban/completed/landing-zero-and-flyaway-encoding.md: the pins
 /// for the two paper-convention encodings, driven through the real seed
 /// definitions in the NzNdcSeedArithmeticTests black-box style (seed
 /// TaskDefinitions resolved through ParameterResolver, evaluated by

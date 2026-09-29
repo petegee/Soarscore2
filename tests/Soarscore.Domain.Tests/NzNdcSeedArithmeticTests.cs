@@ -126,7 +126,7 @@ public class NzNdcSeedArithmeticTests
     public void F5jNdc_horn_reading_is_a_flyaway_capped_at_599_with_no_landing()
     {
         // The organiser's reinterpret steer
-        // (kanban/in-progress/landing-zero-and-flyaway-encoding.md): a 600 s
+        // (kanban/completed/landing-zero-and-flyaway-encoding.md): a 600 s
         // reading means the model flew away and never landed. The flight caps
         // at 9:59 (599, 5.5.11.12 c) and the landing conditional's
         // flightTime < 600 test fails, so no landing is awarded: 599 flight

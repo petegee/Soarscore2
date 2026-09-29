@@ -1,13 +1,6 @@
 # Story — Paper-convention encodings: an entered 0 on landing scores zero; a flight that reaches the horn earns no landing
 
-**Status:** In progress (raised 2026-09-27, unblocking NdcScore
-`kanban/blocked/ss_landing-zero-scores-no-landing-points.md` and
-`kanban/blocked/ss_f5j-flight-time-cap-at-959.md` — one ambiguity family,
-one design answer: **the definition interprets paper language**). Sibling
-story: `minimum-score-floor.md` — the three scoring fixes it shares the F5J
-score sum with are to land in one review, one seed drift-guard run.
-
-**Status:** In progress (raised 2026-09-27, unblocking NdcScore
+**Status:** Completed 2026-09-29 (raised 2026-09-27, unblocking NdcScore
 `kanban/blocked/ss_landing-zero-scores-no-landing-points.md` and
 `kanban/blocked/ss_f5j-flight-time-cap-at-959.md` — one ambiguity family,
 one design answer: **the definition interprets paper language**). Sibling
@@ -15,7 +8,7 @@ story: `minimum-score-floor.md` — LANDED ALONE 2026-09-27 (owner decision,
 see that story's As built): the shared-review/shared-drift-guard constraint
 is lifted; this story runs its own guard.
 
-## As built (2026-09-28, ready for review — NOT committed)
+## As built (2026-09-28, accepted to completed 2026-09-29 — commit pending)
 
 Owner decisions taken in-session 2026-09-28: (a) reinterpret steer confirmed,
 full sweep (not 85c-only); (b) flight caps 599 prelim / 899 fly-off (rule c's

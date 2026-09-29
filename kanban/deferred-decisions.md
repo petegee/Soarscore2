@@ -195,7 +195,7 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
 
 - **The exact-zero landing convention stops at the tape path (direct-entry
   distances only) — and no engine zero-branch is needed.** **Decided
-  2026-09-28** (`kanban/in-progress/landing-zero-and-flyaway-encoding.md`,
+  2026-09-28** (`kanban/completed/landing-zero-and-flyaway-encoding.md`,
   WI-6; engine-branch half **declined** 2026-09-29, owner direction: "zero
   should always mean zero ... if there's no other alternative" — there is).
   Tapes are pre-marked in awarded points at measured distances: an on-the-nail
