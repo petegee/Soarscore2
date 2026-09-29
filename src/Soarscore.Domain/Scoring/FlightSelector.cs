@@ -274,15 +274,7 @@ public static class FlightSelector
         return null;
     }
 
-    private static string? GetTermMetricRef(ScoreTerm term) => term switch
-    {
-        RateTerm t => t.MetricRef,
-        LookupTerm t => t.MetricRef,
-        PiecewiseTerm t => t.MetricRef,
-        ConditionalTerm t => GetTermMetricRef(t.Then)
-                           ?? (t.Else is not null ? GetTermMetricRef(t.Else) : null),
-        _ => null
-    };
+    private static string? GetTermMetricRef(ScoreTerm term) => ScoreTermRefs.GetTermMetricRef(term);
 
     /// <summary>
     /// The declared unit per metric, for WI-1's unit-match check wherever a

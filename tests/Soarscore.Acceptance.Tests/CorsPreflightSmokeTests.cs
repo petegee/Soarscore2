@@ -14,6 +14,7 @@
 
 using System.Net;
 using AwesomeAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -70,7 +71,11 @@ public sealed class CorsPreflightSmokeTests
     [Fact]
     public async Task With_no_origins_configured_no_cors_headers_are_added()
     {
-        var (factory, dbPath) = Factory();
+        // The empty alias is explicit, not incidental: it pins "no origins"
+        // against an ambient SOARSCORE_CORS_ORIGINS on the running machine,
+        // the same leak the Testing environment below pins shut for the
+        // gitignored appsettings.Development.json.
+        var (factory, dbPath) = Factory(("SOARSCORE_CORS_ORIGINS", ""));
         try
         {
             var client = factory.CreateClient();
@@ -128,14 +133,36 @@ public sealed class CorsPreflightSmokeTests
     /// here too and costs a moment per factory; that is the price of testing
     /// the real Build, not a mock of it. The caller owns both the factory and
     /// the file: dispose the factory, then DeleteDatabase.
+    ///
+    /// CORS hermeticity: the factory boots in the Testing environment, never
+    /// Development, so a machine-local gitignored appsettings.Development.json
+    /// (the dev's SPA origin) can never leak origins into these facts — every
+    /// fact states its origins explicitly through settings, and anything
+    /// unstated is empty (appsettings.json ships Origins: []). Your local
+    /// Development file stays exactly as it is.
     /// </summary>
     private static (WebApplicationFactory<Program> Factory, string DbPath) Factory(
         params (string Key, string Value)[] settings)
     {
         var dbPath = Path.Combine(
             Path.GetTempPath(), $"soarscore-cors-{Guid.NewGuid():N}.db");
+
+        // Ambient hierarchical overrides for the origins array itself
+        // (Soarscore__Cors__Origins__*) merge by index into the array binding,
+        // so unlike the flat alias they cannot be neutralised with a
+        // UseSetting — the process environment is the only lever. Scoped to
+        // this prefix: the suite's shared fixtures use Soarscore__Store /
+        // SeedCorpusDirectory / Auth keys, never Cors ones.
+        foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())
+        {
+            if (entry.Key is string key
+                && key.StartsWith("Soarscore__Cors__Origins", StringComparison.OrdinalIgnoreCase))
+                Environment.SetEnvironmentVariable(key, null);
+        }
+
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.UseSetting("Soarscore:Store", "sqlite");
             builder.UseSetting("ConnectionStrings:Soarscore", $"Data Source={dbPath}");
             foreach (var (key, value) in settings)

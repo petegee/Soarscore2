@@ -14,6 +14,7 @@ using Soarscore.Application.Queries.Entries;
 using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
+using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Application.Queries.Scoring;
@@ -35,13 +36,52 @@ namespace Soarscore.Application.Queries.Scoring;
 /// the field readout distinguishes "awaiting capture" from a genuine
 /// no-result. Diagnostics are per TaskResult and rows are per Entry, so a
 /// competitor with two live entries sees each entry's on its own row.</param>
+/// <summary>One score term's awarded contribution on one flight, projected
+/// verbatim from the engine's own <see cref="TermContribution"/>
+/// (kanban/in-progress/per-term-score-breakdown.md#WI-1). Key by
+/// <see cref="MetricRef"/>, not position: term order is an engine detail
+/// (NdcScore law 3). Raw <c>Score</c> terms only — <c>ScoreNormalised</c>
+/// terms evaluate inside normalisation and are out of scope.</summary>
+/// <param name="TermIndex">Term-list position in the resolved task's
+/// <c>Score</c> list — the same index the engine keys contributions by.</param>
+/// <param name="MetricRef">The metric the term consumes, unwrapped through
+/// conditionals per <see cref="ScoreTermRefs.GetTermMetricRef"/> — null for
+/// <c>ConstantTerm</c>, which consumes none.</param>
+/// <param name="MetricConsumed">Verbatim contribution input (always the
+/// uncapped raw value).</param>
+/// <param name="Points">Verbatim contribution award — no rounding, no
+/// formatting, no normalisation math.</param>
+public sealed record ScoreTermView(
+    int TermIndex,
+    string? MetricRef,
+    decimal MetricConsumed,
+    decimal Points);
+
+/// <summary>One selected flight's per-term breakdown, in that entry's
+/// selection (kanban/in-progress/per-term-score-breakdown.md#WI-1).
+/// Per-flight <see cref="ScoreTermView.Points"/> sum to the flight's score
+/// <b>before</b> PerTask-cap correction and <c>RawScore</c> rounding — the
+/// deltas stay server-side, so the column never re-derives
+/// <c>RawScore</c> by addition. Flight-gate-zeroed flights carry the
+/// interpreter's own zeroing (empty terms); pending flights are omitted
+/// (their signal stays on <c>AwaitingCapture</c>).</summary>
+/// <param name="Sequence">The flight's 1-based sequence number (the
+/// <c>flight.sequence</c> intrinsic), not the selection rank.</param>
+public sealed record FlightScoreView(
+    int Sequence,
+    ImmutableArray<ScoreTermView> Terms);
+
 public sealed record CompetitorTaskResultView(
     CompetitorId CompetitorRef,
     ReflightRole Role,
     TaskResultState State,
     decimal RawScore,
     decimal PreNormalisationScore,
-    ImmutableArray<PendingFlightDiagnostic> AwaitingCapture);
+    ImmutableArray<PendingFlightDiagnostic> AwaitingCapture,
+    /// <summary>The selected flights' per-term breakdowns, verbatim from
+    /// <c>TaskResult.Selection</c> (kanban/in-progress/per-term-score-breakdown.md#WI-1).
+    /// Empty (never null) for <c>NoResult</c> rows — absence, never zero.</summary>
+    ImmutableArray<FlightScoreView> Flights);
 
 /// <summary>One group's scored result — the GET /task-round-result response shape.</summary>
 public sealed record GroupScoreView(
@@ -144,6 +184,23 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
 
         var views = new List<GroupScoreView>();
 
+        // WI-2 (per-term-score-breakdown.md): resolve once per task-round —
+        // the group loop shares the task — so MapGroupResult can project each
+        // row's Selection through the resolved term list. ScoreGroup resolves
+        // internally too; this re-resolution is pure and cheap. Unreachable in
+        // normal operation (bindings were validated at declaration/adoption);
+        // TaskResolver's entry.parameterUnbound precedent applies.
+        ImmutableArray<ScoreTerm> scoreTerms;
+        try
+        {
+            scoreTerms = ParameterResolver.ResolveTask(taskDefinition, bindings, classDef.Parameters).Score;
+        }
+        catch (UnresolvedParameterException ex)
+        {
+            return Result<IReadOnlyList<GroupScoreView>>.Failure(
+                "scoreTaskRound.parameterUnbound", ex.Message);
+        }
+
         foreach (var group in groups)
         {
             // Keyed BY ENTRY (reflight-groups.md WI-7, finding 7): a competitor
@@ -173,7 +230,7 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 // existing path. No declaration here means distances only.
                 competition.DeclaredInstruments?.Instruments ?? []);
 
-            views.Add(MapGroupResult(group.Id, groupResult, groupEntries));
+            views.Add(MapGroupResult(group.Id, groupResult, groupEntries, scoreTerms));
         }
 
         return Result<IReadOnlyList<GroupScoreView>>.Success(views);
@@ -182,7 +239,8 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
     private static GroupScoreView MapGroupResult(
         GroupId groupRef,
         GroupResult result,
-        IReadOnlyDictionary<string, Entry> entriesByKey)
+        IReadOnlyDictionary<string, Entry> entriesByKey,
+        ImmutableArray<ScoreTerm> scoreTerms)
     {
         // The engine's uninitialised AwaitingCapture (a default ImmutableArray —
         // TaskResult's own doc) must cross the Api boundary as a real empty
@@ -201,7 +259,8 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 kv.Value.State,
                 kv.Value.RawScore,
                 result.PreNormalisationScores[kv.Key],
-                BoundaryEmpty(kv.Value.AwaitingCapture)))
+                BoundaryEmpty(kv.Value.AwaitingCapture),
+                ProjectFlights(kv.Value.Selection, scoreTerms)))
             .ToImmutableArray();
 
         return new GroupScoreView(
@@ -212,5 +271,66 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 : null,
             ValidCount: result.ValidCount,
             IsAnnulled: result.IsAnnulled);
+    }
+
+    /// <summary>
+    /// WI-2 (per-term-score-breakdown.md): project <c>TaskResult.Selection</c>
+    /// through the resolved term list. Values cross verbatim (decimal as-is —
+    /// no rounding, no formatting, no normalisation math). NoResult
+    /// (<c>Selection: null</c>) yields an empty array, never null; pending
+    /// flights never enter <c>Selection</c> so they are omitted by
+    /// construction. Flight-gate-zeroed flights carry the interpreter's own
+    /// zeroing (empty contributions → empty terms).
+    /// </summary>
+    private static ImmutableArray<FlightScoreView> ProjectFlights(
+        SelectedFlights? selection,
+        ImmutableArray<ScoreTerm> scoreTerms)
+    {
+        if (selection is null)
+            return ImmutableArray<FlightScoreView>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<FlightScoreView>(selection.Flights.Length);
+        for (var i = 0; i < selection.Flights.Length; i++)
+        {
+            var flight = selection.Flights[i];
+            builder.Add(new FlightScoreView(
+                ReadSequence(flight, i),
+                ProjectTerms(flight, scoreTerms)));
+        }
+        return builder.ToImmutable();
+    }
+
+    private static ImmutableArray<ScoreTermView> ProjectTerms(
+        InterpretedFlight flight,
+        ImmutableArray<ScoreTerm> scoreTerms)
+    {
+        if (flight.TermContributions.Count == 0)
+            return ImmutableArray<ScoreTermView>.Empty;
+
+        var builder = ImmutableArray.CreateBuilder<ScoreTermView>(flight.TermContributions.Count);
+        foreach (var (termIndex, contribution) in flight.TermContributions)
+        {
+            var metricRef = termIndex >= 0 && termIndex < scoreTerms.Length
+                ? ScoreTermRefs.GetTermMetricRef(scoreTerms[termIndex])
+                : null;
+            builder.Add(new ScoreTermView(
+                termIndex, metricRef, contribution.MetricConsumed, contribution.Points));
+        }
+        return builder.ToImmutable();
+    }
+
+    /// <summary>
+    /// The flight's 1-based sequence from its own <c>flight.sequence</c>
+    /// intrinsic — never the selection rank (BestNFlights re-ranks). Falls
+    /// back to position when the intrinsic is absent, which is unreachable
+    /// through the interpreter (it always injects it).
+    /// </summary>
+    private static int ReadSequence(InterpretedFlight flight, int position)
+    {
+        if (flight.Metrics.TryGetValue("flight.sequence", out var seq)
+            && seq.Kind == MeasuredKind.Number
+            && seq.Number.HasValue)
+            return (int)seq.Number.Value;
+        return position + 1;
     }
 }
