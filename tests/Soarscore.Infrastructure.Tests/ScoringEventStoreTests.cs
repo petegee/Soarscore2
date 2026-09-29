@@ -181,10 +181,12 @@ public abstract class ScoringEventStoreTests<TFixture>(TFixture fixture) : IClas
         group1.CompetitorRefs.Should().BeEquivalentTo(competitorIds);
 
         // Distinct flightTime per competitor -> a single, unambiguous winner.
-        // Raw score == flightTime (this file's header), so with winner 600 the
+        // Raw score == flightTime (this file's header), so with winner 550 the
         // normalised formula (1000 * raw / winnerRaw) is exact decimal math.
+        // All values stay below the 599 prelim cap (SeedF5J.cs: a 600 reading
+        // is a flyaway, capped to 599 with no landing) so the cap never engages.
         var flightTimeByCompetitor = competitorIds
-            .Select((c, i) => (c, flightTime: 350m + i * 50m)) // 350, 400, 450, 500, 550, 600
+            .Select((c, i) => (c, flightTime: 300m + i * 50m)) // 300, 350, 400, 450, 500, 550
             .ToDictionary(x => x.c, x => x.flightTime);
 
         foreach (var (competitorRef, flightTime) in flightTimeByCompetitor)
