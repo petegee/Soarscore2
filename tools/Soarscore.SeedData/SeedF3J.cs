@@ -35,12 +35,15 @@ public static class SeedF3J
 
     // The landing table of F3J.10.5, declared once and used by both phases
     // (notation §7.1). One rulebook clause, one table: the fly-off scores against
-    // exactly the preliminary's twenty-four rows and differs only in the working
+    // exactly the preliminary's twenty-four measured bands (plus the exact-zero
+    // convention row) and differs only in the working
     // time and the flight-points cap. Written out twice it was a hand-maintained
     // duplicate — the F22/F24 failure shape, where one drifted row still adopts,
     // still runs and still produces a plausible number.
     private static ImmutableArray<LookupRow> LandingRows => // F3J.10.5
-        Rows.UpTo(0.2m, 100)
+        // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+        Rows.UpTo(0, 0)
+            .ThenUpTo(0.2m, 100)
             .ThenUpTo(0.4m, 99)
             .ThenUpTo(0.6m, 98)
             .ThenUpTo(0.8m, 97)
@@ -99,14 +102,15 @@ public static class SeedF3J
                                                                                //   designated landing circle"
         Score =
         [
-            ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // F3J.10 1 pt/s; timed to the end of working time (F3J.10.1 c)
+            ScoreTerm.Rate("flightTime", 1, cap: 599),                                 // F3J.10 1 pt/s, cap at 9:59: a 600 reading is a flyaway, never out-scores a landed 9:59; timed to the end of working time (F3J.10.1 c)
 
             // A DERIVED deduction, not a Penalty: nobody records an infraction, it
             // falls out of the measured overfly.
             ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),                // F3J.10.3
 
             ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),                            // F3J.10.9
-                         Predicate.Is("touchedByCompetitor", false)),                  // F3J.10.8
+                         Predicate.Is("touchedByCompetitor", false),                  // F3J.10.8
+                         Predicate.LessThan("flightTime", 600)),                      // horn: 600 means flyaway → no landing (F3J.10.9)
                    ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };
@@ -114,7 +118,8 @@ public static class SeedF3J
     // Two numbers change, the working time and the flight-points cap;
     // `flightValidWhen` and everything else comes with `like`. The `score` block
     // is restated whole because a restated block replaces the parent's entirely —
-    // but the twenty-four landing rows are declared once above, so restating the
+    // but the twenty-four measured bands (plus the exact-zero convention row)
+    // are declared once above, so restating the
     // block no longer re-transcribes them.
     private static TaskDefinition FlyoffTaskD => TaskD with
     {
@@ -122,10 +127,11 @@ public static class SeedF3J
         Timing = new() { Kind = WorkingTimeKind.Fixed, WorkingTime = 900 },    // F3J.11.2 "fifteen (15) minutes duration" for fly-off qualifiers
         Score =
         [
-            ScoreTerm.Rate("flightTime", 1, cap: 900),
+            ScoreTerm.Rate("flightTime", 1, cap: 899),                                 // F3J.10 1 pt/s, cap at 14:59 for the fly-off: a 900 reading is a flyaway, never out-scores a landed 14:59
             ScoreTerm.When(Predicate.GreaterThan("overflySeconds", 0), ScoreTerm.Constant(-30)),                // F3J.10.3
-            ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),
-                         Predicate.Is("touchedByCompetitor", false)),
+            ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),                            // F3J.10.9
+                         Predicate.Is("touchedByCompetitor", false),                  // F3J.10.8
+                         Predicate.LessThan("flightTime", 900)),                      // horn: 900 means flyaway → no landing (F3J.10.9)
                    ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };

@@ -64,7 +64,9 @@ public static class SeedF5J
              .Rest(-3);
 
     private static ImmutableArray<LookupRow> LandingRows =>                    // 5.5.11.12 h
-        Rows.UpTo(1, 50)
+        // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+        Rows.UpTo(0, 0)
+            .ThenUpTo(1, 50)
             .ThenUpTo(2, 45)
             .ThenUpTo(3, 40)
             .ThenUpTo(4, 35)
@@ -118,7 +120,7 @@ public static class SeedF5J
 
         Score =
         [
-            ScoreTerm.Rate("flightTime", 1, cap: 600),                                 // 5.5.11.12 c 1 pt per full second, max 600 points
+            ScoreTerm.Rate("flightTime", 1, cap: 599),                                 // 5.5.11.12 c 1 pt per full second, cap at 9:59: a 600 reading is a flyaway, never out-scores a landed 9:59
 
             // Start-height deduction. Cumulative bands: 0.5/m for the first 200 m
             // and 3/m thereafter, so 220 m deducts 100 + 60 = 160, not 660.
@@ -126,7 +128,8 @@ public static class SeedF5J
 
             // Landing bonus — the coarser 50->0 table, forfeited two ways.
             ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),                            // 5.5.11.12 k
-                         Predicate.Is("touchedByCompetitor", false)),                  // 5.5.11.12 j
+                         Predicate.Is("touchedByCompetitor", false),                  // 5.5.11.12 j
+                         Predicate.LessThan("flightTime", 600)),                      // horn: 600 means flyaway → no landing (5.5.11.12 k)
                    ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };
@@ -148,10 +151,11 @@ public static class SeedF5J
         },
         Score =
         [
-            ScoreTerm.Rate("flightTime", 1, cap: 900),                                 // 5.5.11.12 c 900 points for the fly-off rounds
+            ScoreTerm.Rate("flightTime", 1, cap: 899),                                 // 5.5.11.12 c cap at 14:59 for the fly-off rounds: a 900 reading is a flyaway, never out-scores a landed 14:59
             ScoreTerm.Piecewise("startHeight", StartHeightBands),
             ScoreTerm.When(Predicate.All(Predicate.Equal("overflySeconds", 0),
-                         Predicate.Is("touchedByCompetitor", false)),
+                         Predicate.Is("touchedByCompetitor", false),
+                         Predicate.LessThan("flightTime", 900)),                      // horn: 900 means flyaway → no landing (5.5.11.12 k)
                    ScoreTerm.Lookup("landingDistance", LandingRows)),
         ],
     };

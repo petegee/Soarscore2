@@ -139,6 +139,23 @@ public class TapeLandingScaleProofTests
     }
 
     /// <summary>
+    /// The generic tape-measure snapshot, mapped from the WI-2 catalogue
+    /// like the ALES metre scale above (finding F-MAP-1): centimetre marks
+    /// 0.01..15.00 with the catalogue's off-scale reading 0. No number is
+    /// re-transcribed — the marks below ARE the catalogue's.
+    /// </summary>
+    private static ReadingScale TapeMeasureScale()
+    {
+        var tape = TapeCorpus.All.First(t => t.FileName == "tape-measure").Tape;
+        return new ReadingScale
+        {
+            Unit = tape.Unit,
+            Marks = tape.Marks.Select(m => new ScaleMark(m.UpTo!.Value, m.Reading)).ToImmutableArray(),
+            OffScaleReading = tape.OffTapeReading,
+        };
+    }
+
+    /// <summary>
     /// The NZ F3B-side snapshot, mapped from the catalogue like the F3J side
     /// above (seeded since the 2026-09-09 owner evidence: printed in points).
     /// </summary>
@@ -224,10 +241,10 @@ public class TapeLandingScaleProofTests
     [Fact]
     public void Tape_catalogue_is_counted_separately_with_no_class_count_delta()
     {
-        TapeCorpus.ExpectedCount.Should().Be(3);
+        TapeCorpus.ExpectedCount.Should().Be(4);
         TapeCorpus.All.Should().HaveCount(TapeCorpus.ExpectedCount);
         TapeCorpus.All.Select(t => t.FileName)
-            .Should().BeEquivalentTo("tape-nz-f3j-side", "tape-nz-f3b-side", "tape-nz-ales-m-10m");
+            .Should().BeEquivalentTo("tape-nz-f3j-side", "tape-nz-f3b-side", "tape-nz-ales-m-10m", "tape-measure");
         foreach (var tape in TapeCorpus.All)
             TapeIntegrity.Check(tape.FileName, tape.Tape).Should().BeEmpty($"{tape.FileName} must emit clean");
 
@@ -242,13 +259,17 @@ public class TapeLandingScaleProofTests
     [Fact]
     public void Catalogue_F3J_side_inverts_the_corpus_F3J_table()
     {
-        // The scale IS the award table read backwards: every mark's reading is
-        // the award the corpus F3J table gives the mark's band, and the mark
-        // set is the boundary set. Asserted structurally, not by
+        // The scale IS the award table's measured bands read backwards: every
+        // mark's reading is the award the corpus F3J table gives the mark's band,
+        // and the mark set is the measured boundary set. The table's leading
+        // {0, 0} row is the paper convention (landing-zero-and-flyaway-encoding),
+        // not a measured band — the physical tape has no 0 m mark — so it is
+        // excluded here and pinned below. Asserted structurally, not by
         // re-transcription.
         var scale = NzF3JSideScale();
         var f3j = LandingTables().First(t => t.FileName == "50-f3j").Lookup.Rows;
-        var boundaries = f3j.Where(r => r.UpTo is not null).Select(r => r.UpTo!.Value).ToArray();
+        f3j[0].Should().Be(new LookupRow(0m, 0m), "the exact-zero convention row leads");
+        var boundaries = f3j.Where(r => r.UpTo is not null && r.UpTo != 0m).Select(r => r.UpTo!.Value).ToArray();
         scale.Marks.Select(m => m.UpTo).Should().BeEquivalentTo(boundaries, "same boundary set");
         foreach (var mark in scale.Marks)
             DirectAward(f3j, mark.UpTo).Should().Be(mark.Reading, $"mark at {mark.UpTo}");
@@ -270,7 +291,12 @@ public class TapeLandingScaleProofTests
             composed.IsSuccess.Should().BeTrue(
                 $"{table.FileName}/{table.TaskCode}/{table.Stage} must compose: {composed.Code} {composed.Message}");
 
-            (from cents in Gen.Int[0, 2500]
+            // Exact 0 is excluded from the sweep: on the tape path a nose on the
+            // spot reads the top mark (physical first-band semantics — the
+            // deferred tape carve-out of landing-zero-and-flyaway-encoding),
+            // while the direct award is the {0, 0} convention row. The
+            // divergence at exactly 0 is pinned deterministically below.
+            (from cents in Gen.Int[1, 2500]
              select cents / 100m).Sample(d =>
              {
                  var reading = ReadingOf(scale, d);
@@ -279,6 +305,12 @@ public class TapeLandingScaleProofTests
                      DirectAward(table.Lookup.Rows, d),
                      $"{table.FileName} d={d} reading={reading}");
              });
+
+            DirectAward(table.Lookup.Rows, 0m).Should().Be(0m,
+                $"{table.FileName} exact 0 is the paper convention: zero landing points");
+            composed.Value.Resolve(ReadingOf(scale, 0m)).Value.Should().Be(
+                composed.Value.Resolve(ReadingOf(scale, 0.01m)).Value,
+                $"{table.FileName} d=0 on the tape path reads the same top mark as any d in (0, first mark] (deferred carve-out)");
         }
     }
 
@@ -373,6 +405,57 @@ public class TapeLandingScaleProofTests
         refused.IsSuccess.Should().BeFalse("the 25-point boundary at 15 m lies past the last mark");
         refused.Code.Should().Be("tapeComposition.straddledBand");
         refused.Message.Should().Contain("(10, inf)");
+    }
+
+    [Fact]
+    public void Tape_measure_scale_starts_above_zero_with_off_scale_zero()
+    {
+        // kanban/in-progress/tape-measure-scale.md: the scale must start
+        // above 0 so an entered 0.0 resolves off-scale → 0 landing points
+        // through the existing OffScaleReading machinery — no engine change.
+        var scale = TapeMeasureScale();
+        scale.Marks.Should().HaveCount(1500);
+        scale.Marks[0].UpTo.Should().Be(0.01m, "the first mark is above 0");
+        scale.Marks[^1].UpTo.Should().Be(15.00m, "the tape covers every corpus landing boundary");
+        scale.OffScaleReading.Should().Be(0m, "the catalogue carries an off-scale reading");
+        // d == 0 on the tape path reads the top mark (first-band semantics,
+        // the deferred tape carve-out of landing-zero-and-flyaway-encoding),
+        // while the entered 0.0 reading IS the off-scale one → 0 points.
+        ReadingOf(scale, 0m).Should().Be(scale.Marks[0].Reading);
+        var f3j = LandingTables().First(t => t.FileName == "50-f3j").Lookup.Rows;
+        TapeComposition.Resolve(scale, "m", f3j, 0m).Value.Should().Be(0m);
+        var f5j = LandingTables().First(t => t.FileName == "30-f5j").Lookup.Rows;
+        TapeComposition.Resolve(scale, "m", f5j, 0m).Value.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Tape_measure_composes_with_every_distance_table_and_refuses_the_unitless_metric()
+    {
+        // The seed's composition matrix (SeedTapeMeasure.cs header), asserted
+        // live: every distance-keyed boundary falls on a centimetre mark, so
+        // each pairing is the identity; a unitless metric refuses.
+        var scale = TapeMeasureScale();
+        var composers = new[]
+        {
+            "50-f3j", "60-f5l", "20-f3b", "30-f5j", "85c-nz-f5j-ndc",
+            "86-nz-x5j", "80-nz-m-ales200", "81-nz-m-ndc",
+            "83-nz-n-ales123", "85-nz-p-radian", "87-nz-h-thermal-2m",
+        };
+        foreach (var file in composers)
+        {
+            var rows = LandingTables().First(t => t.FileName == file).Lookup.Rows;
+            var composed = TapeComposition.Compose(scale, "m", rows);
+            composed.IsSuccess.Should().BeTrue(
+                $"{file} boundaries lie on centimetre marks: {composed.Code} {composed.Message}");
+            composed.Value.Awards.Should().HaveCount(scale.Marks.Length + 1);
+            foreach (var mark in scale.Marks)
+                composed.Value.Resolve(mark.Reading).Value.Should().Be(
+                    DirectAward(rows, mark.UpTo), $"{file} reading {mark.Reading}");
+        }
+
+        var f3j = LandingTables().First(t => t.FileName == "50-f3j").Lookup.Rows;
+        TapeComposition.Compose(scale, null, f3j).Code
+            .Should().Be("tapeComposition.unitMismatch", "a metre scale cannot score a unitless metric");
     }
 
     // ============================================================ property (b)
@@ -829,8 +912,11 @@ public class TapeLandingScaleProofTests
     public void Off_tape_zero_vs_zero_metres_vs_no_measurement_are_three_facts()
     {
         // Decision 8, end to end (WI-4): the off-scale reading composes to no
-        // bonus; 0 m captures as a distance (top award through the real
-        // pipeline); no measurement pends awaiting landingDistance.
+        // bonus; an exact 0 m direct entry scores zero (the paper convention of
+        // landing-zero-and-flyaway-encoding — physically impossible reading,
+        // reserved); no measurement pends awaiting landingDistance. The first
+        // two coincide in outcome but stay distinct facts: different capture
+        // paths (tape reading vs direct distance).
         var metrics = F3JDefinition.Phases[0].Tasks[0].Metrics;
         var declared = DeclaredNzF3JSide();
         var table = LandingTables().First(t => t.FileName == "50-f3j");
@@ -852,7 +938,7 @@ public class TapeLandingScaleProofTests
 
         var spotOn = FlightMetricResolution.InterpretAllFlights(
             Capture(Base(), "landingDistance", MeasuredValue.Of(0m), metrics), task, declared).Single();
-        spotOn.Score.Should().Be(100m, "0 m is on the spot: the top award");
+        spotOn.Score.Should().Be(0m, "exact 0 m is the paper convention: zero landing points");
 
         var missing = FlightMetricResolution.InterpretAllFlights(Base(), task, declared).Single();
         missing.Result.State.Should().Be(FlightResultState.Pending);

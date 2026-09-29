@@ -74,6 +74,13 @@ public class TapeCompositionTests
 
     private static ReadingScale AlesMetreTape() => SeedTapeNzAlesM10m.Definition.ToReadingScale();
 
+    /// <summary>
+    /// The generic tape-measure snapshot, mapped from the WI-2 catalogue
+    /// (TapeMapping) — no landing table and no tape scale is re-transcribed
+    /// here either.
+    /// </summary>
+    private static ReadingScale TapeMeasure() => SeedTapeMeasure.Definition.ToReadingScale();
+
     // ---------------------------------------------------------------- identity
 
     [Fact]
@@ -276,6 +283,52 @@ public class TapeCompositionTests
         foreach (var mark in tape.Marks)
             TapeComposition.Resolve(tape, unit, nzM.Rows, mark.Reading).Value
                 .Should().Be(DirectAward(nzM.Rows, mark.UpTo), $"reading {mark.Reading}");
+    }
+
+    [Fact]
+    public void Tape_measure_is_identity_over_the_NZ_M_table()
+    {
+        // Positive control: the generic centimetre scale reads metres, so
+        // composing it with a distance-keyed table is the identity — the
+        // same coincidence that makes the ALES M metre tape compose, now
+        // witnessed at centimetre grain (kanban/in-progress/tape-measure-scale.md).
+        var tape = TapeMeasure();
+        var (nzM, unit) = LandingLookup("80-nz-m-ales200");
+
+        var composed = TapeComposition.Compose(tape, unit, nzM.Rows);
+        composed.IsSuccess.Should().BeTrue(composed.Code);
+        composed.Value.Awards.Should().HaveCount(tape.Marks.Length + 1);
+
+        foreach (var mark in tape.Marks)
+            TapeComposition.Resolve(tape, unit, nzM.Rows, mark.Reading).Value
+                .Should().Be(DirectAward(nzM.Rows, mark.UpTo), $"reading {mark.Reading}");
+    }
+
+    [Fact]
+    public void Tape_measure_off_scale_zero_resolves_to_no_bonus()
+    {
+        // An entered 0.0 is not a mark — the first mark is above 0 — so it
+        // is the off-scale reading denoting (15, inf) → 0 points through the
+        // existing OffScaleReading machinery, no engine change.
+        var tape = TapeMeasure();
+        tape.OffScaleReading.Should().Be(0m);
+        tape.Marks[0].UpTo.Should().Be(0.01m, "the first mark is above 0");
+        var (f3j, unit) = LandingLookup("50-f3j");
+        TapeComposition.Resolve(tape, unit, f3j.Rows, 0m).Value.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Tape_measure_refuses_a_unitless_metric()
+    {
+        // As for every metre scale: a lookup over a unitless metric (e.g.
+        // the F5K flight.sequence tables) cannot be scored off a tape that
+        // reads in metres — never guess an instrument.
+        var (lookup, _) = LandingLookup("50-f3j");
+        var tape = TapeMeasure();
+
+        var refused = TapeComposition.Compose(tape, null, lookup.Rows);
+        refused.IsFailure.Should().BeTrue("a metre scale cannot score a unitless metric");
+        refused.Code.Should().Be("tapeComposition.unitMismatch");
     }
 
     [Fact]

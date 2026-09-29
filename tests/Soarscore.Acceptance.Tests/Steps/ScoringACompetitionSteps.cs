@@ -314,9 +314,13 @@ public sealed class ScoringACompetitionSteps
         group.CompetitorRefs.Should().HaveCount(6);
 
         // Distinct, ascending — an unambiguous single winner (the highest).
+        // Capped below the horn: these scenarios are about normalisation
+        // mechanics, and a 600 reading is a flyaway under the capped 599
+        // prelim (landing-zero-and-flyaway-encoding) — the horn band is
+        // pinned by the domain tests, not here.
         for (var i = 0; i < group.CompetitorRefs.Length; i++)
         {
-            var flightTime = 350m + i * 50m; // 350, 400, 450, 500, 550, 600
+            var flightTime = 300m + i * 50m; // 300, 350, 400, 450, 500, 550
             _scenario1FlightTimes[group.CompetitorRefs[i]] = flightTime;
             await CaptureFlightAsync(1, group.Id, group.CompetitorRefs[i], flightTime);
         }
@@ -324,11 +328,14 @@ public sealed class ScoringACompetitionSteps
 
     /// <summary>
     /// Two groups flying in different air: group 1's times 300..400, group 2's
-    /// 480..600. Every value is a whole multiple of its own group's winner
+    /// 440..550. Every value is a whole multiple of its own group's winner
     /// over 1000 (750, 800, 850, 900, 950, 1000 and 800, 840, 880, 920, 960,
     /// 1000), so the expected scores are exact decimals; and the two groups'
     /// ranges do not overlap, so normalising the whole round against one
-    /// winner would move every score in the other group.
+    /// winner would move every score in the other group. Group 2 stops at
+    /// 550 — a 600 reading is a flyaway under the capped 599 prelim
+    /// (landing-zero-and-flyaway-encoding), and these scenarios are about
+    /// normalisation mechanics, not the horn band.
     /// </summary>
     [When(@"^every competitor flies, one group flying markedly longer times than the other$")]
     public async Task WhenEveryCompetitorFliesOneGroupFlyingMarkedlyLongerTimes()
@@ -336,11 +343,11 @@ public sealed class ScoringACompetitionSteps
         var groups = await ResolveGroupsAsync(roundOrdinal: 1);
 
         // Group ordinal 1 → 300, 320, 340, 360, 380, 400 (winner 400).
-        // Group ordinal 2 → 480, 504, 528, 552, 576, 600 (winner 600).
+        // Group ordinal 2 → 440, 462, 484, 506, 528, 550 (winner 550).
         var timesByGroupOrdinal = new Dictionary<int, decimal[]>
         {
             [1] = [300m, 320m, 340m, 360m, 380m, 400m],
-            [2] = [480m, 504m, 528m, 552m, 576m, 600m],
+            [2] = [440m, 462m, 484m, 506m, 528m, 550m],
         };
 
         foreach (var group in groups)
@@ -532,13 +539,15 @@ public sealed class ScoringACompetitionSteps
     /// <summary>
     /// The data this step flies makes the deduction's PLACEMENT observable in
     /// exact decimals (raw == flightTime per the file header). Competitor 1
-    /// flies the group's longest time (600) — their unpenalised winner-anchor
-    /// position; one clean competitor flies 500, above competitor 1's deducted
-    /// raw but below their unpenalised one; the rest fill distinct mid-field
-    /// values. Two records of the same infraction are then made against
-    /// competitor 1's Entry: GetEntryPenalties groups them into OccurrenceCount
-    /// 2 (ScoringService), and the PerOccurrence definition accrues
-    /// 2 x 100 = 200 pre-normalisation.
+    /// flies the group's longest time (590 — deliberately below the 600 horn:
+    /// a 600 reading is a flyaway under the capped 599 prelim, and this
+    /// scenario is about deduction placement, not the horn band) — their
+    /// unpenalised winner-anchor position; one clean competitor flies 500,
+    /// above competitor 1's deducted raw but below their unpenalised one;
+    /// the rest fill distinct mid-field values. Two records of the same
+    /// infraction are then made against competitor 1's Entry: GetEntryPenalties
+    /// groups them into OccurrenceCount 2 (ScoringService), and the
+    /// PerOccurrence definition accrues 2 x 100 = 200 pre-normalisation.
     /// </summary>
     [When(@"^competitor 1 commits the infraction twice and everyone else flies clean$")]
     public async Task WhenCompetitor1CommitsTheInfractionTwiceAndEveryoneElseFliesClean()
@@ -546,7 +555,7 @@ public sealed class ScoringACompetitionSteps
         var group = await ResolveGroupAsync(roundOrdinal: 1);
         var penalised = group.CompetitorRefs[0];
 
-        var times = new decimal[] { 600m, 300m, 320m, 340m, 360m, 500m };
+        var times = new decimal[] { 590m, 300m, 320m, 340m, 360m, 500m };
         const decimal perOccurrencePoints = 100m;
         const int committedOccurrences = 2;
 
@@ -574,7 +583,7 @@ public sealed class ScoringACompetitionSteps
         // the clean best raw outranks the deducted one (so the "if any clean
         // flight outscores their deducted raw" clause of the scenario holds),
         // and every normalised score divides exactly under that anchor.
-        decimal deductedRaw = times[0] - perOccurrencePoints * committedOccurrences; // 400
+        decimal deductedRaw = times[0] - perOccurrencePoints * committedOccurrences; // 390
         decimal cleanBestRaw = times.Skip(1).Max();                                  // 500
         deductedRaw.Should().BeLessThan(cleanBestRaw);
 
@@ -798,15 +807,15 @@ public sealed class ScoringACompetitionSteps
         // so the group's 1000 anchors on the best DEDUCTED raw (500, a clean
         // flight) and every cell reads 1000 x effectiveRaw / 500 —
         //
-        //     competitor 1: 1000 x (600 - 2x100) / 500 = 800   not their
+        //     competitor 1: 1000 x (590 - 2x100) / 500 = 780   not their
         //                unpenalised anchor position of 1000 (the inert bug)
         //     clean peers:  1000 x t / 500             = 600 / 640 / 680 / 720
         //     clean best:   1000 x 500 / 500           = 1000
         //
         // Every row is asserted because misplacing the deduction moves other
         // rows even where competitor 1's coincides: applied POST-normalisation
-        // flat it would leave the anchor on the unpenalised 600 (clean best
-        // then reads 833.33...); ignoring occurrence count reads 900.
+        // flat it would leave the anchor on the unpenalised 590 (clean best
+        // then reads 847.46...); ignoring occurrence count reads 980.
         view.ValidCount.Should().Be(6);
 
         foreach (var result in view.Results)
@@ -822,7 +831,7 @@ public sealed class ScoringACompetitionSteps
         var view = (await FetchAllGroupViewsAsync(roundOrdinal: 1)).Single();
 
         // The "if" clause is a fact of the When step's data: the best clean
-        // raw (500) outscores competitor 1's deducted raw (600 - 200 = 400),
+        // raw (500) outscores competitor 1's deducted raw (590 - 200 = 390),
         // so normalisation must move off them — under the same max-over-
         // deducted-raws that found them the anchor while unpenalised. A
         // pipeline scoring the penalised flight from its unpenalised anchor

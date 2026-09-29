@@ -256,11 +256,13 @@ public sealed class LandingTapeDeclaredScaleSteps
     [Then(@"^the group's pre-normalisation scores are flight time plus the rulebook landing award$")]
     public async Task ThenTheGroupsPreNormalisationScoresAreFlightTimePlusTheRulebookLandingAward()
     {
-        // F3J.10.5 through the real pipeline: 0.0->100, 0.5->98, 2.5->90,
-        // 5.5->75, 12.5->40, 100->0, each over the fixed 500 s flight time.
+        // F3J.10.5 through the real pipeline: 0.0->0 (the paper convention —
+        // landing-zero-and-flyaway-encoding — not the top award), 0.5->98,
+        // 2.5->90, 5.5->75, 12.5->40, 100->0, each over the fixed 500 s
+        // flight time. Pilot 2's 598 is the group's best raw.
         var expected = new Dictionary<int, decimal>
         {
-            [1] = 600m, [2] = 598m, [3] = 590m, [4] = 575m, [5] = 540m, [6] = 500m,
+            [1] = 500m, [2] = 598m, [3] = 590m, [4] = 575m, [5] = 540m, [6] = 500m,
         };
         var view = (await FetchGroupViewAsync());
         foreach (var (pilot, pre) in expected)
@@ -275,13 +277,13 @@ public sealed class LandingTapeDeclaredScaleSteps
     [Then(@"^the group's normalised scores follow the class target of 1000$")]
     public async Task ThenTheGroupsNormalisedScoresFollowTheClassTargetOf1000()
     {
-        // F3J.10.11 Truncate-0.1 over the 600 winner: exact decimals.
+        // F3J.10.11 Truncate-0.1 over the 598 winner: exact decimals.
         var expected = new Dictionary<int, decimal>
         {
-            [1] = 1000m, [2] = 996.6m, [3] = 983.3m, [4] = 958.3m, [5] = 900m, [6] = 833.3m,
+            [1] = 836.1m, [2] = 1000m, [3] = 986.6m, [4] = 961.5m, [5] = 903.0m, [6] = 836.1m,
         };
         var view = await FetchGroupViewAsync();
-        view.WinnerRef.Should().Be(_competitors[0]);
+        view.WinnerRef.Should().Be(_competitors[1]);
         foreach (var (pilot, normalised) in expected)
             view.Results.Single(r => r.CompetitorRef == _competitors[pilot - 1]).RawScore.Should().Be(normalised);
     }

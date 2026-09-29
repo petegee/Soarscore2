@@ -7,6 +7,125 @@ one design answer: **the definition interprets paper language**). Sibling
 story: `minimum-score-floor.md` — the three scoring fixes it shares the F5J
 score sum with are to land in one review, one seed drift-guard run.
 
+**Status:** In progress (raised 2026-09-27, unblocking NdcScore
+`kanban/blocked/ss_landing-zero-scores-no-landing-points.md` and
+`kanban/blocked/ss_f5j-flight-time-cap-at-959.md` — one ambiguity family,
+one design answer: **the definition interprets paper language**). Sibling
+story: `minimum-score-floor.md` — LANDED ALONE 2026-09-27 (owner decision,
+see that story's As built): the shared-review/shared-drift-guard constraint
+is lifted; this story runs its own guard.
+
+## As built (2026-09-28, ready for review — NOT committed)
+
+Owner decisions taken in-session 2026-09-28: (a) reinterpret steer confirmed,
+full sweep (not 85c-only); (b) flight caps 599 prelim / 899 fly-off (rule c's
+"max 600" reads as the flyaway bound: a 600 reading scores 599 flight + zero
+landing, never out-scoring a landed 9:59); (c) exact-0 semantics picked:
+**exact 0 = zero points**. Two items below need ratification at review:
+the 87-scope extension (WI-1) and the tape carve-out deferral (WI-6).
+
+**WI-1 — landing zero rows** (11 tables, definition data only). Every
+landing-distance lookup gained a leading `Rows.UpTo(0, 0)` with a
+paper-convention comment: `SeedF5jNdc` (85c), `SeedNzMNdc` (81),
+`SeedF5J` (30, shared prelim+fly-off), `SeedF3J` (50, shared) + its two
+"twenty-four rows" comments now "twenty-four measured bands (plus the
+exact-zero convention row)", `SeedF3B` (20), `SeedF5L` (60, same comment
+fix), `SeedNzMAles200` (80's distance path), `SeedNzNAles123` (83),
+`SeedNzPRadian` (85), `SeedX5j` (86). **Scope flag:** `SeedNzHThermal2m`
+(87) also carries a genuine landing-distance lookup and got the row under
+the full-sweep steer — it is beyond the story's listed set; trivial to
+revert if the owner disagrees. Untouched: `SeedTape*.cs`, `SeedF5K.cs` /
+`SeedF5kNdc.cs` (launch-sequence penalty lookups, not landing tables).
+Adoption check 9 passes (0 < smallest first upTo 0.2).
+
+**WI-2 — flyaway landing test** (6 `When`s). Each horn-blind landing
+conditional gained `Predicate.LessThan("flightTime", W)` (existing
+`Authoring.Predicate.LessThan` vocabulary, no engine change): 85c <600;
+30 prelim <600 + fly-off <900; 50 prelim <600 + fly-off <900 (with F3J.10.9
+cites); 60 <540 both phases via `with` (cites 5.5.12.11.2 b, verified in
+`source-docs/f5-electric-2026.md:1705-1707`). F3B Task A (already
+flight-gated, no overfly metric) and all NZ flag-only conditionals
+(WI-4 gap) correctly out of scope.
+
+**WI-3 — flyaway flight caps** (5 terms). `Rate("flightTime", 1, cap: 600)`
+→ 599 and `cap: 900` → 899 in `SeedF5jNdc` (TaskD), `SeedF5J` (prelim +
+fly-off), `SeedF3J` (prelim + fly-off); 85c's arithmetic footer updated
+(per-round max 649, contest 2596). `SeedF5L` Piecewise flight term and all
+other caps untouched. The pre-existing `Then`→`ThenUpTo` rename in the
+tree was built on, not reverted.
+
+**WI-4 — expression gap (decided, recorded).** `Comparison` is
+metric↔metric/literal only; `ParameterRef` has no predicate slot and
+`ParameterResolver` never rewrites predicates — so `flightTime < W` is a
+literal on Fixed tasks (the whole affected set: 600/900/540) and a
+parameterised/`UntilAllFlightsComplete` stopwatch-pair task would need new
+vocabulary. Nothing needs it today; entry added to `deferred-decisions.md`.
+
+**WI-5 — seeds and fixtures.** `dotnet run --project tools/Soarscore.SeedData`
+green (all integrity gates). `json/` is gitignored/untracked (drift-guard
+WI-2 unlanded) so the diff ran against a pre-regen snapshot: 12 files
+changed + 1 new (87), all attributable — WI-1/2/3 in
+20/30/50/60/80/81/83/85/85c/86/87; **stale-tree refreshers alongside**
+(committed-but-never-emitted: `floorAtZero` on 30/85c/85d, `landedWithin75m`
+removal on 81/83/85, version lines incl. 85b's only delta, new 87 file).
+Silent: 10-f3k, 40-f5k, 70-f3f, 90-aggregate, all 3 tapes. Spot-check 85c:
+`[{0,0},{1,50}…]`, `flightTime LessThan 600`, `cap: 599`. NdcScore mirror
+DONE (`/home/pete/Source/NdcScore/src/test/fixtures/`: 85c, 81, 85, 50-f3j;
+`version` lines preserved; 85b skipped, fixture-only delta): 4 consuming
+suites 103 pass, **3 fail in `src/grid/schema.test.ts` — pre-existing
+cross-repo drift exposed, not a story regression** (the 81 mirror carries
+committed `cf69aba`'s `landedWithin75m` removal which NdcScore main still
+pins). NdcScore owner update owed; mirror left uncommitted in that tree.
+
+**WI-6 — tests.** New `tests/Soarscore.Domain.Tests/LandingZeroAndFlyawayTests.cs`
+(~630 lines): zero-row pins for all 10 Score-stage tables + 80's
+ScoreNormalised stage through `ScoreGroup`, blank-landing "no result",
+seven horn pins incl. both F5L phases and a capture-level 600.4 s →
+truncation-band pin, and the two CsCheck named invariants
+(`new(d)==old(d) ∀ d>0`, `new(0)==0`; `s ≥ W ⇒ no landing`,
+`flight ≤ 599×rate`, flyaway ≤ landed W−1; F5L's piecewise rise below the
+horn scoped to the total level). Stale oracles updated to the reinterpreted
+numbers: `NzNdcSeedArithmeticTests` (550→499 flyaway; companion overfly
+500→499), `F5JSeed75mGateTests` (prelim 550→499, fly-off stays 550).
+**Tape carve-out — deferred under red-suite pressure, needs ratification:**
+`TapeLandingScaleProofTests` forced the story's open question (3 failures).
+Decision: the tape path keeps physical first-band semantics (a nose on the
+spot reads the top mark; the tape has no 0 m mark; no NDC comp declares
+instruments; closing it would need an engine magic-value branch), while the
+direct path uses the convention row — divergence pinned deterministically
+at d==0, catalogue boundary comparison excludes the convention row, the
+`0 m → 100` oracle became `0 m → 0`. Entry added to
+`deferred-decisions.md`; revisit with `jerilderie-2010-tape-witness.md`.
+BDD oracles moved off the horn (generic normalisation scenarios stay
+horn-free: 300..550 / 440..550 exact-decimal group, deduction anchor
+600→590 with 780/980/847.46 counterfactuals) and onto the convention
+(landing feature: pilot 1 600→500, winner pilot 2 at 598, renormalised
+836.1/1000/986.6/961.5/903.0/836.1). **f3j-international ledger re-triaged**
+(25→10 entries): sentinel raw class retired to a provenance note (seed
+`{0,0}` meets GS's own 0→0 rule — pure sentinel cells now agree),
+−30/decay entries rewritten with the raw pin (32), cascade recomputed
+(232 normalised = 200 grid + 32 cascade; maxima move in 3 groups), 14
+ranking entries retired, 6 rewritten (swaps 30↔12, 52↔32, 2↔64);
+−30/decay/rounding causes intact.
+
+**Suites:** Domain 920/920, Application 441/441, Architecture 14 (+4
+pre-existing skips), Acceptance 116/116 on sqlite (the 2
+`CorsPreflightSmokeTests` failures with the gitignored
+`src/Soarscore.Api/appsettings.Development.json` present are the documented
+pre-existing env sensitivity — fail with it, pass with it aside;
+sibling-story precedent). Postgres runs need Docker (not available here).
+
+**Design questions settled:** exact-0 = zero points (above); reinterpret,
+not reject/clamp (owner); 600-legality = organiser steer (cap 599);
+generalisation = per-class data argued from each class's text (F5L cites
+its own clause); negative/sub-1 m capture warning stays open.
+Composed-tape carve-out deferred (above).
+
+**Not committed:** seed `.cs` edits + tests + ledger + story (this tree),
+regenerated `json/` (untracked by design until drift-guard WI-2 lands),
+NdcScore fixture mirror (that tree). Commit shape is the owner's call —
+note the stale-tree refreshers will ride along in the seed-output diff.
+
 ## What
 
 Two paper-scoresheet conventions collide with metric readings the model

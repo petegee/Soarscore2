@@ -78,16 +78,20 @@ public static class SeedF5L
                          Predicate.Is("amrtPresetsCorrect", true),                     // 5.5.12.4
                          Predicate.Is("timingDeviationInFavour", false),               // 5.5.12.4 d
                          Predicate.Equal("overflySeconds", 0),                            // 5.5.12.11.2 b
+                         Predicate.LessThan("flightTime", 540),                           // horn: 540 means flyaway → no landing (5.5.12.11.2 b)
                          Predicate.Is("lostPart", false),                              // 5.5.12.11.2 a
                          Predicate.Is("touchedByCompetitor", false),                   // 5.5.12.11.2 c
                          Predicate.Is("touchedBeforeMeasuring", false)),               // 5.5.12.11.2 d
                    ScoreTerm.Lookup("landingDistance",                                 // 5.5.12.11.2
-                       // The same twenty-four rows F3J.10.5 states, and
+                       // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+                       // The same twenty-four measured bands F3J.10.5 states (plus the
+                       // exact-zero convention row), and
                        // deliberately written out again: a fragment is scoped to
                        // one class definition, so the duplication BETWEEN
                        // definitions stays on the page as an honest record of what
                        // that discipline costs (notation §7.1).
-                       Rows.UpTo(0.2m, 100)
+                       Rows.UpTo(0, 0)
+                           .ThenUpTo(0.2m, 100)
                            .ThenUpTo(0.4m, 99)
                            .ThenUpTo(0.6m, 98)
                            .ThenUpTo(0.8m, 97)

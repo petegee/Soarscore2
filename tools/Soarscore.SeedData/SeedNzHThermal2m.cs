@@ -107,7 +107,9 @@ public static class SeedNzHThermal2m
             //   consequence. Outside the 15 m spot the bonus is zero; the
             //   flight stands.
             ScoreTerm.Lookup("landingDistance",                                 // NZ.5.5(f)(i) — the class's own single-step bonus
-                Rows.UpTo(15, 50)
+                // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+                Rows.UpTo(0, 0)
+                    .ThenUpTo(15, 50)
                     .Rest(0)),
         ],
     };

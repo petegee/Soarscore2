@@ -193,6 +193,42 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
 
 ## Competition class model
 
+- **The exact-zero landing convention stops at the tape path (direct-entry
+  distances only) — and no engine zero-branch is needed.** **Decided
+  2026-09-28** (`kanban/in-progress/landing-zero-and-flyaway-encoding.md`,
+  WI-6; engine-branch half **declined** 2026-09-29, owner direction: "zero
+  should always mean zero ... if there's no other alternative" — there is).
+  Tapes are pre-marked in awarded points at measured distances: an on-the-nail
+  landing reads the top award (100) straight off the tape, and a beyond-the-end
+  landing reads the off-scale 0 — the tape path has no zero-ambiguity to
+  resolve. The corpus tables' leading `{0, 0}` row reserves exact 0 as paper
+  language ("beyond the tape" → zero points) for directly entered distances
+  only, where a genuine exact-0.000 m nose-to-spot measurement is physically
+  impossible (any real measurement shows a small delta and lands in the top
+  band as before). Zero means zero on every real capture path with no engine
+  change: direct entry via the `{0, 0}` row, points-tape reading 0 via the
+  existing `OffScaleReading`, and tape-measure 0.0 via off-scale once the
+  tape-measure scale exists (`kanban/backlog/tape-measure-scale.md`). The
+  only remaining split is synthetic — composing a mathematical d=0 distance
+  through the physical scale reads the top mark — at an unphysical point no
+  scorer can produce; it is pinned, not fixed (`TapeLandingScaleProofTests`:
+  catalogue comparison excludes the convention row — the physical tape has
+  no 0 m mark; d==0 composition divergence asserted deterministically).
+  Revisit with the tape-measure-scale story or
+  `kanban/backlog/jerilderie-2010-tape-witness.md`. Do not add an engine
+  zero-branch, do not "fix" the tape-path first-band award at 0, and do not
+  drop the convention row to reunify them.
+
+- **Scoring predicates cannot reference task timing or parameters.**
+  **Decided 2026-09-28** (same story, WI-4). `Comparison` is
+  metric↔metric/literal only (`ScoringVocabulary.cs:156-166`); `ParameterRef`
+  has no predicate slot and `ParameterResolver` never rewrites predicates —
+  so `flightTime < W` is written as a literal on every Fixed-time task
+  (the whole stopwatch-pair set: 600/900/540). A parameterised or
+  `UntilAllFlightsComplete` task with a horn-blind conditional would need
+  new vocabulary; invent none speculatively. Reopen only when such a task
+  actually needs a timing-aware predicate.
+
 - **The `.class` notation parser** (`docs/competition-class-notation.md` is a writing
   notation, not an input format) and **class-definition drift detection** — both settled
   out of scope.

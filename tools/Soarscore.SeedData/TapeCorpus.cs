@@ -15,6 +15,8 @@
 //     side pre-composed, verified row-for-row — one fused table serving both
 //     sides). See SeedTapeNzF3BSide.cs; do not re-open without new evidence.
 //   - tape-nz-ales-m-10m — ALES M's metre-marked instrument, NZ.7.4(c)(i).
+//   - tape-measure — the generic centimetre-marked instrument any contest
+//     may declare (kanban/completed/tape-measure-scale.md).
 
 using System.Collections.Immutable;
 
@@ -30,12 +32,13 @@ public static class TapeCorpus
     /// same commit that adds its SeedTape — the count moves only by an explicit
     /// catalogue change, never silently.
     /// </summary>
-    public const int ExpectedCount = 3;
+    public const int ExpectedCount = 4;
 
     public static ImmutableArray<SeedTape> All =>
     [
         new("tape-nz-f3j-side", SeedTapeNzF3JSide.Definition),
         new("tape-nz-f3b-side", SeedTapeNzF3BSide.Definition),
         new("tape-nz-ales-m-10m", SeedTapeNzAlesM10m.Definition),
+        new("tape-measure", SeedTapeMeasure.Definition),
     ];
 }

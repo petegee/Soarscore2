@@ -79,7 +79,9 @@ public static class SeedX5j
                          Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.7.6(c)(vi) "no landing points are
                                                                                //   awarded"
                    ScoreTerm.Lookup("landingDistance",                                 // NZ.7.6(c)(v), table at NZ.4.13
-                       Rows.UpTo(1, 50)
+                       // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+                       Rows.UpTo(0, 0)
+                           .ThenUpTo(1, 50)
                            .ThenUpTo(2, 45)
                            .ThenUpTo(3, 40)
                            .ThenUpTo(4, 35)

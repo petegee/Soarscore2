@@ -123,32 +123,37 @@ public class NzNdcSeedArithmeticTests
     // ------------------------------------------------------ F5J NDC
 
     [Fact]
-    public void F5jNdc_perfect_200m_launch_round_scores_550_not_1000()
+    public void F5jNdc_horn_reading_is_a_flyaway_capped_at_599_with_no_landing()
     {
-        // NZ.0.3 d: the raw sum. 600 flight (5.5.11.12 c) + 50 landing (h)
-        // − 100 start-height deduction at exactly 200 m (0.5/m, e) = 550.
+        // The organiser's reinterpret steer
+        // (kanban/in-progress/landing-zero-and-flyaway-encoding.md): a 600 s
+        // reading means the model flew away and never landed. The flight caps
+        // at 9:59 (599, 5.5.11.12 c) and the landing conditional's
+        // flightTime < 600 test fails, so no landing is awarded: 599 flight
+        // − 100 start-height deduction at exactly 200 m (0.5/m, e) = 499.
         // An evaluator that normalised the group (5.5.11.12 m) would produce
-        // 1000 — this assertion is the raw-sum lock.
+        // 1000 — this assertion is still the raw-sum lock, at the new number.
         var task = ResolveF5jNdcTaskD();
 
         var result = FlightInterpreter.Interpret(task, 1, F5jNdcMetrics(
             flightTime: 600, startHeight: 200, overfly: 0, touched: false, within75m: true, landing: 1));
 
-        result.Score.Should().Be(550m);
+        result.Score.Should().Be(499m);
     }
 
     [Fact]
     public void F5jNdc_within_one_minute_overfly_keeps_flight_points_and_loses_landing()
     {
-        // 5.5.11.12 c/g/k via NZ.0.3 f/g: 600 flight (capped at the working
-        // time), landing forfeited (k), no per-second overtime deduction (the
-        // rules state none), − 100 at a 200 m launch = 500.
+        // 5.5.11.12 c/g/k via NZ.0.3 f/g: 599 flight (capped at 9:59 — a 600
+        // reading is a flyaway, never a landed 10:00), landing forfeited (k),
+        // no per-second overtime deduction (the rules state none),
+        // − 100 at a 200 m launch = 499.
         var task = ResolveF5jNdcTaskD();
 
         var result = FlightInterpreter.Interpret(task, 1, F5jNdcMetrics(
             flightTime: 600, startHeight: 200, overfly: 30, touched: false, within75m: true, landing: 1));
 
-        result.Score.Should().Be(500m);
+        result.Score.Should().Be(499m);
     }
 
     [Fact]

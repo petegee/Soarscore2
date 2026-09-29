@@ -61,7 +61,9 @@ public static class SeedF3B
                          Predicate.Is("touchedByCompetitor", false)),                  // F3B.1.7 d "touches either the competitor or his helper during
                                                                                //   landing manoeuvres of task A, no landing points will be given"
                    ScoreTerm.Lookup("landingDistance",                                 // F3B.2.3 d
-                       Rows.UpTo(1, 100)
+                       // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+                       Rows.UpTo(0, 0)
+                           .ThenUpTo(1, 100)
                            .ThenUpTo(2, 95)
                            .ThenUpTo(3, 90)
                            .ThenUpTo(4, 85)

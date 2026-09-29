@@ -65,7 +65,9 @@ public static class SeedNzPRadian
                     Predicate.Is("motorRestarted", false),                        // NZ.7.7(e)(vii) "landing points will be lost"
                     Predicate.Is("airborneAtRoundEnd", false)),                   // NZ.7.7(e)(x), read per NZ.7.5(k) — see below
                    ScoreTerm.Lookup("landingDistance",                                 // NZ.7.7(e)(v)
-                       Rows.UpTo(7, 50)
+                       // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+                       Rows.UpTo(0, 0)
+                           .ThenUpTo(7, 50)
                            .ThenUpTo(15, 25)
                            .Rest(0))),
         ],

@@ -86,7 +86,9 @@ public static class SeedNzMAles200
             ScoreTerm.When(Predicate.All(Predicate.Is("damagedAndNotSafelyFlyable", false),            // NZ.7.4(c)(iv)
                          Predicate.Is("touchedByCompetitor", false)),                  // NZ.7.4(c)(v)
                    ScoreTerm.Lookup("landingDistance",                                 // NZ.7.4(c)(ii), table at NZ.4.13
-                       Rows.UpTo(1, 50)
+                       // exact 0 = paper "beyond the tape" → zero landing points (physically impossible reading, reserved)
+                       Rows.UpTo(0, 0)
+                           .ThenUpTo(1, 50)
                            .ThenUpTo(2, 45)
                            .ThenUpTo(3, 40)
                            .ThenUpTo(4, 35)

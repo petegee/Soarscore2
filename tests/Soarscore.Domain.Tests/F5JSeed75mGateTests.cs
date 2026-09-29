@@ -42,8 +42,9 @@ public class F5JSeed75mGateTests
     [InlineData(1, "fly-off")]
     public void Landing_beyond_75m_zeroes_the_flight(int phaseIndex, string _)
     {
-        // 5.5.11.7 d via FlightValidWhen — otherwise a clean 550 round
-        // (600 flight + 50 landing − 100 start-height deduction at 200 m).
+        // 5.5.11.7 d via FlightValidWhen — otherwise a 499 round on the
+        // preliminary task (599 flight, no landing at the horn, − 100
+        // start-height deduction at 200 m).
         var task = ResolveF5JTask(phaseIndex);
 
         var result = FlightInterpreter.Interpret(task, 1, F5JMetrics(within75m: false));
@@ -51,12 +52,24 @@ public class F5JSeed75mGateTests
         result.Score.Should().Be(0m);
     }
 
-    [Theory]
-    [InlineData(0, "preliminary")]
-    [InlineData(1, "fly-off")]
-    public void Landing_within_75m_keeps_the_full_round(int phaseIndex, string _)
+    [Fact]
+    public void Landing_within_75m_on_the_preliminary_task_scores_the_flyaway()
     {
-        var task = ResolveF5JTask(phaseIndex);
+        // flightTime 600 is the horn on the 600 s task: 599 flight, no
+        // landing, − 100 start-height deduction at 200 m = 499.
+        var task = ResolveF5JTask(0);
+
+        var result = FlightInterpreter.Interpret(task, 1, F5JMetrics(within75m: true));
+
+        result.Score.Should().Be(499m);
+    }
+
+    [Fact]
+    public void Landing_within_75m_on_the_flyoff_task_keeps_the_full_round()
+    {
+        // 600 < 900: below the fly-off horn, so the landing stands — 600
+        // flight + 50 landing − 100 start-height deduction at 200 m = 550.
+        var task = ResolveF5JTask(1);
 
         var result = FlightInterpreter.Interpret(task, 1, F5JMetrics(within75m: true));
 
@@ -83,7 +96,7 @@ public class F5JSeed75mGateTests
         var bareRow = bareScore.Results[MetricAbsenceFixtures.RowKey(0)];
         var explicitRow = explicitScore.Results[MetricAbsenceFixtures.RowKey(0)];
         bareRow.State.Should().Be(explicitRow.State);
-        bareScore.PreNormalisationScores[MetricAbsenceFixtures.RowKey(0)].Should().Be(550m);
+        bareScore.PreNormalisationScores[MetricAbsenceFixtures.RowKey(0)].Should().Be(499m);
         bareScore.PreNormalisationScores[MetricAbsenceFixtures.RowKey(0)].Should().Be(
             explicitScore.PreNormalisationScores[MetricAbsenceFixtures.RowKey(0)]);
         bareRow.RawScore.Should().Be(explicitRow.RawScore);
