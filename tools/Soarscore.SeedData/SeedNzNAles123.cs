@@ -114,6 +114,12 @@ public static class SeedNzNAles123
         // no penalty definitions — every consequence in NZ.7.5 is derived from
         // something measured, as in F5L
 
+        // Competition-total floor: NZ rulebook silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application). The round-grain task
+        //   datum (Joe Wurts local practice) is untouched — different datum,
+        //   different grain.
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

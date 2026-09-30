@@ -87,6 +87,14 @@ public sealed class ScoringACompetitionSteps
         Name = "RC Electric Powered Thermal Duration Gliders (acceptance fixture: nonConformingWinch zero)",
         Version = "FAI F5 Electric 2026 ed.2 + acceptance nonConformingWinch",
         Penalties = [.. F5JDefinition.Penalties, NonConformingWinchZero],
+        // Competition-floor story (competition-total-floor-and-fai-floor-audit.md;
+        // owner decision 2026-09-30: class-level datum, applies corpus-wide):
+        // 30-f5j's class now states FloorTotalAtZero (5.5.11.12 n),
+        // which would record this scenario's 0 − 1000 as 0 — merging the two
+        // outcomes the D-A4 pin must distinguish (deducted −1000 vs a dropped
+        // half's un-deducted 0). The floor is not what this scenario tests, so
+        // the fixture class clears the datum and keeps pinning the raw −1000.
+        FloorTotalAtZero = null,
     };
 
     // WI-4: a Disqualify-carrying definition shaped like F3F's

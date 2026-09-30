@@ -135,6 +135,11 @@ public static class SeedF3F
             },
         ],
 
+        // Competition-total floor: no own floor clause in docs/rules/f3f.md —
+        //   applied per owner decision 2026-09-30 (universal corpus-wide
+        //   application).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

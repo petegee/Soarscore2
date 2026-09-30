@@ -230,6 +230,15 @@ public static class SeedF5J
             Deduct("contactInAccessCorridor", 1000),                            // 5.5.11.4 e
         ],
 
+        // Competition-total floor, class-level: 5.5.11.12 n ("In case the total
+        //   score after deduction of the penalties is negative, a zero (0) score
+        //   will be recorded") plus the common §6 (docs/rules/00-general-rules.md
+        //   sec 6: "A score that would go negative is recorded as zero (penalties
+        //   still stand)"). Owner decision 2026-09-30: the floor applies to all
+        //   classes and floors uniformly with the class total — preliminary and
+        //   fly-off alike (supersedes the preliminary-scoped reading).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

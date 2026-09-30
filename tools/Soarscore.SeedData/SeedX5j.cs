@@ -123,6 +123,10 @@ public static class SeedX5j
         //   from something measured; a motor restart is a score term above,
         //   not a penalty
 
+        // Competition-total floor: NZ rulebook silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

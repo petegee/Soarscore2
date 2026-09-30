@@ -175,6 +175,10 @@ public static class SeedNzF3kNdc
             },
         ],
 
+        // Competition-total floor: NZ rulebook silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

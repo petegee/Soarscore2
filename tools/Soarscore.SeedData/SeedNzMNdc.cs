@@ -129,6 +129,12 @@ public static class SeedNzMNdc
             // no launchHeightExceeded: NZ.4.17(c)/2.8.6 are a CD discretion — see the parent
         ],
 
+        // Competition-total floor: NZ rulebook silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application). The round-grain task
+        //   datum (Joe Wurts local practice) is untouched — different datum,
+        //   different grain.
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

@@ -158,6 +158,12 @@ public static class SeedNzMAles200
             // The CD's zero is recorded as a ruling on the Competition.
         ],
 
+        // Competition-total floor: NZ rulebook silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application). The round-grain task
+        //   datum (Joe Wurts local practice) is untouched — different datum,
+        //   different grain.
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

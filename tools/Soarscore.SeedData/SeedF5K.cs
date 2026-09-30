@@ -116,6 +116,11 @@ public static class SeedF5K
             Round = new(RoundingMode.HalfUp, 1),                               // 5.5.10.15 rounded to whole points
         },
         RawScore = new(RoundingMode.Truncate, 1),                              // 5.5.10.15 raw truncated down to whole points (F4b)
+        // 5.5.10.1: "If the total of all points is negative, the score is
+        //   zero (0)." Round grain (task datum, not phase datum); inherited
+        //   by B, C, D and E through the `with` below. The 40-f5k PHASE
+        //   datum (5.5.10.16) is silent and stays absent — no inference.
+        FloorAtZero = true,
         // 5.5.10.12 flight penalty b zeroes THE FLIGHT, not the flight-time term
         // (F17). Written as a term wrapper it guarded only the first term, so a
         // model landing off the field still collected its launch-height adjustment
@@ -354,6 +359,14 @@ public static class SeedF5K
                 Effects = [new(PenaltyEffect.DeductPoints, 300)],               // 5.5.10.12 safety penalty b, c "deducted from the final score"
             },
         ],
+
+        // Competition-total floor: docs/rules/00-general-rules.md sec 6 (common:
+        //   "A score that would go negative is recorded as zero (penalties still
+        //   stand)"). 5.5.10.16 checked-silent — the seed rides on the common §6
+        //   + owner decision 2026-09-30 (universal corpus-wide application), not
+        //   an own clause. The round-grain task datum (5.5.10.1) is untouched —
+        //   different datum, different grain.
+        FloorTotalAtZero = true,
 
         Phases =
         [

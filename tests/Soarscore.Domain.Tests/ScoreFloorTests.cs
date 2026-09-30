@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
 using AwesomeAssertions;
 using CsCheck;
+using Soarscore.Domain;
 using Soarscore.Domain.Competitions;
 using Soarscore.Domain.Entries;
+using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Domain.Scoring;
 using Xunit;
@@ -28,6 +30,12 @@ namespace Soarscore.Domain.Tests;
 /// Driven through <see cref="ScoringService.ScoreGroup"/> — the grain the
 /// floor lives at — with the same synthetic-class style as
 /// ScoringServiceZeroRoutingTests (class-agnostic, NFR-1).
+///
+/// The competition-grain extension below pins
+/// kanban/backlog/competition-total-floor-and-fai-floor-audit.md WI-5 as
+/// reworked by owner decision 2026-09-30: the class-level
+/// <c>FloorTotalAtZero</c> datum (FAI F5J 5.5.11.12 n, corpus-wide) floors the
+/// post-deduction total through <see cref="ScoringService.ScoreCompetition"/>.
 /// </summary>
 public class ScoreFloorTests
 {
@@ -403,5 +411,337 @@ public class ScoreFloorTests
         result.DroppedScores[0].RoundOrdinal.Should().Be(3);   // Latest of the tied
         result.Aggregate.Should().Be(0m);
         result.AllScores.Length.Should().Be(3);
+    }
+
+    // --------------------------------- competition grain (WI-5 of the floor audit)
+    //
+    // Through ScoreCompetition with synthetic single-phase classes — the same
+    // class-agnostic style as above, with Competition/Entry scaffolding
+    // following ScoringServicePropertyTests.BuildCompetitionWithPenalties
+    // (AdoptedRules, DrawPhase, DrawAccepted, entries keyed by EntryId,
+    // Competition-scoped penalties carrying a CompetitorRef subject). The
+    // rate-1 task carries no normalisation, so each round score IS the
+    // captured value and the phase aggregate IS the plain sum.
+
+    private static ClassDefinition MakeFlooredClassDefinition(
+        TaskDefinition task,
+        bool? floorTotal,
+        ImmutableArray<PenaltyDefinition> penalties = default,
+        ImmutableArray<DropPolicy> drops = default) => new()
+    {
+        Name = "Synthetic",
+        Version = "1.0",
+        Reflight = new ReflightRule
+        {
+            EntitledScores = ReflightSelection.Replacement,
+            OthersScore = ReflightSelection.BetterOf,
+        },
+        Penalties = penalties.IsDefault ? [] : penalties,
+        FloorTotalAtZero = floorTotal,
+        Phases =
+        [
+            new PhaseDefinition
+            {
+                Ordinal = 1,
+                Type = PhaseType.Preliminary,
+                Validity = new ValidityRule { MinRounds = 1 },
+                Drops = drops.IsDefault ? [] : drops,
+                Tasks = [task],
+            },
+        ],
+    };
+
+    private static PenaltyDefinition AggregateDeductDef(
+        string infractionType, decimal points,
+        PenaltyAccrual accrual = PenaltyAccrual.OncePerAttempt) => new()
+    {
+        InfractionType = infractionType,
+        Accrual = accrual,
+        Effects = [new PenaltyEffectSpec(PenaltyEffect.DeductPoints, points)],
+    };
+
+    /// <summary>
+    /// Two competitors, one round per element of <paramref name="subjectRounds"/>
+    /// (== <paramref name="otherRounds"/> in length), each round scoring exactly
+    /// its captured value. No competition penalties recorded — the caller sets
+    /// <c>Competition.Penalties</c> via <c>with</c> once it holds the ids.
+    /// </summary>
+    private static (Competition Competition, Dictionary<EntryId, Entry> Entries, CompetitorId Subject, CompetitorId Other)
+        BuildFlooredCompetition(
+            bool? floorTotal,
+            decimal[] subjectRounds,
+            decimal[] otherRounds,
+            ImmutableArray<PenaltyDefinition> penalties = default,
+            bool? taskFloor = null,
+            ImmutableArray<DropPolicy> drops = default)
+    {
+        subjectRounds.Length.Should().Be(otherRounds.Length);
+
+        var task = MakeTask(taskFloor);
+        var classDefinition = MakeFlooredClassDefinition(task, floorTotal, penalties, drops);
+
+        var adoptedRules = new AdoptedRules
+        {
+            Definition = classDefinition,
+            SourceClassId = "content-hash-synthetic",
+            SourceVersion = classDefinition.Version,
+            AdoptedAt = Now,
+        };
+        var created = new CompetitionCreated(
+            CompetitionId.New(), "Competition Floor Test Comp", "Nowhere",
+            new DateOnly(2026, 3, 14), new DateOnly(2026, 3, 15),
+            "1.0.0", adoptedRules, Now);
+
+        var competition = Competition.Create(created);
+        var subject = CompetitorId.New();
+        var other = CompetitorId.New();
+        foreach (var competitor in new[] { subject, other })
+        {
+            var registered = competition.RegisterCompetitor(competitor, PersonId.New(), Now);
+            competition = competition.Apply(registered.Value);
+        }
+
+        var drawn = competition.DrawPhase(subjectRounds.Length, [], Now);
+        drawn.IsSuccess.Should().BeTrue();
+        competition = competition.Apply(drawn.Value);
+        // Entries open only against an accepted draw (D4) — arrangement here.
+        competition = competition.Apply(new DrawAccepted(0, Now));
+
+        var entries = new Dictionary<EntryId, Entry>();
+
+        foreach (var round in competition.Phases[0].Rounds)
+        {
+            var taskRound = round.TaskRounds[0];
+            foreach (var group in taskRound.Groups)
+            {
+                foreach (var competitorRef in group.CompetitorRefs)
+                {
+                    var rounds = competitorRef == subject ? subjectRounds : otherRounds;
+                    var opened = competition.OpenEntry(
+                        EntryId.New(), 0, round.Ordinal, taskRound.Ordinal, group.Id, competitorRef, ReflightRole.Original, Now);
+                    opened.IsSuccess.Should().BeTrue();
+
+                    var entry = Entry.Create(opened.Value).Apply(new FlightOpened(1, Now));
+                    var captured = entry.CaptureMeasurement(
+                        1, "value", MeasuredValue.Of(rounds[round.Ordinal - 1]), Now, MetricDefs);
+                    captured.IsSuccess.Should().BeTrue();
+                    entry = entry.Apply(captured.Value);
+
+                    entries[entry.Id] = entry;
+                }
+            }
+        }
+
+        return (competition, entries, subject, other);
+    }
+
+    private static CompetitionResult ScoreWholeCompetition(
+        Competition competition, Dictionary<EntryId, Entry> entries)
+    {
+        var result = ScoringService.ScoreCompetition(competition, entries);
+        result.IsSuccess.Should().BeTrue();
+        return result.Value;
+    }
+
+    // ------------------------------------------------- (a) non-negative → untouched
+
+    [Fact]
+    public void Competition_floor_leaves_a_non_negative_total_minus_penalties_untouched()
+    {
+        var defs = (ImmutableArray<PenaltyDefinition>)[AggregateDeductDef("safety", 100m)];
+        var (competition, entries, subject, other) = BuildFlooredCompetition(
+            floorTotal: true, subjectRounds: [500m], otherRounds: [400m], penalties: defs);
+        competition = competition with
+        {
+            Penalties = [new Penalty { InfractionType = "safety", Scope = PenaltyScope.Competition, CompetitorRef = subject }],
+        };
+
+        var result = ScoreWholeCompetition(competition, entries);
+
+        // 500 − 100 = 400 on BOTH keys — the floor must not touch it.
+        result.Scores[subject.ToString()].Score.Should().Be(400m);
+        result.Scores[subject.ToString()].PreDropScore.Should().Be(400m);
+        // Someone else's penalty never lands here.
+        result.Scores[other.ToString()].Score.Should().Be(400m);
+        result.Scores[other.ToString()].PreDropScore.Should().Be(400m);
+    }
+
+    // --------------------------------------- (b) floored rounds + penalty → 0
+
+    [Fact]
+    public void Competition_floor_records_zero_when_floored_rounds_plus_aggregate_penalty_go_negative()
+    {
+        // The 5.5.11.12 n shape: the round grain floors −160 → 0 (task datum),
+        // so the phase aggregate is 0; the aggregate 100 then takes it to −100
+        // and the competition floor records 0 — on BOTH keys.
+        var defs = (ImmutableArray<PenaltyDefinition>)[AggregateDeductDef("safety", 100m)];
+        var (competition, entries, subject, _) = BuildFlooredCompetition(
+            floorTotal: true, subjectRounds: [-160m], otherRounds: [200m],
+            penalties: defs, taskFloor: true);
+        competition = competition with
+        {
+            Penalties = [new Penalty { InfractionType = "safety", Scope = PenaltyScope.Competition, CompetitorRef = subject }],
+        };
+
+        var result = ScoreWholeCompetition(competition, entries);
+
+        result.Scores[subject.ToString()].Score.Should().Be(0m);
+        result.Scores[subject.ToString()].PreDropScore.Should().Be(0m);
+    }
+
+    // ------------------------------------------------- (c) no datum → identity
+
+    [Fact]
+    public void Without_the_datum_a_negative_total_passes_through()
+    {
+        // D4's aggregate-grain identity, mirroring the comp-121 pin through
+        // ScoreCompetition: 100 − 300 = −200 is recorded as scored — the floor
+        // exists ONLY where the class datum states it.
+        var defs = (ImmutableArray<PenaltyDefinition>)[AggregateDeductDef("safety", 300m)];
+        var (competition, entries, subject, _) = BuildFlooredCompetition(
+            floorTotal: null, subjectRounds: [100m], otherRounds: [100m], penalties: defs);
+        competition = competition with
+        {
+            Penalties = [new Penalty { InfractionType = "safety", Scope = PenaltyScope.Competition, CompetitorRef = subject }],
+        };
+
+        var result = ScoreWholeCompetition(competition, entries);
+
+        result.Scores[subject.ToString()].Score.Should().Be(-200m);
+        result.Scores[subject.ToString()].PreDropScore.Should().Be(-200m);
+    }
+
+    // ------------------------------------------------- (d) drop interaction
+
+    [Fact]
+    public void Competition_floor_applies_after_drops_with_a_dropped_rounds_penalty_retained()
+    {
+        // 00-general sec 5: penalties are retained even when their round drops.
+        // The TaskRound-scoped 1200 names round 1 — the round the drop discards
+        // (500 < 1000) — yet still deducts at the aggregate stage. So the
+        // post-drop aggregate is 1000, 1000 − 1200 floors to 0, while the
+        // pre-drop 1500 − 1200 = 300 passes the floor untouched: the floor acts
+        // AFTER drops + deduction, on each key independently.
+        var drops = (ImmutableArray<DropPolicy>)[new DropPolicy
+        {
+            Dimension = DropDimension.ByRound,
+            DropCount = 1,
+            ApplyWhenRoundsCompletedAtLeast = 1,
+        }];
+        var defs = (ImmutableArray<PenaltyDefinition>)[AggregateDeductDef("late", 1200m)];
+        var (competition, entries, subject, _) = BuildFlooredCompetition(
+            floorTotal: true, subjectRounds: [500m, 1000m], otherRounds: [400m, 400m],
+            penalties: defs, drops: drops);
+        competition = competition with
+        {
+            Penalties = [new Penalty
+            {
+                InfractionType = "late",
+                Scope = PenaltyScope.TaskRound,
+                CompetitorRef = subject,
+                TaskRound = new TaskRoundCoordinate(0, 1, 1),
+            }],
+        };
+
+        var result = ScoreWholeCompetition(competition, entries);
+
+        // Had the dropped round's penalty been discarded with it, Score would
+        // read 1000; had the floor acted before the deduction, −200. It reads 0.
+        result.Scores[subject.ToString()].Score.Should().Be(0m);
+        result.Scores[subject.ToString()].PreDropScore.Should().Be(300m);
+    }
+
+    // ------------------------------------------------- (e) the flag survives
+
+    [Fact]
+    public void Competition_floor_preserves_the_disqualified_flag()
+    {
+        // The floor rewrites the FinalCompetitorScore the flag rides on — the
+        // rewrite must not drop it. Mixed-effect definition (the F20 shape):
+        // Disqualify flags while DeductPoints 500 takes 100 → −400 → 0.
+        var defs = (ImmutableArray<PenaltyDefinition>)[new PenaltyDefinition
+        {
+            InfractionType = "misconduct",
+            Effects =
+            [
+                new PenaltyEffectSpec(PenaltyEffect.DeductPoints, 500m),
+                new PenaltyEffectSpec(PenaltyEffect.Disqualify),
+            ],
+        }];
+        var (competition, entries, subject, other) = BuildFlooredCompetition(
+            floorTotal: true, subjectRounds: [100m], otherRounds: [200m], penalties: defs);
+        competition = competition with
+        {
+            Penalties = [new Penalty { InfractionType = "misconduct", Scope = PenaltyScope.Competition, CompetitorRef = subject }],
+        };
+
+        var result = ScoreWholeCompetition(competition, entries);
+
+        result.Scores[subject.ToString()].Score.Should().Be(0m);
+        result.Scores[subject.ToString()].PreDropScore.Should().Be(0m);
+        result.Scores[subject.ToString()].Disqualified.Should().BeTrue();
+        result.Scores[other.ToString()].Disqualified.Should().BeFalse();
+    }
+
+    // ----------------------------------------------------- the named invariant
+
+    // Invariant (WI-5, property): for any competitor with any round scores and
+    // any aggregate penalties, under a class stating the competition floor,
+    // the final score is exactly max(0, sum − penalties) and satisfies
+    // score ≥ 0 — on BOTH keys (no drops in this class, so both keys share
+    // the one oracle).
+    [Fact]
+    public void Competition_floor_is_exactly_max_of_zero_and_sum_minus_penalties()
+    {
+        (from values in SignedValue.Array[1, 4]
+         from occurrences in Gen.Int[0, 5]
+         select (values, occurrences))
+        .Sample(t =>
+        {
+            var defs = (ImmutableArray<PenaltyDefinition>)[AggregateDeductDef("safety", 100m, PenaltyAccrual.PerOccurrence)];
+            var otherRounds = Enumerable.Repeat(50m, t.values.Length).ToArray();
+            var (competition, entries, subject, _) = BuildFlooredCompetition(
+                floorTotal: true, subjectRounds: t.values, otherRounds: otherRounds, penalties: defs);
+            competition = competition with
+            {
+                Penalties = [.. Enumerable.Range(0, t.occurrences).Select(_ => new Penalty
+                {
+                    InfractionType = "safety",
+                    Scope = PenaltyScope.Competition,
+                    CompetitorRef = subject,
+                })],
+            };
+
+            var result = ScoreWholeCompetition(competition, entries);
+
+            var expected = Math.Max(0m, t.values.Sum() - 100m * t.occurrences);
+            var row = result.Scores[subject.ToString()];
+            return row.Score == expected
+                && row.PreDropScore == expected
+                && row.Score >= 0m
+                && row.PreDropScore >= 0m;
+        });
+    }
+
+    // Invariant (WI-5, property): the tail-merge pin — two competitors with
+    // sum − penalties at a < b ≤ 0 both record 0.
+    [Fact]
+    public void Competition_floor_merges_the_sub_zero_tail_into_ties_at_zero()
+    {
+        (from b in Gen.Int[-200_000, 0]
+         from delta in Gen.Int[1, 100_000]
+         select (a: (b - delta) / 100m, b: b / 100m))
+        .Sample(t =>
+        {
+            var (competition, entries, subject, other) = BuildFlooredCompetition(
+                floorTotal: true, subjectRounds: [t.a], otherRounds: [t.b]);
+
+            var result = ScoreWholeCompetition(competition, entries);
+
+            return result.Scores[subject.ToString()].Score == 0m
+                && result.Scores[other.ToString()].Score == 0m
+                && result.Scores[subject.ToString()].PreDropScore == 0m
+                && result.Scores[other.ToString()].PreDropScore == 0m;
+        });
     }
 }

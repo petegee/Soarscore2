@@ -194,6 +194,13 @@ public static class SeedF3B
             },
         ],
 
+        // Competition-total floor: docs/rules/00-general-rules.md sec 6 (common:
+        //   "A score that would go negative is recorded as zero (penalties still
+        //   stand)"). F3B.2.8 checked-silent — the seed rides on the common §6 +
+        //   owner decision 2026-09-30 (universal corpus-wide application), not an
+        //   own clause.
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

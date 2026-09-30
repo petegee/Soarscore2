@@ -87,6 +87,10 @@ public static class SeedAggregate
         // no penalty definitions — every consequence in NZFF.4.3 is derived from
         //   something measured, and the rest is conduct (see the header)
 
+        // Competition-total floor: NZFF silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

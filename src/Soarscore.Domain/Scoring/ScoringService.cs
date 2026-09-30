@@ -606,11 +606,34 @@ public static class ScoringService
             // penalty hit every competitor.
             var aggregatePenalties = GetAggregatePenalties(competition.Penalties, competitorRef);
             var penaltyResult = PenaltyEngine.ApplyAggregatePenalties(totalScore, aggregatePenalties, classDef.Penalties);
+            var deduction = penaltyResult.Deduction;
+
+            // Competition-grain floor (competition-total-floor-and-fai-floor-audit.md;
+            // owner decision 2026-09-30: class-level datum, applies corpus-wide
+            // including the fly-off — fly-off totals floor uniformly with
+            // everything else). FAI F5J 5.5.11.12 n: "In case the total score
+            // after deduction of the penalties is negative, a zero (0) score
+            // will be recorded". Score and PreDropScore floor TOGETHER, both
+            // being the same "total after deduction" at different drop stages
+            // (a floored Score beside a negative PreDropScore would corrupt the
+            // display-ladder rung 2 countback; GS floors the final score,
+            // Rpt_Results_Overall_MOD.vb:2690-2712). Unfloored classes keep
+            // today's subtract-once behaviour. `<= 0m` with a literal 0m, per
+            // the clamp's −0.0 lesson
+            // (kanban/completed/normalisation-lower-clamp.md D3).
+            var net = totalScore - deduction;
+            var finalScore = classDef.FloorTotalAtZero == true
+                ? (net <= 0m ? 0m : net)
+                : net;
+            var preNet = preDropTotals.GetValueOrDefault(competitorRef) - deduction;
+            var finalPreDropScore = classDef.FloorTotalAtZero == true
+                ? (preNet <= 0m ? 0m : preNet)
+                : preNet;
 
             finalScores.Add(new FinalCompetitorScore(
                 CompetitorRef: competitorRef,
-                Score: totalScore - penaltyResult.Deduction,
-                PreDropScore: preDropTotals.GetValueOrDefault(competitorRef) - penaltyResult.Deduction,
+                Score: finalScore,
+                PreDropScore: finalPreDropScore,
                 // D4: no penalty adjustment — the max dropped cell is a
                 // round-level figure; the prior art subtracts from
                 // total-scale keys only.

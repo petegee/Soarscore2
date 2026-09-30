@@ -194,6 +194,13 @@ public static class SeedF5jNdc
             Deduct("contactInAccessCorridor", 1000),                            // 5.5.11.4 e
         ],
 
+        // Competition-total floor, class-level: NZ.2.4(c) carries FAI 5.5.11.12 n
+        //   whole (NZ.2.4(d) disregards only m) — "In case the total score after
+        //   deduction of the penalties is negative, a zero (0) score will be
+        //   recorded" — plus owner decision 2026-09-30 (universal corpus-wide
+        //   application).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()

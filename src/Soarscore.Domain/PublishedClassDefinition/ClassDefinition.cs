@@ -328,6 +328,38 @@ public sealed record ClassDefinition
 
     public ImmutableArray<PenaltyDefinition> Penalties { get; init; } = [];
 
+    /// <summary>
+    /// The rulebook-stated floor at zero for the class total — true only
+    /// where the class's own rules state it (each seed cites its clause in a
+    /// comment: "cite what you encode"). Absent (null) means NO floor: the
+    /// total passes through as scored, negatives included
+    /// (deferred-decisions D4 identity default preserved in principle for
+    /// unseeded definitions) — this datum is the rulebook-stated route,
+    /// never an engine policy
+    /// (kanban/backlog/competition-total-floor-and-fai-floor-audit.md).
+    ///
+    /// FAI F5J 5.5.11.12 n verbatim (preliminary-rounds total, negative → 0):
+    /// "Penalties shall be listed on the score sheet of the round in which
+    /// the infringement(s) occurred. All penalties are cumulative and will be
+    /// deducted from the competitor's total score at the end of the
+    /// preliminary rounds. Penalties earned in the preliminary rounds are not
+    /// carried forward into the fly-off rounds. In case the total score after
+    /// deduction of the penalties is negative, a zero (0) score will be
+    /// recorded. The same total score will be used for individuals and team
+    /// classifications." docs/rules/00-general-rules.md sec 6 states the same
+    /// common rule as digest synthesis ("A score that would go negative is
+    /// recorded as zero (penalties still stand)" — not verbatim CIAM text).
+    /// Owner decision 2026-09-30 applies it corpus-wide: class-level instead
+    /// of phase-level, this rule in general for all classes, no new field,
+    /// and the fly-off covered by the same datum (cells can't print negative;
+    /// totals floor uniformly).
+    ///
+    /// Grain: the CLASS TOTAL after aggregate penalties — on both the
+    /// post-drop total and the pre-drop total. Additive (NFR-2); omitted by
+    /// the canonical JSON when absent.
+    /// </summary>
+    public bool? FloorTotalAtZero { get; init; }
+
     /// <summary>1..*, ordered.</summary>
     public required ImmutableArray<PhaseDefinition> Phases { get; init; }
 }

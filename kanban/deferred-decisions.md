@@ -286,6 +286,25 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   given; scope is exactly the four definitions asked about, not H/O/Q. Reopen
   if NZMAA writes a floor into Section 5 or the SIG ruling is refined/withdrawn.
 
+- **OPEN CD question — 50-f3j all-negative group: no datum seeded against silent
+  text.** **Recorded 2026-09-30** (WI-6 of
+  `kanban/backlog/competition-total-floor-and-fai-floor-audit.md`, no local ruling
+  sought or given). F3J's scoring clauses state no floor anywhere: `F3J.10.10`
+  (winner = highest aggregate flight-plus-landing-minus-penalties → 1000, no floor
+  sentence), `F3J.10.11` (losers = own/winner × 1000, no floor), `F3J.11.4` (final
+  placing, no floor). But the raw CAN print negative without any penalty — the
+  `Constant(-30)` overfly deduction (`SeedF3J.cs:109`, F3J.10.3) drags a near-zero
+  flight below zero (e.g. 25 s flight − 30 overfly = −5) — so an all-negative
+  group is reachable in principle, and there the 1000-basis inverts (a −20 loser
+  against a −5 winner normalises to 4000, unclamped). Per the fai-rules rule this
+  stays UNSEEDED: silence without a ruling is a question, never an inference, never
+  an engine default. Scope is exactly `50-f3j` TaskD plus its fly-off task;
+  `docs/rules/` untouched. Companion rows closed the same day with no question:
+  20-f3b (Task A raw provably ≥ 480 by working-time-capped arithmetic) and 60-f5l
+  (raw provably ≥ 480 the same way), while 40-f5k seeded `FloorAtZero` on a stated
+  clause (5.5.10.1). Close this by seeding (if the CD states a floor) or by a
+  recorded ruling either way.
+
 - **NZ Class H (Thermal 2 Metre) — three settled calls.** **Decided 2026-09-27**
   (Pete; `kanban/completed/nz-class-h-thermal-2m-seed.md`). **(a) The
   `NZ.3.6(b)` repeat-attempt grounds reach Class H** (it is the first modelled
@@ -360,6 +379,34 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   (e.g. F5J 5.5.11.12 f; NZ.7.8(c)(iv)), not the engine policy this decision
   refused. Comp 121's fixture-local definition states no datum, so its −2026
   oracle is untouched.
+  **Amended 2026-09-30** (`kanban/backlog/competition-total-floor-and-fai-floor-audit.md`):
+  the second rulebook-stated route lands at the competition grain — a phase-level
+  `FloorTotalAtZero` datum (`PhaseDefinition`), floored once at final assembly
+  per phase (`max(0, phaseAggregate − deduction)` on both `Score` and
+  `PreDropScore`), seeded only where a phase's own clause states it (30-f5j
+  preliminary and 85c single phase, both via FAI F5J 5.5.11.12 n — "at the end
+  of the preliminary rounds", so fly-off phases stay absent). The identity
+  default is untouched at both grains: unfloored phases contribute as today,
+  and the D-A4 acceptance pin keeps a floored-off fixture class to prove the
+  raw −1000 still passes through where no datum is stated.
+  **Amended again 2026-09-30 (owner ruling — design questions on the same story):**
+  the datum moves to **class level** (`ClassDefinition.FloorTotalAtZero`) and is
+  **seeded corpus-wide (all 17 classes)** — the owner rules that the floor "in
+  general applies to all classes", with `docs/rules/00-general-rules.md` sec 6
+  ("A score that would go negative is recorded as zero (penalties still stand)")
+  as the common statement. Authority recorded honestly: sec 6 is digest synthesis
+  of the common rule, not verbatim CIAM text (the only verbatim
+  competition-grain floor in the sources is 5.5.11.12 n; the per-class finals —
+  F3B.2.8, F3J.11, F3K.10.1, 5.5.10.16, 5.5.12.12 — are each silent, checked
+  clause by clause), corroborated by GS prior art flooring the final score after
+  penalties (`Rpt_Results_Overall_MOD.vb:2690-2712`); NZ classes ride on this
+  ruling, their rulebooks silent (85c additionally via NZ.2.4(c)). The identity
+  default survives only in principle now (an unseeded definition still passes
+  through); every corpus class floors `max(0, total − penalties)` on both keys,
+  fly-off totals uniformly with the rest. The D-A4 acceptance fixture clears the
+  class datum to keep pinning the raw −1000. Full suite green unchanged at every
+  stage (including all GS replay and parallel-run oracles — no negative
+  post-deduction total in any oracle).
 
 - **The parallel-run comparator runs the ranking and score-cell grains only;
   the parity comparator's conservation and team grains are deliberately not

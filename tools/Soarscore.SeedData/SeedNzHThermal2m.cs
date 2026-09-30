@@ -150,6 +150,10 @@ public static class SeedNzHThermal2m
                                                                                 //   here IS one flight), not the whole contest
         ],
 
+        // Competition-total floor: NZ rulebook silent — applied per owner decision
+        //   2026-09-30 (universal corpus-wide application).
+        FloorTotalAtZero = true,
+
         Phases =
         [
             new()
