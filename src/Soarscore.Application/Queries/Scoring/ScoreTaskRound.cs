@@ -71,6 +71,16 @@ public sealed record FlightScoreView(
     int Sequence,
     ImmutableArray<ScoreTermView> Terms);
 
+/// <summary>One engine score warning, projected verbatim for the field readout
+/// (kanban/backlog/turn-around-window-score-validation.md WI-2): NdcScore
+/// renders code + message as-is — no arithmetic, no thresholds client-side.
+/// </summary>
+/// <param name="Code">Stable warning code (<c>score.windowSumExceeded</c>,
+/// <c>score.turnaroundCapExceeded</c>).</param>
+/// <param name="Message">Human sentence naming group, competitor/entry, summed
+/// seconds, and thresholds at recorded precision.</param>
+public sealed record ScoreWarningView(string Code, string Message);
+
 public sealed record CompetitorTaskResultView(
     CompetitorId CompetitorRef,
     ReflightRole Role,
@@ -81,7 +91,12 @@ public sealed record CompetitorTaskResultView(
     /// <summary>The selected flights' per-term breakdowns, verbatim from
     /// <c>TaskResult.Selection</c> (kanban/in-progress/per-term-score-breakdown.md#WI-1).
     /// Empty (never null) for <c>NoResult</c> rows — absence, never zero.</summary>
-    ImmutableArray<FlightScoreView> Flights);
+    ImmutableArray<FlightScoreView> Flights,
+    /// <summary>The row's plausibility warnings, verbatim from the engine's
+    /// per-entry warnings (kanban/backlog/turn-around-window-score-validation.md#WI-2).
+    /// Empty (never null) for clean rows; NoResult rows carry empty. Scores are
+    /// never altered by warnings — warn-through only.</summary>
+    ImmutableArray<ScoreWarningView> Warnings);
 
 /// <summary>One group's scored result — the GET /task-round-result response shape.</summary>
 public sealed record GroupScoreView(
@@ -260,7 +275,8 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 kv.Value.RawScore,
                 result.PreNormalisationScores[kv.Key],
                 BoundaryEmpty(kv.Value.AwaitingCapture),
-                ProjectFlights(kv.Value.Selection, scoreTerms)))
+                ProjectFlights(kv.Value.Selection, scoreTerms),
+                ProjectWarnings(result.Warnings, kv.Key)))
             .ToImmutableArray();
 
         return new GroupScoreView(
@@ -271,6 +287,26 @@ public sealed class ScoreTaskRoundHandler(IEventStore eventStore, IEntryQuery en
                 : null,
             ValidCount: result.ValidCount,
             IsAnnulled: result.IsAnnulled);
+    }
+
+    /// <summary>
+    /// WI-2 (turn-around-window-score-validation.md): per-row warning projection
+    /// from the engine's <c>GroupResult.Warnings</c> (WI-1). Verbatim — no
+    /// formatting, no threshold math. A missing key yields empty (never
+    /// throws); a null map yields empty; a default array value is normalised
+    /// to a real empty so serialisation stays safe (the AwaitingCapture
+    /// precedent above). NoResult rows carry empty — the engine never warns
+    /// them, and absence here is never a warning.
+    /// </summary>
+    internal static ImmutableArray<ScoreWarningView> ProjectWarnings(
+        IReadOnlyDictionary<string, ImmutableArray<ScoreWarning>>? warningsByKey,
+        string key)
+    {
+        if (warningsByKey is null)
+            return ImmutableArray<ScoreWarningView>.Empty;
+        if (!warningsByKey.TryGetValue(key, out var warnings) || warnings.IsDefaultOrEmpty)
+            return ImmutableArray<ScoreWarningView>.Empty;
+        return [.. warnings.Select(w => new ScoreWarningView(w.Code, w.Message))];
     }
 
     /// <summary>

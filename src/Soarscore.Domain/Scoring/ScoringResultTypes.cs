@@ -145,6 +145,14 @@ public sealed record TaskResult(
 
 // --------------------------------------------------------------- normalisation
 
+/// <summary>
+/// A warn-through plausibility flag on one entry's readout row
+/// (kanban/backlog/turn-around-window-score-validation.md WI-1): the score is
+/// never altered, the row is only annotated. NdcScore renders Code + Message
+/// verbatim. The draw path's <c>DrawWarning</c> is the precedent shape.
+/// </summary>
+public sealed record ScoreWarning(string Code, string Message);
+
 /// <summary>One group's worth of task results, after normalisation.</summary>
 public sealed record GroupResult(
     /// <summary>CompetitorRef → TaskResult. Includes NoResult entries.</summary>
@@ -166,7 +174,19 @@ public sealed record GroupResult(
     /// The orchestrator reads this flag to annul the TaskRound on the Competition aggregate.
     /// </summary>
     bool IsAnnulled = false
-);
+)
+{
+    /// <summary>
+    /// Per-result-key plausibility warnings from
+    /// <see cref="WindowPlausibility.Check"/> (kanban/backlog/
+    /// turn-around-window-score-validation.md WI-1). Keys are exactly
+    /// <see cref="Results"/>' keys; an empty array is a clean row. Never null —
+    /// the empty map is the default, so pre-story construction sites keep
+    /// compiling unchanged.
+    /// </summary>
+    public ImmutableDictionary<string, ImmutableArray<ScoreWarning>> Warnings { get; init; } =
+        ImmutableDictionary<string, ImmutableArray<ScoreWarning>>.Empty;
+}
 
 // --------------------------------------------------------------- phase aggregation
 

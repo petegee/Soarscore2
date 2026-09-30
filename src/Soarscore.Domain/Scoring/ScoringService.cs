@@ -191,9 +191,30 @@ public static class ScoringService
             taskResults[competitorRef] = taskResult;
         }
 
+        // 2e. Warn-through plausibility flags (kanban/backlog/
+        //     turn-around-window-score-validation.md WI-1): per
+        //     (competitorRef, taskResult), at most one ScoreWarning from the
+        //     pure WindowPlausibility.Check — clean rows carry an empty array.
+        //     No score field is touched here (or anywhere below): the diff on
+        //     RawScore/PreNormalisationScores for any input is empty by
+        //     construction. Computed from the pre-normalisation task results;
+        //     Normalise's with-rebuilds preserve Selection, so the values are
+        //     identical either side of step 3.
+        var warningsBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableArray<ScoreWarning>>();
+        foreach (var (competitorRef, taskResult) in taskResults)
+        {
+            warningsBuilder[competitorRef] = WindowPlausibility.Check(
+                resolvedTask, taskResult, competitorRef, groupRef, task.Code) is { } w
+                ? [w]
+                : [];
+        }
+        var warnings = warningsBuilder.ToImmutable();
+
         // 3. Normalise the group.
-        return NormalisationEngine.Normalise(
+        var groupResult = NormalisationEngine.Normalise(
             groupRef, taskResults.ToImmutable(), resolvedTask, parameterBindings, declaredInstruments);
+
+        return groupResult with { Warnings = warnings };
     }
 
     /// <summary>

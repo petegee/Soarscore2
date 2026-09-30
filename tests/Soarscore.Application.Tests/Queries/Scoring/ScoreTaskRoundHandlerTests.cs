@@ -724,4 +724,165 @@ public class ScoreTaskRoundHandlerTests
         System.Text.Json.JsonSerializer.Serialize(views, camelCase)
             .Should().Contain("\"flights\":[]");
     }
+
+    // ------------------------------------------------- turn-around / window warnings
+    // (kanban/backlog/turn-around-window-score-validation.md WI-2): the view
+    // carries the engine's per-entry warnings (WI-1) verbatim — code + message
+    // as-is, scores untouched.
+
+    private static ClassDefinition TaskDShapeDefinition() => ClassDefinitionFixtures.WithSingleTask(
+        ClassDefinitionFixtures.Minimal(),
+        new TaskDefinition
+        {
+            Code = "D",
+            Name = "Task D",
+            Metrics = [new MetricDefinition { Name = "flightTime", Kind = MeasuredKind.Number, Unit = "s" }],
+            Flights = new BestNFlights { Count = 2, RankByMetric = "flightTime" },
+            Timing = new TaskTiming { Kind = WorkingTimeKind.Fixed, WorkingTime = 600 },
+            Score = [new RateTerm { MetricRef = "flightTime", Rate = 1 }],
+        });
+
+    [Fact]
+    public async Task A_task_D_shaped_group_flags_the_expected_rows_with_scores_unchanged()
+    {
+        // One group, three entries straddling both thresholds (the story's
+        // worked example, W = 600, n = 2): clean 300+298 = 598 (exactly at
+        // cap), cap-only 299.5+299 = 598.5, window 300+300 = 600. Pass-through
+        // (no Normalisation) so RawScore == PreNormalisationScore == the sums —
+        // warnings annotate, never alter.
+        var store = new FakeEventStore();
+        var entryQuery = new FakeEntryQuery();
+        var definition = TaskDShapeDefinition();
+        var (competition, competitionId, group, competitors) =
+            SeedDrawnGroup(store, entryQuery, definition, 3);
+        OpenMultiFlightEntry(
+            store, entryQuery, definition, competition, competitionId, group, competitors[0],
+            [[("flightTime", MeasuredValue.Of(300m))], [("flightTime", MeasuredValue.Of(298m))]]);
+        OpenMultiFlightEntry(
+            store, entryQuery, definition, competition, competitionId, group, competitors[1],
+            [[("flightTime", MeasuredValue.Of(299.5m))], [("flightTime", MeasuredValue.Of(299m))]]);
+        OpenMultiFlightEntry(
+            store, entryQuery, definition, competition, competitionId, group, competitors[2],
+            [[("flightTime", MeasuredValue.Of(300m))], [("flightTime", MeasuredValue.Of(300m))]]);
+
+        var views = await ScoreSeededGroup(store, entryQuery, competitionId);
+        var view = views.Should().ContainSingle().Subject;
+        view.ValidCount.Should().Be(3);
+
+        var clean = view.Results.Single(r => r.CompetitorRef == competitors[0]);
+        clean.State.Should().Be(TaskResultState.Valid);
+        clean.RawScore.Should().Be(598m);
+        clean.PreNormalisationScore.Should().Be(598m);
+
+        var capOnly = view.Results.Single(r => r.CompetitorRef == competitors[1]);
+        capOnly.State.Should().Be(TaskResultState.Valid);
+        capOnly.RawScore.Should().Be(598.5m);
+        capOnly.PreNormalisationScore.Should().Be(598.5m);
+
+        var window = view.Results.Single(r => r.CompetitorRef == competitors[2]);
+        window.State.Should().Be(TaskResultState.Valid);
+        window.RawScore.Should().Be(600m);
+        window.PreNormalisationScore.Should().Be(600m);
+
+        // The story's row contract: clean carries none, cap-only carries the
+        // turn-around flag, window carries the window flag — each exactly one,
+        // rendered verbatim (code asserted; the message is WI-1's format).
+        clean.Warnings.Should().BeEmpty();
+
+        var capWarning = capOnly.Warnings.Should().ContainSingle().Subject;
+        capWarning.Code.Should().Be("score.turnaroundCapExceeded");
+        capWarning.Message.Should().NotBeNullOrWhiteSpace();
+
+        var windowWarning = window.Warnings.Should().ContainSingle().Subject;
+        windowWarning.Code.Should().Be("score.windowSumExceeded");
+        windowWarning.Message.Should().NotBeNullOrWhiteSpace();
+
+        // Clean groups serialise warnings: [] — never null, never absent.
+        var camelCase = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        };
+        var json = System.Text.Json.JsonSerializer.Serialize(views, camelCase);
+        json.Should().Contain("\"warnings\":[]");
+        json.Should().Contain("\"code\":\"score.turnaroundCapExceeded\"");
+        json.Should().Contain("\"code\":\"score.windowSumExceeded\"");
+    }
+
+    [Theory]
+    [InlineData("entry-1", false)]
+    [InlineData("missing-entry", true)]
+    public void ProjectWarnings_returns_verbatim_or_empty_without_throwing(string key, bool expectEmpty)
+    {
+        var warning = new ScoreWarning(
+            "score.windowSumExceeded",
+            "Entry c in group g: flight-time sum 600s reaches the 600s working time (task D)");
+        var map = new Dictionary<string, ImmutableArray<ScoreWarning>>
+        {
+            ["entry-1"] = [warning],
+        };
+
+        var projected = ScoreTaskRoundHandler.ProjectWarnings(map, key);
+
+        if (expectEmpty)
+            projected.Should().BeEmpty();
+        else
+            projected.Should().Equal(new ScoreWarningView(warning.Code, warning.Message));
+    }
+
+    [Fact]
+    public void ProjectWarnings_treats_a_null_map_and_a_default_array_as_empty()
+    {
+        ScoreTaskRoundHandler.ProjectWarnings(null, "entry-1").Should().BeEmpty();
+        ScoreTaskRoundHandler.ProjectWarnings(
+            new Dictionary<string, ImmutableArray<ScoreWarning>> { ["entry-1"] = default },
+            "entry-1").IsEmpty.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Warning_rows_round_trip_and_old_payloads_without_the_array_still_read()
+    {
+        // New payload: a flagged row serialises its warnings beside the scores.
+        var row = new CompetitorTaskResultView(
+            CompetitorId.New(), ReflightRole.Original, TaskResultState.Valid,
+            600m, 600m,
+            ImmutableArray<PendingFlightDiagnostic>.Empty,
+            ImmutableArray<FlightScoreView>.Empty,
+            [new ScoreWarningView("score.windowSumExceeded", "Entry c in group g: flight-time sum 600s reaches the 600s working time (task D)")]);
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+        };
+        var json = System.Text.Json.JsonSerializer.Serialize(row, options);
+        json.Should().Contain("\"warnings\":[{");
+
+        // Record == on ImmutableArray fields is reference-based, so assert
+        // field-wise (.Equal is sequence-equality — the AwaitingCapture
+        // precedent above).
+        var roundTripped = System.Text.Json.JsonSerializer.Deserialize<CompetitorTaskResultView>(json, options);
+        roundTripped.Should().NotBeNull();
+        roundTripped!.CompetitorRef.Should().Be(row.CompetitorRef);
+        roundTripped.Role.Should().Be(row.Role);
+        roundTripped.State.Should().Be(row.State);
+        roundTripped.RawScore.Should().Be(600m);
+        roundTripped.PreNormalisationScore.Should().Be(600m);
+        roundTripped.AwaitingCapture.Should().BeEmpty();
+        roundTripped.Flights.Should().BeEmpty();
+        roundTripped.Warnings.Should().Equal(row.Warnings);
+
+        // Old payload (pre-story, no warnings array) still reads — default,
+        // never throws; IsDefaultOrEmpty treats it as empty at the boundary.
+        var cleanJson = System.Text.Json.JsonSerializer.Serialize(
+            row with { Warnings = ImmutableArray<ScoreWarningView>.Empty }, options);
+        var node = System.Text.Json.Nodes.JsonNode.Parse(cleanJson)!.AsObject();
+        node.Remove("warnings").Should().BeTrue();
+        var oldJson = node.ToJsonString();
+        oldJson.Should().NotContain("warnings");
+        var oldRow = System.Text.Json.JsonSerializer.Deserialize<CompetitorTaskResultView>(oldJson, options);
+        oldRow.Should().NotBeNull();
+        oldRow!.Warnings.IsDefaultOrEmpty.Should().BeTrue();
+        oldRow.RawScore.Should().Be(600m);
+        oldRow.PreNormalisationScore.Should().Be(600m);
+    }
 }
