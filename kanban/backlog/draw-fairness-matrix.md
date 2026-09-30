@@ -232,6 +232,29 @@ public sealed record DrawMatrixView(
   unknown id returns `competition.notFound` ProblemDetails. Record the run
   in the story on completion.
 
+## WI-4 verification (2026-09-30, done)
+
+Live run against the real API over real PostgreSQL: `WebApplicationFactory<Program>`
+in-process host (auth mode `none`, the default — no auth pipeline, same as every
+existing acceptance scenario; the `AuthenticatedPolicy` wiring itself is covered by
+`PolicyTableTotalityTests`) backed by a Testcontainers `postgres:16-alpine` container
+(scratch harness outside the shipped tree, removed afterwards — repo left with only
+the WI-1…WI-3 files).
+
+- `POST /publish-class-definition` (F5J `30-f5j`) → 200.
+- `POST /create-competition` → 200.
+- 6 × (`POST /register-person` + `POST /register-competitor`) → 200 each.
+- `POST /draw-phase` (2 rounds, generated) → 200 (one group of 6 per round).
+- `GET /draw-matrix?competitionRef=…` → 200: 6 pilots (numbers 1–6), 2 groups
+  (round 1 × 1, round 2 × 1), 15 sparse entries all `count=2`, distribution
+  gap-filled `0:0;1:0;2:15` (sums to 6 choose 2 = 15), `min=max=mean=2`, `MAD=0`.
+- `GET /draw-matrix?competitionRef=…&fromRound=1&toRound=1` → 200: 1 group
+  (all round 1), 15 entries `count=1`, distribution `0:0;1:15`, stats 1/1/1/0.
+- `GET /draw-matrix?competitionRef=<unknown>` → 404 `competition.notFound`
+  ProblemDetails (the `*.notFound` → 404 convention).
+- Regression: `GetDrawMatrixHandlerTests` + policy-totality (9 passed),
+  `Soarscore.Architecture.Tests` (14 passed, 4 production-guard skips by design).
+
 ## Dependency order
 
 ```

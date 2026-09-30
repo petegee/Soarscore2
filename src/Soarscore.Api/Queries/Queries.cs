@@ -37,6 +37,7 @@ public static class Queries
         app.MapQuery<GetTeamRosters, TeamRostersView>("/competition-teams");
         app.MapQuery<ScoreTeamStandings, TeamStandingsView>("/competition-team-result");
         app.MapQuery<GetDrawProtectionDiagnostics, DrawProtectionDiagnosticsView>("/draw-diagnostics");
+        app.MapQuery<GetDrawMatrix, DrawMatrixView>("/draw-matrix");
 
         return app;
     }

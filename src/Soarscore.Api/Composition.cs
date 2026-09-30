@@ -154,6 +154,7 @@ public static class Composition
         builder.Services.AddScoped<IQueryHandler<GetTeamRosters, TeamRostersView>, GetTeamRostersHandler>();
         builder.Services.AddScoped<IQueryHandler<ScoreTeamStandings, TeamStandingsView>, ScoreTeamStandingsHandler>();
         builder.Services.AddScoped<IQueryHandler<GetDrawProtectionDiagnostics, DrawProtectionDiagnosticsView>, GetDrawProtectionDiagnosticsHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetDrawMatrix, DrawMatrixView>, GetDrawMatrixHandler>();
 
         builder.Services.AddScoped<ICommandHandler<OpenEntry, EntryId>, OpenEntryHandler>();
         builder.Services.AddScoped<ICommandHandler<OpenFlight, EntryId>, OpenFlightHandler>();

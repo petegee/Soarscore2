@@ -93,6 +93,7 @@ public static class CommandPolicyTable
         [typeof(GetCompetition)] = new AuthenticatedPolicy(),
         [typeof(GetCompetitionEventLog)] = new AuthenticatedPolicy(),
         [typeof(GetDrawProtectionDiagnostics)] = new AuthenticatedPolicy(),
+        [typeof(GetDrawMatrix)] = new AuthenticatedPolicy(),
         [typeof(GetTeamRosters)] = new AuthenticatedPolicy(),
         [typeof(FindEntries)] = new AuthenticatedPolicy(),
         // Security review 2026-09-16, D4 deviation: the roster carries every

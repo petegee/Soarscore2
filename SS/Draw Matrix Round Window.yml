@@ -1,0 +1,26 @@
+info:
+  name: Draw Matrix Round Window
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{BaseUrl}}/draw-matrix?competitionRef=00000000-0000-0000-0000-000000000000&fromRound=1&toRound=1"
+  params:
+    - name: competitionRef
+      value: 00000000-0000-0000-0000-000000000000
+      type: query
+    - name: fromRound
+      value: "1"
+      type: query
+    - name: toRound
+      value: "1"
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
