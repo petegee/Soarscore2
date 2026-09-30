@@ -56,6 +56,13 @@ public static class SeedNzNAles123
         // No flightValidWhen gate: the 75 m cancellation does not reach this
         //   class (see the header).
 
+        // Local practice (Joe Wurts, senior MFNZ Soaring SIG member, verbal
+        //   2026-09-30: "I would go with the assumption of no negative scores",
+        //   in reply to max(0, raw) per round for M+NDC/N/P where NZ.7.5
+        //   states no floor): floor the task-round score at zero.
+        //   docs/rules/nz/ untouched (house-keeping rule 1).
+        FloorAtZero = true,
+
         Score =
         [
             // Cumulative bands: 400 s scores 360x1 + 40x(−1) = 320.

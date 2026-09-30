@@ -66,6 +66,13 @@ public static class SeedNzMNdc
         //   the header (Joe Wurts, senior MFNZ Soaring SIG member,
         //   2026-09-27).
 
+        // Local practice (Joe Wurts, verbal 2026-09-30: "I would go with the
+        //   assumption of no negative scores", in reply to max(0, raw) per
+        //   round for M+NDC/N/P where NZ.7.4 states no floor): floor the
+        //   task-round score at zero. docs/rules/nz/ untouched — cf. 75 m NDC
+        //   deviation above.
+        FloorAtZero = true,
+
         Score =
         [
             ScoreTerm.Piecewise("flightTime",                                          // NZ.7.4(d)(ii)

@@ -274,6 +274,18 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   the SIG ruling is confirmed in writing in different terms, or if it is
   withdrawn.
 
+- **ALES 200 / N / P task-round scores floor at zero as local practice.**
+  **Decided 2026-09-30** (Joe Wurts, senior MFNZ Soaring SIG member, WhatsApp
+  verbatim: Q "For Class M ALES200 + NDC, where NZ.7.4 states no floor, is the
+  intended scoring max(0, raw) per round — same for N (NZ.7.5) and P (NZ.7.7)?"
+  A "I would go with the assumption of no negative scores"). `NZ.7.4/7.5/7.7`
+  state `+1/-1` bands with no floor — the corpus-wide scan hits only
+  `NZ.7.8(c)(iv)` — so `80/81/83/85` carry `FloorAtZero = true` against silent
+  text, same standing as the 75 m NDC deviation above: `docs/rules/nz/`
+  untouched (house-keeping rule 1). Hedged wording ("assumption") recorded as
+  given; scope is exactly the four definitions asked about, not H/O/Q. Reopen
+  if NZMAA writes a floor into Section 5 or the SIG ruling is refined/withdrawn.
+
 - **NZ Class H (Thermal 2 Metre) — three settled calls.** **Decided 2026-09-27**
   (Pete; `kanban/completed/nz-class-h-thermal-2m-seed.md`). **(a) The
   `NZ.3.6(b)` repeat-attempt grounds reach Class H** (it is the first modelled

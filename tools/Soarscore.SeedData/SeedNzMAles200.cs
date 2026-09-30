@@ -63,6 +63,13 @@ public static class SeedNzMAles200
                                                                                //   1000"; no precision stated (F12)
         FlightValidWhen = Predicate.Is("landedWithin75m", true),                       // NZ.4.13(c) "the flight is cancelled and recorded as a zero score"
 
+        // Local practice (Joe Wurts, senior MFNZ Soaring SIG member, verbal
+        //   2026-09-30: "I would go with the assumption of no negative scores",
+        //   in reply to max(0, raw) per round for M+NDC/N/P where NZ.7.4/7.5/7.7
+        //   state no floor): floor the task-round score at zero. docs/rules/nz/
+        //   untouched (house-keeping rule 1) — cf. the 75 m NDC deviation.
+        FloorAtZero = true,
+
         // Raw score — flight points only. Cumulative bands, F3B Task A's shape at a
         // parameterised turning point (F27): at target 600 a 700 s flight scores
         // 600x1 + 100x(−1) = 500, not 600. Both sides of the join are the SAME
