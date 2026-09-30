@@ -1,6 +1,12 @@
 # Story — CI authoring-drift guard for the seed corpus
 
-**Status:** Planned · **Raised:** 2026-09-11 · **Planned:** 2026-09-13
+**Status:** Completed · **Raised:** 2026-09-11 · **Planned:** 2026-09-13 · **Built:** 2026-09-30
+
+> As-built note (2026-09-30): the corpus grew after this story was written.
+> Tree truth is **17 classes + 4 tapes** (`Corpus.ExpectedCount = 17`,
+> `TapeCorpus.ExpectedCount = 4`, incl. `90-aggregate` and `tape-measure`),
+> not the 16 + 3 cited below. WI-2 committed 17 + 4; WI-3 README says
+> seventeen / four-tape; `Program.cs:1` header fixed to seventeen as part of build.
 
 ## What
 
@@ -44,7 +50,8 @@ contradiction resolved with the user:
   `.github/workflows/build-and-test.yml`. The guard goes in that file's
   `build-and-test` job (which the `deploy` job already gates via `needs:`).
 - **The tool README is stale twice over**: "eleven Competition Class definitions"
-  (Corpus is 16 + 3 tapes, `Corpus.cs:26`, `TapeCorpus.cs:33`) and "not checked in".
+  (Corpus was 16 + 3 tapes at writing, `Corpus.cs:26`, `TapeCorpus.cs:33`;
+  17 + 4 at build) and "not checked in".
   Updated in WI-3.
 
 Nothing in `docs/` changes; no glossary concept is touched; NFR-4 is not engaged
@@ -80,8 +87,8 @@ Two changes, nothing else; all existing gates stay exactly as they are.
 - Create `.gitattributes` (none exists) containing:
   `tools/Soarscore.SeedData/json/** eol=lf`
   so checkouts are byte-stable regardless of `core.autocrlf` (diff stays textual).
-- Run the hardened tool and commit the regenerated corpus: 16 class files plus
-  `json/tapes/`'s 3 tape files — the complete `git status` of
+- Run the hardened tool and commit the regenerated corpus: 17 class files plus
+  `json/tapes/`'s 4 tape files (16 + 3 at writing; 17 + 4 as built) — the complete `git status` of
   `tools/Soarscore.SeedData/json` goes into this story's commit.
 - `.dockerignore` needs no change: it already re-includes `json/**` and excludes
   `json/tapes/**`.
@@ -94,7 +101,8 @@ Fix the three stale statements so the docs match the tree:
   byte-exact, and CI-enforced (WI-4); the C# remains the sole authoring source.
 - "Generates `json/*.json` (gitignored)" → regenerates the committed corpus; also
   documents the new clean-slate behaviour (WI-1.2) and fixed `\n` endings (WI-1.1).
-- "eleven Competition Class definitions" → sixteen, plus the three-tape catalogue.
+- "eleven Competition Class definitions" → seventeen (sixteen at writing),
+  plus the four-tape (three at writing) catalogue.
 - Add the local drift-check recipe mirroring the CI step:
   `dotnet run --project tools/Soarscore.SeedData && git status --porcelain tools/Soarscore.SeedData/json`
   (empty output = no drift).
@@ -132,7 +140,7 @@ Decisions embedded here — do not "simplify" away from them:
   `needs: build-and-test`, so re-emitting there is dead weight. `flyctl deploy
   --remote-only` ships the working tree, `json/` included.
 
-### WI-5 — Verification
+### WI-5 — Verification (as built 2026-09-30 — all green)
 
 Local, in order (no store, no Docker needed):
 

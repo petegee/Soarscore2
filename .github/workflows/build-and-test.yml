@@ -28,6 +28,16 @@ jobs:
       - name: Emit seed corpus JSON
         run: dotnet run --project tools/Soarscore.SeedData --configuration Release --no-build
 
+      - name: Seed corpus drift guard
+        run: |
+          drift="$(git status --porcelain -- tools/Soarscore.SeedData/json)"
+          if [ -n "$drift" ]; then
+            echo "::error::Regenerated seed corpus differs from the committed corpus:"
+            printf '%s\n' "$drift"
+            echo "Run 'dotnet run --project tools/Soarscore.SeedData' and commit tools/Soarscore.SeedData/json/."
+            exit 1
+          fi
+
       - name: Test
         run: dotnet test Soarscore.sln --configuration Release --no-build
 
@@ -43,8 +53,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
-      - name: Emit seed corpus JSON
-        run: dotnet run --project tools/Soarscore.SeedData --configuration Release
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
       - run: flyctl deploy --remote-only
         env:

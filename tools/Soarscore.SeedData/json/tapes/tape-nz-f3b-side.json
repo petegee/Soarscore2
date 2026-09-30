@@ -1,0 +1,67 @@
+{
+  "name": "NZ F3B side",
+  "unit": "m",
+  "marks": [
+    {
+      "upTo": 1,
+      "reading": 100
+    },
+    {
+      "upTo": 2,
+      "reading": 95
+    },
+    {
+      "upTo": 3,
+      "reading": 90
+    },
+    {
+      "upTo": 4,
+      "reading": 85
+    },
+    {
+      "upTo": 5,
+      "reading": 80
+    },
+    {
+      "upTo": 6,
+      "reading": 75
+    },
+    {
+      "upTo": 7,
+      "reading": 70
+    },
+    {
+      "upTo": 8,
+      "reading": 65
+    },
+    {
+      "upTo": 9,
+      "reading": 60
+    },
+    {
+      "upTo": 10,
+      "reading": 55
+    },
+    {
+      "upTo": 11,
+      "reading": 50
+    },
+    {
+      "upTo": 12,
+      "reading": 45
+    },
+    {
+      "upTo": 13,
+      "reading": 40
+    },
+    {
+      "upTo": 14,
+      "reading": 35
+    },
+    {
+      "upTo": 15,
+      "reading": 30
+    }
+  ],
+  "offTapeReading": 0
+}

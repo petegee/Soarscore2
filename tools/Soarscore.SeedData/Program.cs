@@ -1,4 +1,4 @@
-// Emits the canonical JSON for the sixteen seed definitions and the tape
+// Emits the canonical JSON for the seventeen seed definitions and the tape
 // catalogue, and checks the things ADR-0002 §6 asks for before a
 // transcription can be trusted, plus the tape story's own gates
 // (tape-points-landing-seeds.md WI-2 — kanban lane moves; the filename is the
@@ -51,10 +51,13 @@ Console.WriteLine($"Emitting {Corpus.All.Length} definitions and {TapeCorpus.All
 Console.WriteLine();
 Console.WriteLine($"{"class",-18} {"tasks",5} {"terms",6} {"depth",5} {"bytes",8}  content hash");
 
+foreach (var stale in Directory.GetFiles(outputDirectory, "*.json", SearchOption.TopDirectoryOnly))
+    File.Delete(stale);
+
 foreach (var (fileName, definition) in Corpus.All)
 {
     var canonical = JsonSerializer.Serialize(definition, SoarscoreJson.Canonical);
-    File.WriteAllText(Path.Combine(outputDirectory, fileName + ".json"), canonical + Environment.NewLine);
+    File.WriteAllText(Path.Combine(outputDirectory, fileName + ".json"), canonical + "\n");
 
     // 2. Round trip, read back through the INGESTION options — the ones a POSTed
     //    definition would meet — and re-emitted canonically.
@@ -104,13 +107,16 @@ Directory.CreateDirectory(tapeDirectory);
 Console.WriteLine();
 Console.WriteLine($"{"tape",-18} {"marks",5} {"depth",5} {"bytes",8}  content hash");
 
+foreach (var stale in Directory.GetFiles(tapeDirectory, "*.json", SearchOption.TopDirectoryOnly))
+    File.Delete(stale);
+
 foreach (var (fileName, tape) in TapeCorpus.All)
 {
     foreach (var defect in TapeIntegrity.Check(fileName, tape))
         failures.Add(defect);
 
     var canonical = JsonSerializer.Serialize(tape, SoarscoreJson.Canonical);
-    File.WriteAllText(Path.Combine(tapeDirectory, fileName + ".json"), canonical + Environment.NewLine);
+    File.WriteAllText(Path.Combine(tapeDirectory, fileName + ".json"), canonical + "\n");
 
     // 2. Round trip, read back through the INGESTION options.
     var reread = JsonSerializer.Deserialize<TapeDefinition>(canonical, SoarscoreJson.Ingestion)
