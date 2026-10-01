@@ -209,12 +209,16 @@ invokes it.
 
 ```sh
 python3 validate.py <fixture-dir> [--index PATH]
+python3 validate.py --index PATH
 python3 validate.py --self-test
 ```
 
 - `<fixture-dir>` — e.g. `../ales-sample-comp` from this directory.
 - `--index` — path to `tests/GliderscoreFixtures/index.md`. Only needed to prove
-  rule 5 for a fixture that trips a concept-gap triage flag.
+  rule 5 for a fixture that trips a concept-gap triage flag. Given WITHOUT a
+  fixture dir it runs the whole-corpus registry gate instead: the registry
+  checks below plus rules 1–6 for every registry-listed fixture, in registry
+  order — deterministic, one command.
 - `--self-test` — builds throwaway minimal fixtures in a temp directory and
   asserts rule 5 in both directions (flagged without/with unsound/sound
   `triageJustification`; the team-grain expectation requirement with and
@@ -273,6 +277,61 @@ a missing oracle remains a hard failure.
    {ReFlightNo}/{PilotNo}`, every key's pilot is among the entries members, and
    the declared key format is the canonical one.
 
+Corpus mode (`validate.py --index`, no fixture dir) adds the GS 04 registry
+gate over `corpus-registry.json` (schema v1, validated structurally here —
+same shapes as `corpus-registry.schema.json`, stdlib-only). Every failure
+names the fixture slug and the field:
+- schema: required declarations per entry (`slug`, `status`, `modes`,
+  `sourceRef`, `oracleRef`, `comparison`, `evidenceLinks`, `replay`), known
+  statuses/modes, parallel-run modes carrying a seed, replay declarations
+  carrying their `basisRef`;
+- duplicate slugs;
+- index ↔ registry agreement: same slug set under `## Competitions`, same
+  active/skipped status per slug;
+- per active fixture: directory and `class-definition.json` exist; the
+  oracle's declared snapshot scope (`scoredWindow` + `lifecycle` +
+  `excludedRounds`) describes the drawn rounds — window bounds are drawn
+  rounds and `excludedRounds` is exactly the drawn rounds outside the window;
+- references resolve: parallel-run seeds name a seed class under
+  `tools/Soarscore.SeedData/json/` AND the fixture's own
+  `<slug>/parallel-run/<seed>.json` ledger; `replay.parallelRun`
+  declarations require a parallel-run mode to own them; a `teamLadder`
+  comparison grain requires `expected-teams.json`;
+- scenario coverage: every active fixture has its replay scenario in
+  `ReplayingAGliderscoreFixture.feature`, every parallel-run mode its
+  scenario in `ParallelRunningAGliderscoreFixture.feature`, and no scenario
+  names an unlisted slug.
+
+`--self-test` proves each registry failure above both directions on a
+miniature corpus (incomplete entry, duplicate slug, orphaned seed, orphaned
+replay declaration, contradicting snapshot scope, missing scenario, index
+drift, missing directory).
+
+Coverage summaries (GS 04 Step 4) are generated, never hand-edited, by
+`corpus.py` (same directory, stdlib-only, offline — same developer-tool
+status as `validate.py`):
+
+```sh
+python3 corpus.py regen
+python3 corpus.py regen --check
+python3 corpus.py --self-test
+```
+
+`regen` rewrites two marked sections from their authoritative inputs and
+nothing else: the oracle-coverage table + totals line in `index.md` (from
+the registry, `scores-raw.json` row counts, `expected-scores.json` keys,
+`expected-result.json` source/lifecycle/window/excludedRounds and
+totals/penalties/discards headers, `divergences.json` ledgers and the
+landed `parallel-run/*.json` witness ledgers) and the fixture-to-seed
+coverage view in `parallel-run-mapping.md` (registry modes, ledger
+entry/cell counts, every seed file under
+`tools/Soarscore.SeedData/json/`). Hand prose outside the
+`corpus-generated` markers is untouched; expected VALUES keep their one
+authoritative location each (the generator copies counts and shapes only).
+`--check` exits 1 with a diff on any drift (the CI-ready gate — GS 05 wires
+it in). `--self-test` proves byte-deterministic regen and drift detection
+on a throwaway miniature corpus.
+
 Exit code 0 on pass, 1 on any failure; warnings go to stderr and do not fail the
 run.
 
@@ -300,10 +359,15 @@ with EXACT decimal equality, no tolerance. See the story on the board
 
 ### How the corpus is consumed
 
-- `index.md` is the manifest: every `- <slug> — …` bullet whose line does not
-  contain "skipped" is active; the feature holds one scenario per active
+- `corpus-registry.json` is the authoritative manifest: fixture
+  identity/status, source and oracle references, historical/seed modes,
+  comparison grains and replay declarations (GS 04). `index.md` stays the
+  human-readable manifest — same slug set under `## Competitions`, same
+  active/skipped status — and the loader cross-checks the two, failing loudly
+  on any drift. The feature holds one literal-record scenario per active
   fixture plus the harness's own self-checks (replay determinism, score
-  conservation, ledger strictness).
+  conservation, ledger strictness); scenario coverage is validated explicitly
+  (every active fixture and every parallel-run pair has its scenario).
 - Fixtures stay exactly where they are — nothing copies or moves them. The
   loader resolves the corpus by walking up from the test assembly's location
   until `tests/GliderscoreFixtures` appears, so build-output depth is never
@@ -385,7 +449,15 @@ Drop the filter to run the rest of the acceptance suite alongside.
 3. **Add a scenario** to `ReplayingAGliderscoreFixture.feature`, asserting
    the three grains plus conservation, and the ledger shape you expect
    ("carries no ledgered divergences" or "records exactly N accepted
-   divergences").
+   divergences"). **Register the fixture** in `corpus-registry.json`
+   (status, modes, provenance refs, grains, replay declarations with
+   `basisRef`) and list it in `index.md` — the corpus gate
+   (`validate.py --index`, plus the `CorpusCoverageTests` unit gate) fails an
+   active fixture without its scenario and any index ↔ registry drift.
+   **Refresh the generated summaries** from `tests/GliderscoreFixtures` with
+   `python3 extract/corpus.py regen` (hand prose is untouched; only the
+   `corpus-generated` blocks move) and keep `regen --check` green — GS 05
+   wires that check into CI.
 4. **Replay.** Any mismatch prints one diff table (pilot × round × grain,
    ours / expected / delta).
 5. **Triage** every difference: *importer/authoring bug* · *our engine

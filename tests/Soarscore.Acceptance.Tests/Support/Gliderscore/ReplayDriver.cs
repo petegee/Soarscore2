@@ -193,9 +193,14 @@ public sealed class ReplayDriver(HttpClient client)
     // One POST = one count, in ReplayAsync order; reads (GETs) are not commands.
     private int _commandsIssued;
 
-    // WI-3 — round-scoped parameter bindings, keyed by fixture slug. The
-    // mechanism is generic (POST /bind-parameter per entry, phase 0 = the
-    // prescribed first phase); only the DATA is per-fixture.
+    // GS 04 Step 2 — round-scoped parameter bindings, keyed by fixture slug.
+    // The DATA now lives in corpus-registry.json (replay.roundParameterBinds,
+    // each with a basisRef); the mechanism stays generic (POST /bind-parameter
+    // per entry, phase 0 = the prescribed first phase). This member delegates
+    // to CorpusReplayRegistry (authoritative; code fallbacks only when the
+    // registry file is absent) — the table below is the verbatim-migrated
+    // fallback CorpusReplayRegistry verifies the registry against, never
+    // edited independently.
     //
     // f3j-international: GS scored its round 1 against a 540 s target — every
     // one of the round's 22 over-target decay witnesses implies T = (t + TS)/2
@@ -207,118 +212,64 @@ public sealed class ReplayDriver(HttpClient client)
     // definition declares `targetTime` PerRound with default 600; this binding
     // pins round 1 to 540 before any entry opens (a round-scoped bind freezes
     // once flights exist).
-    private static readonly IReadOnlyDictionary<string, IReadOnlyList<(string Parameter, int RoundNo, decimal Value)>>
-        RoundParameterBindings = new Dictionary<string, IReadOnlyList<(string, int, decimal)>>
-        {
-            ["f3j-international"] = [("targetTime", 1, 540m)],
-        };
+    private static IReadOnlyDictionary<string, IReadOnlyList<(string Parameter, int RoundNo, decimal Value)>>
+        RoundParameterBindings => CorpusReplayRegistry.RoundParameterBinds();
 
-    // WI-6 — slots a fixture needs prescribed although no scores-raw row backs
-    // them (the same per-fixture-data pattern as the round binds above).
+    // GS 04 Step 2 — slots a fixture needs prescribed although no scores-raw
+    // row backs them. The DATA now lives in corpus-registry.json
+    // (replay.syntheticSlots, each with a basisRef); both kinds are prescribed
+    // but only the flight-less kind gets an entry opened. These members
+    // delegate to CorpusReplayRegistry (authoritative; code fallbacks only
+    // when the registry file is absent) — the per-fixture why stays in the
+    // registry basisRefs, summarised here.
     //
     // reflight-aggregate-destination.md WI-4 (trap 3) splits the one table in
     // two. BOTH kinds are prescribed — prescribeDraw.competitorMissing demands
     // every registered competitor appear in every round — but only the second
     // kind gets an entry opened.
     //
-    // SyntheticPrescriptionOnlySlots — make-up fixtures: the slot exists only
-    // because the pilot's appearance that round is a RE-FLIGHT make-up flown
-    // elsewhere (D5 step 1 drops that row from the draw). Under the faithful
-    // mapping NO entry is opened here — the make-up's score aggregates into
-    // this round's slot from its hosting round (counts-for), and a flight-less
-    // entry would both refuse nothing and DOUBLE the slot (the D8 check would
-    // then refuse the make-up open itself):
-    //   jerilderie-2010: excluding the re-flight row leaves pilot 29 absent
-    //     from round 12 entirely (R13/G1 SeqNo=14, OriginalRoundNo=12).
-    //   f5j-hawkes-bay-trials (comp 135): pilot 128 is absent from rounds 1–4
-    //     entirely — his first four appearances are the four re-flight rows,
-    //     which D5 step 1 drops (R1/R3 sizes {G1 6, G2 5, G3 6} → group 2;
-    //     R2/R4 {G1 5, G2 6, G3 6} → group 1).
+    // SyntheticPrescriptionOnlySlots — make-up fixtures (jerilderie-2010 pilot
+    // 29 R12; f5j-hawkes-bay-trials pilot 128 R1–R4; f5k-ni-round-2 pilot 88
+    // R6–R10 — the first non-make-up use: rows deleted, group unknowable) plus
+    // SyntheticFlightLessSlots — flight-less-entry slots (f3k-southern-fling
+    // pilot 89 retired R9–R15: NoResult ⇒ cell 0, GS placeholder zeros in the
+    // drop-candidate pool). See the registry basisRefs for the full per-slot
+    // derivations.
+    private static IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
+        SyntheticPrescriptionOnlySlots => CorpusReplayRegistry.PrescriptionOnlySlots();
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
+        SyntheticFlightLessSlots => CorpusReplayRegistry.FlightLessSlots();
+
+    // GS 04 Step 2 — parallel-run-only per-pair widenings for the
+    // f5j-christchurch-2019 witness pair (f5j-christchurch-parallel-run-
+    // witness.md WI-2). The DATA now lives in corpus-registry.json
+    // (replay.parallelRun, each with a basisRef); both maps are consulted ONLY
+    // when parallelRun is not null. These members delegate to
+    // CorpusReplayRegistry (authoritative; code fallbacks only when the
+    // registry file is absent).
     //
-    // f5k-ni-round-2 (f5k-fixture-from-server-db.md WI-3) — the SAME MECHANISM
-    // for a different reason, the first non-make-up use: pilot 88 never flew
-    // (his five rows, R1–R5, are zero stubs) and GS DELETED his rows from R6
-    // on, so his group for R6–R10 is unknowable from the data (provenance).
-    // prescribe-draw still demands him in every prescribed round; a
-    // prescription-only slot satisfies that WITHOUT opening an entry, so no
-    // cell exists for him past R5 — exactly the oracle's shape (GS's own
-    // round-6 standings omit him; his last witnessed standing is R5's rank 6
-    // at 0.000). A flight-less entry instead would mint a zero cell for R6
-    // with no oracle counterpart — two ledger entries citing trap 3 for what
-    // is only a slot-shape choice, where the empty ledger is the point. Group
-    // 2 everywhere: mirrors his majority placement pre-deletion and the
-    // R1–R5 sizes {G1 3, G2 3}; score-neutral by construction — the slot is
-    // never opened, and a group's best (the only thing normalisation reads)
-    // is a max over flown results that an extra member cannot shift.
-    //
-    // SyntheticFlightLessSlots — flight-less-entry slots, unchanged (D4): a
-    // flight-less entry yields NoResult ⇒ cell 0, which is what puts GS's
-    // placeholder zeros into the drop-candidate pool. f3k-southern-fling
-    // (comp 17): pilot 89 Retired=true after round 8, absent R9–R15 (7 missing
-    // slots; R9–R15 sizes {G1 5, G2 5, G3 4} → group 3). These are a retired
-    // pilot's zeros, NOT make-ups — their behaviour is untouched (trap 3).
-    // f5k-ni-round-2 needs NO entry here: its wholly-stub rounds R7–R10 carry
-    // real (if unflown) rows for the five scored pilots, and pilot 88 is
-    // covered by the prescription-only table above.
-    private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
-        SyntheticPrescriptionOnlySlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
-        {
-            ["jerilderie-2010"] = [(12, 1, 29)],
-            ["f5j-hawkes-bay-trials"] =
-                [(1, 2, 128), (2, 1, 128), (3, 2, 128), (4, 1, 128)],
-            ["f5k-ni-round-2"] =
-                [(6, 2, 88), (7, 2, 88), (8, 2, 88), (9, 2, 88), (10, 2, 88)],
-        };
+    // ParallelRunScoredWindowRounds — the rollup window GS actually scored
+    // (rounds 1–11, ladder.py TaskLastRound); R12–18 wholly-unflown
+    // placeholders. ParallelRunLandingTapes — the NZ landing tape declared for
+    // landingDistance (instrument + TapeCorpus stem, scale snapshotted via
+    // TapeMapping.ToReadingScale). See the registry basisRefs.
+    private static IReadOnlyDictionary<string, int> ParallelRunScoredWindowRounds =>
+        CorpusReplayRegistry.ScoredWindowRounds();
 
-    private static readonly IReadOnlyDictionary<string, IReadOnlyList<(int RoundNo, int GroupNo, long PilotNo)>>
-        SyntheticFlightLessSlots = new Dictionary<string, IReadOnlyList<(int, int, long)>>
-        {
-            ["f3k-southern-fling"] =
-                [(9, 3, 89), (10, 3, 89), (11, 3, 89), (12, 3, 89), (13, 3, 89), (14, 3, 89), (15, 3, 89)],
-        };
+    private static IReadOnlyDictionary<string, (string Instrument, string TapeFileName)> ParallelRunLandingTapes =>
+        CorpusReplayRegistry.LandingTapes();
 
-    // f5j-christchurch-parallel-run-witness.md WI-2 — parallel-run-only
-    // per-pair widenings for the f5j-christchurch-2019 witness pair. Both maps
-    // are keyed by fixture slug and consulted ONLY when parallelRun is not
-    // null; a parallel-run pair with no entry behaves exactly as today (the
-    // ales precedent), and the parity path never consults either map.
-    //
-    // ParallelRunScoredWindowRounds — the rollup window GS actually scored:
-    // rounds 1–11 (ladder.py's TaskLastRound = MAX(RoundNo where
-    // Updated='True')). R12–18 are wholly-unflown GS placeholder rows, and a
-    // full-fixture run would let the seed's drop-from-5 eat a phantom zero and
-    // erase the witnessed drop split (story decision 1). Applied to keptRows
-    // before prescription/entry-opening, with a loud assertion that the
-    // fixture's own MAX(RoundNo where Updated=='True') equals the declared
-    // window — a declared scope, recorded in the ledger, never a silent shrink.
-    private static readonly IReadOnlyDictionary<string, int> ParallelRunScoredWindowRounds =
-        new Dictionary<string, int>
-        {
-            ["f5j-christchurch-2019"] = 11,
-        };
-
-    // ParallelRunLandingTapes — the NZ landing tape the fixture's landings
-    // were read on, declared for landingDistance through the parent story's
-    // landed contract (POST /declare-instruments, WI-0) with every reading
-    // capture naming the tape. Instrument is the harness-chosen name recorded
-    // in ledger provenance; TapeFileName is the TapeCorpus stem whose scale is
-    // snapshotted into the declaration via TapeMapping.ToReadingScale.
-    private static readonly IReadOnlyDictionary<string, (string Instrument, string TapeFileName)> ParallelRunLandingTapes =
-        new Dictionary<string, (string Instrument, string TapeFileName)>
-        {
-            ["f5j-christchurch-2019"] = ("nz-f3j-side", "tape-nz-f3j-side"),
-        };
-
-    // ParallelRunSkipParityRoundBinds — f3j-international-parallel-run-retriage
-    // .md decision 4: parallel-run pairs whose parity round-scoped binds are
-    // deliberately neither refused nor applied. Consulted before the refusal
-    // in ReplayAsync throws; a skipped fixture binds nothing from
-    // RoundParameterBindings and the parity path never consults the set. For
-    // f3j-international the seed declares no targetTime parameter at all —
-    // there is nothing to bind — and the R1 540 knowledge is triaged kind 1,
-    // never applied under the seed.
-    private static readonly IReadOnlySet<string> ParallelRunSkipParityRoundBinds =
-        new HashSet<string> { "f3j-international" };
+    // GS 04 Step 2 — f3j-international-parallel-run-retriage.md decision 4:
+    // parallel-run pairs whose parity round-scoped binds are deliberately
+    // neither refused nor applied. The DATA now lives in corpus-registry.json
+    // (replay.parallelRun.skipParityRoundBinds with a basisRef); this member
+    // delegates to CorpusReplayRegistry (authoritative; code fallback only
+    // when the registry file is absent). For f3j-international the seed
+    // declares no targetTime parameter at all and the R1 540 knowledge is
+    // triaged kind 1, never applied under the seed.
+    private static IReadOnlySet<string> ParallelRunSkipParityRoundBinds =>
+        CorpusReplayRegistry.SkipParityRoundBinds();
 
     // ------------------------------------------- WI-1 item 2 parameter binds
 

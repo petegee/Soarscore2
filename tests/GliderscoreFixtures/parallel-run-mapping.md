@@ -96,7 +96,7 @@ is not required to write a row.
 | --- | --- | --- | --- | --- |
 | ales-sample-comp | 80-nz-m-ales200.json | near-twin | done | Landed parallel run: exact final placings; difference set = three triaged kind-1 raw-grain entries (GS folds landing into pre-normalisation raw, seed-run adds it post-normalisation; final cells identical). `ledger tests/GliderscoreFixtures/ales-sample-comp/parallel-run/80-nz-m-ales200.json` |
 | f5j-christchurch-2019 | 30-f5j.json | witness | done | Measured split over R1–11: rulebook drop-from-5 moves 7 pilots (p79 12→13, p82 7→6, p83 6→8, p94 13→11, p129 8→9, p131 9→7, p133 11→12) vs GS unset thresholds; raw grain exact on the declared NZ F3J-side tape (canonical landingDistance unchanged); normalised grid declared as 127 structured cells (GS HalfUp-1dp vs the seed's exact values). R5 5-group prescribes under SHOULD warning. `ledger tests/GliderscoreFixtures/f5j-christchurch-2019/parallel-run/30-f5j.json` |
-| f3j-international | 50-f3j.json | witness | done | Measured split over 16 scored rounds: the rounding grid materialised — 174 normalised cells (GS HalfUp-1dp vs rulebook Truncate-0.1, `F3J.10.11`); landing-0 sentinel 34 cells; −30 late-landing absence 11 cells (all ⊂ sentinel); R1 540 decay 22 cells; 20-pilot final-placing split (raw 54 / normalised 264 mismatch cells); 5 declared phantom exclusions held; drops agree — the original guaranteed-divergence claim stays withdrawn. `ledger tests/GliderscoreFixtures/f3j-international/parallel-run/50-f3j.json` |
+| f3j-international | 50-f3j.json | witness | done | Measured split over 16 scored rounds: the rounding grid materialised — 200 normalised cells (GS HalfUp-1dp vs rulebook Truncate-0.1, `F3J.10.11`) plus a 32-cell composition/renormalisation cascade (union 232 distinct normalised cells); R1 540 decay 22 raw cells; −30 late-landing deduction 11 raw rows (landing awards agree 0→0; union 32 distinct raw cells); the landing-0 sentinel now agrees 0→0 both sides and retires; 6-pilot final-placing split (18 ranking lines, 3 per pilot); 5 declared phantom exclusions held; drops agree — the original guaranteed-divergence claim stays withdrawn. `ledger tests/GliderscoreFixtures/f3j-international/parallel-run/50-f3j.json` (counts measured from the landed ledger; the generated fixture-to-seed view below aggregates 10 entries / 283 structured witness cells) |
 | f3j-international-flyoff | 50-f3j.json | witness | planned | Local fly-off shape: GS scored all 4 rounds to the 900 s target (flights to 898 s, R1 raw 996) vs the seed Preliminary's 600 pt cap — provable at the raw grain; second candidate: GS HalfUp-integer grid vs rulebook Truncate-0.1 (981 vs 980.9). Drops agree at 4 rounds. `config tests/GliderscoreFixtures/f3j-international-flyoff/competition.json familyRows.Dur.durTargetTime` `config tools/Soarscore.SeedData/json/50-f3j.json phases[0].tasks[0].score[0].cap` `rule f3j.md F3J.10.11` |
 | jerilderie-2010 | 50-f3j.json | not-expressible | refused | G5: the fixture's scheme-3 landings are readings on the NZ F3J-side tape — the rulebook distance lookup pre-composed on the tape (scheme-3 identity lookup; scores-raw Landing 93 → GS raw 262+93=355 is the tape's identity read, not a distance) — capturable by declaring tape-nz-f3j-side for landingDistance and submitting the marks verbatim naming that tape (expressible since the declared-instrument model landed, `kanban/completed/tape-points-landing-seeds.md` WI-0–WI-5), which no replay has yet run. The seed's metres metric and rulebook table stand unchanged and no tape-points seed exists: the instrument is declared, not derived. Pair still refused on two gates: the fixture's unrecorded 100-point penalty (R11/G3 pilot 2 — no infraction type recorded, owner disposition pending) and the unrun witness. `config tests/GliderscoreFixtures/jerilderie-2010/competition.json lookups.landingSchemes[0].Name` `config tools/Soarscore.SeedData/json/50-f3j.json phases[0].tasks[0].metrics.landingDistance` `stub kanban/backlog/gs_13_jerilderie-2010-tape-witness.md` |
 | f5j-hawkes-bay-trials | 30-f5j.json | witness | planned | Christchurch precedent (F5J family; launch height captured). Witness split: rulebook drop-from-5 fires at 10 scored rounds vs GS thresholds unset/99 (configProvenance: none can fire). Candidates: scheme-11 landing scale (55–100→5–50) vs the nose-to-spot table; HalfUp-1dp effective grid vs the seed's exact values. `config tests/GliderscoreFixtures/f5j-hawkes-bay-trials/competition.json configProvenance.note` `rule f5j.md 5.5.11.13` |
@@ -161,3 +161,55 @@ only by `refused` rows is `uncovered (refused rows only)`; a seed named in a
   with 30-f5j.json; none is an X5J comp.
 - `90-aggregate.json` — uncovered by design — NZ free-flight Aggregate (D5):
   the corpus is RC gliding; the class cannot witness here.
+
+## Fixture-to-seed coverage (generated, GS 04 Step 4)
+
+The Pairs table and Seed coverage list above stay the triage record (pair
+character, seed decisions and citations are human judgment). The counts
+below are measured at regen time from the registry, the landed
+parallel-run ledgers and the seed directory — run
+`python3 extract/corpus.py regen` from `tests/GliderscoreFixtures` to
+refresh, or `regen --check` to fail on drift.
+
+<!-- corpus-generated:begin:seed-coverage -->
+Executable modes (from the registry; ledgers measured at regen time):
+
+| fixture | status | parity | parallel-run seed | parallel ledger | comparison grains |
+|---|---|---|---|---|---|
+| ales-sample-comp | active | yes | 80-nz-m-ales200 | landed (3 entries, 3 cells) | raw, normalised, ranking |
+| f3j-international | active | yes | 50-f3j | landed (10 entries, 283 cells) | raw, normalised, ranking, teamLadder |
+| f3j-international-flyoff | active | yes | — | — | raw, normalised, ranking |
+| f3k-sample-comp | active | yes | — | — | raw, normalised, ranking |
+| jerilderie-2010 | active | yes | — | — | raw, normalised, ranking |
+| f5j-christchurch-2019 | active | yes | 30-f5j | landed (8 entries, 148 cells) | raw, normalised, ranking |
+| f5j-hawkes-bay-trials | active | yes | — | — | raw, normalised, ranking |
+| f3k-southern-fling | active | yes | — | — | raw, normalised, ranking |
+| f5j-nz-south-island | active | yes | — | — | raw, normalised, ranking |
+| f3k-june-2020 | active | yes | — | — | raw, normalised, ranking |
+| f5k-ni-round-2 | active | yes | — | — | raw, normalised, ranking |
+| f3b-international | skipped | yes | — | — |  |
+
+Seed coverage (every seed file; pairs from the registry):
+
+| seed | registry pairs | ledgers landed | coverage |
+|---|---|---|---|
+| 10-f3k.json | — | 0/0 | uncovered (no registry pair) |
+| 20-f3b.json | — | 0/0 | uncovered (no registry pair) |
+| 30-f5j.json | f5j-christchurch-2019 | 1/1 | witnessed (1 ledger) |
+| 40-f5k.json | — | 0/0 | uncovered (no registry pair) |
+| 50-f3j.json | f3j-international | 1/1 | witnessed (1 ledger) |
+| 60-f5l.json | — | 0/0 | uncovered (no registry pair) |
+| 70-f3f.json | — | 0/0 | uncovered (no registry pair) |
+| 80-nz-m-ales200.json | ales-sample-comp | 1/1 | witnessed (1 ledger) |
+| 81-nz-m-ndc.json | — | 0/0 | uncovered (no registry pair) |
+| 83-nz-n-ales123.json | — | 0/0 | uncovered (no registry pair) |
+| 85-nz-p-radian.json | — | 0/0 | uncovered (no registry pair) |
+| 85b-nz-f3k-ndc.json | — | 0/0 | uncovered (no registry pair) |
+| 85c-nz-f5j-ndc.json | — | 0/0 | uncovered (no registry pair) |
+| 85d-nz-f5k-ndc.json | — | 0/0 | uncovered (no registry pair) |
+| 86-nz-x5j.json | — | 0/0 | uncovered (no registry pair) |
+| 87-nz-h-thermal-2m.json | — | 0/0 | uncovered (no registry pair) |
+| 90-aggregate.json | — | 0/0 | uncovered (no registry pair) |
+
+Seeds: 17 files (3 witnessed, 0 paired without a full ledger set, 14 uncovered).
+<!-- corpus-generated:end:seed-coverage -->

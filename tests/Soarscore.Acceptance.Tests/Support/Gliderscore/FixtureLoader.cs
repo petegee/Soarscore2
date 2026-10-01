@@ -3,10 +3,9 @@
 // corpus stays where it is; the harness resolves the directory from the test
 // assembly's location by walking up, so no build-output depth is hardcoded).
 //
-// index.md is the manifest and its header carries the tokenisation contract:
-// each competition is one `- <slug> — <status> — …` bullet, and a slug counts
-// as SKIP-LISTED when its line contains "skipped" anywhere. Bullets wrap over
-// several lines; continuation lines never start with "- " and are ignored.
+// GS 04 Step 3 — corpus-registry.json is the authoritative manifest; index.md
+// stays the human-readable manifest and ActiveSlugs cross-checks the two (a
+// drift on either side fails loudly naming the slug).
 
 using System.Text.Json;
 using Soarscore.Application.Commands.CompetitionClasses;
@@ -23,17 +22,97 @@ public static class FixtureLoader
         PropertyNameCaseInsensitive = true,
     };
 
-    /// <summary>Every slug the manifest lists as active (not skip-listed).</summary>
+    /// <summary>
+    /// Every slug the corpus runs: GS 04 Step 3 — the registry is
+    /// authoritative (its "active" entries, in registry order) and index.md is
+    /// cross-checked against it: a slug the index lists without a registry
+    /// entry, a registry entry without an index bullet, or a status mismatch
+    /// on either side throws naming the slug. When corpus-registry.json is
+    /// absent (a checkout predating the registry) the index governs alone, so
+    /// strict runs stay green there — the same authoritative-with-fallback
+    /// discipline as <see cref="CorpusReplayRegistry"/>.
+    /// </summary>
     public static IReadOnlyList<string> ActiveSlugs()
     {
         var corpus = ResolveCorpusDirectory();
-        var index = File.ReadAllLines(Path.Combine(corpus, "index.md"));
+        var index = IndexSlugs(corpus);
 
-        return index
+        if (!CorpusReplayRegistry.RegistryGoverns)
+        {
+            return index.Where(s => !s.Skipped).Select(s => s.Slug).ToList();
+        }
+
+        var manifest = CorpusReplayRegistry.ManifestEntries();
+        var manifestBySlug = manifest.ToDictionary(e => e.Slug, StringComparer.Ordinal);
+        var indexBySlug = index.ToDictionary(s => s.Slug, StringComparer.Ordinal);
+
+        foreach (var slug in indexBySlug.Keys.Union(manifestBySlug.Keys).OrderBy(s => s, StringComparer.Ordinal))
+        {
+            var inIndex = indexBySlug.TryGetValue(slug, out var indexRow);
+            var inRegistry = manifestBySlug.TryGetValue(slug, out var entry);
+
+            if (!inRegistry)
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{slug}' is listed in index.md but has no corpus-registry.json entry — "
+                    + "add the entry (status, modes, provenance refs) or drop the bullet.");
+            }
+
+            if (!inIndex)
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{slug}' has a corpus-registry.json entry but no index.md bullet — "
+                    + "the index stays the human-readable manifest; list it there.");
+            }
+
+            var indexActive = !indexRow!.Skipped;
+            var registryActive = entry!.Status == "active";
+
+            if (indexActive != registryActive)
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{slug}' status disagrees: index.md says "
+                    + (indexActive ? "active" : "skipped") + " but corpus-registry.json status is "
+                    + $"'{entry.Status}' — the two must agree.");
+            }
+        }
+
+        return manifest.Where(e => e.Status == "active").Select(e => e.Slug).ToList();
+    }
+
+    private sealed record IndexRow(string Slug, bool Skipped);
+
+    /// <summary>
+    /// The index.md tokenisation contract: under the "## Competitions"
+    /// heading each competition is one `- &lt;slug&gt; — &lt;status&gt; — …`
+    /// bullet, and a slug counts as SKIP-LISTED when its line contains
+    /// "skipped" anywhere. Bullets wrap over several lines; continuation
+    /// lines never start with "- " and are ignored. Dashes elsewhere in the
+    /// file (skip rules, diversity notes) are prose, never manifest entries —
+    /// scoping to the Competitions section keeps them out of the corpus.
+    /// </summary>
+    private static IReadOnlyList<IndexRow> IndexSlugs(string corpus)
+    {
+        var lines = File.ReadAllLines(Path.Combine(corpus, "index.md"));
+        var competitions = lines
+            .SkipWhile(line => line.Trim() != "## Competitions")
+            .Skip(1)
+            .TakeWhile(line => !line.StartsWith("## "))
+            .ToList();
+
+        if (competitions.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"index.md under {corpus} carries no '## Competitions' section — the manifest contract needs it.");
+        }
+
+        return competitions
             .Where(line => line.StartsWith("- "))
             .Select(line => line[2..].Split(' ')[0])
             .Where(slug => !string.IsNullOrWhiteSpace(slug))
-            .Where(slug => !index.First(line => line.StartsWith($"- {slug} ")).Contains("skipped"))
+            .Select(slug => new IndexRow(
+                slug,
+                competitions.First(line => line.StartsWith($"- {slug} ")).Contains("skipped")))
             .ToList();
     }
 
@@ -89,6 +168,15 @@ public static class FixtureLoader
             Definition: definition,
             ExpectedTeams: expectedTeams);
     }
+
+    /// <summary>
+    /// GS 04 Step 2 — the executable-corpus registry file
+    /// (tests/GliderscoreFixtures/corpus-registry.json). Consumed by
+    /// <see cref="CorpusReplayRegistry"/>; since Step 3 it also governs
+    /// <see cref="ActiveSlugs"/> (index.md is cross-checked, not read alone).
+    /// </summary>
+    public static string CorpusRegistryPath() =>
+        Path.Combine(ResolveCorpusDirectory(), "corpus-registry.json");
 
     /// <summary>
     /// Walks up from AppContext.BaseDirectory until a tests/GliderscoreFixtures

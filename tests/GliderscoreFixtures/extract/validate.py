@@ -12,6 +12,8 @@ import argparse
 import contextlib
 import io
 import json
+import re
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -328,6 +330,581 @@ TRIAGE_OFF = {"UseTeams": False, "CompSeriesNo": "0", "PrelimCompNo": -1, "Merge
 SOUND_SERIES = {"series": {"deadLinkCount": 0, "evidence": "CompSeries table is empty; every series link is dead"}}
 
 
+# ---------------------------------------------------------------------------
+# GS 04 Step 3 — corpus-registry awareness. The registry
+# (tests/GliderscoreFixtures/corpus-registry.json, schema v1) is the
+# authoritative fixture manifest; index.md stays the human-readable manifest
+# and the two must agree. These checks are stdlib-only like the rest of this
+# tool: the schema below is validated structurally here, mirroring
+# corpus-registry.schema.json field for field (no jsonschema dependency, no
+# network). Every failure names the fixture slug and the field.
+# ---------------------------------------------------------------------------
+
+REGISTRY_FILE = "corpus-registry.json"
+REGISTRY_SCHEMA_VERSION = 1
+REGISTRY_STATUSES = {"active", "skipped"}
+REGISTRY_MODES = {"parity", "parallel-run"}
+
+REPLAY_SCENARIO = re.compile(r'replays the GliderScore fixture "([^"]+)"')
+PARALLEL_SCENARIO = re.compile(
+    r'parallel-runs the GliderScore fixture "([^"]+)" under the seed class "([^"]+)"'
+)
+
+
+def _is_int(value):
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def check_registry_schema(document, errors):
+    """Structural validation mirroring corpus-registry.schema.json (v1).
+
+    Returns the entries list on success-shaped documents, None otherwise.
+    Per-entry shape problems are recorded but do not stop the scan, so one
+    run names every malformed entry.
+    """
+    if not isinstance(document, dict):
+        fail(errors, "registry: corpus-registry.json must hold a JSON object (schema v1)")
+        return None
+    extra = sorted(set(document) - {"schemaVersion", "entries"})
+    if extra:
+        fail(
+            errors,
+            f"registry: unknown top-level field(s) {extra} "
+            f"(schema v1 allows schemaVersion, entries)",
+        )
+    if document.get("schemaVersion") != REGISTRY_SCHEMA_VERSION:
+        fail(
+            errors,
+            f"registry: field schemaVersion is {document.get('schemaVersion')!r}, "
+            f"this validator reads {REGISTRY_SCHEMA_VERSION}",
+        )
+    entries = document.get("entries")
+    if not isinstance(entries, list):
+        fail(errors, "registry: field entries must hold a JSON array")
+        return None
+    for position, entry in enumerate(entries):
+        check_registry_entry(entry, position, errors)
+    return entries
+
+
+def check_registry_entry(entry, position, errors):
+    label = f"registry: entries[{position}]"
+    if not isinstance(entry, dict):
+        fail(errors, f"{label} must hold a JSON object")
+        return
+    slug = entry.get("slug")
+    if isinstance(slug, str) and slug:
+        label = f"registry: fixture {slug!r}"
+    else:
+        fail(errors, f"{label} is missing its slug (field slug)")
+    extra = sorted(set(entry) - {
+        "slug", "status", "modes", "sourceRef", "oracleRef",
+        "comparison", "evidenceLinks", "replay",
+    })
+    if extra:
+        fail(errors, f"{label} carries unknown field(s) {extra}")
+    for field in ("slug", "status", "modes", "sourceRef", "oracleRef",
+                  "comparison", "evidenceLinks", "replay"):
+        if field not in entry:
+            fail(errors, f"{label} is missing its declaration (field {field})")
+    if "status" in entry and entry["status"] not in REGISTRY_STATUSES:
+        fail(
+            errors,
+            f"{label} declares status {entry['status']!r} "
+            f"(field status; expected 'active' or 'skipped')",
+        )
+    for field in ("sourceRef", "oracleRef"):
+        if field in entry and (
+            not isinstance(entry[field], str) or not entry[field].strip()
+        ):
+            fail(errors, f"{label} declares an empty reference (field {field})")
+    check_registry_modes_shape(entry.get("modes"), label, errors)
+    check_registry_comparison_shape(entry.get("comparison"), label, errors)
+    if "evidenceLinks" in entry and (
+        not isinstance(entry["evidenceLinks"], list)
+        or any(not isinstance(link, str) for link in entry["evidenceLinks"])
+    ):
+        fail(errors, f"{label} must list string evidence pointers (field evidenceLinks)")
+    check_registry_replay_shape(entry.get("replay"), label, errors)
+
+
+def check_registry_modes_shape(modes, label, errors):
+    if not isinstance(modes, list) or not modes:
+        fail(errors, f"{label} must declare at least one executable mode (field modes)")
+        return
+    seen = set()
+    for position, mode in enumerate(modes):
+        field = f"{label} field modes[{position}]"
+        if not isinstance(mode, dict):
+            fail(errors, f"{field} must hold a JSON object")
+            continue
+        extra = sorted(set(mode) - {"mode", "seed"})
+        if extra:
+            fail(errors, f"{field} carries unknown field(s) {extra}")
+        name = mode.get("mode")
+        if name not in REGISTRY_MODES:
+            fail(
+                errors,
+                f"{field} names mode {name!r} (field mode; expected 'parity' or 'parallel-run')",
+            )
+            continue
+        seed = mode.get("seed")
+        if name == "parallel-run" and (
+            not isinstance(seed, str) or not seed.strip()
+        ):
+            fail(errors, f"{field} is a parallel-run mode with no seed (field seed)")
+        key = (name, seed if isinstance(seed, str) else None)
+        if key in seen:
+            fail(errors, f"{label} declares the same mode twice (field modes: {name!r})")
+        seen.add(key)
+
+
+def check_registry_comparison_shape(comparison, label, errors):
+    if not isinstance(comparison, dict):
+        fail(errors, f"{label} must declare its comparison grains (field comparison)")
+        return
+    extra = sorted(set(comparison) - {"grains"})
+    if extra:
+        fail(errors, f"{label} field comparison carries unknown field(s) {extra}")
+    grains = comparison.get("grains")
+    if not isinstance(grains, list) or any(not isinstance(g, str) for g in grains):
+        fail(errors, f"{label} must list string comparison grains (field comparison.grains)")
+
+
+def check_registry_replay_shape(replay, label, errors):
+    if not isinstance(replay, dict):
+        fail(errors, f"{label} must declare its replay scope (field replay)")
+        return
+    extra = sorted(set(replay) - {
+        "roundParameterBinds", "syntheticSlots", "parallelRun",
+    })
+    if extra:
+        fail(errors, f"{label} field replay carries unknown field(s) {extra}")
+    for position, bind in enumerate(replay.get("roundParameterBinds") or []):
+        field = f"{label} field replay.roundParameterBinds[{position}]"
+        if not isinstance(bind, dict):
+            fail(errors, f"{field} must hold a JSON object")
+            continue
+        if sorted(bind) != ["basisRef", "parameter", "roundNo", "value"]:
+            fail(errors, f"{field} must declare parameter, roundNo, value, basisRef")
+            continue
+        if not isinstance(bind["parameter"], str) or not bind["parameter"].strip():
+            fail(errors, f"{field} names no parameter (field parameter)")
+        if not _is_int(bind["roundNo"]) or bind["roundNo"] < 1:
+            fail(errors, f"{field} declares roundNo {bind['roundNo']!r} (field roundNo)")
+        if not _is_number(bind["value"]):
+            fail(errors, f"{field} declares value {bind['value']!r} (field value)")
+        if not isinstance(bind["basisRef"], str) or not bind["basisRef"].strip():
+            fail(errors, f"{field} cites no basis (field basisRef)")
+    slots = replay.get("syntheticSlots")
+    if slots is not None:
+        if not isinstance(slots, dict):
+            fail(errors, f"{label} field replay.syntheticSlots must hold a JSON object")
+        else:
+            extra_slots = sorted(set(slots) - {"prescriptionOnly", "flightLess"})
+            if extra_slots:
+                fail(
+                    errors,
+                    f"{label} field replay.syntheticSlots carries unknown kind(s) {extra_slots}",
+                )
+            for kind in ("prescriptionOnly", "flightLess"):
+                for position, slot in enumerate(slots.get(kind) or []):
+                    field = f"{label} field replay.syntheticSlots.{kind}[{position}]"
+                    if not isinstance(slot, dict):
+                        fail(errors, f"{field} must hold a JSON object")
+                        continue
+                    if sorted(slot) != ["basisRef", "groupNo", "pilotNo", "roundNo"]:
+                        fail(errors, f"{field} must declare roundNo, groupNo, pilotNo, basisRef")
+                        continue
+                    if not _is_int(slot["roundNo"]) or slot["roundNo"] < 1:
+                        fail(errors, f"{field} declares roundNo {slot['roundNo']!r}")
+                    if not _is_int(slot["groupNo"]) or slot["groupNo"] < 1:
+                        fail(errors, f"{field} declares groupNo {slot['groupNo']!r}")
+                    if not _is_int(slot["pilotNo"]):
+                        fail(errors, f"{field} declares pilotNo {slot['pilotNo']!r}")
+                    if not isinstance(slot["basisRef"], str) or not slot["basisRef"].strip():
+                        fail(errors, f"{field} cites no basis (field basisRef)")
+    parallel = replay.get("parallelRun")
+    if parallel is not None:
+        if not isinstance(parallel, dict):
+            fail(errors, f"{label} field replay.parallelRun must hold a JSON object")
+        else:
+            extra_parallel = sorted(
+                set(parallel)
+                - {"scoredWindowAssertion", "landingInstrument", "skipParityRoundBinds"}
+            )
+            if extra_parallel:
+                fail(
+                    errors,
+                    f"{label} field replay.parallelRun carries unknown field(s) {extra_parallel}",
+                )
+            window = parallel.get("scoredWindowAssertion")
+            if window is not None and (
+                not isinstance(window, dict)
+                or sorted(window) != ["basisRef", "rounds"]
+                or not _is_int(window["rounds"])
+                or window["rounds"] < 1
+                or not isinstance(window["basisRef"], str)
+                or not window["basisRef"].strip()
+            ):
+                fail(
+                    errors,
+                    f"{label} field replay.parallelRun.scoredWindowAssertion "
+                    f"must declare rounds (>= 1) and basisRef",
+                )
+            tape = parallel.get("landingInstrument")
+            if tape is not None and (
+                not isinstance(tape, dict)
+                or sorted(tape) != ["basisRef", "instrument", "tapeFile"]
+                or not isinstance(tape["instrument"], str)
+                or not tape["instrument"].strip()
+                or not isinstance(tape["tapeFile"], str)
+                or not tape["tapeFile"].strip()
+                or not isinstance(tape["basisRef"], str)
+                or not tape["basisRef"].strip()
+            ):
+                fail(
+                    errors,
+                    f"{label} field replay.parallelRun.landingInstrument "
+                    f"must declare instrument, tapeFile and basisRef",
+                )
+            skip = parallel.get("skipParityRoundBinds")
+            if skip is not None and (
+                not isinstance(skip, dict)
+                or sorted(skip) != ["basisRef", "value"]
+                or not isinstance(skip["value"], bool)
+                or not isinstance(skip["basisRef"], str)
+                or not skip["basisRef"].strip()
+            ):
+                fail(
+                    errors,
+                    f"{label} field replay.parallelRun.skipParityRoundBinds "
+                    f"must declare value (boolean) and basisRef",
+                )
+
+
+def parse_index_manifest(index_path, errors):
+    """Competitions-section slugs with their skip-listed state.
+
+    Same tokenisation the harness loader uses: one `- <slug> — …` bullet per
+    competition under `## Competitions`; a slug counts as skip-listed when its
+    line contains "skipped". Dashes elsewhere (skip rules, diversity notes)
+    are prose, never manifest entries.
+    """
+    try:
+        lines = index_path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        fail(errors, f"registry: index file unreadable: {index_path} ({exc})")
+        return []
+    try:
+        start = next(
+            i for i, line in enumerate(lines) if line.strip() == "## Competitions"
+        )
+    except StopIteration:
+        fail(errors, f"registry: {index_path} carries no '## Competitions' section")
+        return []
+    section = []
+    for line in lines[start + 1:]:
+        if line.startswith("## "):
+            break
+        section.append(line)
+    rows = []
+    for line in section:
+        if not line.startswith("- "):
+            continue
+        slug = line[2:].split(" ")[0]
+        if slug:
+            rows.append((slug, "skipped" in line.lower()))
+    return rows
+
+
+def corpus_repo_root(corpus_dir, errors):
+    if corpus_dir.name == "GliderscoreFixtures" and corpus_dir.parent.name == "tests":
+        return corpus_dir.parent.parent
+    fail(
+        errors,
+        f"registry: cannot derive the repo root from corpus dir {corpus_dir} "
+        f"(expected <root>/tests/GliderscoreFixtures)",
+    )
+    return None
+
+
+def check_registry_snapshot(corpus_dir, slug, errors):
+    """The oracle's declared snapshot scope must describe the drawn rounds.
+
+    expected-result.json declares scoredWindow + lifecycle + excludedRounds
+    (the GS 02 contract); the drawn rounds come from scores-raw.json. An
+    excluded-round list that contradicts the window, or a window outside the
+    drawn range, fails naming the fixture and the field. Numerical
+    expectations keep their one authoritative location — this check compares
+    declarations, never values.
+    """
+    fixture = corpus_dir / slug
+    try:
+        oracle = json.loads((fixture / "expected-result.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        fail(errors, f"registry: fixture {slug!r}: field expected-result.json is unreadable ({exc})")
+        return
+    if not isinstance(oracle, dict):
+        fail(errors, f"registry: fixture {slug!r}: field expected-result.json must hold a JSON object")
+        return
+    window = oracle.get("scoredWindow")
+    if (
+        not isinstance(window, dict)
+        or not _is_int(window.get("firstRound"))
+        or not _is_int(window.get("lastRound"))
+    ):
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field expected-result.json.scoredWindow "
+            f"must declare integer firstRound/lastRound (the snapshot scope)",
+        )
+        return
+    lifecycle = oracle.get("lifecycle")
+    if not isinstance(lifecycle, str) or not lifecycle.strip():
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field expected-result.json.lifecycle "
+            f"must be a non-empty string (how the comparison reads the oracle)",
+        )
+    excluded = oracle.get("excludedRounds")
+    if not isinstance(excluded, list) or any(not _is_int(round_no) for round_no in excluded):
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field expected-result.json.excludedRounds "
+            f"must list integer round numbers",
+        )
+        return
+    try:
+        scores_raw = json.loads((fixture / "scores-raw.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        fail(errors, f"registry: fixture {slug!r}: field scores-raw.json is unreadable ({exc})")
+        return
+    drawn = sorted({
+        row.get("RoundNo")
+        for row in (scores_raw.get("rows") or [])
+        if isinstance(row, dict) and _is_int(row.get("RoundNo"))
+    })
+    if not drawn:
+        return
+    first, last = window["firstRound"], window["lastRound"]
+    if first > last or first not in drawn or last not in drawn:
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field expected-result.json.scoredWindow "
+            f"[{first},{last}] is incompatible with the drawn rounds "
+            f"{drawn[0]}-{drawn[-1]} (bounds must be drawn rounds)",
+        )
+    want_excluded = sorted(round_no for round_no in drawn if round_no < first or round_no > last)
+    if sorted(excluded) != want_excluded:
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field expected-result.json.excludedRounds "
+            f"{sorted(excluded)} contradicts the drawn rounds outside the declared "
+            f"window (expected {want_excluded})",
+        )
+
+
+def check_registry_entry_refs(corpus_dir, seed_dir, slug, entry, errors):
+    """Cross-file references an entry declares must resolve.
+
+    Parallel-run seeds resolve to a seed class AND the fixture's own
+    parallel-run ledger; parallelRun replay declarations require a
+    parallel-run mode to own them; the teamLadder grain requires its team
+    oracle. Every failure names the fixture and the field.
+    """
+    modes = entry.get("modes") if isinstance(entry, dict) else None
+    has_parallel = False
+    if isinstance(modes, list):
+        for position, mode in enumerate(modes):
+            if not isinstance(mode, dict) or mode.get("mode") != "parallel-run":
+                continue
+            has_parallel = True
+            seed = mode.get("seed")
+            if not isinstance(seed, str) or not seed.strip():
+                continue
+            if not (seed_dir / f"{seed}.json").is_file():
+                fail(
+                    errors,
+                    f"registry: fixture {slug!r}: field modes[{position}].seed {seed!r} "
+                    f"names no seed class (missing {seed}.json under tools/Soarscore.SeedData/json)",
+                )
+            if not (corpus_dir / slug / "parallel-run" / f"{seed}.json").is_file():
+                fail(
+                    errors,
+                    f"registry: fixture {slug!r}: field modes[{position}].seed {seed!r} "
+                    f"has no parallel-run ledger ({slug}/parallel-run/{seed}.json)",
+                )
+    replay = entry.get("replay") if isinstance(entry, dict) else None
+    parallel = replay.get("parallelRun") if isinstance(replay, dict) else None
+    if isinstance(parallel, dict) and parallel and not has_parallel:
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field replay.parallelRun declares "
+            f"{sorted(parallel)} but no parallel-run mode owns them (orphaned replay declaration)",
+        )
+    comparison = entry.get("comparison") if isinstance(entry, dict) else None
+    grains = comparison.get("grains") if isinstance(comparison, dict) else None
+    if isinstance(grains, list) and "teamLadder" in grains and not (
+        corpus_dir / slug / "expected-teams.json"
+    ).is_file():
+        fail(
+            errors,
+            f"registry: fixture {slug!r}: field comparison.grains claims teamLadder "
+            f"but {slug}/expected-teams.json is absent (the ladder grain's oracle)",
+        )
+
+
+def check_registry_scenarios(features_dir, slugs_active, parallel_pairs, errors):
+    """Every executable declaration needs its literal-record scenario.
+
+    Active slugs need a replay scenario; parallel-run modes need a
+    parallel-run scenario under their seed; scenarios naming unlisted slugs
+    are orphaned references. Failures name the fixture.
+    """
+    replay_path = features_dir / "ReplayingAGliderscoreFixture.feature"
+    parallel_path = features_dir / "ParallelRunningAGliderscoreFixture.feature"
+    try:
+        replay_text = replay_path.read_text(encoding="utf-8")
+        parallel_text = parallel_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        fail(errors, f"registry: scenario files unreadable under {features_dir} ({exc})")
+        return set(), set()
+    replayed = set(REPLAY_SCENARIO.findall(replay_text))
+    paired = set(PARALLEL_SCENARIO.findall(parallel_text))
+    for slug in sorted(slugs_active):
+        if slug not in replayed:
+            fail(
+                errors,
+                f"registry: active fixture {slug!r} has no executable replay scenario "
+                f"(field modes: add the ReplayingAGliderscoreFixture scenario)",
+            )
+    for slug, seed in sorted(parallel_pairs):
+        if (slug, seed) not in paired:
+            fail(
+                errors,
+                f"registry: fixture {slug!r} declares parallel-run seed {seed!r} "
+                f"(field modes) with no executable parallel-run scenario",
+            )
+    known = set(slugs_active) | {slug for slug, _ in parallel_pairs}
+    for slug in sorted((replayed | {slug for slug, _ in paired}) - known):
+        fail(
+            errors,
+            f"registry: scenario names {slug!r} but the registry lists no such fixture "
+            f"(orphaned scenario reference)",
+        )
+    return replayed, paired
+
+
+def validate_corpus(corpus_dir, index_path, errors, warnings):
+    """Corpus gate: registry schema, duplicates, index agreement, per-active
+    entry references + snapshot scope, and scenario coverage. Returns
+    (active_count, skipped_count) for the PASS summary.
+    """
+    registry_path = corpus_dir / REGISTRY_FILE
+    if not registry_path.is_file():
+        fail(errors, f"registry: missing file: {REGISTRY_FILE} beside {index_path.name}")
+        return 0, 0
+    try:
+        document = json.loads(registry_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        fail(errors, f"registry: {REGISTRY_FILE} is not valid JSON: {exc}")
+        return 0, 0
+    entries = check_registry_schema(document, errors)
+    if entries is None:
+        return 0, 0
+    by_slug = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        slug = entry.get("slug")
+        if not isinstance(slug, str) or not slug:
+            continue
+        if slug in by_slug:
+            fail(errors, f"registry: duplicate slug {slug!r} (field entries.slug)")
+        else:
+            by_slug[slug] = entry
+    index_rows = parse_index_manifest(index_path, errors)
+    index_by_slug = dict(index_rows)
+    if len(index_by_slug) != len(index_rows):
+        fail(errors, "registry: index.md lists the same slug twice under ## Competitions")
+    for slug in sorted(set(by_slug) | set(index_by_slug)):
+        in_registry = slug in by_slug
+        in_index = slug in index_by_slug
+        if not in_registry:
+            fail(
+                errors,
+                f"registry: fixture {slug!r} is listed in index.md but has no "
+                f"{REGISTRY_FILE} entry (field entries)",
+            )
+        elif not in_index:
+            fail(
+                errors,
+                f"registry: fixture {slug!r} has a {REGISTRY_FILE} entry but no "
+                f"index.md bullet (the index stays the human-readable manifest)",
+            )
+        elif (by_slug[slug].get("status") == "active") == index_by_slug[slug]:
+            fail(
+                errors,
+                f"registry: fixture {slug!r} status disagrees: index.md says "
+                f"{'skipped' if index_by_slug[slug] else 'active'} but "
+                f"{REGISTRY_FILE} status is {by_slug[slug].get('status')!r} (field status)",
+            )
+    repo_root = corpus_repo_root(corpus_dir, errors)
+    seed_dir = repo_root / "tools" / "Soarscore.SeedData" / "json" if repo_root else None
+    features_dir = (
+        repo_root / "tests" / "Soarscore.Acceptance.Tests" / "Features"
+        if repo_root else None
+    )
+    if seed_dir is not None and not seed_dir.is_dir():
+        fail(errors, f"registry: seed class directory missing: {seed_dir}")
+        seed_dir = None
+    if features_dir is not None and not features_dir.is_dir():
+        fail(errors, f"registry: scenario directory missing: {features_dir}")
+        features_dir = None
+    active = sorted(
+        slug for slug, entry in by_slug.items() if entry.get("status") == "active"
+    )
+    for slug in active:
+        fixture = corpus_dir / slug
+        if not fixture.is_dir():
+            fail(
+                errors,
+                f"registry: active fixture {slug!r} has no directory under {corpus_dir.name} "
+                f"(field slug)",
+            )
+            continue
+        if not (fixture / "class-definition.json").is_file():
+            fail(
+                errors,
+                f"registry: active fixture {slug!r} carries no class-definition.json "
+                f"(nothing executable to replay)",
+            )
+        check_registry_snapshot(corpus_dir, slug, errors)
+        if seed_dir is not None:
+            check_registry_entry_refs(corpus_dir, seed_dir, slug, by_slug[slug], errors)
+    parallel_pairs = sorted({
+        (slug, mode.get("seed"))
+        for slug, entry in by_slug.items()
+        if isinstance(entry.get("modes"), list)
+        for mode in entry["modes"]
+        if isinstance(mode, dict)
+        and mode.get("mode") == "parallel-run"
+        and isinstance(mode.get("seed"), str)
+        and mode["seed"].strip()
+    })
+    if features_dir is not None:
+        check_registry_scenarios(features_dir, active, parallel_pairs, errors)
+    skipped = sorted(
+        slug for slug, entry in by_slug.items() if entry.get("status") == "skipped"
+    )
+    return len(active), len(skipped)
+
+
 def base_competition(triage):
     return {
         "identity": {"CompNo": 1, "CompName": "self-test comp"},
@@ -370,6 +947,225 @@ def write_fixture(root, slug, triage, justification=None, extra_score_columns=No
     for name, document in documents.items():
         (fixture / name).write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     return fixture
+
+
+def build_mini_corpus(root):
+    """A complete miniature corpus: registry + index + one active fixture
+    (parity and parallel-run modes) + one skipped slug without a directory +
+    the scenario and seed files the cross-references resolve against."""
+    corpus = root / "tests" / "GliderscoreFixtures"
+    features = root / "tests" / "Soarscore.Acceptance.Tests" / "Features"
+    seeds = root / "tools" / "Soarscore.SeedData" / "json"
+    features.mkdir(parents=True)
+    seeds.mkdir(parents=True)
+
+    write_fixture(corpus, "mini-active", TRIAGE_OFF, pilot_teams=(0, 0))
+    active = corpus / "mini-active"
+    rows = [
+        {
+            "CompNo": 1, "TaskNo": 1, "RoundNo": round_no, "GroupNo": 1,
+            "ReFlightNo": 0, "PilotNo": pilot_no, "SeqNo": pilot_no, "Landing": 0,
+        }
+        for round_no in (1, 2)
+        for pilot_no in (1, 2)
+    ]
+    scores_doc = json.loads((active / "scores-raw.json").read_text(encoding="utf-8"))
+    scores_doc["rows"] = rows
+    (active / "scores-raw.json").write_text(json.dumps(scores_doc, indent=2) + "\n", encoding="utf-8")
+    expected_doc = json.loads((active / "expected-scores.json").read_text(encoding="utf-8"))
+    expected_doc["scores"] = {
+        f"1/{row['RoundNo']}/1/0/{row['PilotNo']}": {"RawScore": 0.0, "NormalisedScore": 0.0}
+        for row in rows
+    }
+    (active / "expected-scores.json").write_text(
+        json.dumps(expected_doc, indent=2) + "\n", encoding="utf-8"
+    )
+    (active / "expected-result.json").write_text(json.dumps({
+        "scoredWindow": {"firstRound": 1, "lastRound": 2},
+        "lifecycle": "finalised-full",
+        "excludedRounds": [],
+    }, indent=2) + "\n", encoding="utf-8")
+    (active / "class-definition.json").write_text("{}\n", encoding="utf-8")
+    (active / "parallel-run").mkdir()
+    (active / "parallel-run" / "mini-seed.json").write_text("{}\n", encoding="utf-8")
+
+    (seeds / "mini-seed.json").write_text(
+        json.dumps({"name": "mini-seed"}, indent=2) + "\n", encoding="utf-8"
+    )
+    (features / "ReplayingAGliderscoreFixture.feature").write_text(
+        "Feature: self-test\n"
+        "  Scenario: mini\n"
+        '    When the harness replays the GliderScore fixture "mini-active"\n',
+        encoding="utf-8",
+    )
+    (features / "ParallelRunningAGliderscoreFixture.feature").write_text(
+        "Feature: self-test\n"
+        "  Scenario: mini pair\n"
+        '    When the harness parallel-runs the GliderScore fixture "mini-active"'
+        ' under the seed class "mini-seed"\n',
+        encoding="utf-8",
+    )
+    write_mini_registry(corpus, [
+        {
+            "slug": "mini-active",
+            "status": "active",
+            "modes": [{"mode": "parity"}, {"mode": "parallel-run", "seed": "mini-seed"}],
+            "sourceRef": "self-test",
+            "oracleRef": "self-test",
+            "comparison": {"grains": ["raw"]},
+            "evidenceLinks": [],
+            "replay": {},
+        },
+        {
+            "slug": "mini-skipped",
+            "status": "skipped",
+            "modes": [{"mode": "parity"}],
+            "sourceRef": "self-test",
+            "oracleRef": "none (self-test skip)",
+            "comparison": {"grains": []},
+            "evidenceLinks": [],
+            "replay": {},
+        },
+    ])
+    (corpus / "index.md").write_text(
+        "# self-test index\n\n## Competitions\n\n"
+        "- mini-active \u2014 active \u2014 self-test\n"
+        "- mini-skipped \u2014 skipped \u2014 self-test concept gap\n",
+        encoding="utf-8",
+    )
+    return corpus
+
+
+def write_mini_registry(corpus, entries):
+    (corpus / REGISTRY_FILE).write_text(
+        json.dumps({"schemaVersion": 1, "entries": entries}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def rewrite_json(path, mutate):
+    document = json.loads(path.read_text(encoding="utf-8"))
+    mutate(document)
+    path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+
+
+def self_test_corpus(run, root):
+    """GS 04 Step 3 — deliberate incomplete/contradictory registries: each
+    must fail naming the fixture and the field."""
+    base = root / "mini-base"
+    corpus = build_mini_corpus(base)
+    run(
+        "miniature corpus passes the registry gate",
+        ["--index", str(corpus / "index.md")], 0, ("corpus: PASS",), ("FAIL",),
+    )
+
+    def fork(name):
+        case = root / name
+        if case.exists():
+            shutil.rmtree(case)
+        shutil.copytree(base, case)
+        return case / "tests" / "GliderscoreFixtures"
+
+    forked = fork("case-incomplete")
+    rewrite_json(forked / REGISTRY_FILE, lambda doc: doc["entries"][0].pop("modes"))
+    run(
+        "registry entry missing its modes fails naming fixture and field",
+        ["--index", str(forked / "index.md")], 1,
+        ("mini-active", "modes"),
+    )
+
+    forked = fork("case-duplicate")
+    rewrite_json(
+        forked / REGISTRY_FILE,
+        lambda doc: doc["entries"].append(dict(doc["entries"][0])),
+    )
+    run(
+        "duplicate registry slug fails naming the slug",
+        ["--index", str(forked / "index.md")], 1,
+        ("duplicate", "mini-active"),
+    )
+
+    forked = fork("case-orphan-seed")
+    rewrite_json(
+        forked / REGISTRY_FILE,
+        lambda doc: doc["entries"][0]["modes"][1].update(seed="ghost-seed"),
+    )
+    run(
+        "parallel-run mode with no seed class or ledger fails naming fixture and field",
+        ["--index", str(forked / "index.md")], 1,
+        ("mini-active", "ghost-seed", "seed"),
+    )
+
+    forked = fork("case-orphan-replay")
+    def strip_mode_add_replay(doc):
+        doc["entries"][0]["modes"] = [{"mode": "parity"}]
+        doc["entries"][0]["replay"] = {
+            "parallelRun": {
+                "skipParityRoundBinds": {"value": True, "basisRef": "self-test"}
+            }
+        }
+    rewrite_json(forked / REGISTRY_FILE, strip_mode_add_replay)
+    run(
+        "parallelRun replay without a parallel-run mode fails naming fixture and field",
+        ["--index", str(forked / "index.md")], 1,
+        ("mini-active", "replay.parallelRun"),
+    )
+
+    forked = fork("case-snapshot")
+    rewrite_json(
+        forked / "mini-active" / "expected-result.json",
+        lambda doc: doc.update(excludedRounds=[2]),
+    )
+    run(
+        "snapshot scope contradicting the drawn rounds fails naming fixture and field",
+        ["--index", str(forked / "index.md")], 1,
+        ("mini-active", "excludedRounds"),
+    )
+
+    forked = fork("case-no-scenario")
+    features = forked.parent / "Soarscore.Acceptance.Tests" / "Features"
+    (features / "ReplayingAGliderscoreFixture.feature").write_text(
+        "Feature: self-test\n", encoding="utf-8"
+    )
+    run(
+        "active fixture without its replay scenario fails naming the fixture",
+        ["--index", str(forked / "index.md")], 1,
+        ("mini-active", "scenario"),
+    )
+
+    forked = fork("case-index-drift")
+    (forked / "index.md").write_text(
+        "# self-test index\n\n## Competitions\n\n"
+        "- mini-active \u2014 skipped \u2014 drifted\n"
+        "- mini-skipped \u2014 skipped \u2014 self-test concept gap\n",
+        encoding="utf-8",
+    )
+    run(
+        "index status disagreeing with the registry fails naming the slug",
+        ["--index", str(forked / "index.md")], 1,
+        ("mini-active", "status"),
+    )
+
+    forked = fork("case-missing-dir")
+    def add_ghost(doc):
+        doc["entries"].append({
+            "slug": "ghost-fixture",
+            "status": "active",
+            "modes": [{"mode": "parity"}],
+            "sourceRef": "self-test",
+            "oracleRef": "self-test",
+            "comparison": {"grains": []},
+            "evidenceLinks": [],
+            "replay": {},
+        })
+    rewrite_json(forked / REGISTRY_FILE, add_ghost)
+    with (forked / "index.md").open("a", encoding="utf-8") as handle:
+        handle.write("- ghost-fixture \u2014 active \u2014 self-test\n")
+    run(
+        "active registry entry without a fixture directory fails naming the slug",
+        ["--index", str(forked / "index.md")], 1,
+        ("ghost-fixture",),
+    )
 
 
 def self_test():
@@ -574,6 +1370,8 @@ def self_test():
             ("outside",),
         )
 
+        self_test_corpus(run, root)
+
     run(
         "ales-sample-comp regression",
         [str(corpus_dir / "ales-sample-comp"), "--index", str(index_path)],
@@ -591,33 +1389,7 @@ def self_test():
     return 1 if failed else 0
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(
-        description="Validate a curated GliderScore fixture directory (schema v1)."
-    )
-    parser.add_argument(
-        "fixture_dir", nargs="?", default=None,
-        help="fixture directory containing the curated JSON files",
-    )
-    parser.add_argument(
-        "--index", default=None,
-        help="path to tests/GliderscoreFixtures/index.md; required to prove rule-5 skip-listing",
-    )
-    parser.add_argument(
-        "--self-test", action="store_true",
-        help="build throwaway fixtures in a temp directory and prove rule 5 both directions",
-    )
-    args = parser.parse_args(argv)
-
-    if args.self_test:
-        return self_test()
-    if not args.fixture_dir:
-        parser.error("a fixture directory is required (or pass --self-test)")
-
-    fixture_dir = Path(args.fixture_dir)
-    if not fixture_dir.is_dir():
-        raise SystemExit(f"validate.py: no such fixture directory: {fixture_dir}")
-
+def validate_fixture(fixture_dir, index_path):
     errors = []
     warnings = []
 
@@ -658,7 +1430,6 @@ def main(argv=None):
     expected_scores = documents["expected-scores.json"]
 
     slug = fixture_dir.name
-    index_path = Path(args.index) if args.index else None
 
     check_rule_1(scores_raw, entries, errors)
     check_rule_2(competition, scores_raw, errors)
@@ -683,6 +1454,83 @@ def main(argv=None):
         f"(rules 1-5, integrity; scores-raw rows={row_count}, expected-score keys={key_count})"
     )
     return 0
+
+
+def run_corpus(index_path):
+    """Corpus gate (GS 04 Step 3): the registry checks plus rules 1-6 for
+    every registry-listed fixture that carries a directory, in registry
+    order. Deterministic: registry order throughout, sorted sets elsewhere.
+    """
+    corpus_dir = index_path.resolve().parent
+    errors: list = []
+    warnings: list = []
+    active_count, skipped_count = validate_corpus(corpus_dir, index_path, errors, warnings)
+    fixture_code = 0
+    try:
+        registry = json.loads((corpus_dir / REGISTRY_FILE).read_text(encoding="utf-8"))
+        slugs = [
+            entry.get("slug")
+            for entry in (registry.get("entries") or [])
+            if isinstance(entry, dict) and isinstance(entry.get("slug"), str)
+        ]
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        slugs = []
+    for slug in slugs:
+        if not (corpus_dir / slug).is_dir():
+            continue
+        if validate_fixture(corpus_dir / slug, index_path) != 0:
+            fixture_code = 1
+    for warning in warnings:
+        print(warning, file=sys.stderr)
+    if errors:
+        for message in errors:
+            print(f"FAIL {message}", file=sys.stderr)
+        print(f"validate.py: corpus: {len(errors)} error(s)", file=sys.stderr)
+        return 1
+    if fixture_code != 0:
+        print("validate.py: corpus: fixture rule checks failed (see above)", file=sys.stderr)
+        return 1
+    print(
+        f"validate.py: corpus: PASS "
+        f"(registry schema v1; {active_count} active, {skipped_count} skipped; "
+        f"index, snapshot scopes, references and scenarios agree)"
+    )
+    return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Validate a curated GliderScore fixture directory (schema v1)."
+    )
+    parser.add_argument(
+        "fixture_dir", nargs="?", default=None,
+        help="fixture directory containing the curated JSON files; "
+        "omit with --index to validate the whole corpus via the registry",
+    )
+    parser.add_argument(
+        "--index", default=None,
+        help="path to tests/GliderscoreFixtures/index.md; required to prove rule-5 skip-listing, "
+        "or alone to run the whole-corpus registry gate",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true",
+        help="build throwaway fixtures in a temp directory and prove rule 5 both directions",
+    )
+    args = parser.parse_args(argv)
+
+    if args.self_test:
+        return self_test()
+    if not args.fixture_dir:
+        if not args.index:
+            parser.error("a fixture directory is required (or pass --index for the corpus gate, --self-test)")
+        return run_corpus(Path(args.index))
+
+    fixture_dir = Path(args.fixture_dir)
+    if not fixture_dir.is_dir():
+        raise SystemExit(f"validate.py: no such fixture directory: {fixture_dir}")
+
+    index_path = Path(args.index) if args.index else None
+    return validate_fixture(fixture_dir, index_path)
 
 
 if __name__ == "__main__":

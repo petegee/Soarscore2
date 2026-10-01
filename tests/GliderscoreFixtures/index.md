@@ -180,19 +180,59 @@ automatically (exact-decimal, no tolerance); conservation stays the
 independent internal check. Provenance labels are unchanged —
 reconstructed expectations never acquire a report/persisted label.
 
-| fixture | source (unchanged) | window | drops (unit) | penalties |
-|---|---|---|---|---|
-| ales-sample-comp | reconstructed-ladder | R1–R3 full incl. unflown placeholders | 0 (round, proven empty) | 0 |
-| f3j-international | gs-report-transcript | R1–R16 full | 1 (task, `*` marks) | 0 |
-| f3j-international-flyoff | gs-report-transcript | R1–R4 full | 0 (round, proven empty, no `*`) | 0 |
-| f3k-sample-comp | gs-report-transcript | R1–R9 full incl. NoTaskSet placeholders | 1 (task, `*` on R9) | 42:100, 56:200, 65:100 |
-| jerilderie-2010 | reconstructed-ladder | R1–R14 full | 2 (task) | pilot 2:100 |
-| f3k-june-2020 | reconstructed-ladder | R1–R13 full with re-draw dedup | 0 (round, proven empty) | 0 |
-| f3k-southern-fling | reconstructed-ladder | R1–R15 full, pilot 89 absent R9–R15 | 0 (round, proven empty) | 0 |
-| f5j-christchurch-2019 | reconstructed-ladder | R1–R18 drawn, standings R1–R11 (R12–R18 zeros compared) | 0 (round, proven empty) | 0 |
-| f5j-hawkes-bay-trials | reconstructed-ladder | R1–R16 drawn, standings R1–R10 (R11–R16 zeros compared) | 0 (round, proven empty) | 0 |
-| f5j-nz-south-island | reconstructed-ladder | R1–R16 drawn, standings R1–R11 (R12–R16 zeros compared) | 0 (round, proven empty) | 0 |
-| f5k-ni-round-2 | server-persisted-progressive | snapshot R1–R6 (R7–R10 excluded, uncompared) | 1 (round, worst real score) | 0 |
+### Column migration (GS 04 Step 5)
+
+The hand-maintained oracle table this block replaces (one row per fixture:
+`fixture | source | window | drops | penalties`) migrated field-for-field —
+no fixture's coverage changed, only where each cell is owned:
+
+- `source` → `oracle`: `expected-result.json: source`, classed external
+  (`gs-report-transcript`, `server-persisted-progressive`) vs reconstructed
+  (`reconstructed-ladder`) by the generator's source reading.
+- `window` → `window`: `expected-result.json: scoredWindow` first–last plus
+  `lifecycle`; snapshot scope renders "of drawn R…–R…" when the window is a
+  strict subset, and `excludedRounds` moved into `exclusions` with its
+  measured uncompared-cell count. Lifecycle tokens absorb the old prose
+  qualifiers (`-including-unflown-placeholders`, `-with-retirement-absence`,
+  `-with-redraw-dedup`, `-snapshot-of-scored-window`).
+- `drops` → `drops (unit)`: `expected-result.json: discards[]` — unit plus
+  max dropped-round count over pilots-with-drops / ranked pilots; the old
+  hand qualifiers ("proven empty", "`*` marks") are replaced by measured
+  counts. `penalties` → `penalties`: `expected-result.json: penalties[]`
+  (pilot:deduction, explicit zero where none).
+- NEW measured columns with no hand predecessor: `archive rows`
+  (`scores-raw.json` row count), `compared cells` (`expected-scores.json`
+  keys inside the window), `exclusions` (`divergences.json` entries by grain
+  plus parallel-run excluded oracle cells), `seed witnesses` (registry modes
+  plus landed parallel-run ledger entry/cell counts).
+- Prose-only, accepted openly (no machine-readable home): the parity
+  standings-scope nuance on the three F5J bullets ("standings R1–R11/R1–R10")
+  lives only in the bullet prose and the registry `oracleRef` parenthetical —
+  `expected-result.json` scoredWindow pins the COMPARED window (full drawn
+  scope including placeholder zeros), not the standings reach. The only
+  machine-readable scored window is the parallel-run assertion
+  (christchurch R1–R11), and it governs the parallel-run rollup, never parity
+  scope. Unify into a schema field if a consumer ever needs standings reach
+  corpus-wide.
+
+<!-- corpus-generated:begin:oracle-coverage -->
+| fixture | oracle | window | archive rows | compared cells | exclusions | drops (unit) | penalties | seed witnesses |
+|---|---|---|---|---|---|---|---|---|
+| ales-sample-comp | reconstructed-ladder (reconstructed) | R1–R3, finalised-full-including-unflown-placeholders | 30 | 30 | none | 0 (round, proven empty) | 0 | 80-nz-m-ales200: ledger 3 entries/3 cells |
+| f3j-international | gs-report-transcript (external) | R1–R16, finalised-full | 485 | 485 | ledger 2 (1 normalised, 1 raw); parallel-run excluded 1 cell | 1 (task, 30/30 pilots) | 0 | 50-f3j: ledger 10 entries/283 cells, 1 excluded |
+| f3j-international-flyoff | gs-report-transcript (external) | R1–R4, finalised-full | 28 | 28 | none | 0 (round, proven empty) | 0 | parity only |
+| f3k-sample-comp | gs-report-transcript (external) | R1–R9, finalised-full-including-unflown-placeholders | 90 | 90 | ledger 1 (1 team) | 1 (task, 10/10 pilots) | pilot 42:−100, pilot 56:−200, pilot 65:−100 | parity only |
+| jerilderie-2010 | reconstructed-ladder (reconstructed) | R1–R14, finalised-full | 882 | 882 | ledger 1 (1 team) | 2 (task, 63/63 pilots) | pilot 2:−100 | parity only |
+| f5j-christchurch-2019 | reconstructed-ladder (reconstructed) | R1–R18, finalised-full-including-unflown-placeholders | 324 | 324 | none | 0 (round, proven empty) | 0 | 30-f5j: ledger 8 entries/148 cells (scored window R1–R11) |
+| f5j-hawkes-bay-trials | reconstructed-ladder (reconstructed) | R1–R16, finalised-full-including-unflown-placeholders | 288 | 288 | none | 0 (round, proven empty) | 0 | parity only |
+| f3k-southern-fling | reconstructed-ladder (reconstructed) | R1–R15, finalised-full-with-retirement-absence | 218 | 218 | ledger 14 (7 normalised, 7 raw) | 0 (round, proven empty) | 0 | parity only |
+| f5j-nz-south-island | reconstructed-ladder (reconstructed) | R1–R16, finalised-full-including-unflown-placeholders | 208 | 208 | none | 0 (round, proven empty) | 0 | parity only |
+| f3k-june-2020 | reconstructed-ladder (reconstructed) | R1–R13, finalised-full-with-redraw-dedup | 199 | 199 | ledger 11 (4 normalised, 7 raw) | 0 (round, proven empty) | 0 | parity only |
+| f5k-ni-round-2 | server-persisted-progressive (external) | R1–R6 of drawn R1–R10, finalised-snapshot-of-scored-window | 55 | 35 | excludedRounds=[7, 8, 9, 10] (20 cells uncompared) | 1 (round, 5/5 pilots) | 0 | parity only |
+| f3b-international | none (skipped) | — | n/a (no directory) | n/a | n/a | n/a | n/a | skipped |
+
+Corpus: 12 competitions (11 active, 1 skipped); 2807 archive rows; 2787 compared cells; 20 excluded-round cells uncompared; 29 ledgered divergence entries; 3 seed-witness pairs (3 ledgers landed, 434 structured witness cells); oracles 4 external / 7 reconstructed; team ladders 1.
+<!-- corpus-generated:end:oracle-coverage -->
 
 Pilot 88 (f5k, registered never-flew) is declared zero-only unranked and
 carries no discard assertion — his tied-zero cells evidence no external

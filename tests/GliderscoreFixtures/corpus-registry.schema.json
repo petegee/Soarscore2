@@ -1,0 +1,164 @@
+{
+  "$schema": "./corpus-registry.schema.json",
+  "$id": "https://soarscore/corpus-registry.schema.json",
+  "title": "GliderScore executable corpus registry",
+  "description": "GS 04 Step 2: versioned registry for fixture identity/status, source and oracle references, historical/seed modes, comparison grains and replay declarations. Test metadata only: class arithmetic stays in class-definition.json, expected values stay in expected-*.json (this file holds references, never values).",
+  "type": "object",
+  "required": ["schemaVersion", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Registry schema version. Bump on any breaking shape change."
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "status", "modes", "sourceRef", "oracleRef", "comparison", "evidenceLinks", "replay"],
+        "additionalProperties": false,
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Fixture directory name; must match the index.md bullet token."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "skipped"],
+            "description": "Mirrors the index.md bullet status."
+          },
+          "modes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["mode"],
+              "additionalProperties": false,
+              "properties": {
+                "mode": { "type": "string", "enum": ["parity", "parallel-run"] },
+                "seed": {
+                  "type": "string",
+                  "description": "Parallel-run only: the seed-class slug under <fixture>/parallel-run/."
+                }
+              }
+            }
+          },
+          "sourceRef": {
+            "type": "string",
+            "description": "Where the source data lives (fixture provenance.json section or shared extraction path). Reference only."
+          },
+          "oracleRef": {
+            "type": "string",
+            "description": "Which oracle file(s) pin expectations (expected-scores.json / expected-result.json / expected-teams.json + provenance label). Reference only."
+          },
+          "comparison": {
+            "type": "object",
+            "required": ["grains"],
+            "additionalProperties": false,
+            "properties": {
+              "grains": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Comparator grains asserted for this fixture (raw, normalised, ranking, teamLadder, ...). Empty for skip-listed fixtures that run no comparison."
+              }
+            }
+          },
+          "evidenceLinks": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Evidence pointers (ladder.py, transcript csv, ledger, story file). References only."
+          },
+          "replay": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "roundParameterBinds": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["parameter", "roundNo", "value", "basisRef"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "parameter": { "type": "string" },
+                    "roundNo": { "type": "integer", "minimum": 1 },
+                    "value": { "type": "number" },
+                    "basisRef": { "type": "string" }
+                  }
+                }
+              },
+              "syntheticSlots": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "prescriptionOnly": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["roundNo", "groupNo", "pilotNo", "basisRef"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "roundNo": { "type": "integer", "minimum": 1 },
+                        "groupNo": { "type": "integer", "minimum": 1 },
+                        "pilotNo": { "type": "integer" },
+                        "basisRef": { "type": "string" }
+                      }
+                    }
+                  },
+                  "flightLess": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["roundNo", "groupNo", "pilotNo", "basisRef"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "roundNo": { "type": "integer", "minimum": 1 },
+                        "groupNo": { "type": "integer", "minimum": 1 },
+                        "pilotNo": { "type": "integer" },
+                        "basisRef": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              },
+              "parallelRun": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "scoredWindowAssertion": {
+                    "type": "object",
+                    "required": ["rounds", "basisRef"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "rounds": { "type": "integer", "minimum": 1 },
+                      "basisRef": { "type": "string" }
+                    }
+                  },
+                  "landingInstrument": {
+                    "type": "object",
+                    "required": ["instrument", "tapeFile", "basisRef"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "instrument": { "type": "string" },
+                      "tapeFile": { "type": "string" },
+                      "basisRef": { "type": "string" }
+                    }
+                  },
+                  "skipParityRoundBinds": {
+                    "type": "object",
+                    "required": ["value", "basisRef"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "value": { "type": "boolean" },
+                      "basisRef": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

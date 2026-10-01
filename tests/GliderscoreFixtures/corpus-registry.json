@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "slug": "ales-sample-comp",
+      "status": "active",
+      "modes": [
+        { "mode": "parity" },
+        { "mode": "parallel-run", "seed": "80-nz-m-ales200" }
+      ],
+      "sourceRef": "fixture provenance.json (Jet export slice) + extract/ staged tables",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R3 full incl. unflown placeholders)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["index.md ales-sample-comp bullet", "kanban/completed/gs_02_complete-result-oracles.md"],
+      "replay": {}
+    },
+    {
+      "slug": "f3j-international",
+      "status": "active",
+      "modes": [
+        { "mode": "parity" },
+        { "mode": "parallel-run", "seed": "50-f3j" }
+      ],
+      "sourceRef": "sources/gliderscore-example-comps-extract/ (shared extraction of record; DurTargetTimeByRound empty)",
+      "oracleRef": "gs-report-transcript: expected-scores.json + expected-result.json (R1-R16 full) + expected-teams.json (8 teams)",
+      "comparison": { "grains": ["raw", "normalised", "ranking", "teamLadder"] },
+      "evidenceLinks": [
+        "overall-results-transcript.csv",
+        "team-results-transcript.csv",
+        "kanban/in-progress/f3j-international-parallel-run-retriage.md decision 4"
+      ],
+      "replay": {
+        "roundParameterBinds": [
+          {
+            "parameter": "targetTime",
+            "roundNo": 1,
+            "value": 540,
+            "basisRef": "ReplayDriver.cs RoundParameterBindings: GS scored round 1 against a 540 s target (every one of the round's 22 over-target decay witnesses implies T = (t + TS)/2 = 540 exactly; rounds 2-16 hold 600); the export carries no DurTargetTimeByRound rows, so the value is oracle-reconciled knowledge authored beside the capture maps (trap 6 precedent), not parsed input."
+          }
+        ],
+        "parallelRun": {
+          "skipParityRoundBinds": {
+            "value": true,
+            "basisRef": "ReplayDriver.cs ParallelRunSkipParityRoundBinds + f3j-international-parallel-run-retriage.md decision 4: the seed declares no targetTime parameter at all (nothing to bind) and the R1 540 knowledge is triaged kind 1, never applied under the seed."
+          }
+        }
+      }
+    },
+    {
+      "slug": "f3j-international-flyoff",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (Jet export slice)",
+      "oracleRef": "gs-report-transcript: expected-scores.json + expected-result.json (R1-R4 full)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["overall-results-transcript.csv", "index.md f3j-international-flyoff bullet"],
+      "replay": {}
+    },
+    {
+      "slug": "f3k-sample-comp",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (Jet export slice; per-round task schedule F3KTaskByRound in competition.json scheduleTables)",
+      "oracleRef": "gs-report-transcript: expected-scores.json + expected-result.json (R1-R9 full incl. NoTaskSet placeholders)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["overall-results-transcript.csv", "kanban/completed/gs_02_complete-result-oracles.md"],
+      "replay": {}
+    },
+    {
+      "slug": "jerilderie-2010",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (Jet export slice)",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R14 full, 2 drops)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["kanban/completed/gs_02_complete-result-oracles.md", "reflight-aggregate-destination.md trap 3"],
+      "replay": {
+        "syntheticSlots": {
+          "prescriptionOnly": [
+            {
+              "roundNo": 12,
+              "groupNo": 1,
+              "pilotNo": 29,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: excluding the re-flight row leaves pilot 29 absent from round 12 entirely (R13/G1 SeqNo=14, OriginalRoundNo=12); no entry is opened (the make-up destination cell fills the slot)."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "f5j-christchurch-2019",
+      "status": "active",
+      "modes": [
+        { "mode": "parity" },
+        { "mode": "parallel-run", "seed": "30-f5j" }
+      ],
+      "sourceRef": "fixture provenance.json (NZ master slice) + extract/ staged tables",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R18 drawn, standings R1-R11)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": [
+        "ladder.py (TaskLastRound = MAX(RoundNo where Updated='True'))",
+        "kanban/in-progress/f5j-christchurch-parallel-run-witness.md WI-2"
+      ],
+      "replay": {
+        "parallelRun": {
+          "scoredWindowAssertion": {
+            "rounds": 11,
+            "basisRef": "ReplayDriver.cs ParallelRunScoredWindowRounds: the rollup window GS actually scored, rounds 1-11 (ladder.py TaskLastRound); R12-18 are wholly-unflown placeholders; asserted against the fixture's own MAX(RoundNo where Updated=='True')."
+          },
+          "landingInstrument": {
+            "instrument": "nz-f3j-side",
+            "tapeFile": "tape-nz-f3j-side",
+            "basisRef": "ReplayDriver.cs ParallelRunLandingTapes: the NZ landing tape the fixture's landings were read on, declared for landingDistance via POST /declare-instruments (WI-0 landed contract); scale snapshotted via TapeMapping.ToReadingScale."
+          }
+        }
+      }
+    },
+    {
+      "slug": "f5j-hawkes-bay-trials",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (NZ master slice) + extract/ staged tables",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R16 drawn, standings R1-R10)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["ladder.py", "reflight-aggregate-destination.md trap 3"],
+      "replay": {
+        "syntheticSlots": {
+          "prescriptionOnly": [
+            {
+              "roundNo": 1,
+              "groupNo": 2,
+              "pilotNo": 128,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 128 is absent from round 1 entirely (first appearance is a re-flight row dropped by D5 step 1; R1/R3 sizes {G1 6, G2 5, G3 6} -> group 2)."
+            },
+            {
+              "roundNo": 2,
+              "groupNo": 1,
+              "pilotNo": 128,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 128 is absent from round 2 entirely (R2/R4 {G1 5, G2 6, G3 6} -> group 1)."
+            },
+            {
+              "roundNo": 3,
+              "groupNo": 2,
+              "pilotNo": 128,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 128 is absent from round 3 entirely (R1/R3 sizes {G1 6, G2 5, G3 6} -> group 2)."
+            },
+            {
+              "roundNo": 4,
+              "groupNo": 1,
+              "pilotNo": 128,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 128 is absent from round 4 entirely (R2/R4 {G1 5, G2 6, G3 6} -> group 1)."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "f3k-southern-fling",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (NZ master slice, comp 17) + extract/ staged tables",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R15 full, pilot 89 absent R9-R15)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["ladder.py", "reflight-aggregate-destination.md trap 3"],
+      "replay": {
+        "syntheticSlots": {
+          "flightLess": [
+            {
+              "roundNo": 9,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 Retired=true after round 8, absent R9-R15 (R9-R15 sizes {G1 5, G2 5, G3 4} -> group 3); flight-less entry yields NoResult => cell 0 (D4), retired zeros not make-ups."
+            },
+            {
+              "roundNo": 10,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 retired slot R10 (see R9 basis)."
+            },
+            {
+              "roundNo": 11,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 retired slot R11 (see R9 basis)."
+            },
+            {
+              "roundNo": 12,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 retired slot R12 (see R9 basis)."
+            },
+            {
+              "roundNo": 13,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 retired slot R13 (see R9 basis)."
+            },
+            {
+              "roundNo": 14,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 retired slot R14 (see R9 basis)."
+            },
+            {
+              "roundNo": 15,
+              "groupNo": 3,
+              "pilotNo": 89,
+              "basisRef": "ReplayDriver.cs SyntheticFlightLessSlots: pilot 89 retired slot R15 (see R9 basis)."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "f5j-nz-south-island",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (NZ master slice) + extract/ staged tables",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R16 drawn, standings R1-R11)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["ladder.py", "index.md f5j-nz-south-island bullet"],
+      "replay": {}
+    },
+    {
+      "slug": "f3k-june-2020",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "fixture provenance.json (NZ master slice, comp 54) + extract/ staged tables",
+      "oracleRef": "reconstructed-ladder: expected-scores.json + expected-result.json (R1-R13 full with re-draw dedup)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["ladder.py", "kanban/completed/gs_02_complete-result-oracles.md"],
+      "replay": {}
+    },
+    {
+      "slug": "f5k-ni-round-2",
+      "status": "active",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "server-DB acquisition (extract/extract-mssql.py, WI-1 tooling, PII redaction on) + fixture provenance.json",
+      "oracleRef": "server-persisted-progressive: expected-scores.json + expected-result.json (snapshot R1-R6; R7-R10 excluded)",
+      "comparison": { "grains": ["raw", "normalised", "ranking"] },
+      "evidenceLinks": ["kanban/completed/gs_02_complete-result-oracles.md", "f5k-fixture-from-server-db.md WI-3"],
+      "replay": {
+        "syntheticSlots": {
+          "prescriptionOnly": [
+            {
+              "roundNo": 6,
+              "groupNo": 2,
+              "pilotNo": 88,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots + f5k-fixture-from-server-db.md WI-3: pilot 88 never flew (zero stubs R1-R5, rows deleted from R6, group unknowable); group 2 mirrors majority placement pre-deletion and R1-R5 sizes {G1 3, G2 3}; oracle omits him from R6 on."
+            },
+            {
+              "roundNo": 7,
+              "groupNo": 2,
+              "pilotNo": 88,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 88 prescription-only slot R7 (see R6 basis)."
+            },
+            {
+              "roundNo": 8,
+              "groupNo": 2,
+              "pilotNo": 88,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 88 prescription-only slot R8 (see R6 basis)."
+            },
+            {
+              "roundNo": 9,
+              "groupNo": 2,
+              "pilotNo": 88,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 88 prescription-only slot R9 (see R6 basis)."
+            },
+            {
+              "roundNo": 10,
+              "groupNo": 2,
+              "pilotNo": 88,
+              "basisRef": "ReplayDriver.cs SyntheticPrescriptionOnlySlots: pilot 88 prescription-only slot R10 (see R6 basis)."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "f3b-international",
+      "status": "skipped",
+      "modes": [{ "mode": "parity" }],
+      "sourceRef": "sources/gliderscore-example-comps-extract/ (shared extraction of record; NO fixture directory curated)",
+      "oracleRef": "none (skip-listed: multi-task-per-round hits unsupportedRoundComposition)",
+      "comparison": { "grains": [] },
+      "evidenceLinks": ["index.md f3b-international bullet"],
+      "replay": {}
+    }
+  ]
+}
