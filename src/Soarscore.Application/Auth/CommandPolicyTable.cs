@@ -92,6 +92,10 @@ public static class CommandPolicyTable
         [typeof(FindCompetitions)] = new AuthenticatedPolicy(),
         [typeof(GetCompetition)] = new AuthenticatedPolicy(),
         [typeof(GetCompetitionEventLog)] = new AuthenticatedPolicy(),
+        // ui_competition-roster-read.md: the D4 default (any authenticated
+        // caller) — names for non-organisers. The view carries display names
+        // only: no contact details, no club, no identity links.
+        [typeof(GetCompetitionRoster)] = new AuthenticatedPolicy(),
         [typeof(GetDrawProtectionDiagnostics)] = new AuthenticatedPolicy(),
         [typeof(GetDrawMatrix)] = new AuthenticatedPolicy(),
         [typeof(GetTeamRosters)] = new AuthenticatedPolicy(),

@@ -6,9 +6,10 @@
 //
 // Four deliberate deviations from the GliderScore precedent, recorded so a
 // later reader does not "align" them away:
-//  1. Names are NOT resolved server-side — Competitor carries PersonRef only,
-//     and no competition query resolves people; the client joins pilot labels
-//     via the existing people reads.
+//  1. Names are NOT resolved server-side — Competitor carries PersonRef only;
+//     non-organisers resolve them through GET /competition-roster (any
+//     authenticated caller; /people is organiser-only since the D4
+//     narrowing). Organiser tooling may still join via the people reads.
 //  2. Re-flight groups ARE included — the fold has no ReFlightNo marker;
 //     Group.CompetitorRefs is all this query sees (teams-mvp.md WI-6
 //     provenance-blind precedent: generated and prescribed draws read
