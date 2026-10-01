@@ -4,6 +4,7 @@
 // HTTP client — "driven without HTTP testing tools" (LADR-0003).
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
@@ -71,6 +72,12 @@ public static class Composition
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.AllowOutOfOrderMetadataProperties = true;
+            // UI prerequisite (ui_typed-openapi-responses): strict numbers.
+            // Web defaults allow reading numbers from strings, which makes
+            // every numeric schema emit `number | string` in openapi-typescript
+            // output. Responses are written with these same options, so strict
+            // also guarantees numbers serialise as numbers.
+            options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
             foreach (var converter in ClassDefinitionIngestion.Options.Converters)
             {
                 options.SerializerOptions.Converters.Add(converter);

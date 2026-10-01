@@ -13,6 +13,13 @@ namespace Soarscore.Api.Routing;
 public static class EndpointRouteBuilderExtensions
 {
     /// <summary>POST — a Command. Binds <typeparamref name="TCommand"/> from the JSON body (never the query string).</summary>
+    /// <remarks>
+    /// Success convention (see <c>ToHttpResult</c>): the 200 body is the bare
+    /// <typeparamref name="TResult"/> when there are no advisories, or the
+    /// <c>{value, warnings}</c> envelope when there are (draw commands only).
+    /// OpenAPI documents the bare <typeparamref name="TResult"/> shape; clients
+    /// must accept both.
+    /// </remarks>
     public static IEndpointRouteBuilder MapCommand<TCommand, TResult>(this IEndpointRouteBuilder endpoints, string path)
         where TCommand : ICommand<TResult>
     {
@@ -20,12 +27,23 @@ public static class EndpointRouteBuilderExtensions
         {
             var result = await dispatcher.SendAsync<TResult>(command, cancellationToken);
             return result.ToHttpResult();
-        });
+        })
+        .Produces<TResult>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return endpoints;
     }
 
     /// <summary>GET — a Query. Binds <typeparamref name="TQuery"/> from the query string via [AsParameters] (never a body).</summary>
+    /// <remarks>
+    /// Success convention: the 200 body is the bare <typeparamref name="TResult"/>
+    /// (queries never carry advisories, so no envelope shape applies).
+    /// </remarks>
     public static IEndpointRouteBuilder MapQuery<TQuery, TResult>(this IEndpointRouteBuilder endpoints, string path)
         where TQuery : IQuery<TResult>
     {
@@ -33,7 +51,14 @@ public static class EndpointRouteBuilderExtensions
         {
             var result = await dispatcher.QueryAsync<TResult>(query, cancellationToken);
             return result.ToHttpResult();
-        });
+        })
+        .Produces<TResult>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return endpoints;
     }
