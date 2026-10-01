@@ -176,7 +176,35 @@ public sealed record ExpectedScoresFile(Dictionary<string, ExpectedCell> Scores)
 /// <summary>Keyed "{TaskNo}/{RoundNo}/{GroupNo}/{ReFlightNo}/{PilotNo}" per keyFormat.</summary>
 public sealed record ExpectedCell(decimal RawScore, decimal NormalisedScore);
 
-public sealed record ExpectedResultFile(ExpectedRank[] Ranks);
+public sealed record ExpectedResultFile(
+    ExpectedRank[] Ranks,
+    // gs_01_f5k-snapshot-result-parity.md — the snapshot/result-oracle contract.
+    // All optional and null-tolerant: fixtures without a snapshot oracle load
+    // exactly as before and the comparator runs its place-only ranking grain.
+    // Totals pins the final/progressive totals the snapshot declares per pilot;
+    // UnrankedZeroOnly names registered pilots the oracle deliberately omits
+    // (never-flew, zero-only) with their expected zero total; ScoredWindow is
+    // the source window the replay prescribes entries/completions for and the
+    // comparator covers cells for; Lifecycle names how the comparison reads
+    // the oracle (a legitimately finalised snapshot, never invented
+    // completion); ExcludedRounds discloses the archived rounds no comparison
+    // is claimed for.
+    IReadOnlyList<ExpectedPilotTotal>? Totals = null,
+    IReadOnlyList<ExpectedUnrankedPilot>? UnrankedZeroOnly = null,
+    ExpectedScoredWindow? ScoredWindow = null,
+    string? Lifecycle = null,
+    IReadOnlyList<int>? ExcludedRounds = null);
+
+/// <summary>gs_01 — one pilot's declared final/progressive total, exact-decimal.</summary>
+public sealed record ExpectedPilotTotal(long PilotNo, decimal Total);
+
+/// <summary>gs_01 — a registered pilot the oracle deliberately leaves unranked:
+/// never flew, zero-only, expected total zero. Explicit so an extra ranked
+/// competitor still fails while the witnessed absence does not.</summary>
+public sealed record ExpectedUnrankedPilot(long PilotNo, decimal Total);
+
+/// <summary>gs_01 — the source window, inclusive fixture RoundNos.</summary>
+public sealed record ExpectedScoredWindow(int FirstRound, int LastRound);
 
 /// <summary>Rank strings are "n" or "=n" (GS displayed rank, HiddenRanking aside).</summary>
 public sealed record ExpectedRank(long PilotNo, string Rank);

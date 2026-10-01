@@ -134,6 +134,15 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the final snapshot totals match the round-6 oracle exactly
+      | pilot | total    |
+      | 80    | 5000.000 |
+      | 75    | 4928.100 |
+      | 82    | 4796.100 |
+      | 79    | 4359.900 |
+      | 102   | 4319.200 |
+    And the ranked population holds exactly those five pilots with pilot 88 recorded as zero-only unranked
+    And only the six scored rounds are compared over the intact ten-round source
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 

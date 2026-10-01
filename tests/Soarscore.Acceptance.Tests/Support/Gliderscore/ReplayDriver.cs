@@ -107,6 +107,17 @@
 //     unknowable; prescribing an unopened slot keeps the draw complete, the
 //     oracle (which omits him from R6 on) honest, and the ledger empty.
 //
+// gs_01_f5k-snapshot-result-parity.md adds the SNAPSHOT WINDOW, cited where
+// it happens below: when the fixture's expected-result.json declares a scored
+// window, rounds outside it are prescribed (the draw stays complete, exactly
+// as the archived stub rows describe it) but never entered, never
+// flown/captured and never completed — prescribed-but-unentered slots are
+// absent from the result, not scored as zeros (NFR-4; ScoreCompetition
+// finding 5), so no phantom zero enters the drop pool and the drop lands on
+// the worst real score exactly as GS's TaskLastRound-gated pool does. No
+// completion is invented to satisfy the API: /finalise-competition gates on
+// flown rounds >= minRounds, which the scored window satisfies on its own.
+//
 // seed-definition-parallel-run.md WI-1 adds the PARALLEL-RUN MODE, cited
 // where it happens below: ReplayAsync(fixture, new ParallelRunMode(seed))
 // publishes the SEED class from tools/Soarscore.SeedData/json
@@ -570,6 +581,28 @@ public sealed class ReplayDriver(HttpClient client)
                 FlightScoreDeduction: 0m, Landing: 0m, Penalty: 0, OriginalRoundNo: roundNo));
         }
 
+        // gs_01 — the snapshot window, read from the oracle contract (null for
+        // every fixture without one: the whole draw replays exactly as
+        // before). Rounds outside the window stay prescribed — the draw above
+        // covers all ten rounds — but the entry/completion walk below skips
+        // them entirely: no entries opened, nothing flown or captured, no
+        // /complete-task-round. The loud assertion proves the declared window
+        // still describes the fixture's own scored rollup (the parallel-run
+        // window's discipline); a window that no longer does is a re-triage,
+        // never a silent shrink.
+        var snapshotWindow = fixture.ExpectedResult.ScoredWindow;
+
+        if (snapshotWindow is not null)
+        {
+            AssertSnapshotWindow(fixture, snapshotWindow);
+        }
+
+        var unscoredRounds = snapshotWindow is null
+            ? new HashSet<int>()
+            : keptRows.Select(r => r.RoundNo)
+                .Where(n => n < snapshotWindow.FirstRound || n > snapshotWindow.LastRound)
+                .ToHashSet();
+
         // WI-4 — the fixture's per-round GS task schedule (empty for the
         // duration-family fixtures, whose FixedSequence phases prescribe a null
         // TaskRef and repeat their single task).
@@ -751,6 +784,16 @@ public sealed class ReplayDriver(HttpClient client)
 
         foreach (var roundNo in roundNosAscending)
         {
+            // gs_01 — rounds outside the snapshot window are prescribed but
+            // never entered and never completed: no entries opened (pass 1 and
+            // pass 2 both skipped), no /complete-task-round. Their task-rounds
+            // stay Drawn with no entries anywhere, so the engine omits them as
+            // absent-not-zero (finding 5) — nothing invented, nothing zeroed.
+            if (unscoredRounds.Contains(roundNo))
+            {
+                continue;
+            }
+
             var roundOrdinal = roundOrdinalByRoundNo[roundNo];
             var groupNosAscending = keptRows
                 .Where(r => r.RoundNo == roundNo)
@@ -1007,6 +1050,38 @@ public sealed class ReplayDriver(HttpClient client)
         }
 
         keptRows.RemoveAll(r => r.RoundNo > scoredWindow);
+    }
+
+    /// <summary>
+    /// gs_01_f5k-snapshot-result-parity.md — prove the oracle-declared
+    /// snapshot window still describes the fixture's scored rollup. Fails
+    /// loudly unless the fixture's own MAX(RoundNo where Updated=='True')
+    /// equals the declared last round: a window that no longer describes the
+    /// fixture is a re-triage, never a silent shrink (the parallel-run
+    /// scored-window discipline, applied to the parity path from the oracle
+    /// contract rather than a hardcoded map).
+    /// </summary>
+    private static void AssertSnapshotWindow(GliderscoreFixture fixture, ExpectedScoredWindow window)
+    {
+        var maxScored = fixture.ScoresRaw.Rows
+            .Where(r => string.Equals(r.Updated, "True", StringComparison.OrdinalIgnoreCase))
+            .Select(r => (int?)r.RoundNo)
+            .Max();
+
+        if (maxScored is null)
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}' declares scored window R{window.FirstRound}–R{window.LastRound} but carries "
+                + "no Updated='True' scores-raw row to witness it against — the window names a rollup the fixture never scored.");
+        }
+
+        if (maxScored != window.LastRound)
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}' declares scored window ending R{window.LastRound} but its MAX(RoundNo where "
+                + $"Updated='True') is {maxScored} — the window no longer describes the fixture's scored rollup; "
+                + "re-triage, never silently shrink.");
+        }
     }
 
     /// <summary>

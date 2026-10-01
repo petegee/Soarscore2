@@ -319,6 +319,13 @@ public static class Comparator
             client, $"/competition-result?competitionRef={outcome.CompetitionId.Value}");
         CompareRankingGrain(fixture, outcome, finalScores, rankingMismatches);
 
+        // gs_01 — the final/progressive totals grain (parity only): where the
+        // oracle declares totals, every declared total must match our final
+        // Score exactly. Placings alone cannot pass a placeholder-zero
+        // discard — that shape publishes different totals at an identical
+        // placing order, which this grain fails.
+        CompareFinalTotalsGrain(fixture, outcome, finalScores, rankingMismatches);
+
         // teams-mvp.md WI-9 — the team grain, only where semantics overlap
         // (the fixture declared team scoring with the MVP's own method).
         var (teamMismatches, derivedStandings) =
@@ -335,8 +342,21 @@ public static class Comparator
         // Ledgered divergences are SUBTRACTED (D6); the remainder must be empty.
         // Coverage is enforced symmetrically: an oracle cell we never compared,
         // or an our-cell with no oracle counterpart, is itself a mismatch.
-        EnsureOracleCoverage(fixture.ExpectedScores.Scores.Keys, comparedRaw, "raw", rawMismatches);
-        EnsureOracleCoverage(fixture.ExpectedScores.Scores.Keys, comparedNormalised, "normalised", normalisedMismatches);
+        //
+        // gs_01 — under an oracle-declared scored window the coverage universe
+        // IS the window (the parallel-run window discipline, read from the
+        // parity oracle contract): archived cells outside it are deliberately
+        // uncompared — a declared scope, recorded in the oracle, never a
+        // silent shrink. Source rows and persisted expected scores stay
+        // intact; the window only scopes what this run claims to compare.
+        IEnumerable<string> oracleUniverse = fixture.ExpectedResult.ScoredWindow is { } scoredWindow
+            ? fixture.ExpectedScores.Scores.Keys.Where(key => OracleRoundNo(key) <= scoredWindow.LastRound
+                && OracleRoundNo(key) >= scoredWindow.FirstRound)
+            : fixture.ExpectedScores.Scores.Keys;
+        EnsureOracleCoverage(oracleUniverse, comparedRaw, "raw", rawMismatches);
+        EnsureOracleCoverage(oracleUniverse, comparedNormalised, "normalised", normalisedMismatches);
+        EnsureNoCellsOutsideWindow(fixture, comparedRaw, "raw", rawMismatches);
+        EnsureNoCellsOutsideWindow(fixture, comparedNormalised, "normalised", normalisedMismatches);
 
         // WI-5 — conservation runs over OUR cells and the PUBLISHED finals,
         // independent of whether any grain matched: a break is evidence in its
@@ -778,6 +798,102 @@ public static class Comparator
                 }
             }
         }
+
+        // gs_01 — bidirectional population equality: every pilot WE place must
+        // be named by the oracle. The walk above only visits oracle places, so
+        // an extra competitor at a place the oracle never names (or beside an
+        // oracle group without disturbing its membership shape) passed
+        // silently until now. The one explicit exception is a declared
+        // unrankedZeroOnly pilot holding a zero total strictly behind every
+        // ranked place — the witnessed never-flew absence, never a silent
+        // extra. A missing oracle pilot is already mismatched above.
+        var oraclePilotNos = new HashSet<long>(fixture.ExpectedResult.Ranks.Select(r => r.PilotNo));
+        var zeroOnlyByPilot = (fixture.ExpectedResult.UnrankedZeroOnly ?? [])
+            .ToDictionary(u => u.PilotNo);
+        var maxOraclePlace = oraclePilotsAtPlace.Keys.DefaultIfEmpty(0).Max();
+        var scoreByPilot = finalScores.Scores
+            .ToDictionary(s => pilotByCompetitor[s.CompetitorRef], s => s.Score);
+
+        foreach (var (pilotNo, placing) in placingByPilot.OrderBy(kv => kv.Key))
+        {
+            if (oraclePilotNos.Contains(pilotNo))
+            {
+                continue;
+            }
+
+            // Absent from /competition-result entirely (no cells anywhere) is
+            // absent, not zero — NFR-4. Such a pilot never reaches this loop
+            // (it walks our placed pilots), which is the oracle's own shape
+            // for a never-flew pilot GS omits; nothing to assert.
+            var ours = scoreByPilot[pilotNo];
+
+            if (zeroOnlyByPilot.TryGetValue(pilotNo, out var declared))
+            {
+                if (ours == declared.Total)
+                {
+                    if (placing <= maxOraclePlace)
+                    {
+                        mismatches.Add(new GrainMismatch(
+                            "ranking", pilotNo, 0, 0, placing, null,
+                            $"pilot {pilotNo} is declared unrankedZeroOnly but holds oracle-ranked place {placing}."));
+                    }
+                }
+                else
+                {
+                    mismatches.Add(new GrainMismatch(
+                        "total", pilotNo, 0, 0, ours, declared.Total,
+                        $"pilot {pilotNo} is declared unrankedZeroOnly with total {declared.Total} but scored {ours}."));
+                }
+            }
+            else
+            {
+                mismatches.Add(new GrainMismatch(
+                    "ranking", pilotNo, 0, 0, placing, null,
+                    $"we placed pilot {pilotNo} at {placing} but the oracle names no such pilot — "
+                    + "an extra ranked competitor (declare them unrankedZeroOnly or triage the divergence)."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// gs_01 — the final/progressive totals grain (parity only; the
+    /// parallel-run comparator never calls it — a seed run differs from GS by
+    /// design). Where the oracle declares totals, every declared total must
+    /// equal our final Score exactly (decimal ==, no tolerance). A
+    /// placeholder-zero discard publishes different totals at an identical
+    /// placing order, so placings alone pass that shape and this grain fails
+    /// it. Fixtures declaring no totals compare exactly as before.
+    /// </summary>
+    internal static void CompareFinalTotalsGrain(
+        GliderscoreFixture fixture,
+        ReplayOutcome outcome,
+        CompetitionScoreView finalScores,
+        List<GrainMismatch> mismatches)
+    {
+        if (fixture.ExpectedResult.Totals is not { Count: > 0 } totals)
+        {
+            return;
+        }
+
+        var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+        var scoreByPilot = finalScores.Scores
+            .ToDictionary(s => pilotByCompetitor[s.CompetitorRef], s => s.Score);
+
+        foreach (var expected in totals.OrderBy(t => t.PilotNo))
+        {
+            if (!scoreByPilot.TryGetValue(expected.PilotNo, out var ours))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "total", expected.PilotNo, 0, 0, null, expected.Total,
+                    $"oracle declares total {expected.Total} for pilot {expected.PilotNo} but we recorded no final score."));
+            }
+            else if (ours != expected.Total)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "total", expected.PilotNo, 0, 0, ours, expected.Total,
+                    "exact-decimal mismatch."));
+            }
+        }
     }
 
     // ------------------------------------------------------------ conservation
@@ -932,12 +1048,27 @@ public static class Comparator
         var phaseDefinition = classDef.Phases[outcome.PhaseOrdinal];
 
         // The round structure exactly as ScoreCompetition walks it — including
-        // its write-side state collapse (Drawn/InProgress score as Complete).
+        // its write-side state collapse (Drawn/InProgress score as Complete)
+        // AND its finding-5 filter (a task-round with no Entry anywhere is
+        // omitted entirely rather than scored as Complete-with-zeros, which
+        // would hand a drop-worst policy a zero nobody flew).
+        //
+        // gs_01 — the filter is what keeps this conservation honest for the
+        // snapshot window: rounds 7–10 are prescribed-but-unentered, so the
+        // engine omits them and the drop lands on the worst real score. The
+        // pre-gs_01 shape (every prescribed task-round walked) would invent a
+        // zero per unflown round and break the identity exactly as the failing
+        // run proved. For every fixture without unentered task-rounds the
+        // filter changes nothing.
         var phase = competition.Phases.Single(p => p.Ordinal == outcome.PhaseOrdinal);
         var rounds = phase.Rounds.OrderBy(r => r.Ordinal)
             .Select(round => new RoundData(
                 round.Ordinal,
                 round.TaskRounds.OrderBy(tr => tr.Ordinal)
+                    .Where(tr => entries.Values.Any(e =>
+                        e.PhaseOrdinal == phase.Ordinal
+                        && e.RoundOrdinal == round.Ordinal
+                        && e.TaskRoundOrdinal == tr.Ordinal))
                     .Select(tr => new TaskRoundData(
                         tr.Ordinal,
                         tr.TaskRef,
@@ -952,6 +1083,7 @@ public static class Comparator
                                 nameof(competition), tr.State, "Unknown TaskRoundState."),
                         }))
                     .ToImmutableArray()))
+            .Where(round => round.TaskRounds.Length > 0)
             .ToImmutableArray();
 
         var roundNoByOrdinal = outcome.RoundOrdinalByRoundNo.ToDictionary(kv => kv.Value, kv => kv.Key);
@@ -1576,6 +1708,42 @@ public static class Comparator
 
     internal static ExpectedCell? OracleCell(GliderscoreFixture fixture, int taskNo, int roundNo, int groupNo, long pilotNo) =>
         fixture.ExpectedScores.Scores.GetValueOrDefault($"{taskNo}/{roundNo}/{groupNo}/0/{pilotNo}");
+
+    /// <summary>gs_01 — one oracle key's RoundNo. The keyFormat is
+    /// {"TaskNo"}/{"RoundNo"}/{"GroupNo"}/{"ReFlightNo"}/{"PilotNo"}.</summary>
+    internal static int OracleRoundNo(string oracleKey) =>
+        int.Parse(oracleKey.Split('/')[1], System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// gs_01 — under an oracle-declared scored window, no compared cell may
+    /// lie outside it: the run claims no comparison for any unrun cell, and
+    /// the replay must honour the window. Without a declared window this is a
+    /// no-op and every existing caller behaves exactly as before.
+    /// </summary>
+    internal static void EnsureNoCellsOutsideWindow(
+        GliderscoreFixture fixture, HashSet<string> compared, string grain, List<GrainMismatch> mismatches)
+    {
+        if (fixture.ExpectedResult.ScoredWindow is not { } window)
+        {
+            return;
+        }
+
+        foreach (var key in compared)
+        {
+            var parts = key.Split('/');
+            var roundNo = int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+
+            if (roundNo < window.FirstRound || roundNo > window.LastRound)
+            {
+                mismatches.Add(new GrainMismatch(
+                    grain, long.Parse(parts[4], System.Globalization.CultureInfo.InvariantCulture),
+                    roundNo, int.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture),
+                    null, null,
+                    $"cell {key} lies outside the declared scored window R{window.FirstRound}–R{window.LastRound} — "
+                    + "no comparison is claimed for any unrun cell."));
+            }
+        }
+    }
 
     internal static async Task<Competition> LoadCompetitionAsync(IEventStore eventStore, ReplayOutcome outcome)
     {

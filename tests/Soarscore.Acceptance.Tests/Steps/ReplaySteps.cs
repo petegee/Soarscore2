@@ -98,6 +98,94 @@ public sealed class ReplaySteps
             + $"{Environment.NewLine}{report.DiffTable()}");
     }
 
+    [Then(@"^the final snapshot totals match the round-6 oracle exactly$")]
+    public void ThenTheFinalSnapshotTotalsMatchExactly(Table expectedTotals)
+    {
+        // gs_01_f5k-snapshot-result-parity.md — the real F5K snapshot pin: the
+        // scenario names every round-6 total, so expected-result.json cannot
+        // drift silently. A placeholder-zero discard publishes different
+        // totals at an identical placing order, so this pin fails that shape
+        // where the ranking step alone would pass it.
+        var pinned = expectedTotals.Rows
+            .Select(row => (
+                Pilot: long.Parse(row["pilot"], System.Globalization.CultureInfo.InvariantCulture),
+                Total: decimal.Parse(row["total"], System.Globalization.CultureInfo.InvariantCulture)))
+            .ToList();
+
+        var oracle = Fixture!.ExpectedResult;
+
+        oracle.Totals.Should().NotBeNull(
+            $"{Fixture.Slug}'s scenario pins snapshot totals, so the fixture must declare them.");
+
+        oracle.Totals!.Select(t => (t.PilotNo, t.Total)).Should().BeEquivalentTo(
+            pinned.Select(p => (p.Pilot, p.Total)),
+            $"{Fixture.Slug}'s declared totals must equal exactly the {pinned.Count} total(s) the scenario pins.");
+
+        var report = Report();
+
+        report.RankingMismatches
+            .Where(m => m.Grain == "total")
+            .Should().BeEmpty(
+                $"the final snapshot totals must match the round-6 oracle exactly for {Fixture.Slug}."
+                + $"{Environment.NewLine}{report.DiffTable()}");
+    }
+
+    [Then(@"^the ranked population holds exactly those five pilots with pilot 88 recorded as zero-only unranked$")]
+    public void ThenTheRankedPopulationHoldsExactlyThoseFivePilots()
+    {
+        // gs_01 — the population pin beside the totals pin: the ranked set is
+        // exactly the five oracle pilots, and pilot 88's absence from it is
+        // an explicit declared fact (registered, never flew, zero-only),
+        // never a dropped registration or a silent extra. Any other extra or
+        // missing ranked competitor fails in the ranking grain.
+        var oracle = Fixture!.ExpectedResult;
+
+        oracle.Ranks.Should().HaveCount(5,
+            $"{Fixture.Slug}'s snapshot ranks exactly five pilots (places 1–5).");
+
+        oracle.UnrankedZeroOnly.Should().NotBeNull(
+            $"{Fixture.Slug}'s snapshot must declare its zero-only unranked pilots explicitly.");
+
+        oracle.UnrankedZeroOnly!.Should().ContainSingle(
+            $"{Fixture.Slug}'s snapshot declares exactly one zero-only pilot.")
+            .Which.Should().BeEquivalentTo(
+                new { PilotNo = 88L, Total = 0.000m },
+                "pilot 88 is registered but never flew — the evidence, not a fitted omission.");
+
+        oracle.ScoredWindow.Should().NotBeNull(
+            $"{Fixture.Slug}'s snapshot must declare its scored window.");
+        oracle.ScoredWindow!.FirstRound.Should().Be(1);
+        oracle.ScoredWindow!.LastRound.Should().Be(6);
+
+        oracle.ExcludedRounds.Should().BeEquivalentTo(
+            [7, 8, 9, 10],
+            "rounds 7–10 are disclosed excluded — archived placeholder stubs with no comparison claimed.");
+
+        var report = Report();
+
+        report.RankingMismatches.Should().BeEmpty(
+            $"the ranked population must hold exactly for {Fixture.Slug}."
+            + $"{Environment.NewLine}{report.DiffTable()}");
+    }
+
+    [Then(@"^only the six scored rounds are compared over the intact ten-round source$")]
+    public void ThenOnlyTheSixScoredRoundsAreCompared()
+    {
+        // gs_01 — the window pin: the ten-round source record stays intact
+        // (55 oracle cells) while exactly the six scored rounds compare (35
+        // cells per grain: 30 flown plus pilot 88's five flight-less zeros).
+        // Rounds 7–10 claim no comparison for any unrun cell.
+        var report = Report();
+
+        report.OracleCells.Should().Be(55,
+            "the ten-round source record stays intact — no oracle cell is trimmed to fit.");
+
+        report.RawCellsCompared.Should().Be(35,
+            "grain 1 compares exactly the six scored rounds' cells.");
+        report.NormalisedCellsCompared.Should().Be(35,
+            "grain 2 compares exactly the six scored rounds' cells.");
+    }
+
     [Then(@"^kept normalised cells minus dropped cells and aggregate penalties conserve into every final score$")]
     public void ThenKeptNormalisedCellsConserveIntoEveryFinalScore()
     {

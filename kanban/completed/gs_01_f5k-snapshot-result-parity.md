@@ -1,6 +1,6 @@
 # Story — Make the F5K snapshot comparison complete
 
-**Status:** Backlog · **Raised:** 2026-10-01
+**Status:** Completed · **Raised:** 2026-10-01 · **Completed:** 2026-10-01
 **Sequence:** GS 01/13 · Milestone 1: trustworthy comparisons
 **Dependencies:** None. Establishes the result/snapshot pattern for GS 02.
 
@@ -52,14 +52,14 @@ cannot establish agreement with GS's choice of discarded score.
 
 ## Acceptance criteria
 
-- [ ] The five persisted round-6 totals are asserted exactly: P80 5000.000,
+- [x] The five persisted round-6 totals are asserted exactly: P80 5000.000,
   P75 4928.100, P82 4796.100, P79 4359.900, P102 4319.200; places 1–5 respectively.
-- [ ] An extra or missing ranked competitor fails, including an extra competitor
+- [x] An extra or missing ranked competitor fails, including an extra competitor
   at a place not present in the oracle. Zero-only population treatment is explicit.
-- [ ] A placeholder-zero discard cannot pass merely because placings agree.
-- [ ] Source rows and persisted expected scores remain intact; every excluded
+- [x] A placeholder-zero discard cannot pass merely because placings agree.
+- [x] Source rows and persisted expected scores remain intact; every excluded
   cell/window is disclosed, with no claim of comparison for an unrun cell.
-- [ ] Existing GliderScore scenarios pass in strict mode on SQLite and PostgreSQL.
+- [x] Existing GliderScore scenarios pass in strict mode on SQLite and PostgreSQL.
 
 ## Verification
 

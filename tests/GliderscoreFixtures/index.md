@@ -142,9 +142,18 @@ line starts with the slug token and contains "skipped".
   activation Drop1@5 over the ten prescribed rounds — our drop lands on a
   placeholder zero where GS's scored-round-gated pool drops a real score,
   placing-identical (verified at curation and by the replay), the score-level
-  difference never compared by any grain; oracle = GS's own persisted round-6
+  difference formerly never compared by any grain; oracle = GS's own persisted round-6
   progressive standings, independently recomputed cell-exact (30/30 raw,
-  normalisation and drop arithmetic); empty divergence ledger.
+  normalisation and drop arithmetic); empty divergence ledger. GS 01
+  (2026-10-01) closes the score-level gap as a finalised snapshot: the replay
+  prescribes the full ten-round draw but enters and completes only R1-R6,
+  then finalises (6 flown >= minRounds 1 -- no invented completion), so R7-R10
+  stay absent-not-zero (NFR-4, finding 5) and the drop lands on the worst
+  real score exactly as GS's pool does; the oracle pins the five round-6
+  totals exactly (5000.000 / 4928.100 / 4796.100 / 4359.900 / 4319.200,
+  places 1-5), declares pilot 88 zero-only unranked (registered, never
+  flew), excludes R7-R10 from comparison (35 cells compared of 55 intact),
+  and the ranking grain enforces bidirectional population equality.
 - f3b-international — skipped — multi-task-per-round (Duration+Speed+Distance)
   hits unsupportedRoundComposition; NO fixture directory was curated — it
   remains available only in the shared extraction of record
