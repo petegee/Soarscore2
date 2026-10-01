@@ -183,15 +183,35 @@ public sealed record ComparisonReport(
     // ledger. Permanent entries are exempt (T1 is documentary by design;
     // D5/R1 witness but are not required to). Defaulted so the self-check
     // and any earlier caller compile unchanged.
-    IReadOnlyList<DivergenceEntry>? UnwitnessedLedgerEntries = null)
+    IReadOnlyList<DivergenceEntry>? UnwitnessedLedgerEntries = null,
+    // gs_03_exact-divergence-contracts.md — documentary scope breaks: an
+    // unsupported-comparison entry whose declared method now runs (or never
+    // applied). Unlike unwitnessed entries these never witness a computed
+    // mismatch by design, so they fail here instead. Defaulted like above.
+    IReadOnlyList<string>? LedgerScopeBreaks = null)
 {
     private readonly IReadOnlyList<DivergenceEntry> _unwitnessedLedgerEntries =
         UnwitnessedLedgerEntries ?? [];
+    private readonly IReadOnlyList<string> _ledgerScopeBreaks =
+        LedgerScopeBreaks ?? [];
 
     /// <summary>gs-ledger-modes.md WI-2 — the pending entries whose divergence
     /// no longer fires. Never empty-tolerated: a discharged entry is removed
-    /// from the ledger, not silently carried.</summary>
+    /// from the ledger, not silently carried.
+    /// <para>
+    /// gs_03 — every numeric, excluded-cell and synthetic-slot entry must
+    /// witness a live computed mismatch of its own shape, whatever its
+    /// disposition (a resolved permanent numerical difference fails its stale
+    /// expectation in every mode). Unsupported-comparison entries never
+    /// witness: they are validated as <see cref="LedgerScopeBreaks"/> instead.
+    /// </para>
+    /// </summary>
     public IReadOnlyList<DivergenceEntry> UnwitnessedLedgerEntries => _unwitnessedLedgerEntries;
+
+    /// <summary>gs_03 — documentary scope breaks (see the record parameter).
+    /// Fails in every mode: a stale documentary claim is a discharged
+    /// divergence, never a silent carry.</summary>
+    public IReadOnlyList<string> LedgerScopeBreaks => _ledgerScopeBreaks;
     public bool AllGrainsExact =>
         RawMismatches.Count == 0
         && NormalisedMismatches.Count == 0
@@ -361,7 +381,15 @@ public static class Comparator
         // WI-5 — conservation runs over OUR cells and the PUBLISHED finals,
         // independent of whether any grain matched: a break is evidence in its
         // own right, not a consequence of a grain mismatch.
-        var conservationBreaks = await CheckConservation(outcome, eventStore, client);
+        //
+        // gs_02 — the rows are computed once and shared: the conservation
+        // verdict below stays the internal consistency check, while the
+        // complete-result grains read the same rows as the ACTUAL alongside
+        // the /competition-result finals (the EXPECTED identities and values
+        // always come from the fixture oracle, never from these rows).
+        var conservationRows = await ConservationByCompetitor(outcome, eventStore, client);
+        var conservationBreaks = BreaksOf(conservationRows);
+        CompareCompleteResultGrains(fixture, outcome, finalScores, competition, conservationRows, rankingMismatches);
 
         return BuildReport(
             fixture,
@@ -403,18 +431,33 @@ public static class Comparator
         var normalisedRemainder = SubtractLedger(fixture, normalisedMismatches).ToList();
         var rankingRemainder = SubtractLedger(fixture, rankingMismatches).ToList();
 
-        // gs-ledger-modes.md WI-2 — the witnessing arm: every PENDING entry
-        // must cover at least one computed (pre-subtraction) mismatch. An
-        // entry whose divergence no longer fires is a discharged divergence
-        // the ledger still carries — fail it in every mode rather than
-        // silently carry it. Permanent entries are exempt: T1 entries are
-        // documentary (the team grain they describe does not run), and D5/R1
-        // entries witness today but are decided-law, not debt to verify.
+        // gs_03 — eager ledger validation: unknown disposition/kind tokens
+        // and pin-less numeric entries fail loudly here, in every mode, even
+        // on an otherwise green run. A typo must never silently demote an
+        // entry or widen a claim.
+        foreach (var entry in fixture.Divergences)
+        {
+            _ = entry.Permanent;
+            _ = entry.KindNormalized;
+            entry.RequirePins();
+        }
+
+        // gs-ledger-modes.md WI-2 — the witnessing arm, widened by gs_03 to
+        // every observed-difference entry whatever its disposition: numeric,
+        // excluded-cell and synthetic-slot entries must each witness a live
+        // computed mismatch OF THEIR OWN SHAPE (value pins for numeric, the
+        // coverage-gap shape for excluded cells, the orphan-slot shape for
+        // synthetic slots). A resolved permanent numerical difference fails
+        // its stale expectation in every mode. Unsupported-comparison
+        // entries never witness a computed mismatch by design — their
+        // applicability is validated as scope breaks below.
         var preSubtraction = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).ToList();
         var unwitnessed = fixture.Divergences
-            .Where(d => !d.Permanent)
-            .Where(d => !preSubtraction.Any(d.CoversGrainRoundGroupPilot))
+            .Where(d => d.KindNormalized is not "unsupportedComparison")
+            .Where(d => !preSubtraction.Any(m => LedgerWitnesses(d, m)))
             .ToList();
+
+        var scopeBreaks = CheckLedgerScope(fixture, teamsCompared);
 
         return new ComparisonReport(
             RawMismatches: rawRemainder,
@@ -428,7 +471,110 @@ public static class Comparator
             OracleCells: oracleCells,
             TeamsCompared: teamsCompared,
             LadderStandingsCompared: ladderStandingsCompared,
-            UnwitnessedLedgerEntries: unwitnessed);
+            UnwitnessedLedgerEntries: unwitnessed,
+            LedgerScopeBreaks: scopeBreaks);
+    }
+
+    /// <summary>
+    /// gs_03 — true when the ledger entry witnesses the computed mismatch:
+    /// a numeric entry covers it value-exact (<see
+    /// cref="DivergenceEntry.CoversMismatch"/>); an excluded-cell entry
+    /// witnesses the coverage-gap shape at its identity (the oracle cell the
+    /// replay deliberately never produces); a synthetic-slot entry witnesses
+    /// the orphan-slot shape at its identity (the our-only slot with no
+    /// oracle counterpart). An unsupported-comparison entry never witnesses —
+    /// the team grain it describes does not run — and is validated by <see
+    /// cref="CheckLedgerScope"/> instead. A value mismatch at an excluded
+    /// identity, or any mismatch at an unsupported identity, is untriaged:
+    /// documentary scope excuses nothing numeric.
+    /// </summary>
+    internal static bool LedgerWitnesses(DivergenceEntry entry, GrainMismatch mismatch) =>
+        entry.KindNormalized switch
+        {
+            "numeric" => entry.CoversMismatch(mismatch),
+            "excludedOracleCell" => IsCoverageGap(mismatch) && ScopeMatches(entry, mismatch),
+            "syntheticSlot" => IsOrphanSlot(mismatch) && ScopeMatches(entry, mismatch),
+            "unsupportedComparison" => false,
+            _ => throw new InvalidOperationException(
+                $"Ledger entry has unknown kind '{entry.Kind}' — a typo must not silently change the claim."),
+        };
+
+    /// <summary>gs_03 — the documentary identity (grain, round/group scope,
+    /// pilot) without any value claim. A null pilotNo covers any pilot, as
+    /// the subtraction rule always has.</summary>
+    internal static bool ScopeMatches(DivergenceEntry entry, GrainMismatch mismatch) =>
+        entry.Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
+        && (entry.Round is null || entry.Round == mismatch.RoundNo)
+        && (entry.Group is null || entry.Group == mismatch.GroupNo)
+        && (entry.PilotNo is null || entry.Covers(mismatch.PilotNo));
+
+    /// <summary>gs_03 — true for the coverage-gap shape EnsureOracleCoverage
+    /// emits (no slot replayed for an oracle cell). Window-violation and
+    /// duplicate-slot shapes are null-valued too but carry different details
+    /// and are never documentary scope.</summary>
+    internal static bool IsCoverageGap(GrainMismatch mismatch) =>
+        mismatch.Ours is null && mismatch.Expected is null
+        && mismatch.Detail.Contains("was never compared", StringComparison.Ordinal);
+
+    /// <summary>gs_03 — true for the orphan-slot shape AddIfDifferent emits
+    /// (a replayed slot with no oracle counterpart).</summary>
+    internal static bool IsOrphanSlot(GrainMismatch mismatch) =>
+        mismatch.Ours is not null && mismatch.Expected is null
+        && mismatch.Detail.Contains("no oracle cell for this", StringComparison.Ordinal);
+
+    /// <summary>
+    /// gs_03 — the documentary applicability check, run in every mode:
+    /// every unsupported-comparison entry must describe a team method the
+    /// MVP genuinely does not run — the fixture's triage block declares
+    /// UseTeams with a non-3 NbrForTeamScore — and the team grain must not
+    /// have run (teamsCompared == 0). A fixture whose method is now the
+    /// MVP's own, or a run that compared team standings anyway, makes the
+    /// documentary claim stale: it discloses an unrun comparison, so a run
+    /// comparison — or no declared method to excuse — fails it. The entry
+    /// never pretends to witness numeric equality or a computed mismatch.
+    /// </summary>
+    internal static IReadOnlyList<string> CheckLedgerScope(GliderscoreFixture fixture, int teamsCompared)
+    {
+        var breaks = new List<string>();
+        var triage = fixture.Competition.Triage;
+
+        foreach (var entry in fixture.Divergences.Where(d => d.KindNormalized is "unsupportedComparison"))
+        {
+            var excerpt = entry.Reason.Length <= 80 ? entry.Reason : entry.Reason[..80] + "…";
+
+            if (triage?.UseTeams != true)
+            {
+                breaks.Add(
+                    $"documentary unsupported-comparison entry (grain '{entry.Grain}': {excerpt}) applies to no "
+                    + "declared team method — the fixture's triage block declares UseTeams "
+                    + $"{(triage is null ? "(absent)" : triage.UseTeams?.ToString() ?? "null")}: remove the entry, "
+                    + "never silently carry it.");
+            }
+            else if (triage.NbrForTeamScore is not { } declared)
+            {
+                breaks.Add(
+                    $"documentary unsupported-comparison entry (grain '{entry.Grain}': {excerpt}) names no declared "
+                    + "team method — the fixture's triage block declares no NbrForTeamScore: remove the entry, "
+                    + "never silently carry it.");
+            }
+            else if (declared == 3)
+            {
+                breaks.Add(
+                    $"documentary unsupported-comparison entry (grain '{entry.Grain}': {excerpt}) is stale — the "
+                    + "fixture now declares NbrForTeamScore=3, the MVP's own method, so the team comparison it "
+                    + "excuses now runs: remove the entry, never silently carry it.");
+            }
+
+            if (teamsCompared > 0)
+            {
+                breaks.Add(
+                    $"documentary unsupported-comparison entry (grain '{entry.Grain}': {excerpt}) is stale — the "
+                    + $"run compared {teamsCompared} team standing(s) the entry claims never run: remove the "
+                    + "entry, never silently carry it.");
+            }
+        }
+
+        return breaks;
     }
 
     // ------------------------------------------------------------- grain 1
@@ -896,6 +1042,323 @@ public static class Comparator
         }
     }
 
+    // --------------------------------------------- gs_02 complete-result grains
+
+    /// <summary>
+    /// gs_02 — one competitor's actual complete result, read from the public
+    /// result paths (the /competition-result finals) and the conservation
+    /// collapse (the engine's own cells, drops and aggregate penalties — the
+    /// same state <see cref="CheckConservation"/> referees). The EXPECTED
+    /// side of every comparison below always comes from the fixture oracle,
+    /// never from here.
+    /// </summary>
+    internal sealed record ActualResult(
+        decimal Total,
+        decimal PreDropTotal,
+        decimal PenaltyDeduction,
+        string DiscardUnit,
+        IReadOnlyList<int> DiscardedRounds,
+        IReadOnlyList<decimal> DiscardedValues,
+        int? Placing);
+
+    /// <summary>
+    /// gs_02 — the complete-result oracle contract, asserted automatically
+    /// for every available field. Every active fixture must declare its
+    /// snapshot scope (ScoredWindow, Lifecycle, ExcludedRounds) and every
+    /// result field's availability (FieldAvailability naming total,
+    /// preDropTotal, penaltyDeduction, discards, places and population as
+    /// available, unavailable or inapplicable with a reason). Available
+    /// fields compare exactly (decimal ==, no tolerance); unavailable and
+    /// inapplicable fields are never asserted and never treated as zero — an
+    /// available field with no populated expectations fails loudly rather
+    /// than passing silently. Mismatches ride the ranking-grain remainder
+    /// (the gs_01 totals precedent) under their own grain names, so the
+    /// ledger tail and every downstream step behave exactly as before.
+    /// </summary>
+    internal static void CompareCompleteResultGrains(
+        GliderscoreFixture fixture,
+        ReplayOutcome outcome,
+        CompetitionScoreView finalScores,
+        Competition competition,
+        IReadOnlyList<ConservationRow> conservationRows,
+        List<GrainMismatch> mismatches)
+    {
+        var oracle = fixture.ExpectedResult;
+        var availability = RequireCompleteOracleContract(fixture);
+
+        var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+        var placingByPilot = finalScores.Scores
+            .ToDictionary(s => pilotByCompetitor[s.CompetitorRef], s => s.Placing);
+        var scoreByPilot = finalScores.Scores
+            .ToDictionary(s => pilotByCompetitor[s.CompetitorRef], s => s.Score);
+        var conservationByPilot = conservationRows
+            .ToDictionary(r => pilotByCompetitor[r.Competitor], r => r);
+
+        // The fixture's own drop dimension is the discard unit (ByRound drops
+        // round cells, ByTask drops task cells — the source distinction is
+        // preserved, never normalised away). A fixture with no drop policy
+        // cannot drop, so its proven-empty discard sets read "round" — the
+        // ladder's cell granularity — vacuously.
+        var phaseDefinition = competition.AdoptedRules.Definition.Phases[outcome.PhaseOrdinal];
+        var discardUnit = phaseDefinition.Drops is { IsDefaultOrEmpty: false } drops
+            && drops[0].Dimension == DropDimension.ByTask ? "task" : "round";
+
+        var actuals = new Dictionary<long, ActualResult>();
+        foreach (var (pilotNo, total) in scoreByPilot)
+        {
+            conservationByPilot.TryGetValue(pilotNo, out var row);
+            actuals[pilotNo] = new ActualResult(
+                total,
+                row?.CellSum ?? total,
+                row?.PenaltyDeduction ?? 0m,
+                discardUnit,
+                row?.DroppedCells.Select(c => c.RoundNo).ToList() ?? [],
+                row?.DroppedCells.Select(c => c.Value).ToList() ?? [],
+                placingByPilot.GetValueOrDefault(pilotNo));
+        }
+
+        if (availability["preDropTotal"] == "available")
+        {
+            ComparePreDropTotalsGrain(fixture, actuals, mismatches);
+        }
+
+        if (availability["penaltyDeduction"] == "available")
+        {
+            ComparePenaltyDeductionGrain(fixture, actuals, mismatches);
+        }
+
+        if (availability["discards"] == "available")
+        {
+            CompareDiscardsGrain(fixture, actuals, mismatches);
+        }
+    }
+
+    /// <summary>
+    /// gs_02 — the contract gate: every active fixture declares its snapshot
+    /// scope and every result field's availability. Pure (no I/O), so the
+    /// negative harness checks drive it directly. Returns the availability
+    /// map (field → available/unavailable/inapplicable, case-insensitive).
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> RequireCompleteOracleContract(GliderscoreFixture fixture)
+    {
+        var oracle = fixture.ExpectedResult;
+
+        if (oracle.ScoredWindow is null || oracle.Lifecycle is null || oracle.ExcludedRounds is null)
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': the gs_02 contract requires every active fixture to declare its "
+                + "snapshot scope (scoredWindow, lifecycle, excludedRounds) — declare the included scoring window "
+                + "and row population, never leave them implicit.");
+        }
+
+        if (oracle.FieldAvailability is not { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': the gs_02 contract requires an explicit availability declaration for "
+                + "every result field (total, preDropTotal, penaltyDeduction, discards, places, population) — "
+                + "omission must not mean zero.");
+        }
+
+        var availability = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in oracle.FieldAvailability)
+        {
+            var status = entry.Status.ToLowerInvariant();
+            if (status is not ("available" or "unavailable" or "inapplicable"))
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{fixture.Slug}': field '{entry.Field}' declares unknown status '{entry.Status}' "
+                    + "(valid: available, unavailable, inapplicable) — a typo must not silently narrow the oracle.");
+            }
+
+            availability[entry.Field] = status;
+        }
+
+        foreach (var field in new[] { "total", "preDropTotal", "penaltyDeduction", "discards", "places", "population" })
+        {
+            if (!availability.ContainsKey(field))
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{fixture.Slug}': result field '{field}' has no availability declaration — "
+                    + "every field must be declared available, unavailable or inapplicable with a reason.");
+            }
+        }
+
+        return availability;
+    }
+
+    /// <summary>
+    /// gs_02 — the pre-drop totals grain: where the oracle declares them,
+    /// every pre-drop (pre-penalty) aggregate must equal our summed grain-2
+    /// cells exactly. A wrong pre-drop with an unchanged final total fails
+    /// (a drop/penalty shift masking a cell error cannot hide here).
+    /// </summary>
+    internal static void ComparePreDropTotalsGrain(
+        GliderscoreFixture fixture,
+        IReadOnlyDictionary<long, ActualResult> actuals,
+        List<GrainMismatch> mismatches)
+    {
+        if (fixture.ExpectedResult.PreDropTotals is not { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': preDropTotal is declared available but carries no expectations — "
+                + "populate them or declare the field unavailable with a reason.");
+        }
+
+        foreach (var expected in fixture.ExpectedResult.PreDropTotals.OrderBy(t => t.PilotNo))
+        {
+            if (!actuals.TryGetValue(expected.PilotNo, out var ours))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "preDrop", expected.PilotNo, 0, 0, null, expected.Total,
+                    $"oracle declares pre-drop total {expected.Total} for pilot {expected.PilotNo} but we recorded no result."));
+            }
+            else if (ours.PreDropTotal != expected.Total)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "preDrop", expected.PilotNo, 0, 0, ours.PreDropTotal, expected.Total,
+                    "exact-decimal mismatch."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// gs_02 — the aggregate-penalty grain: where the oracle declares them,
+    /// every per-pilot deduction must equal our aggregate-penalty deduction
+    /// exactly. Explicit zeros are asserted — a missing declaration never
+    /// reads as zero (the guard above throws instead).
+    /// </summary>
+    internal static void ComparePenaltyDeductionGrain(
+        GliderscoreFixture fixture,
+        IReadOnlyDictionary<long, ActualResult> actuals,
+        List<GrainMismatch> mismatches)
+    {
+        if (fixture.ExpectedResult.Penalties is not { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': penaltyDeduction is declared available but carries no expectations — "
+                + "populate them (explicit zeros where none) or declare the field unavailable with a reason.");
+        }
+
+        foreach (var expected in fixture.ExpectedResult.Penalties.OrderBy(t => t.PilotNo))
+        {
+            if (!actuals.TryGetValue(expected.PilotNo, out var ours))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "penalty", expected.PilotNo, 0, 0, null, expected.Deduction,
+                    $"oracle declares penalty deduction {expected.Deduction} for pilot {expected.PilotNo} but we recorded no result."));
+            }
+            else if (ours.PenaltyDeduction != expected.Deduction)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "penalty", expected.PilotNo, 0, 0, ours.PenaltyDeduction, expected.Deduction,
+                    "exact-decimal mismatch."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// gs_02 — the discards grain: where the oracle declares them, every
+    /// pilot's discarded units must agree in kind (round vs task), identity
+    /// (which rounds/tasks) and value, exactly. A wrong discarded identity
+    /// preserving the total fails — every dropped candidate in some fixtures
+    /// is a zero cell, so the sum identity cannot catch a wrong-round drop
+    /// (the f3k-sample-comp literal-record precedent). Pilots the oracle
+    /// declares unrankedZeroOnly carry no discard assertion: their tied-zero
+    /// cells evidence no external identity (the f5k pilot-88 shape), and an
+    /// unknown discard identity is never presented as a proven empty set.
+    /// An engine drop for a pilot with no oracle entry is itself a mismatch.
+    /// </summary>
+    internal static void CompareDiscardsGrain(
+        GliderscoreFixture fixture,
+        IReadOnlyDictionary<long, ActualResult> actuals,
+        List<GrainMismatch> mismatches)
+    {
+        if (fixture.ExpectedResult.Discards is not { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': discards is declared available but carries no expectations — "
+                + "populate them (explicit empty sets where proven) or declare the field unavailable with a reason.");
+        }
+
+        var oracle = fixture.ExpectedResult;
+        var zeroOnly = new HashSet<long>((oracle.UnrankedZeroOnly ?? []).Select(u => u.PilotNo));
+        var expectedByPilot = (oracle.Discards ?? []).ToDictionary(d => d.PilotNo);
+
+        foreach (var expected in (oracle.Discards ?? []).OrderBy(d => d.PilotNo))
+        {
+            if (!actuals.TryGetValue(expected.PilotNo, out var ours))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "discard", expected.PilotNo, 0, 0, null, null,
+                    $"oracle declares discards for pilot {expected.PilotNo} but we recorded no result."));
+                continue;
+            }
+
+            if (!ours.DiscardUnit.Equals(expected.Unit, StringComparison.OrdinalIgnoreCase)
+                && (ours.DiscardedRounds.Count > 0 || expected.DroppedRounds.Count > 0))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "discard", expected.PilotNo, 0, 0, null, null,
+                    $"discard unit differs: ours '{ours.DiscardUnit}' vs oracle '{expected.Unit}' — "
+                    + "a round discard is not a task discard."));
+            }
+
+            var oursRounds = ours.DiscardedRounds.OrderBy(n => n).ToList();
+            var expectedRounds = expected.DroppedRounds.OrderBy(n => n).ToList();
+
+            if (!oursRounds.SequenceEqual(expectedRounds))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "discard", expected.PilotNo, 0, 0, null, null,
+                    $"discarded identity differs: ours [{string.Join(", ", oursRounds)}] vs oracle "
+                    + $"[{string.Join(", ", expectedRounds)}] — a wrong discarded identity preserving the total still fails."));
+                continue;
+            }
+
+            var oursValues = ours.DiscardedValues
+                .Zip(ours.DiscardedRounds, (value, round) => (round, value))
+                .OrderBy(x => x.round)
+                .Select(x => x.value)
+                .ToList();
+            var expectedValues = expected.DroppedValues
+                .Zip(expected.DroppedRounds, (value, round) => (round, value))
+                .OrderBy(x => x.round)
+                .Select(x => x.value)
+                .ToList();
+
+            if (expected.DroppedRounds.Count != expected.DroppedValues.Count)
+            {
+                throw new InvalidOperationException(
+                    $"Fixture '{fixture.Slug}': pilot {expected.PilotNo} declares {expected.DroppedRounds.Count} "
+                    + $"dropped rounds but {expected.DroppedValues.Count} dropped values — the parallel arrays must align.");
+            }
+
+            if (!oursValues.SequenceEqual(expectedValues))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "discard", expected.PilotNo, 0, 0, null, null,
+                    $"discarded values differ: ours [{string.Join(", ", oursValues)}] vs oracle "
+                    + $"[{string.Join(", ", expectedValues)}] — exact-decimal mismatch."));
+            }
+        }
+
+        foreach (var (pilotNo, ours) in actuals.OrderBy(kv => kv.Key))
+        {
+            if (expectedByPilot.ContainsKey(pilotNo) || zeroOnly.Contains(pilotNo))
+            {
+                continue;
+            }
+
+            if (ours.DiscardedRounds.Count > 0)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "discard", pilotNo, 0, 0, null, null,
+                    $"we dropped [{string.Join(", ", ours.DiscardedRounds.OrderBy(n => n))}] for pilot {pilotNo} "
+                    + "but the oracle declares no discards for them — an undeclared drop is a defect, never a pass."));
+            }
+        }
+    }
+
     // ------------------------------------------------------------ conservation
 
     /// <summary>
@@ -925,7 +1388,16 @@ public static class Comparator
     {
         var rows = await ConservationByCompetitor(outcome, eventStore, client);
 
-        return rows
+        return BreaksOf(rows);
+    }
+
+    /// <summary>
+    /// gs_02 — the pure conservation verdict over precomputed rows, shared by
+    /// <see cref="CheckConservation"/> and the compare tail (which reuses the
+    /// same rows as the complete-result grains' actual side).
+    /// </summary>
+    internal static IReadOnlyList<ConservationBreak> BreaksOf(IReadOnlyList<ConservationRow> rows) =>
+        rows
             .Where(row => row.ExpectedFinal != row.FinalScore
                 || row.ExpectedDisqualified != row.ActualDisqualified)
             .Select(row => new ConservationBreak(
@@ -939,7 +1411,6 @@ public static class Comparator
                 row.ExpectedDisqualified,
                 row.ActualDisqualified))
             .ToList();
-    }
 
     /// <summary>
     /// One competitor's conservation figures — the same state collapse
@@ -957,6 +1428,13 @@ public static class Comparator
     /// the sum identity cannot give: every dropped candidate in
     /// f3k-sample-comp is a zero cell, so a wrong-round zero drop still
     /// conserves.
+    ///
+    /// gs_02 — DroppedCells carries the same dropped set per fixture RoundNo
+    /// with each round's dropped VALUE (rounds ascending; rounds with no
+    /// dropped cell contribute nothing). The complete-result discards grain
+    /// reads it as the ACTUAL alongside the placing/total read paths; the
+    /// EXPECTED identities and values always come from the fixture oracle,
+    /// never from here.
     /// </summary>
     internal sealed record ConservationRow(
         CompetitorId Competitor,
@@ -964,12 +1442,16 @@ public static class Comparator
         decimal CellSum,
         decimal DroppedSum,
         IReadOnlyList<int> DroppedRoundOrdinals,
+        IReadOnlyList<DroppedCell> DroppedCells,
         decimal AggregateAfterDrops,
         decimal PenaltyDeduction,
         decimal ExpectedFinal,
         decimal FinalScore,
         bool ExpectedDisqualified,
         bool ActualDisqualified);
+
+    /// <summary>gs_02 — one fixture round's dropped contribution (actual).</summary>
+    internal sealed record DroppedCell(int RoundNo, decimal Value);
 
     /// <summary>
     /// kanban/in-progress/literal-record-f3k-sample-comp.md WI-4 — the
@@ -1137,6 +1619,22 @@ public static class Comparator
                 droppedRoundNos.Add(droppedRoundNo);
             }
 
+            // gs_02 — the same dropped set per fixture RoundNo with values
+            // (one entry per dropped round; a ByTask policy never drops two
+            // cells of one round in this corpus — one task per round — so a
+            // per-round sum is exact and stays exact if that ever changes).
+            var droppedCells = phaseScores.DroppedScores
+                .GroupBy(s => s.RoundOrdinal)
+                .Select(g => new DroppedCell(
+                    roundNoByOrdinal.TryGetValue(g.Key, out var roundNo)
+                        ? roundNo
+                        : throw new InvalidOperationException(
+                            $"Competition {outcome.CompetitionId.Value}: the engine dropped a cell of round ordinal "
+                            + $"{g.Key}, which maps to no fixture round."),
+                    g.Sum(s => s.Score)))
+                .OrderBy(c => c.RoundNo)
+                .ToList();
+
             var final = finalByCompetitor.GetValueOrDefault(competitorId);
 
             rows.Add(new ConservationRow(
@@ -1145,6 +1643,7 @@ public static class Comparator
                 cells.Sum(c => c.Score),
                 droppedSum,
                 droppedRoundNos.Distinct().OrderBy(n => n).ToList(),
+                droppedCells,
                 phaseScores.Aggregate,
                 applied.Deduction,
                 expectedFinal,
@@ -1651,7 +2150,7 @@ public static class Comparator
     // -------------------------------------------------------------- ledger
 
     private static IEnumerable<GrainMismatch> SubtractLedger(GliderscoreFixture fixture, IEnumerable<GrainMismatch> mismatches) =>
-        mismatches.Where(m => !fixture.Divergences.Any(d => d.CoversGrainRoundGroupPilot(m)));
+        mismatches.Where(m => !fixture.Divergences.Any(d => LedgerWitnesses(d, m)));
 
     // ------------------------------------------------------------ plumbing
     // The plumbing helpers are internal (not private): ParallelRunComparator

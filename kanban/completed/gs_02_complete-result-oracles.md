@@ -1,6 +1,6 @@
 # Story — Extend complete result parity across the GliderScore corpus
 
-**Status:** Backlog · **Raised:** 2026-10-01
+**Status:** Completed · **Raised:** 2026-10-01 · **Completed:** 2026-10-01
 **Sequence:** GS 02/13 · Milestone 1: trustworthy comparisons
 **Dependencies:** `gs_01_f5k-snapshot-result-parity.md`.
 
@@ -45,15 +45,42 @@ their evidential strength must stay visible as comparison becomes richer.
 
 ## Acceptance criteria
 
-- [ ] Every active fixture declares snapshot scope and availability of each
+- [x] Every active fixture declares snapshot scope and availability of each
   result field; all available fields are asserted automatically.
-- [ ] A wrong total preserving places fails. A wrong discarded identity preserving
+- [x] A wrong total preserving places fails. A wrong discarded identity preserving
   the total fails wherever that identity is externally evidenced.
-- [ ] Complete ranked populations and tie memberships agree bidirectionally.
-- [ ] Unknown discard identity is not presented as a proven empty discard set;
+- [x] Complete ranked populations and tie memberships agree bidirectionally.
+- [x] Unknown discard identity is not presented as a proven empty discard set;
   equally-low candidates are handled according to the source's actual evidence.
-- [ ] Reconstructed expectations never acquire a report/persisted provenance label.
-- [ ] Both-store strict GliderScore runs and relevant fixture validation pass.
+- [x] Reconstructed expectations never acquire a report/persisted provenance label.
+- [x] Both-store strict GliderScore runs and relevant fixture validation pass.
+
+## Completion (2026-10-01)
+
+Contract: `ExpectedResultFile` gains `preDropTotals`, `penalties` (explicit
+zeros), `discards` (own drop dimension as unit — round/task — with round
+identities + values), `scoredWindow`/`lifecycle`/`excludedRounds` (required
+for every active fixture) and `fieldAvailability` (available/unavailable/
+inapplicable + reason per field). All 11 oracles populated from external
+evidence only (transcript `*` marks + Score/Penalty columns cross-checked
+against persisted best-per-round sums; ladder.py-arithmetic recompute over
+persisted cells; server-persisted progressive + curation recompute) — never
+SoarScore output. No new product capability: actuals read the public
+`/competition-result` finals plus the conservation collapse (same rows as
+the internal check); expected identities/values always come from the
+oracle. No rulebook interpretation was needed (historical GS drop config;
+no fai-rules amendment); R1/T1 stand.
+
+Grains: pre-drop, penalty and discards ride the ranking remainder under
+their own names (gs_01 totals precedent); conservation unchanged as the
+internal check. ReplayDriver's snapshot assertion now runs only when rounds
+are actually excluded (f5k shape); full-window fixtures enter/compare
+placeholder zeros as before. Negative cases live in
+`CompleteResultOracleTests.cs`, real-data witnesses in the feature
+scenarios' new "complete result oracle matches exactly" step. Full
+acceptance green strict on SQLite (154/154) and replay green strict on
+PostgreSQL (13/13); `validate.py` passes every fixture; index.md carries
+the coverage table. Zero new divergences triaged — no product defect found.
 
 ## Verification
 

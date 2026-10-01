@@ -1088,6 +1088,33 @@ public sealed class RecordingAGliderscoreFixtureSteps
                     + $"found {entry.PilotNo?.GetRawText() ?? "null"}");
             }
 
+            // gs_03 — the typed expectation: every committed entry declares
+            // a known kind, and numeric entries pin both values. A T1-cited
+            // entry discloses an unrun team comparison (unsupportedComparison);
+            // an R1-cited entry is a representation divergence (numeric).
+            string? kind = null;
+
+            try
+            {
+                kind = entry.KindNormalized;
+            }
+            catch (InvalidOperationException ex)
+            {
+                violations.Add($"{named}: {ex.Message}");
+            }
+
+            if (kind is "numeric")
+            {
+                try
+                {
+                    entry.RequirePins();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    violations.Add($"{named}: {ex.Message}");
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(entry.Reason))
             {
                 violations.Add(
@@ -1102,6 +1129,23 @@ public sealed class RecordingAGliderscoreFixtureSteps
                 }
 
                 var t1Cited = Regex.IsMatch(entry.Reason, @"\bT1\b", RegexOptions.IgnoreCase);
+
+                if (t1Cited && kind is not null && kind is not "unsupportedComparison")
+                {
+                    violations.Add(
+                        $"{named}: a T1-cited entry discloses an unrun team comparison without witnessing "
+                        + $"numeric equality or a computed mismatch — expected kind 'unsupportedComparison', "
+                        + $"found '{kind}'");
+                }
+
+                var r1Cited = Regex.IsMatch(entry.Reason, @"\bR1\b", RegexOptions.IgnoreCase);
+
+                if (r1Cited && kind is not null && kind is not "numeric")
+                {
+                    violations.Add(
+                        $"{named}: an R1-cited entry is a representation divergence with pinned values — "
+                        + $"expected kind 'numeric', found '{kind}'");
+                }
 
                 if (t1Cited)
                 {
@@ -1188,11 +1232,12 @@ public sealed class RecordingAGliderscoreFixtureSteps
                     continue;
                 }
 
+                // gs_03 — the excuse is the entry's own typed witness: a
+                // numeric entry excuses a value-equal mismatch at its cell, a
+                // documentary entry its coverage-gap/orphan shape. A moved
+                // cell or an altered value no longer satisfies the entry.
                 var excusedCount = unledgeredMismatches.Count(mismatch =>
-                    entry.Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
-                    && (entry.Round is null || entry.Round == mismatch.RoundNo)
-                    && (entry.Group is null || entry.Group == mismatch.GroupNo)
-                    && (entry.PilotNo is null || entry.Covers(mismatch.PilotNo)));
+                    Comparator.LedgerWitnesses(entry, mismatch));
 
                 if (excusedCount == 0)
                 {

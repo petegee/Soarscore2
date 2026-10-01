@@ -61,9 +61,88 @@
       "round": null,
       "group": null,
       "pilotNo": "*",
-      "difference": "Raw score-cell \u221230 late-landing deduction: 11 rows carry FlightScoreDeduction=30 (R1G1P44, R5G4P7, R6G3P2, R6G4P63, R10G3P2, R12G2P63, R13G1P42, R13G4P54, R14G2P25, R14G3P44, R14G4P7), and GS deducts the payload from the raw pre-normalisation; the seed declares no such term, so the seed-run scores those rows +30 relative to GS. The offences differ: every deduction row sits inside the 600 s working time (flight times 182\u2013596 s), so F3J.10.3's overfly offence cannot describe them, and GS's durFlightPenalty=1 late-landing scheme is a local GS construct the rulebook does not state \u2014 the payload is not mapped (decision 3: the mapping policy fixes values, not offences). The landing award on all eleven now agrees (every deduction row records Landing 0.0, and the seed's {0,0} convention row meets GS's 0\u21920 rule there \u2014 the retired sentinel's meeting point, provenance note 8): the gap is the deduction alone. Ten rows show raw deltas of exactly +30.0 in the comparator report; the eleventh, R1G1P44, additionally carries the R1 decay below (raw 596 vs 454.0, delta +142 = decay + deduction). Pinned raw-mismatch count: 32 across the two raw classes (this deduction and the R1 decay below) \u2014 the wildcard covers any cell, so the count is what makes the entry exact (decision 1).",
+      "difference": "Raw score-cell \u221230 late-landing deduction: 11 rows carry FlightScoreDeduction=30 (R1G1P44, R5G4P7, R6G3P2, R6G4P63, R10G3P2, R12G2P63, R13G1P42, R13G4P54, R14G2P25, R14G3P44, R14G4P7), and GS deducts the payload from the raw pre-normalisation; the seed declares no such term, so the seed-run scores those rows +30 relative to GS. The offences differ: every deduction row sits inside the 600 s working time (flight times 182\u2013596 s), so F3J.10.3's overfly offence cannot describe them, and GS's durFlightPenalty=1 late-landing scheme is a local GS construct the rulebook does not state \u2014 the payload is not mapped (decision 3: the mapping policy fixes values, not offences). The landing award on all eleven now agrees (every deduction row records Landing 0.0, and the seed's {0,0} convention row meets GS's 0\u21920 rule there \u2014 the retired sentinel's meeting point, provenance note 8): the gap is the deduction alone. Ten rows show raw deltas of exactly +30.0 in the comparator report; the eleventh, R1G1P44, additionally carries the R1 decay below (raw 596 vs 454.0, delta +142 = decay + deduction). Declared as 11 structured cells (\"cells\": identity with pinned GS and seed-run values) \u2014 the exact witnessed set for this class; the R1 decay class declares its own 22, sharing R1G1P44 (delta +142 = decay + deduction). Union 32 distinct.",
       "citation": "Rulebook: F3J.10.3 \u2014 'A penalty of thirty (30) points will be deducted from the flight score for overflying the end of the group's working time for up to a maximum of one (1) minute' \u2014 the overfly offence, which the seed's conditional implements exactly (overflySeconds > 0 \u2192 \u221230) and which never fires here (overflySeconds unrecorded \u2192 0, and no flight overflew). Local practice: competition.json familyRows.Dur.durFlightPenalty = 1 puts GS's late-landing scheme in force (provenance.json: 'durFlightPenalty=1 puts the late-landing deduction mode in force (unlike ales-sample-comp): 11 rows carry FlightScoreDeduction=30; Penalty is 0 everywhere'); the capture gate reads the published definition \u2014 the seed class in parallel-run mode (ReplayDriver.cs:1161-1168) \u2014 and the seed declares no lateLandingDeduction metric, so the harness captures nothing for the column. Triage kind 1 \u2014 local variation: the offences differ, so the payload is disclosed and never reconciled (decision 3).",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 44,
+          "gs": 454.0,
+          "seed": 596
+        },
+        {
+          "round": 5,
+          "group": 4,
+          "pilotNo": 7,
+          "gs": 563.0,
+          "seed": 593
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 2,
+          "gs": 565.0,
+          "seed": 595
+        },
+        {
+          "round": 6,
+          "group": 4,
+          "pilotNo": 63,
+          "gs": 553.0,
+          "seed": 583
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 2,
+          "gs": 564.0,
+          "seed": 594
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 63,
+          "gs": 321.0,
+          "seed": 351
+        },
+        {
+          "round": 13,
+          "group": 1,
+          "pilotNo": 42,
+          "gs": 566.0,
+          "seed": 596
+        },
+        {
+          "round": 13,
+          "group": 4,
+          "pilotNo": 54,
+          "gs": 563.0,
+          "seed": 593
+        },
+        {
+          "round": 14,
+          "group": 2,
+          "pilotNo": 25,
+          "gs": 555.0,
+          "seed": 585
+        },
+        {
+          "round": 14,
+          "group": 3,
+          "pilotNo": 44,
+          "gs": 152.0,
+          "seed": 182
+        },
+        {
+          "round": 14,
+          "group": 4,
+          "pilotNo": 7,
+          "gs": 266.0,
+          "seed": 296
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -73,7 +152,163 @@
       "pilotNo": "*",
       "difference": "Raw score-cell R1 over-target decay: GS scored round 1 against a 540 s target with linear over-target decay (target \u2212 (t \u2212 target)), while rounds 2\u201316 held the 600 s target with no decay; 22 R1 flights over 540 s witness it (every one solves T = (t + TS)/2 = 540 exactly \u2014 oracle-reconciled, the export carrying no DurTargetTimeByRound rows, ReplayDriver.cs:185-203). The seed's working time is a fixed 600 s with a 1 pt/s rate term capped PerFlight at 599 and no decay clause, so the seed-run scores those 22 flights at their flight time \u2014 up to 114 points above GS's decayed value (R1G2P62: seed 694 vs GS 580.0; his recorded 0.8 m landing agrees on both sides). Two of the 22 record Landing 0.0 (R1G3P13 and R1G1P44 \u2014 the retired sentinel's last shared cells): the landing award now agrees 0\u21920 there and their deltas (+110 and +142) are decay alone, plus the \u221230 deduction for P44 (entry above). The 599 cap never binds on this pair (longest decoded flight 598 s).",
       "citation": "Rulebook: F3J.6.2 b \u2014 'The working time allowed to each competitor in a group shall be of exactly ten (10) minutes duration' \u2014 the fixed 600 s the seed's timing declares; F3J.10.1 c ends the timed attempt at 'completion of the group's working time', so no flight scores beyond 600 s (the seed's rate term caps PerFlight at 599 (landing-zero story; inert here \u2014 longest decoded flight 598 s); the 1 pt/s rate itself is the universal F3J convention, carried at docs/rules/f3j.md:74-78 as convention, not citation). The rulebook states no over-target decay clause. Local practice: GS scored R1 against 540 s (competition.json familyRows.Dur.durTargetTime 600 covers rounds 2\u201316; the R1 value exists nowhere in the fixture's input files \u2014 DurTargetTimeByRound has zero rows \u2014 and is oracle-reconciled in the parity harness, ReplayDriver.cs:185-203, never bound under the seed: decision 4). Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 29,
+          "gs": 588.0,
+          "seed": 686
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 39,
+          "gs": 531.0,
+          "seed": 629
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 44,
+          "gs": 454.0,
+          "seed": 596
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 47,
+          "gs": 572.0,
+          "seed": 678
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 49,
+          "gs": 590.0,
+          "seed": 686
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 55,
+          "gs": 575.0,
+          "seed": 685
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 56,
+          "gs": 571.0,
+          "seed": 679
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 3,
+          "gs": 570.0,
+          "seed": 680
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 22,
+          "gs": 587.0,
+          "seed": 685
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 28,
+          "gs": 586.0,
+          "seed": 692
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 30,
+          "gs": 564.0,
+          "seed": 676
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 32,
+          "gs": 588.0,
+          "seed": 686
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 62,
+          "gs": 580.0,
+          "seed": 694
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 64,
+          "gs": 578.0,
+          "seed": 672
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 13,
+          "gs": 485.0,
+          "seed": 595
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 21,
+          "gs": 591.0,
+          "seed": 679
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 26,
+          "gs": 578.0,
+          "seed": 688
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 42,
+          "gs": 571.0,
+          "seed": 679
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 43,
+          "gs": 553.0,
+          "seed": 647
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 50,
+          "gs": 598.0,
+          "seed": 680
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 52,
+          "gs": 574.0,
+          "seed": 676
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 54,
+          "gs": 577.0,
+          "seed": 673
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -81,9 +316,1411 @@
       "round": null,
       "group": null,
       "pilotNo": "*",
-      "difference": "Normalised-cell rounding grid: GS normalises 1000\u00b7Raw/max HalfUp to 1 dp (competition.json scoring: GroupScoreDecimals 1, RoundOrTruncate 0) while the seed truncates to 1 dp per the rulebook. Witnessed on 200 cells with identical raws and unshifted group maxima \u2014 the first sighting on the corpus of the HalfUp-vs-Truncate split. Witness cell 1/1/4/0/11: exact 1000\u00b7421/588 = 715.986\u2026 \u2192 GS 716.0 vs seed 715.9. Pinned normalised-cell count: 232 across the two normalised classes (this grid and the cascade below) \u2014 the wildcard covers any cell, so the count is what makes the entry exact (decision 1).",
+      "difference": "Normalised-cell rounding grid: GS normalises 1000\u00b7Raw/max HalfUp to 1 dp (competition.json scoring: GroupScoreDecimals 1, RoundOrTruncate 0) while the seed truncates to 1 dp per the rulebook. Witnessed on 200 cells with identical raws and unshifted group maxima \u2014 the first sighting on the corpus of the HalfUp-vs-Truncate split. Witness cell 1/1/4/0/11: exact 1000\u00b7421/588 = 715.986\u2026 \u2192 GS 716.0 vs seed 715.9. Declared as 200 structured cells (\"cells\": identity with pinned GS and seed-run values) \u2014 the exact witnessed set for this class; the cascade class declares its own 32. Union 232 distinct.",
       "citation": "Rulebook: F3J.10.11 \u2014 'The corrected score shall be recorded (truncated) to one place after the decimal point' \u2014 truncation is the cited rulebook position, implemented by 50-f3j.json's normalise.round (Truncate, 0.1). Local practice: the club's GS grid rounds HalfUp to 1 dp (competition.json scoring: GroupScoreDecimals 1, RoundOrTruncate 0) \u2014 the same grid the christchurch pair witnessed where the rulebook was silent; here the rulebook speaks and the citation is stronger. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 1,
+          "group": 4,
+          "pilotNo": 11,
+          "gs": 716.0,
+          "seed": 715.9
+        },
+        {
+          "round": 1,
+          "group": 4,
+          "pilotNo": 46,
+          "gs": 693.9,
+          "seed": 693.8
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 12,
+          "gs": 960.9,
+          "seed": 960.8
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 32,
+          "gs": 892.4,
+          "seed": 892.3
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 50,
+          "gs": 882.6,
+          "seed": 882.5
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 64,
+          "gs": 733.9,
+          "seed": 733.8
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 17,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 47,
+          "gs": 979.8,
+          "seed": 979.7
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 52,
+          "gs": 974.0,
+          "seed": 973.9
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 54,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 11,
+          "gs": 270.0,
+          "seed": 269.9
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 26,
+          "gs": 997.1,
+          "seed": 997
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 30,
+          "gs": 849.1,
+          "seed": 849
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 46,
+          "gs": 744.6,
+          "seed": 744.5
+        },
+        {
+          "round": 2,
+          "group": 4,
+          "pilotNo": 2,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 2,
+          "group": 4,
+          "pilotNo": 21,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 2,
+          "group": 4,
+          "pilotNo": 22,
+          "gs": 644.0,
+          "seed": 643.9
+        },
+        {
+          "round": 2,
+          "group": 4,
+          "pilotNo": 28,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 2,
+          "group": 4,
+          "pilotNo": 49,
+          "gs": 869.8,
+          "seed": 869.7
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 2,
+          "gs": 979.8,
+          "seed": 979.7
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 56,
+          "gs": 976.9,
+          "seed": 976.8
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 64,
+          "gs": 774.6,
+          "seed": 774.5
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 22,
+          "gs": 893.6,
+          "seed": 893.5
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 25,
+          "gs": 784.3,
+          "seed": 784.2
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 39,
+          "gs": 686.6,
+          "seed": 686.5
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 54,
+          "gs": 986.9,
+          "seed": 986.8
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 55,
+          "gs": 683.7,
+          "seed": 683.6
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 17,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 29,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 32,
+          "gs": 975.5,
+          "seed": 975.4
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 43,
+          "gs": 596.0,
+          "seed": 595.9
+        },
+        {
+          "round": 3,
+          "group": 4,
+          "pilotNo": 3,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 3,
+          "group": 4,
+          "pilotNo": 11,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 3,
+          "group": 4,
+          "pilotNo": 12,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 3,
+          "group": 4,
+          "pilotNo": 42,
+          "gs": 532.5,
+          "seed": 532.4
+        },
+        {
+          "round": 3,
+          "group": 4,
+          "pilotNo": 44,
+          "gs": 626.3,
+          "seed": 626.2
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 32,
+          "gs": 925.1,
+          "seed": 925
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 43,
+          "gs": 671.5,
+          "seed": 671.4
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 55,
+          "gs": 629.7,
+          "seed": 629.6
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 3,
+          "gs": 994.2,
+          "seed": 994.1
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 25,
+          "gs": 991.3,
+          "seed": 991.2
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 29,
+          "gs": 991.3,
+          "seed": 991.2
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 64,
+          "gs": 819.8,
+          "seed": 819.7
+        },
+        {
+          "round": 4,
+          "group": 3,
+          "pilotNo": 2,
+          "gs": 979.9,
+          "seed": 979.8
+        },
+        {
+          "round": 4,
+          "group": 3,
+          "pilotNo": 22,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 4,
+          "group": 3,
+          "pilotNo": 26,
+          "gs": 979.9,
+          "seed": 979.8
+        },
+        {
+          "round": 4,
+          "group": 4,
+          "pilotNo": 13,
+          "gs": 997.1,
+          "seed": 997
+        },
+        {
+          "round": 4,
+          "group": 4,
+          "pilotNo": 47,
+          "gs": 997.1,
+          "seed": 997
+        },
+        {
+          "round": 5,
+          "group": 1,
+          "pilotNo": 63,
+          "gs": 447.2,
+          "seed": 447.1
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 22,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 55,
+          "gs": 987.0,
+          "seed": 986.9
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 64,
+          "gs": 971.1,
+          "seed": 971
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 11,
+          "gs": 843.5,
+          "seed": 843.4
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 43,
+          "gs": 637.7,
+          "seed": 637.6
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 56,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 5,
+          "group": 4,
+          "pilotNo": 25,
+          "gs": 969.6,
+          "seed": 969.5
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 13,
+          "gs": 987.1,
+          "seed": 987
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 30,
+          "gs": 979.9,
+          "seed": 979.8
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 39,
+          "gs": 718.0,
+          "seed": 717.9
+        },
+        {
+          "round": 6,
+          "group": 2,
+          "pilotNo": 47,
+          "gs": 987.0,
+          "seed": 986.9
+        },
+        {
+          "round": 6,
+          "group": 2,
+          "pilotNo": 55,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 11,
+          "gs": 985.6,
+          "seed": 985.5
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 26,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 64,
+          "gs": 613.3,
+          "seed": 613.2
+        },
+        {
+          "round": 6,
+          "group": 4,
+          "pilotNo": 3,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 6,
+          "group": 4,
+          "pilotNo": 28,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 11,
+          "gs": 912.2,
+          "seed": 912.1
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 17,
+          "gs": 989.8,
+          "seed": 989.7
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 44,
+          "gs": 604.7,
+          "seed": 604.6
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 46,
+          "gs": 764.3,
+          "seed": 764.2
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 7,
+          "gs": 666.7,
+          "seed": 666.6
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 49,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 50,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 7,
+          "group": 3,
+          "pilotNo": 21,
+          "gs": 994.2,
+          "seed": 994.1
+        },
+        {
+          "round": 7,
+          "group": 4,
+          "pilotNo": 12,
+          "gs": 939.5,
+          "seed": 939.4
+        },
+        {
+          "round": 7,
+          "group": 4,
+          "pilotNo": 29,
+          "gs": 203.2,
+          "seed": 203.1
+        },
+        {
+          "round": 7,
+          "group": 4,
+          "pilotNo": 32,
+          "gs": 935.2,
+          "seed": 935.1
+        },
+        {
+          "round": 7,
+          "group": 4,
+          "pilotNo": 43,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 7,
+          "group": 4,
+          "pilotNo": 54,
+          "gs": 904.9,
+          "seed": 904.8
+        },
+        {
+          "round": 7,
+          "group": 4,
+          "pilotNo": 56,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 8,
+          "group": 1,
+          "pilotNo": 21,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 8,
+          "group": 1,
+          "pilotNo": 52,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 17,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 42,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 44,
+          "gs": 851.4,
+          "seed": 851.3
+        },
+        {
+          "round": 8,
+          "group": 3,
+          "pilotNo": 7,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 8,
+          "group": 3,
+          "pilotNo": 28,
+          "gs": 984.2,
+          "seed": 984.1
+        },
+        {
+          "round": 8,
+          "group": 3,
+          "pilotNo": 30,
+          "gs": 977.0,
+          "seed": 976.9
+        },
+        {
+          "round": 8,
+          "group": 4,
+          "pilotNo": 12,
+          "gs": 987.0,
+          "seed": 986.9
+        },
+        {
+          "round": 8,
+          "group": 4,
+          "pilotNo": 39,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 8,
+          "group": 4,
+          "pilotNo": 49,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 32,
+          "gs": 446.7,
+          "seed": 446.6
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 49,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 55,
+          "gs": 361.7,
+          "seed": 361.6
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 63,
+          "gs": 579.3,
+          "seed": 579.2
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 11,
+          "gs": 981.3,
+          "seed": 981.2
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 12,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 13,
+          "gs": 987.1,
+          "seed": 987
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 29,
+          "gs": 965.5,
+          "seed": 965.4
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 52,
+          "gs": 981.3,
+          "seed": 981.2
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 42,
+          "gs": 897.0,
+          "seed": 896.9
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 47,
+          "gs": 997.1,
+          "seed": 997
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 54,
+          "gs": 985.5,
+          "seed": 985.4
+        },
+        {
+          "round": 9,
+          "group": 4,
+          "pilotNo": 3,
+          "gs": 987.1,
+          "seed": 987
+        },
+        {
+          "round": 9,
+          "group": 4,
+          "pilotNo": 26,
+          "gs": 650.4,
+          "seed": 650.3
+        },
+        {
+          "round": 9,
+          "group": 4,
+          "pilotNo": 43,
+          "gs": 920.9,
+          "seed": 920.8
+        },
+        {
+          "round": 9,
+          "group": 4,
+          "pilotNo": 46,
+          "gs": 892.1,
+          "seed": 892
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 21,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 39,
+          "gs": 655.7,
+          "seed": 655.6
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 49,
+          "gs": 985.7,
+          "seed": 985.6
+        },
+        {
+          "round": 10,
+          "group": 2,
+          "pilotNo": 26,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 10,
+          "group": 2,
+          "pilotNo": 64,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 25,
+          "gs": 952.6,
+          "seed": 952.5
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 30,
+          "gs": 994.3,
+          "seed": 994.2
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 54,
+          "gs": 987.1,
+          "seed": 987
+        },
+        {
+          "round": 10,
+          "group": 4,
+          "pilotNo": 3,
+          "gs": 525.3,
+          "seed": 525.2
+        },
+        {
+          "round": 10,
+          "group": 4,
+          "pilotNo": 12,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 10,
+          "group": 4,
+          "pilotNo": 29,
+          "gs": 555.6,
+          "seed": 555.5
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 11,
+          "gs": 971.1,
+          "seed": 971
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 32,
+          "gs": 851.2,
+          "seed": 851.1
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 42,
+          "gs": 832.4,
+          "seed": 832.3
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 54,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 56,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 3,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 25,
+          "gs": 962.5,
+          "seed": 962.4
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 39,
+          "gs": 968.3,
+          "seed": 968.2
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 50,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 11,
+          "group": 3,
+          "pilotNo": 30,
+          "gs": 972.7,
+          "seed": 972.6
+        },
+        {
+          "round": 11,
+          "group": 3,
+          "pilotNo": 46,
+          "gs": 951.1,
+          "seed": 951
+        },
+        {
+          "round": 11,
+          "group": 3,
+          "pilotNo": 47,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 11,
+          "group": 3,
+          "pilotNo": 62,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 11,
+          "group": 4,
+          "pilotNo": 12,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 11,
+          "group": 4,
+          "pilotNo": 22,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 11,
+          "group": 4,
+          "pilotNo": 43,
+          "gs": 935.0,
+          "seed": 934.9
+        },
+        {
+          "round": 11,
+          "group": 4,
+          "pilotNo": 44,
+          "gs": 950.9,
+          "seed": 950.8
+        },
+        {
+          "round": 11,
+          "group": 4,
+          "pilotNo": 63,
+          "gs": 969.7,
+          "seed": 969.6
+        },
+        {
+          "round": 12,
+          "group": 1,
+          "pilotNo": 3,
+          "gs": 461.1,
+          "seed": 461
+        },
+        {
+          "round": 12,
+          "group": 1,
+          "pilotNo": 29,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 12,
+          "group": 1,
+          "pilotNo": 47,
+          "gs": 988.5,
+          "seed": 988.4
+        },
+        {
+          "round": 12,
+          "group": 1,
+          "pilotNo": 64,
+          "gs": 974.1,
+          "seed": 974
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 7,
+          "gs": 622.7,
+          "seed": 622.6
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 11,
+          "gs": 995.7,
+          "seed": 995.6
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 28,
+          "gs": 990.0,
+          "seed": 989.9
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 49,
+          "gs": 990.0,
+          "seed": 989.9
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 52,
+          "gs": 642.8,
+          "seed": 642.7
+        },
+        {
+          "round": 12,
+          "group": 3,
+          "pilotNo": 42,
+          "gs": 991.3,
+          "seed": 991.2
+        },
+        {
+          "round": 12,
+          "group": 4,
+          "pilotNo": 50,
+          "gs": 987.1,
+          "seed": 987
+        },
+        {
+          "round": 12,
+          "group": 4,
+          "pilotNo": 55,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 13,
+          "group": 1,
+          "pilotNo": 12,
+          "gs": 854.5,
+          "seed": 854.4
+        },
+        {
+          "round": 13,
+          "group": 1,
+          "pilotNo": 39,
+          "gs": 851.6,
+          "seed": 851.5
+        },
+        {
+          "round": 13,
+          "group": 2,
+          "pilotNo": 30,
+          "gs": 997.9,
+          "seed": 997.8
+        },
+        {
+          "round": 13,
+          "group": 2,
+          "pilotNo": 46,
+          "gs": 976.6,
+          "seed": 976.5
+        },
+        {
+          "round": 13,
+          "group": 2,
+          "pilotNo": 52,
+          "gs": 951.1,
+          "seed": 951
+        },
+        {
+          "round": 13,
+          "group": 2,
+          "pilotNo": 55,
+          "gs": 489.4,
+          "seed": 489.3
+        },
+        {
+          "round": 13,
+          "group": 3,
+          "pilotNo": 32,
+          "gs": 871.1,
+          "seed": 871
+        },
+        {
+          "round": 13,
+          "group": 4,
+          "pilotNo": 7,
+          "gs": 439.5,
+          "seed": 439.4
+        },
+        {
+          "round": 13,
+          "group": 4,
+          "pilotNo": 17,
+          "gs": 515.9,
+          "seed": 515.8
+        },
+        {
+          "round": 13,
+          "group": 4,
+          "pilotNo": 29,
+          "gs": 707.5,
+          "seed": 707.4
+        },
+        {
+          "round": 13,
+          "group": 4,
+          "pilotNo": 44,
+          "gs": 600.9,
+          "seed": 600.8
+        },
+        {
+          "round": 14,
+          "group": 1,
+          "pilotNo": 28,
+          "gs": 519.5,
+          "seed": 519.4
+        },
+        {
+          "round": 14,
+          "group": 1,
+          "pilotNo": 39,
+          "gs": 496.4,
+          "seed": 496.3
+        },
+        {
+          "round": 14,
+          "group": 1,
+          "pilotNo": 50,
+          "gs": 684.0,
+          "seed": 683.9
+        },
+        {
+          "round": 14,
+          "group": 1,
+          "pilotNo": 64,
+          "gs": 939.4,
+          "seed": 939.3
+        },
+        {
+          "round": 14,
+          "group": 2,
+          "pilotNo": 2,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 14,
+          "group": 2,
+          "pilotNo": 46,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 14,
+          "group": 2,
+          "pilotNo": 52,
+          "gs": 545.6,
+          "seed": 545.5
+        },
+        {
+          "round": 14,
+          "group": 3,
+          "pilotNo": 13,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 14,
+          "group": 3,
+          "pilotNo": 26,
+          "gs": 781.8,
+          "seed": 781.7
+        },
+        {
+          "round": 14,
+          "group": 3,
+          "pilotNo": 63,
+          "gs": 518.8,
+          "seed": 518.7
+        },
+        {
+          "round": 14,
+          "group": 4,
+          "pilotNo": 3,
+          "gs": 779.9,
+          "seed": 779.8
+        },
+        {
+          "round": 14,
+          "group": 4,
+          "pilotNo": 12,
+          "gs": 729.5,
+          "seed": 729.4
+        },
+        {
+          "round": 14,
+          "group": 4,
+          "pilotNo": 30,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 15,
+          "group": 1,
+          "pilotNo": 29,
+          "gs": 916.7,
+          "seed": 916.6
+        },
+        {
+          "round": 15,
+          "group": 1,
+          "pilotNo": 55,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 15,
+          "group": 1,
+          "pilotNo": 64,
+          "gs": 577.6,
+          "seed": 577.5
+        },
+        {
+          "round": 15,
+          "group": 2,
+          "pilotNo": 28,
+          "gs": 969.8,
+          "seed": 969.7
+        },
+        {
+          "round": 15,
+          "group": 2,
+          "pilotNo": 42,
+          "gs": 984.2,
+          "seed": 984.1
+        },
+        {
+          "round": 15,
+          "group": 2,
+          "pilotNo": 54,
+          "gs": 984.2,
+          "seed": 984.1
+        },
+        {
+          "round": 15,
+          "group": 3,
+          "pilotNo": 3,
+          "gs": 666.2,
+          "seed": 666.1
+        },
+        {
+          "round": 15,
+          "group": 3,
+          "pilotNo": 22,
+          "gs": 998.6,
+          "seed": 998.5
+        },
+        {
+          "round": 15,
+          "group": 3,
+          "pilotNo": 32,
+          "gs": 724.0,
+          "seed": 723.9
+        },
+        {
+          "round": 15,
+          "group": 3,
+          "pilotNo": 49,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 15,
+          "group": 3,
+          "pilotNo": 63,
+          "gs": 913.3,
+          "seed": 913.2
+        },
+        {
+          "round": 15,
+          "group": 4,
+          "pilotNo": 2,
+          "gs": 865.9,
+          "seed": 865.8
+        },
+        {
+          "round": 15,
+          "group": 4,
+          "pilotNo": 44,
+          "gs": 641.4,
+          "seed": 641.3
+        },
+        {
+          "round": 15,
+          "group": 4,
+          "pilotNo": 46,
+          "gs": 814.9,
+          "seed": 814.8
+        },
+        {
+          "round": 15,
+          "group": 4,
+          "pilotNo": 56,
+          "gs": 973.8,
+          "seed": 973.7
+        },
+        {
+          "round": 16,
+          "group": 1,
+          "pilotNo": 3,
+          "gs": 992.8,
+          "seed": 992.7
+        },
+        {
+          "round": 16,
+          "group": 1,
+          "pilotNo": 7,
+          "gs": 884.4,
+          "seed": 884.3
+        },
+        {
+          "round": 16,
+          "group": 1,
+          "pilotNo": 42,
+          "gs": 948.0,
+          "seed": 947.9
+        },
+        {
+          "round": 16,
+          "group": 1,
+          "pilotNo": 47,
+          "gs": 896.0,
+          "seed": 895.9
+        },
+        {
+          "round": 16,
+          "group": 1,
+          "pilotNo": 52,
+          "gs": 932.1,
+          "seed": 932
+        },
+        {
+          "round": 16,
+          "group": 2,
+          "pilotNo": 63,
+          "gs": 532.6,
+          "seed": 532.5
+        },
+        {
+          "round": 16,
+          "group": 3,
+          "pilotNo": 22,
+          "gs": 990.0,
+          "seed": 989.9
+        },
+        {
+          "round": 16,
+          "group": 3,
+          "pilotNo": 30,
+          "gs": 990.0,
+          "seed": 989.9
+        },
+        {
+          "round": 16,
+          "group": 3,
+          "pilotNo": 32,
+          "gs": 925.4,
+          "seed": 925.3
+        },
+        {
+          "round": 16,
+          "group": 3,
+          "pilotNo": 49,
+          "gs": 991.4,
+          "seed": 991.3
+        },
+        {
+          "round": 16,
+          "group": 4,
+          "pilotNo": 29,
+          "gs": 989.9,
+          "seed": 989.8
+        },
+        {
+          "round": 16,
+          "group": 4,
+          "pilotNo": 54,
+          "gs": 978.3,
+          "seed": 978.2
+        },
+        {
+          "round": 16,
+          "group": 4,
+          "pilotNo": 56,
+          "gs": 989.9,
+          "seed": 989.8
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -93,7 +1730,233 @@
       "pilotNo": "*",
       "difference": "Normalised-cell composition/renormalisation cascade: the 32 non-rounding normalised mismatches \u2014 31 cells carrying their own raw mismatch (21 R1 decay cells and the 10 deduction rows outside R1; R1G1P44's R1 cell carries both) plus 1 raw-unchanged rescaled cell (R1G1P25: raw agrees both sides, seed 629.7 vs GS 732.2, \u2212102.5 \u2014 the R1G1 max raw moved 590 \u2192 686). The group max moved in exactly 3 groups, all round 1: R1G1 (GS winner p49 alone at 1000 \u2014 the only R1G1 cell absent from the normalised report, so GS's 1000 \u2014 vs seed co-winners p29+p49, p49 agreeing at the top on both sides while p29's decayed raw joins him; every other R1G1 mismatch carries its own raw), R1G2 (winner p32 at GS 1000.0 \u2192 p62 at seed 1000; all 7 mismatches carry their own raw) and R1G3 (winner p50 at GS 1000.0 \u2192 p26 at seed 1000; all 8 carry their own raw). In the ten deduction groups (R5G4, R6G3, R6G4, R10G3, R12G2, R13G1, R13G4, R14G2, R14G3, R14G4) the maxima hold \u2014 each group's sole non-rounding cell carries its own +30 raw (deltas +43.0\u2026+43.5) with no winner-change row. R13G3 rejoins the agreeing set: its old +100 sentinel raw now agrees and its sole mismatch is R13G3P32 rounding (\u22120.1). Cites the two raw classes as its causes; the remaining 200 normalised mismatches are the rounding grid (the entry above).",
       "citation": "Rulebook: F3J.10.10 \u2014 the group winner is 'the highest aggregate of points comprising of flight points plus landing bonus points minus penalty points' \u2014 the composition whose seed-side value the two raw classes change; F3J.10.11 \u2014 each competitor's corrected score is his own score 'multiplied by 1000 / highest points total scored in the group before correction' \u2014 the renormalisation that propagates a moved max to every raw-unchanged cell. Local practice causes: the R1 540 s decay (22 flights) and the \u221230 late-landing deduction (11 rows, GS-side only) \u2014 each triaged above. The retired landing-0 sentinel (provenance note 8) causes none of the 32. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 25,
+          "gs": 732.2,
+          "seed": 629.7
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 29,
+          "gs": 996.6,
+          "seed": 1000
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 39,
+          "gs": 900.0,
+          "seed": 916.9
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 44,
+          "gs": 769.5,
+          "seed": 868.8
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 47,
+          "gs": 969.5,
+          "seed": 988.3
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 55,
+          "gs": 974.6,
+          "seed": 998.5
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 56,
+          "gs": 967.8,
+          "seed": 989.7
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 3,
+          "gs": 969.4,
+          "seed": 979.8
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 22,
+          "gs": 998.3,
+          "seed": 987
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 28,
+          "gs": 996.6,
+          "seed": 997.1
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 30,
+          "gs": 959.2,
+          "seed": 974
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 32,
+          "gs": 1000.0,
+          "seed": 988.4
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 62,
+          "gs": 986.4,
+          "seed": 1000
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 64,
+          "gs": 983.0,
+          "seed": 968.2
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 13,
+          "gs": 811.0,
+          "seed": 864.8
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 21,
+          "gs": 988.3,
+          "seed": 986.9
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 26,
+          "gs": 966.6,
+          "seed": 1000
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 42,
+          "gs": 954.8,
+          "seed": 986.9
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 43,
+          "gs": 924.7,
+          "seed": 940.4
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 50,
+          "gs": 1000.0,
+          "seed": 988.3
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 52,
+          "gs": 959.9,
+          "seed": 982.5
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 54,
+          "gs": 964.9,
+          "seed": 978.1
+        },
+        {
+          "round": 5,
+          "group": 4,
+          "pilotNo": 7,
+          "gs": 815.9,
+          "seed": 859.4
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 2,
+          "gs": 815.3,
+          "seed": 858.5
+        },
+        {
+          "round": 6,
+          "group": 4,
+          "pilotNo": 63,
+          "gs": 798.0,
+          "seed": 841.2
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 2,
+          "gs": 810.3,
+          "seed": 853.4
+        },
+        {
+          "round": 12,
+          "group": 2,
+          "pilotNo": 63,
+          "gs": 460.5,
+          "seed": 503.5
+        },
+        {
+          "round": 13,
+          "group": 1,
+          "pilotNo": 42,
+          "gs": 815.6,
+          "seed": 858.7
+        },
+        {
+          "round": 13,
+          "group": 4,
+          "pilotNo": 54,
+          "gs": 811.2,
+          "seed": 854.4
+        },
+        {
+          "round": 14,
+          "group": 2,
+          "pilotNo": 25,
+          "gs": 803.2,
+          "seed": 846.5
+        },
+        {
+          "round": 14,
+          "group": 3,
+          "pilotNo": 44,
+          "gs": 219.7,
+          "seed": 263
+        },
+        {
+          "round": 14,
+          "group": 4,
+          "pilotNo": 7,
+          "gs": 382.7,
+          "seed": 425.8
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -101,9 +1964,32 @@
       "round": null,
       "group": null,
       "pilotNo": 12,
-      "difference": "Final-placing split, pilot 12: GS rank 11 vs seed-run placing 12 (down 1). No raw or non-rounding cell of his own in the comparator report \u2014 his split is the rounding grid (9 cells, \u22120.1 each) against pilot 30's decay gain: pilot 30's R1G2 cell (+112 raw, +14.8 normalised) passes him. His old sentinel causes (R14G4, R13G1 +100s) now agree 0\u21920 and retire with the sentinel class. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "difference": "Final-placing split, pilot 12: GS rank 11 vs seed-run placing 12 (down 1). No raw or non-rounding cell of his own in the comparator report \u2014 his split is the rounding grid (9 cells, \u22120.1 each) against pilot 30's decay gain: pilot 30's R1G2 cell (+112 raw, +14.8 normalised) passes him. His old sentinel causes (R14G4, R13G1 +100s) now agree 0\u21920 and retire with the sentinel class. Covers the pilot's rank-placement line (seed-run placing 12 vs GS rank 11) and both place-group membership lines (the =11 line (seed-run excludes, GS includes); the =12 line (seed-run includes, GS excludes)) \u2014 every rank is distinct on both sides, and the swap moves both pilots' memberships (re-triaged gs_03: measured 18 ranking lines, 3 per pilot; the prior 'no membership lines' claim was wrong \u2014 wildcard cover had absorbed them).",
       "citation": "Rulebook drop: F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest \u2014 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) \u2014 the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (rival pilot 30's R1G2 cell); the rounding grid (own, 9 cells); Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed policy. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 12,
+          "gs": 11,
+          "seed": 12
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 12,
+          "gs": 11,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 12,
+          "gs": null,
+          "seed": 12
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -111,9 +1997,32 @@
       "round": null,
       "group": null,
       "pilotNo": 30,
-      "difference": "Final-placing split, pilot 30: GS rank 12 vs seed-run placing 11 (up 1). His R1G2 decay cell scores his flight at flight time on the seed side (raw 676 vs 564.0, +112; norm 974.0 vs 959.2, +14.8); 8 further cells ride the rounding grid \u2014 he passes pilot 12. His old R12G4 co-winner sentinel cell now agrees 0\u21920 and retires with the sentinel class. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "difference": "Final-placing split, pilot 30: GS rank 12 vs seed-run placing 11 (up 1). His R1G2 decay cell scores his flight at flight time on the seed side (raw 676 vs 564.0, +112; norm 974.0 vs 959.2, +14.8); 8 further cells ride the rounding grid \u2014 he passes pilot 12. His old R12G4 co-winner sentinel cell now agrees 0\u21920 and retires with the sentinel class. Covers the pilot's rank-placement line (seed-run placing 11 vs GS rank 12) and both place-group membership lines (the =11 line (seed-run includes, GS excludes); the =12 line (seed-run excludes, GS includes)) \u2014 every rank is distinct on both sides, and the swap moves both pilots' memberships (re-triaged gs_03: measured 18 ranking lines, 3 per pilot; the prior 'no membership lines' claim was wrong \u2014 wildcard cover had absorbed them).",
       "citation": "Rulebook drop: F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest \u2014 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) \u2014 the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G2); the rounding grid (own, 8 cells); Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed policy. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 30,
+          "gs": 12,
+          "seed": 11
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 30,
+          "gs": null,
+          "seed": 11
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 30,
+          "gs": 12,
+          "seed": null
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -121,9 +2030,32 @@
       "round": null,
       "group": null,
       "pilotNo": 2,
-      "difference": "Final-placing split, pilot 2: GS rank 24 vs seed-run placing 23 (up 1). His two deduction rows (R6G3P2, R10G3P2 \u2014 +30 raw each, the seed never carrying GS's late-landing payload; norm +43.2/+43.1; their Landing 0.0 awards now agree 0\u21920) score higher on the seed side; 5 further cells ride the rounding grid \u2014 he swaps with pilot 64. His old pure sentinel cells (R13G3, R15G4) now agree and retire with the sentinel class. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "difference": "Final-placing split, pilot 2: GS rank 24 vs seed-run placing 23 (up 1). His two deduction rows (R6G3P2, R10G3P2 \u2014 +30 raw each, the seed never carrying GS's late-landing payload; norm +43.2/+43.1; their Landing 0.0 awards now agree 0\u21920) score higher on the seed side; 5 further cells ride the rounding grid \u2014 he swaps with pilot 64. His old pure sentinel cells (R13G3, R15G4) now agree and retire with the sentinel class. Covers the pilot's rank-placement line (seed-run placing 23 vs GS rank 24) and both place-group membership lines (the =23 line (seed-run includes, GS excludes); the =24 line (seed-run excludes, GS includes)) \u2014 every rank is distinct on both sides, and the swap moves both pilots' memberships (re-triaged gs_03: measured 18 ranking lines, 3 per pilot; the prior 'no membership lines' claim was wrong \u2014 wildcard cover had absorbed them).",
       "citation": "Rulebook drop: F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest \u2014 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) \u2014 the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: \u221230 absence (own, R6G3 + R10G3); the rounding grid (own, 5 cells); Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed policy. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 2,
+          "gs": 24,
+          "seed": 23
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 2,
+          "gs": null,
+          "seed": 23
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 2,
+          "gs": 24,
+          "seed": null
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -131,9 +2063,32 @@
       "round": null,
       "group": null,
       "pilotNo": 32,
-      "difference": "Final-placing split, pilot 32: GS rank 20 vs seed-run placing 21 (down 1). His R1G2 decay cell scores higher raw on the seed side (686 vs 588.0, +98) but the R1G2 winner changes under him (GS p32 at 1000.0 \u2192 seed p62 at 1000), so his normalised drops (988.4 vs 1000.0, \u221211.6); 9 further cells ride the rounding grid \u2014 pilot 52's decay gain (+102 raw, +22.6 norm) passes him. His old sentinel cells (R15G3, R11G1) now agree and retire with the sentinel class. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "difference": "Final-placing split, pilot 32: GS rank 20 vs seed-run placing 21 (down 1). His R1G2 decay cell scores higher raw on the seed side (686 vs 588.0, +98) but the R1G2 winner changes under him (GS p32 at 1000.0 \u2192 seed p62 at 1000), so his normalised drops (988.4 vs 1000.0, \u221211.6); 9 further cells ride the rounding grid \u2014 pilot 52's decay gain (+102 raw, +22.6 norm) passes him. His old sentinel cells (R15G3, R11G1) now agree and retire with the sentinel class. Covers the pilot's rank-placement line (seed-run placing 21 vs GS rank 20) and both place-group membership lines (the =20 line (seed-run excludes, GS includes); the =21 line (seed-run includes, GS excludes)) \u2014 every rank is distinct on both sides, and the swap moves both pilots' memberships (re-triaged gs_03: measured 18 ranking lines, 3 per pilot; the prior 'no membership lines' claim was wrong \u2014 wildcard cover had absorbed them).",
       "citation": "Rulebook drop: F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest \u2014 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) \u2014 the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G2, diluted by the winner change); rival pilot 52's decay gain; the rounding grid (own, 9 cells); Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed policy. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 32,
+          "gs": 20,
+          "seed": 21
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 32,
+          "gs": 20,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 32,
+          "gs": null,
+          "seed": 21
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -141,9 +2096,32 @@
       "round": null,
       "group": null,
       "pilotNo": 52,
-      "difference": "Final-placing split, pilot 52: GS rank 21 vs seed-run placing 20 (up 1). His R1G3 decay cell scores his flight at flight time on the seed side (raw 676 vs 574.0, +102; norm 982.5 vs 959.9, +22.6); 7 further cells ride the rounding grid \u2014 he passes pilot 32. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "difference": "Final-placing split, pilot 52: GS rank 21 vs seed-run placing 20 (up 1). His R1G3 decay cell scores his flight at flight time on the seed side (raw 676 vs 574.0, +102; norm 982.5 vs 959.9, +22.6); 7 further cells ride the rounding grid \u2014 he passes pilot 32. Covers the pilot's rank-placement line (seed-run placing 20 vs GS rank 21) and both place-group membership lines (the =20 line (seed-run includes, GS excludes); the =21 line (seed-run excludes, GS includes)) \u2014 every rank is distinct on both sides, and the swap moves both pilots' memberships (re-triaged gs_03: measured 18 ranking lines, 3 per pilot; the prior 'no membership lines' claim was wrong \u2014 wildcard cover had absorbed them).",
       "citation": "Rulebook drop: F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest \u2014 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) \u2014 the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G3); the rounding grid (own, 7 cells); Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed policy. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 52,
+          "gs": 21,
+          "seed": 20
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 52,
+          "gs": null,
+          "seed": 20
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 52,
+          "gs": 21,
+          "seed": null
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -151,9 +2129,32 @@
       "round": null,
       "group": null,
       "pilotNo": 64,
-      "difference": "Final-placing split, pilot 64: GS rank 23 vs seed-run placing 24 (down 1). His R1G2 decay cell scores higher raw on the seed side (672 vs 578.0, +94) but the R1G2 winner changes under him (GS p32 at 1000.0 \u2192 seed p62 at 1000), so his normalised drops (968.2 vs 983.0, \u221214.8); 9 cells ride the rounding grid (R6G3 among them \u2014 its landing now agrees 0\u21920, \u22120.1 there); pilot 2's two deduction cells pass him. His old R6G3 sentinel cause retires with the sentinel class. Covers the pilot's rank-placement line; no '=n' tie-group membership lines exist on this pair (every rank is distinct on both sides).",
+      "difference": "Final-placing split, pilot 64: GS rank 23 vs seed-run placing 24 (down 1). His R1G2 decay cell scores higher raw on the seed side (672 vs 578.0, +94) but the R1G2 winner changes under him (GS p32 at 1000.0 \u2192 seed p62 at 1000), so his normalised drops (968.2 vs 983.0, \u221214.8); 9 cells ride the rounding grid (R6G3 among them \u2014 its landing now agrees 0\u21920, \u22120.1 there); pilot 2's two deduction cells pass him. His old R6G3 sentinel cause retires with the sentinel class. Covers the pilot's rank-placement line (seed-run placing 24 vs GS rank 23) and both place-group membership lines (the =23 line (seed-run excludes, GS includes); the =24 line (seed-run includes, GS excludes)) \u2014 every rank is distinct on both sides, and the swap moves both pilots' memberships (re-triaged gs_03: measured 18 ranking lines, 3 per pilot; the prior 'no membership lines' claim was wrong \u2014 wildcard cover had absorbed them).",
       "citation": "Rulebook drop: F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 implemented by 50-f3j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 8, tieBreak Latest \u2014 16 completed rounds, fires). Local practice: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) \u2014 the drop policies AGREE (the story's original guaranteed-divergence claim stands withdrawn); the move comes from the score cells. Contributing classes: R1 540 s decay (own, R1G2, diluted by the winner change); rival pilot 2's deduction cells; the rounding grid (own, 9 cells); Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed policy. Triage kind 1 \u2014 local variation: correct on both sides.",
-      "disposition": "permanent"
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 64,
+          "gs": 23,
+          "seed": 24
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 64,
+          "gs": 23,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 64,
+          "gs": null,
+          "seed": 24
+        }
+      ]
     }
   ]
 }

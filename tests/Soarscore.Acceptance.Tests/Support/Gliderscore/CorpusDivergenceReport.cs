@@ -59,9 +59,9 @@ public static class CorpusDivergenceReport
             lines.Add($"### {slug} — {fixture.Divergences.Count} "
                 + (fixture.Divergences.Count == 1 ? "entry" : "entries") + $", {permanent} permanent");
             lines.Add(
-                "grain       | round | group | pilot | disposition | reason");
+                "grain       | round | group | pilot | kind                  | expectation                    | disposition | reason");
             lines.Add(
-                "------------|-------|-------|-------|-------------|-------");
+                "------------|-------|-------|-------|-----------------------|--------------------------------|-------------|-------");
 
             foreach (var d in fixture.Divergences
                 .OrderBy(d => d.Grain, StringComparer.Ordinal)
@@ -69,9 +69,10 @@ public static class CorpusDivergenceReport
             {
                 lines.Add(string.Format(
                     invariant,
-                    "{0,-11} | {1,5} | {2,5} | {3,5} | {4,-11} | {5}",
+                    "{0,-11} | {1,5} | {2,5} | {3,5} | {4,-21} | {5,-30} | {6,-11} | {7}",
                     d.Grain, d.Round?.ToString(invariant) ?? "*", d.Group?.ToString(invariant) ?? "*",
-                    d.PilotToken(), d.Disposition ?? "(pending)", d.Reason));
+                    d.PilotToken(), RenderKind(d), RenderExpectation(d),
+                    d.Disposition ?? "(pending)", d.Reason));
             }
 
             lines.Add("");
@@ -107,16 +108,26 @@ public static class CorpusDivergenceReport
                 lines.Add($"### {slug} under {seedSlug} — {ledger.TriagedDifferences.Count} "
                     + (ledger.TriagedDifferences.Count == 1 ? "entry" : "entries") + $", {permanent} permanent");
                 lines.Add(
-                    "kind | grain       | round/group/pilot | disposition | difference | citation");
+                    "kind | grain       | round/group/pilot | cells | disposition | difference | citation");
                 lines.Add(
-                    "-----|-------------|-------------------|-------------|------------|---------");
+                    "-----|-------------|-------------------|-------|-------------|------------|---------");
 
                 foreach (var e in ledger.TriagedDifferences
                     .OrderBy(e => e.Grain, StringComparer.Ordinal)
                     .ThenBy(e => e.Round).ThenBy(e => e.Group).ThenBy(e => e.PilotToken()))
                 {
                     lines.Add($"{e.TriageKind,4} | {e.Grain,-11} | r{e.Round?.ToString() ?? "*"}/g{e.Group?.ToString() ?? "*"} "
-                        + $"p{e.PilotToken(),-3} | {e.Disposition ?? "(pending)",-11} | {e.Difference} | {e.Citation}");
+                        + $"p{e.PilotToken(),-3} | {(e.Cells?.Count ?? 0),5} | {e.Disposition ?? "(pending)",-11} | {e.Difference} | {e.Citation}");
+
+                    // gs_03 — the declared exact set beside the prose: every
+                    // declared cell with both pinned values, so the report
+                    // answers "which cells, which values" structurally.
+                    foreach (var cell in (e.Cells ?? []).OrderBy(c => c.Round).ThenBy(c => c.Group).ThenBy(c => c.PilotNo))
+                    {
+                        lines.Add($"         |             |   r{cell.Round}/g{cell.Group} p{cell.PilotNo}: "
+                            + $"seed-run {cell.Seed?.ToString(invariant) ?? "(none)"} vs GS oracle "
+                            + $"{cell.Gs?.ToString(invariant) ?? "(none)"}");
+                    }
                 }
 
                 lines.Add("");
@@ -135,6 +146,53 @@ public static class CorpusDivergenceReport
         File.WriteAllText(path, string.Join(Environment.NewLine, lines) + Environment.NewLine);
 
         return path;
+    }
+
+    /// <summary>gs_03 — the structured kind without throwing: the report is
+    /// best-effort visibility, so an unknown token prints instead of
+    /// breaking the run (the compare itself fails it loudly).</summary>
+    private static string RenderKind(DivergenceEntry entry)
+    {
+        try
+        {
+            return entry.KindNormalized;
+        }
+        catch (InvalidOperationException)
+        {
+            return $"unknown-kind:{entry.Kind}";
+        }
+    }
+
+    /// <summary>gs_03 — the structured expectation one-liner beside the
+    /// prose: pinned ours-vs-expected values for numeric entries, the
+    /// documentary scope otherwise, with the evidence reference where one
+    /// is declared.</summary>
+    private static string RenderExpectation(DivergenceEntry entry)
+    {
+        var invariant = System.Globalization.CultureInfo.InvariantCulture;
+
+        string expectation;
+        try
+        {
+            expectation = entry.KindNormalized switch
+            {
+                "numeric" => entry.Ours is { } ours && entry.Expected is { } expected
+                    ? $"ours {ours.ToString(invariant)} vs GS {expected.ToString(invariant)}"
+                    : "(pins missing)",
+                "excludedOracleCell" => "oracle cell never replayed",
+                "syntheticSlot" => "our-only slot, no oracle cell",
+                "unsupportedComparison" => "team comparison does not run",
+                _ => "(unknown kind)",
+            };
+        }
+        catch (InvalidOperationException)
+        {
+            expectation = "(unknown kind)";
+        }
+
+        return entry.Evidence is { } evidence
+            ? $"{expectation} [{evidence}]"
+            : expectation;
     }
 
     /// <summary>TestResults/ off the repository root — the same walk-up

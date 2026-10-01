@@ -586,22 +586,32 @@ public sealed class ReplayDriver(HttpClient client)
         // before). Rounds outside the window stay prescribed — the draw above
         // covers all ten rounds — but the entry/completion walk below skips
         // them entirely: no entries opened, nothing flown or captured, no
-        // /complete-task-round. The loud assertion proves the declared window
-        // still describes the fixture's own scored rollup (the parallel-run
-        // window's discipline); a window that no longer does is a re-triage,
-        // never a silent shrink.
+        // /complete-task-round.
+        //
+        // gs_02 — every active fixture now declares a window, in two honest
+        // flavours. A SNAPSHOT window (f5k: 1–6 of 10 drawn) excludes rounds
+        // from entry/completion/comparison, so the loud assertion below
+        // proves it still describes the fixture's own scored rollup (the
+        // parallel-run window's discipline) — a window that no longer does
+        // is a re-triage, never a silent shrink. A FULL window spans the
+        // whole drawn range (unflown placeholder rounds ARE entered as
+        // flight-less zeros and compared as zero cells — the comparator's
+        // universe trim and outside-window guard are vacuous there), so
+        // there is nothing to shrink and the assertion does not run; the
+        // window still records the included scoring window and row
+        // population the gs_02 contract requires.
         var snapshotWindow = fixture.ExpectedResult.ScoredWindow;
-
-        if (snapshotWindow is not null)
-        {
-            AssertSnapshotWindow(fixture, snapshotWindow);
-        }
 
         var unscoredRounds = snapshotWindow is null
             ? new HashSet<int>()
             : keptRows.Select(r => r.RoundNo)
                 .Where(n => n < snapshotWindow.FirstRound || n > snapshotWindow.LastRound)
                 .ToHashSet();
+
+        if (snapshotWindow is not null && unscoredRounds.Count > 0)
+        {
+            AssertSnapshotWindow(fixture, snapshotWindow);
+        }
 
         // WI-4 — the fixture's per-round GS task schedule (empty for the
         // duration-family fixtures, whose FixedSequence phases prescribe a null

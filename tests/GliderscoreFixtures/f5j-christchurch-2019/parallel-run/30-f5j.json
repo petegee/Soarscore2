@@ -14,22 +14,22 @@
       {
         "metric": "overflySeconds",
         "resolved": 0,
-        "mechanism": "seed-declared whenNotRecorded (Number 0), resolved by the engine (FlightMetricResolution tier 1, metric-absence-semantics.md) — the harness emits NO assumed values; the capture map stays exactly the duration replay's and records only what the fixture data carries.",
-        "justification": "P1 (assumed-clean unless recorded to the contrary): seconds past the working time are what the timekeeper records; a flight landing within time has none. FAI 5.5.11.12 g — 'A zero score will be recorded for overflying the end of the Group's Working Time by more than one (1) minute' — and 5.5.11.12 k (no landing bonus when the model overflies the end of the working time) are the rulebook shape the seed's overflySeconds metric and its flightValidWhen/landing gates implement. Corroborated inside the foil's own data: the longest decoded flight is 599 s, inside the 600 s working time, so no row could carry a positive value."
+        "mechanism": "seed-declared whenNotRecorded (Number 0), resolved by the engine (FlightMetricResolution tier 1, metric-absence-semantics.md) \u2014 the harness emits NO assumed values; the capture map stays exactly the duration replay's and records only what the fixture data carries.",
+        "justification": "P1 (assumed-clean unless recorded to the contrary): seconds past the working time are what the timekeeper records; a flight landing within time has none. FAI 5.5.11.12 g \u2014 'A zero score will be recorded for overflying the end of the Group's Working Time by more than one (1) minute' \u2014 and 5.5.11.12 k (no landing bonus when the model overflies the end of the working time) are the rulebook shape the seed's overflySeconds metric and its flightValidWhen/landing gates implement. Corroborated inside the foil's own data: the longest decoded flight is 599 s, inside the 600 s working time, so no row could carry a positive value."
       },
       {
         "metric": "touchedByCompetitor",
         "resolved": false,
-        "mechanism": "seed-declared whenNotRecorded (Flag false), resolved by the engine — no harness-emitted values.",
-        "justification": "P1: FAI 5.5.11.12 j — 'If during the landing procedure the model aircraft touches the competitor or his helper (or the team manager if present) or any deliberately placed obstruction, zero landing bonus must be allocated' — is an exception a helper records. No GS column records it on this fixture, so the benign value (no contact; the landing award stands per 5.5.11.12 h) is the negative recording. The seed declares the flag inside the conditional gating its landing lookup."
+        "mechanism": "seed-declared whenNotRecorded (Flag false), resolved by the engine \u2014 no harness-emitted values.",
+        "justification": "P1: FAI 5.5.11.12 j \u2014 'If during the landing procedure the model aircraft touches the competitor or his helper (or the team manager if present) or any deliberately placed obstruction, zero landing bonus must be allocated' \u2014 is an exception a helper records. No GS column records it on this fixture, so the benign value (no contact; the landing award stands per 5.5.11.12 h) is the negative recording. The seed declares the flag inside the conditional gating its landing lookup."
       }
     ],
     "derivedMetrics": [
       {
         "metric": "startHeight",
         "source": "Scores.FlightScoreDeduction",
-        "derivation": "P2 re-expression under the seed's metric name: a flown row with a positive payload captures startHeight = payload — the capture itself satisfies the seed's recordedness gate (Predicate.IsRecorded, add-recorded-predicate.md); a flown row with a zero payload would capture NOTHING, startHeight absent being the gate's false — the flight is cancelled and recorded as a zero score, still FLOWN (never exercised here — every flown row carries 66–271 m). GS's FlightScoreDeduction column carries the start height on an F5J fixture ('misleadingly named', ladder.py:26-27).",
-        "justification": "FAI 5.5.11.12 d — 'The recorded Start Height in metres shall be truncated to the nearest metre' — the recorded quantity exists on every flown row here (66–271 m); 5.5.11.12 e prices it (half a point per metre to 200 m, three points above). The seed's two-rate bands are byte-identical to GS's deduction. The height-less-zero outcome is FAI 5.5.11.7 e — 'the AMRT does not record any Start Height data' cancels the flight — carried by the seed's flightValidWhen recordedness gate (add-recorded-predicate.md: the rejected startHeightRecorded companion flag is gone)."
+        "derivation": "P2 re-expression under the seed's metric name: a flown row with a positive payload captures startHeight = payload \u2014 the capture itself satisfies the seed's recordedness gate (Predicate.IsRecorded, add-recorded-predicate.md); a flown row with a zero payload would capture NOTHING, startHeight absent being the gate's false \u2014 the flight is cancelled and recorded as a zero score, still FLOWN (never exercised here \u2014 every flown row carries 66\u2013271 m). GS's FlightScoreDeduction column carries the start height on an F5J fixture ('misleadingly named', ladder.py:26-27).",
+        "justification": "FAI 5.5.11.12 d \u2014 'The recorded Start Height in metres shall be truncated to the nearest metre' \u2014 the recorded quantity exists on every flown row here (66\u2013271 m); 5.5.11.12 e prices it (half a point per metre to 200 m, three points above). The seed's two-rate bands are byte-identical to GS's deduction. The height-less-zero outcome is FAI 5.5.11.7 e \u2014 'the AMRT does not record any Start Height data' cancels the flight \u2014 carried by the seed's flightValidWhen recordedness gate (add-recorded-predicate.md: the rejected startHeightRecorded companion flag is gone)."
       }
     ],
     "declaredInstruments": [
@@ -41,17 +41,17 @@
       }
     ],
     "notes": [
-      "No parameter bindings (decision 8): the seed's two parameters (flyoffMaxGroup 14, flyoffMinRounds 3) both carry declared defaults bound at CompetitionSetup and neither is ever exercised — the fly-off never draws (second-phase draw refused; RankingEngine never reads promotion/finalRanking) — so DeriveParallelRunBindings' documented defaulted-parameter arm binds nothing and ParallelRunBindings is an empty dictionary, verified against this empty block.",
-      "Landing is NOT a derived metric: landingDistance carries the reading exactly as recorded (Scores.Landing), verbatim and naming the nz-f3j-side instrument, including 0 for the off-the-tape reading. The award is composed from the seed's own 5.5.11.12 h rows under the declared NZ.2.4.4 scale via the parent story's contract. GS scheme 11 is that same composition pre-composed (50/45/40/35/30/25/20/15/10/5/0 row for row) — a verification target for the parent's composition, never adapter logic. A reading is not points (mark 55 awards 5) and not a claim about the physical tape's calibration.",
-      "UNWITNESSED — raw floor: FAI 5.5.11.12 f records a zero score where the score is negative (penalties stand). The minimum flown raw is 123.0, so the floor never fires on a flown row. A provenance note, NOT a ledger entry.",
-      "Motor-restart rows (Before-starting answer): 22 flown rows carry F5JMotorReStarted=true; GS applies no scoring effect (Dur.F5JMotorRestartOption null, ladder.py:35), the seed declares no such metric, and the harness maps no such flag — the two sides' numbers agree by construction. FAI 5.5.11.7 g cancels the flight (zero score) when the propeller keeps turning after the 30-second motor run period; whether GS's flag denotes that offence is a GS-vs-rulebook question — reported here, never reconciled, and never a harness-emitted zeroing.",
-      "75 m rows flight-less both sides: R8/G3 P82 and R11/G1 P104 are rule-driven cancelled flights (time 0, height 0, LandingOver75m true) under FAI 5.5.11.7 d ('the nose of the model aircraft does not come to rest within 75 meters of the centre of the competitor's designated landing spot'); GS persisted 0.0 cells and the harness's zero-row rule (Time1Mins <= 0, flight-less) makes them flight-less in the seed-run too — cell 0 both sides. Equivalent; a provenance note.",
-      "Overfly corroboration: the longest decoded flight is 599 s — nobody overflew the 600 s working time — so the overflySeconds → 0 assumption is also what the foil's own data implies (FAI 5.5.11.12 g).",
-      "The +0.005 nudge is integer-exact: raw points are whole numbers (min(t,600)·1 + landing award − two-rate deduction), so GS's half-up-1dp nudge changes nothing at the raw grain.",
-      "GS re-rounds Score and RawScore to GroupScoreDecimals (effective 1 dp, half-up) BEFORE comparing, then sorts Score DESC / RawScore DESC with ties displayed '=n' — the =n tie-display semantics vs the engine's exact-decimal ties. The rounding grid cascades into the ranking grain through the aggregate; a rounding-cascade disclosure, not a separate entry.",
-      "R12–18 declared outside the window: the fixture carries 18 rounds of rows but GS scored rounds 1–11 (TaskLastRound = MAX(RoundNo where Updated='True') = 11); R12–18 are wholly-unflown placeholder rows whose persisted 0.0 oracle cells are deliberately outside the comparison universe (scoredWindowRounds 11), and a full-fixture run would let the seed's drop-from-5 eat a phantom zero and erase the witnessed split.",
-      "Penalties all 0 (G4 moot — the harness's loud infraction-mapping refusal never fires); no re-flights (OriginalRoundNo == RoundNo, ReFlightNo 0 everywhere); all 18 CompPilots carry Team='0' so the team mapping no-ops and the comparator's deliberate no-team-grain stance holds (the ales precedent).",
-      "R5 prescribe-with-warning (disclosed run shape, NOT a triaged difference — CheckProvenance passes): R5's drawn 5/6/7 partition prescribes against canonical F5J minPerGroup 6 with a recorded SHOULD-level warning (FAI 5.5.11.8.1 a) 'SHOULD be scheduled'; the hardness recalibration (should-level-minima-warn-dont-refuse.md WI-2: SHOULD breach in [2, min) prescribes + warns naming the group) carries it on PhaseDrawn.Warnings, retained on the folded phase and surfaced synchronously in the {value, warnings} envelope the ReplayDriver unwraps. R5 stays in the 11-round window; no refusal left to witness."
+      "No parameter bindings (decision 8): the seed's two parameters (flyoffMaxGroup 14, flyoffMinRounds 3) both carry declared defaults bound at CompetitionSetup and neither is ever exercised \u2014 the fly-off never draws (second-phase draw refused; RankingEngine never reads promotion/finalRanking) \u2014 so DeriveParallelRunBindings' documented defaulted-parameter arm binds nothing and ParallelRunBindings is an empty dictionary, verified against this empty block.",
+      "Landing is NOT a derived metric: landingDistance carries the reading exactly as recorded (Scores.Landing), verbatim and naming the nz-f3j-side instrument, including 0 for the off-the-tape reading. The award is composed from the seed's own 5.5.11.12 h rows under the declared NZ.2.4.4 scale via the parent story's contract. GS scheme 11 is that same composition pre-composed (50/45/40/35/30/25/20/15/10/5/0 row for row) \u2014 a verification target for the parent's composition, never adapter logic. A reading is not points (mark 55 awards 5) and not a claim about the physical tape's calibration.",
+      "UNWITNESSED \u2014 raw floor: FAI 5.5.11.12 f records a zero score where the score is negative (penalties stand). The minimum flown raw is 123.0, so the floor never fires on a flown row. A provenance note, NOT a ledger entry.",
+      "Motor-restart rows (Before-starting answer): 22 flown rows carry F5JMotorReStarted=true; GS applies no scoring effect (Dur.F5JMotorRestartOption null, ladder.py:35), the seed declares no such metric, and the harness maps no such flag \u2014 the two sides' numbers agree by construction. FAI 5.5.11.7 g cancels the flight (zero score) when the propeller keeps turning after the 30-second motor run period; whether GS's flag denotes that offence is a GS-vs-rulebook question \u2014 reported here, never reconciled, and never a harness-emitted zeroing.",
+      "75 m rows flight-less both sides: R8/G3 P82 and R11/G1 P104 are rule-driven cancelled flights (time 0, height 0, LandingOver75m true) under FAI 5.5.11.7 d ('the nose of the model aircraft does not come to rest within 75 meters of the centre of the competitor's designated landing spot'); GS persisted 0.0 cells and the harness's zero-row rule (Time1Mins <= 0, flight-less) makes them flight-less in the seed-run too \u2014 cell 0 both sides. Equivalent; a provenance note.",
+      "Overfly corroboration: the longest decoded flight is 599 s \u2014 nobody overflew the 600 s working time \u2014 so the overflySeconds \u2192 0 assumption is also what the foil's own data implies (FAI 5.5.11.12 g).",
+      "The +0.005 nudge is integer-exact: raw points are whole numbers (min(t,600)\u00b71 + landing award \u2212 two-rate deduction), so GS's half-up-1dp nudge changes nothing at the raw grain.",
+      "GS re-rounds Score and RawScore to GroupScoreDecimals (effective 1 dp, half-up) BEFORE comparing, then sorts Score DESC / RawScore DESC with ties displayed '=n' \u2014 the =n tie-display semantics vs the engine's exact-decimal ties. The rounding grid cascades into the ranking grain through the aggregate; a rounding-cascade disclosure, not a separate entry.",
+      "R12\u201318 declared outside the window: the fixture carries 18 rounds of rows but GS scored rounds 1\u201311 (TaskLastRound = MAX(RoundNo where Updated='True') = 11); R12\u201318 are wholly-unflown placeholder rows whose persisted 0.0 oracle cells are deliberately outside the comparison universe (scoredWindowRounds 11), and a full-fixture run would let the seed's drop-from-5 eat a phantom zero and erase the witnessed split.",
+      "Penalties all 0 (G4 moot \u2014 the harness's loud infraction-mapping refusal never fires); no re-flights (OriginalRoundNo == RoundNo, ReFlightNo 0 everywhere); all 18 CompPilots carry Team='0' so the team mapping no-ops and the comparator's deliberate no-team-grain stance holds (the ales precedent).",
+      "R5 prescribe-with-warning (disclosed run shape, NOT a triaged difference \u2014 CheckProvenance passes): R5's drawn 5/6/7 partition prescribes against canonical F5J minPerGroup 6 with a recorded SHOULD-level warning (FAI 5.5.11.8.1 a) 'SHOULD be scheduled'; the hardness recalibration (should-level-minima-warn-dont-refuse.md WI-2: SHOULD breach in [2, min) prescribes + warns naming the group) carries it on PhaseDrawn.Warnings, retained on the folded phase and surfaced synchronously in the {value, warnings} envelope the ReplayDriver unwraps. R5 stays in the 11-round window; no refusal left to witness."
     ]
   },
   "triagedDifferences": [
@@ -61,9 +61,900 @@
       "round": null,
       "group": null,
       "pilotNo": "*",
-      "difference": "Normalised-cell rounding grid: GS normalises 1000·Raw/max HalfUp to 1 dp (effective GroupScoreDecimals 1 — every scored cell lands on the grid) while the seed leaves the rulebook's exact values (full decimal expansion). Witnessed on every fractional cell of the window; cascades into the ranking grain through the aggregate. Pinned normalised-cell count: 127 — measured 2026-09-10 on sqlite (198 normalised cells compared over the 11-round window; the 1000.0 group-winner and 0.0 flight-less cells compare exact, the 127 fractional cells differ); the wildcard covers any cell, so the count is what makes the entry exact (decision 4).",
-      "citation": "Local practice: the club's GS grid rounds normalised cells HalfUp to 1 dp (competition.json configProvenance.knobs.GroupScoreDecimals — stored null, effective 1, basis: all 162 positive NormalisedScore values match half-up rounding to exactly 1 dp and none match truncation). Rulebook: FAI 5.5.11.12 l–m normalise the group winner to 1000 and scale the rest by percentage, stating no normalised-score rounding precision — the f3j re-triage framing. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Normalised-cell rounding grid: GS normalises 1000\u00b7Raw/max HalfUp to 1 dp (effective GroupScoreDecimals 1 \u2014 every scored cell lands on the grid) while the seed leaves the rulebook's exact values (full decimal expansion). Witnessed on every fractional cell of the window; cascades into the ranking grain through the aggregate. Declared as 127 structured cells (\"cells\": identity with pinned GS and seed-run values) \u2014 the exact witnessed set, measured 2026-09-10 on sqlite (198 normalised cells compared over the 11-round window; the 1000.0 group-winner and 0.0 flight-less cells compare exact, the 127 fractional cells differ).",
+      "citation": "Local practice: the club's GS grid rounds normalised cells HalfUp to 1 dp (competition.json configProvenance.knobs.GroupScoreDecimals \u2014 stored null, effective 1, basis: all 162 positive NormalisedScore values match half-up rounding to exactly 1 dp and none match truncation). Rulebook: FAI 5.5.11.12 l\u2013m normalise the group winner to 1000 and scale the rest by percentage, stating no normalised-score rounding precision \u2014 the f3j re-triage framing. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 104,
+          "gs": 695.4,
+          "seed": 695.4225352112676056338028169
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 129,
+          "gs": 806.3,
+          "seed": 806.3380281690140845070422535
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 130,
+          "gs": 573.1,
+          "seed": 573.06338028169014084507042254
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 131,
+          "gs": 919.0,
+          "seed": 919.0140845070422535211267606
+        },
+        {
+          "round": 1,
+          "group": 1,
+          "pilotNo": 132,
+          "gs": 503.5,
+          "seed": 503.52112676056338028169014085
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 77,
+          "gs": 977.8,
+          "seed": 977.8172138420585625554569654
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 78,
+          "gs": 998.2,
+          "seed": 998.2253771073646850044365572
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 79,
+          "gs": 994.7,
+          "seed": 994.6761313220940550133096717
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 82,
+          "gs": 893.5,
+          "seed": 893.5226264418811002661934339
+        },
+        {
+          "round": 1,
+          "group": 2,
+          "pilotNo": 134,
+          "gs": 969.8,
+          "seed": 969.8314108251996450754214729
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 86,
+          "gs": 973.4,
+          "seed": 973.4278122232063773250664305
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 96,
+          "gs": 961.9,
+          "seed": 961.913197519929140832595217
+        },
+        {
+          "round": 1,
+          "group": 3,
+          "pilotNo": 133,
+          "gs": 855.6,
+          "seed": 855.6244464127546501328609389
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 78,
+          "gs": 754.5,
+          "seed": 754.5289855072463768115942029
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 79,
+          "gs": 625.9,
+          "seed": 625.90579710144927536231884058
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 104,
+          "gs": 835.1,
+          "seed": 835.1449275362318840579710145
+        },
+        {
+          "round": 2,
+          "group": 1,
+          "pilotNo": 129,
+          "gs": 869.6,
+          "seed": 869.5652173913043478260869565
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 82,
+          "gs": 902.3,
+          "seed": 902.2757697456492637215528782
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 133,
+          "gs": 863.5,
+          "seed": 863.4538152610441767068273092
+        },
+        {
+          "round": 2,
+          "group": 2,
+          "pilotNo": 134,
+          "gs": 558.2,
+          "seed": 558.23293172690763052208835341
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 77,
+          "gs": 975.2,
+          "seed": 975.1773049645390070921985816
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 86,
+          "gs": 836.9,
+          "seed": 836.8794326241134751773049645
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 94,
+          "gs": 833.3,
+          "seed": 833.3333333333333333333333333
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 96,
+          "gs": 904.3,
+          "seed": 904.2553191489361702127659574
+        },
+        {
+          "round": 2,
+          "group": 3,
+          "pilotNo": 130,
+          "gs": 760.6,
+          "seed": 760.63829787234042553191489362
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 77,
+          "gs": 789.7,
+          "seed": 789.71962616822429906542056075
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 96,
+          "gs": 991.6,
+          "seed": 991.5887850467289719626168224
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 129,
+          "gs": 886.0,
+          "seed": 885.9813084112149532710280374
+        },
+        {
+          "round": 3,
+          "group": 1,
+          "pilotNo": 133,
+          "gs": 475.7,
+          "seed": 475.70093457943925233644859813
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 79,
+          "gs": 549.6,
+          "seed": 549.62546816479400749063670412
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 86,
+          "gs": 833.3,
+          "seed": 833.3333333333333333333333333
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 94,
+          "gs": 583.3,
+          "seed": 583.33333333333333333333333333
+        },
+        {
+          "round": 3,
+          "group": 2,
+          "pilotNo": 104,
+          "gs": 480.3,
+          "seed": 480.33707865168539325842696629
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 82,
+          "gs": 794.4,
+          "seed": 794.4250871080139372822299652
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 83,
+          "gs": 682.9,
+          "seed": 682.92682926829268292682926829
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 130,
+          "gs": 679.4,
+          "seed": 679.44250871080139372822299652
+        },
+        {
+          "round": 3,
+          "group": 3,
+          "pilotNo": 131,
+          "gs": 834.5,
+          "seed": 834.4947735191637630662020906
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 79,
+          "gs": 680.1,
+          "seed": 680.10075566750629722921914358
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 82,
+          "gs": 622.2,
+          "seed": 622.1662468513853904282115869
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 129,
+          "gs": 928.2,
+          "seed": 928.2115869017632241813602015
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 130,
+          "gs": 680.1,
+          "seed": 680.10075566750629722921914358
+        },
+        {
+          "round": 4,
+          "group": 1,
+          "pilotNo": 133,
+          "gs": 787.2,
+          "seed": 787.15365239294710327455919395
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 75,
+          "gs": 492.2,
+          "seed": 492.24806201550387596899224806
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 78,
+          "gs": 741.6,
+          "seed": 741.60206718346253229974160207
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 104,
+          "gs": 528.4,
+          "seed": 528.42377260981912144702842377
+        },
+        {
+          "round": 4,
+          "group": 2,
+          "pilotNo": 131,
+          "gs": 741.6,
+          "seed": 741.60206718346253229974160207
+        },
+        {
+          "round": 4,
+          "group": 3,
+          "pilotNo": 83,
+          "gs": 913.4,
+          "seed": 913.4146341463414634146341463
+        },
+        {
+          "round": 4,
+          "group": 3,
+          "pilotNo": 94,
+          "gs": 775.6,
+          "seed": 775.60975609756097560975609756
+        },
+        {
+          "round": 4,
+          "group": 3,
+          "pilotNo": 134,
+          "gs": 680.5,
+          "seed": 680.48780487804878048780487805
+        },
+        {
+          "round": 5,
+          "group": 1,
+          "pilotNo": 86,
+          "gs": 315.4,
+          "seed": 315.38461538461538461538461538
+        },
+        {
+          "round": 5,
+          "group": 1,
+          "pilotNo": 131,
+          "gs": 776.9,
+          "seed": 776.92307692307692307692307692
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 83,
+          "gs": 771.7,
+          "seed": 771.67630057803468208092485549
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 94,
+          "gs": 592.5,
+          "seed": 592.48554913294797687861271676
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 96,
+          "gs": 941.2,
+          "seed": 941.2331406551059730250481696
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 104,
+          "gs": 380.5,
+          "seed": 380.53949903660886319845857418
+        },
+        {
+          "round": 5,
+          "group": 2,
+          "pilotNo": 133,
+          "gs": 289.0,
+          "seed": 289.01734104046242774566473988
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 78,
+          "gs": 544.3,
+          "seed": 544.33497536945812807881773399
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 79,
+          "gs": 908.9,
+          "seed": 908.8669950738916256157635468
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 129,
+          "gs": 264.4,
+          "seed": 264.36781609195402298850574713
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 130,
+          "gs": 412.2,
+          "seed": 412.15106732348111658456486043
+        },
+        {
+          "round": 5,
+          "group": 3,
+          "pilotNo": 134,
+          "gs": 324.3,
+          "seed": 324.30213464696223316912972085
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 83,
+          "gs": 760.1,
+          "seed": 760.10781671159029649595687332
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 130,
+          "gs": 737.6,
+          "seed": 737.64600179694519317160826595
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 131,
+          "gs": 994.6,
+          "seed": 994.6091644204851752021563342
+        },
+        {
+          "round": 6,
+          "group": 1,
+          "pilotNo": 134,
+          "gs": 440.3,
+          "seed": 440.2515723270440251572327044
+        },
+        {
+          "round": 6,
+          "group": 2,
+          "pilotNo": 94,
+          "gs": 971.3,
+          "seed": 971.3004484304932735426008969
+        },
+        {
+          "round": 6,
+          "group": 2,
+          "pilotNo": 129,
+          "gs": 715.7,
+          "seed": 715.69506726457399103139013453
+        },
+        {
+          "round": 6,
+          "group": 2,
+          "pilotNo": 133,
+          "gs": 683.4,
+          "seed": 683.4080717488789237668161435
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 78,
+          "gs": 864.0,
+          "seed": 863.9514731369150779896013865
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 82,
+          "gs": 956.7,
+          "seed": 956.6724436741767764298093588
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 86,
+          "gs": 760.0,
+          "seed": 759.96533795493934142114384749
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 104,
+          "gs": 387.3,
+          "seed": 387.34835355285961871750433276
+        },
+        {
+          "round": 6,
+          "group": 3,
+          "pilotNo": 132,
+          "gs": 944.5,
+          "seed": 944.5407279029462738301559792
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 78,
+          "gs": 908.9,
+          "seed": 908.851884312007011393514461
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 83,
+          "gs": 955.3,
+          "seed": 955.3023663453111305872042068
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 129,
+          "gs": 650.3,
+          "seed": 650.30674846625766871165644172
+        },
+        {
+          "round": 7,
+          "group": 1,
+          "pilotNo": 131,
+          "gs": 946.5,
+          "seed": 946.5381244522348816827344435
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 104,
+          "gs": 549.8,
+          "seed": 549.8220640569395017793594306
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 130,
+          "gs": 745.6,
+          "seed": 745.55160142348754448398576512
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 133,
+          "gs": 261.6,
+          "seed": 261.56583629893238434163701068
+        },
+        {
+          "round": 7,
+          "group": 2,
+          "pilotNo": 134,
+          "gs": 744.7,
+          "seed": 744.66192170818505338078291815
+        },
+        {
+          "round": 7,
+          "group": 3,
+          "pilotNo": 75,
+          "gs": 988.4,
+          "seed": 988.3824843610366398570151921
+        },
+        {
+          "round": 7,
+          "group": 3,
+          "pilotNo": 79,
+          "gs": 316.4,
+          "seed": 316.35388739946380697050938338
+        },
+        {
+          "round": 7,
+          "group": 3,
+          "pilotNo": 82,
+          "gs": 945.5,
+          "seed": 945.4870420017873100983020554
+        },
+        {
+          "round": 8,
+          "group": 1,
+          "pilotNo": 79,
+          "gs": 313.1,
+          "seed": 313.05114638447971781305114638
+        },
+        {
+          "round": 8,
+          "group": 1,
+          "pilotNo": 83,
+          "gs": 834.2,
+          "seed": 834.2151675485008818342151675
+        },
+        {
+          "round": 8,
+          "group": 1,
+          "pilotNo": 131,
+          "gs": 751.3,
+          "seed": 751.32275132275132275132275132
+        },
+        {
+          "round": 8,
+          "group": 1,
+          "pilotNo": 133,
+          "gs": 589.1,
+          "seed": 589.06525573192239858906525573
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 75,
+          "gs": 898.5,
+          "seed": 898.534385569334836527621195
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 86,
+          "gs": 827.5,
+          "seed": 827.5084554678692220969560316
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 104,
+          "gs": 641.5,
+          "seed": 641.48816234498308906426155581
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 129,
+          "gs": 860.2,
+          "seed": 860.2029312288613303269447576
+        },
+        {
+          "round": 8,
+          "group": 2,
+          "pilotNo": 134,
+          "gs": 481.4,
+          "seed": 481.39797068771138669673055242
+        },
+        {
+          "round": 8,
+          "group": 3,
+          "pilotNo": 78,
+          "gs": 896.6,
+          "seed": 896.5517241379310344827586207
+        },
+        {
+          "round": 8,
+          "group": 3,
+          "pilotNo": 130,
+          "gs": 795.1,
+          "seed": 795.1318458417849898580121704
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 75,
+          "gs": 983.8,
+          "seed": 983.7837837837837837837837838
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 78,
+          "gs": 836.5,
+          "seed": 836.4864864864864864864864865
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 94,
+          "gs": 773.0,
+          "seed": 772.97297297297297297297297297
+        },
+        {
+          "round": 9,
+          "group": 1,
+          "pilotNo": 133,
+          "gs": 882.4,
+          "seed": 882.4324324324324324324324324
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 83,
+          "gs": 887.1,
+          "seed": 887.1111111111111111111111111
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 104,
+          "gs": 812.4,
+          "seed": 812.4444444444444444444444444
+        },
+        {
+          "round": 9,
+          "group": 2,
+          "pilotNo": 130,
+          "gs": 695.1,
+          "seed": 695.11111111111111111111111111
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 79,
+          "gs": 928.0,
+          "seed": 927.9513888888888888888888889
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 82,
+          "gs": 988.7,
+          "seed": 988.7152777777777777777777778
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 96,
+          "gs": 943.6,
+          "seed": 943.5763888888888888888888889
+        },
+        {
+          "round": 9,
+          "group": 3,
+          "pilotNo": 129,
+          "gs": 913.2,
+          "seed": 913.1944444444444444444444444
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 78,
+          "gs": 644.6,
+          "seed": 644.61247637051039697542533081
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 79,
+          "gs": 957.5,
+          "seed": 957.466918714555765595463138
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 94,
+          "gs": 485.8,
+          "seed": 485.82230623818525519848771267
+        },
+        {
+          "round": 10,
+          "group": 1,
+          "pilotNo": 130,
+          "gs": 973.5,
+          "seed": 973.534971644612476370510397
+        },
+        {
+          "round": 10,
+          "group": 2,
+          "pilotNo": 75,
+          "gs": 581.2,
+          "seed": 581.17647058823529411764705882
+        },
+        {
+          "round": 10,
+          "group": 2,
+          "pilotNo": 129,
+          "gs": 930.6,
+          "seed": 930.5882352941176470588235294
+        },
+        {
+          "round": 10,
+          "group": 2,
+          "pilotNo": 134,
+          "gs": 565.9,
+          "seed": 565.88235294117647058823529412
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 82,
+          "gs": 492.6,
+          "seed": 492.62202043132803632236095346
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 86,
+          "gs": 756.0,
+          "seed": 755.95913734392735527809307605
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 104,
+          "gs": 675.4,
+          "seed": 675.36889897843359818388195233
+        },
+        {
+          "round": 10,
+          "group": 3,
+          "pilotNo": 131,
+          "gs": 474.5,
+          "seed": 474.46083995459704880817253121
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 77,
+          "gs": 991.9,
+          "seed": 991.8845807033363390441839495
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 79,
+          "gs": 265.1,
+          "seed": 265.10369702434625788999098287
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 83,
+          "gs": 358.0,
+          "seed": 357.98016230838593327321911632
+        },
+        {
+          "round": 11,
+          "group": 1,
+          "pilotNo": 94,
+          "gs": 340.8,
+          "seed": 340.84761045987376014427412083
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 86,
+          "gs": 899.0,
+          "seed": 898.9513822688274547187797903
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 130,
+          "gs": 787.4,
+          "seed": 787.41658722592945662535748332
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 133,
+          "gs": 911.3,
+          "seed": 911.3441372735938989513822688
+        },
+        {
+          "round": 11,
+          "group": 2,
+          "pilotNo": 134,
+          "gs": 664.4,
+          "seed": 664.44232602478551000953288847
+        },
+        {
+          "round": 11,
+          "group": 3,
+          "pilotNo": 96,
+          "gs": 919.2,
+          "seed": 919.1542288557213930348258706
+        },
+        {
+          "round": 11,
+          "group": 3,
+          "pilotNo": 129,
+          "gs": 615.7,
+          "seed": 615.67164179104477611940298507
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -71,9 +962,32 @@
       "round": null,
       "group": null,
       "pilotNo": 79,
-      "difference": "Final-placing split, pilot 79: GS rank 12 vs seed-run placing 13 (down 1). The seed drops the pilot's lowest round score — R11/G1 265.1, flown (off-tape landing, award 0) and uniquely lowest (next-lowest R8/G1 313.1, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =12/=13 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 ('if more than 4 [rounds flown], the lowest round score is dropped') implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds, fires on real rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99 — no drop-worst can activate within rounds 1-11). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence on normalised precision. Minimum-tie rule 30-f5j tieBreak Latest: pilot 79's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 79: GS rank 12 vs seed-run placing 13 (down 1). The seed drops the pilot's lowest round score \u2014 R11/G1 265.1, flown (off-tape landing, award 0) and uniquely lowest (next-lowest R8/G1 313.1, far beyond rounding-reorder reach) \u2014 while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =12/=13 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 ('if more than 4 [rounds flown], the lowest round score is dropped') implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds, fires on real rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99 \u2014 no drop-worst can activate within rounds 1-11). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence on normalised precision. Minimum-tie rule 30-f5j tieBreak Latest: pilot 79's minimum is unique, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 79,
+          "gs": 12,
+          "seed": 13
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 79,
+          "gs": 12,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 79,
+          "gs": null,
+          "seed": 13
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -81,9 +995,32 @@
       "round": null,
       "group": null,
       "pilotNo": 82,
-      "difference": "Final-placing split, pilot 82: GS rank 7 vs seed-run placing 6 (up 1). The pilot's lowest cell is R8/G3 0.0 — the rule-driven cancelled 75 m flight (flight-less both sides, provenance-noted) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =6/=7 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231); the cancelled flight is FAI 5.5.11.7 d. Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 82's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 82: GS rank 7 vs seed-run placing 6 (up 1). The pilot's lowest cell is R8/G3 0.0 \u2014 the rule-driven cancelled 75 m flight (flight-less both sides, provenance-noted) \u2014 so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =6/=7 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds; SeedF5J.cs:225-231); the cancelled flight is FAI 5.5.11.7 d. Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 82's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 82,
+          "gs": 7,
+          "seed": 6
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 82,
+          "gs": null,
+          "seed": 6
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 82,
+          "gs": 7,
+          "seed": null
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -91,9 +1028,32 @@
       "round": null,
       "group": null,
       "pilotNo": 83,
-      "difference": "Final-placing split, pilot 83: GS rank 6 vs seed-run placing 8 (down 2). The seed drops the pilot's lowest round score — R11/G1 358.0, flown and uniquely lowest (next-lowest R10/G2 440.0, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =6/=8 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 83's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 83: GS rank 6 vs seed-run placing 8 (down 2). The seed drops the pilot's lowest round score \u2014 R11/G1 358.0, flown and uniquely lowest (next-lowest R10/G2 440.0, far beyond rounding-reorder reach) \u2014 while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =6/=8 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 83's minimum is unique, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 83,
+          "gs": 6,
+          "seed": 8
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 83,
+          "gs": 6,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 83,
+          "gs": null,
+          "seed": 8
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -101,9 +1061,32 @@
       "round": null,
       "group": null,
       "pilotNo": 94,
-      "difference": "Final-placing split, pilot 94: GS rank 13 vs seed-run placing 11 (up 2). The pilot's lowest cell is R7/G1 0.0 — an unflown placeholder slot inside the window (Updated False) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =11/=13 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 94's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 94: GS rank 13 vs seed-run placing 11 (up 2). The pilot's lowest cell is R7/G1 0.0 \u2014 an unflown placeholder slot inside the window (Updated False) \u2014 so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =11/=13 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 94's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 94,
+          "gs": 13,
+          "seed": 11
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 94,
+          "gs": null,
+          "seed": 11
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 94,
+          "gs": 13,
+          "seed": null
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -111,9 +1094,32 @@
       "round": null,
       "group": null,
       "pilotNo": 129,
-      "difference": "Final-placing split, pilot 129: GS rank 8 vs seed-run placing 9 (down 1). The seed drops the pilot's lowest round score — R5/G3 264.4, flown and uniquely lowest (next-lowest R11/G3 615.7, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =8/=9 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 129's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 129: GS rank 8 vs seed-run placing 9 (down 1). The seed drops the pilot's lowest round score \u2014 R5/G3 264.4, flown and uniquely lowest (next-lowest R11/G3 615.7, far beyond rounding-reorder reach) \u2014 while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =8/=9 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 129's minimum is unique, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 129,
+          "gs": 8,
+          "seed": 9
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 129,
+          "gs": 8,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 129,
+          "gs": null,
+          "seed": 9
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -121,9 +1127,32 @@
       "round": null,
       "group": null,
       "pilotNo": 131,
-      "difference": "Final-placing split, pilot 131: GS rank 9 vs seed-run placing 7 (up 2). The pilot's lowest cell is R11/G3 0.0 — an unflown placeholder slot inside the window (Updated False) — so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =7/=9 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 131's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 131: GS rank 9 vs seed-run placing 7 (up 2). The pilot's lowest cell is R11/G3 0.0 \u2014 an unflown placeholder slot inside the window (Updated False) \u2014 so the seed's drop eats a 0 and the aggregate is unchanged; the pilot rises relatively as the drop sheds rivals' positive cells, positioned by the HalfUp-1dp cascade. Covers the pilot's rank-placement line and both =7/=9 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 131's minimum (0.0) is unique among positive cells, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 131,
+          "gs": 9,
+          "seed": 7
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 131,
+          "gs": null,
+          "seed": 7
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 131,
+          "gs": 9,
+          "seed": null
+        }
+      ]
     },
     {
       "triageKind": 1,
@@ -131,9 +1160,32 @@
       "round": null,
       "group": null,
       "pilotNo": 133,
-      "difference": "Final-placing split, pilot 133: GS rank 11 vs seed-run placing 12 (down 1). The seed drops the pilot's lowest round score — R7/G2 261.6, flown and uniquely lowest (next-lowest R5/G2 289.0, far beyond rounding-reorder reach) — while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =11/=12 tie-group membership lines.",
-      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 — 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l–m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 133's minimum is unique, arm untriggered. Triage kind 1 — local variation: correct on both sides.",
-      "disposition": "permanent"
+      "difference": "Final-placing split, pilot 133: GS rank 11 vs seed-run placing 12 (down 1). The seed drops the pilot's lowest round score \u2014 R7/G2 261.6, flown and uniquely lowest (next-lowest R5/G2 289.0, far beyond rounding-reorder reach) \u2014 while GS summed all 11; the HalfUp-1dp grid cascades through the aggregate at sub-0.05/cell level. Covers the pilot's rank-placement line and both =11/=12 tie-group membership lines.",
+      "citation": "Rulebook drop: FAI 5.5.11.13 implemented by 30-f5j phases[0].drops[0] (ByRound, dropCount 1, applyWhenRoundsCompletedAtLeast 5 \u2014 11 completed rounds; SeedF5J.cs:225-231). Local practice: the club's GS grid carries no drop thresholds (competition.json configProvenance: Drop1AtRound/Drop2AtRound unset, Drop3-5AtRound 99). Rounding cascade: GroupScoreDecimals effective 1 HalfUp vs FAI 5.5.11.12 l\u2013m silence. Minimum-tie rule 30-f5j tieBreak Latest: pilot 133's minimum is unique, arm untriggered. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 133,
+          "gs": 11,
+          "seed": 12
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 133,
+          "gs": 11,
+          "seed": null
+        },
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 133,
+          "gs": null,
+          "seed": 12
+        }
+      ]
     }
   ]
 }

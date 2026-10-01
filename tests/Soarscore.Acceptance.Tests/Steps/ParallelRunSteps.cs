@@ -21,7 +21,6 @@
 
 using AwesomeAssertions;
 using Reqnroll;
-using System.Text.RegularExpressions;
 using Soarscore.Acceptance.Tests.Support;
 using Soarscore.Acceptance.Tests.Support.Gliderscore;
 
@@ -176,10 +175,10 @@ public sealed class ParallelRunSteps
     // so every raw cell in the window compares exact (162 flown + 34
     // flight-less 0.0 + the 2 cancelled 0.0). A raw-grain mismatch is a
     // declaration/authoring bug or a kind-3 engine divergence — escalate,
-    // never a ledger edit. The wildcard normalised class entry's exactness is
-    // its pinned measured count (decision 4): the entry carries
-    // "Pinned normalised-cell count: N", and the computed normalised count
-    // must equal it, so a silently shrunk comparison cannot fake the match.
+    // never a ledger edit. The normalised class entry's exactness is its
+    // gs_03 structured declared set: every computed normalised difference
+    // must equal a declared cell and the counts must agree, so a silently
+    // shrunk comparison cannot fake the match.
     [Then(@"^the raw grain is exact against the GliderScore oracle$")]
     public void ThenTheRawGrainIsExactAgainstTheGliderScoreOracle()
     {
@@ -194,18 +193,16 @@ public sealed class ParallelRunSteps
                 + "mismatch is an authoring bug or a kind-3 engine divergence, never a ledger edit."
                 + $"{Environment.NewLine}{report.Render()}");
 
-        var normalisedEntry = ledger.TriagedDifferences
-            .Where(entry => entry.Grain == "normalised")
-            .Should().ContainSingle("the ledger carries exactly one normalised-grain class entry.")
-            .Subject;
+        var declared = DeclaredCellCount(ledger, "normalised");
 
-        var pinned = PinnedNormalisedCount(normalisedEntry.Difference);
+        declared.Should().BePositive(
+            "the ledger's normalised grain must declare its exact witnessed difference set as structured cells.");
 
         report.ComputedDifferences
             .Count(mismatch => mismatch.Grain == "normalised")
-            .Should().Be(pinned,
-                $"the ledger's normalised class entry pins the measured count at {pinned} cells — the wildcard "
-                + "covers any cell, so the count is what makes the entry exact."
+            .Should().Be(declared,
+                $"the ledger's normalised grain declares exactly {declared} witnessed difference cell(s) — every "
+                + "computed normalised difference must equal a declared cell (identity and both pinned values)."
                 + $"{Environment.NewLine}{report.Render()}");
     }
 
@@ -255,14 +252,13 @@ public sealed class ParallelRunSteps
                 + $"{Environment.NewLine}{report.Render()}");
     }
 
-    // f3j-international-parallel-run-retriage.md WI-2 item 2 — the count pins
-    // (decision 1's shape, decision 8's step): the ledger triages its raw and
-    // normalised differences as wildcard class entries, so the entry's exact
-    // witness is its pinned measured count — the computed count per grain must
-    // equal it. The raw grain is NON-empty by assertion (the landing-0
-    // sentinel split is this pair's raw-grain product — its first non-exact
-    // raw grain); the ranking grain needs no pin — it is fully enumerated per
-    // pilot and the split step asserts coverage in both directions.
+    // f3j-international-parallel-run-retriage.md WI-2 item 2 — the count pins,
+    // gs_03 exact: the ledger triages its raw and normalised differences as
+    // structured declared cell sets, so the entry's exact witness is the
+    // declared count per grain — the computed count per grain must equal it.
+    // The raw grain is NON-empty by assertion; the ranking grain needs no
+    // pin — it is fully enumerated per pilot and the split step asserts
+    // coverage in both directions (identity AND both pinned values).
     [Then(@"^the witnessed split counts match the ledger's pins$")]
     public void ThenTheWitnessedSplitCountsMatchTheLedgerSPins()
     {
@@ -277,70 +273,35 @@ public sealed class ParallelRunSteps
             + "the run did not witness the split."
             + $"{Environment.NewLine}{report.Render()}");
 
-        var pinnedRaw = PinnedRawCount(
-            DesignatedEntry(ledger, "raw", "Pinned raw-mismatch count").Difference);
+        var declaredRaw = DeclaredCellCount(ledger, "raw");
 
-        rawComputed.Should().Be(pinnedRaw,
-            $"the ledger's raw class entry pins the measured count at {pinnedRaw} cells — the wildcard "
-            + "covers any cell, so the count is what makes the entry exact."
+        rawComputed.Should().Be(declaredRaw,
+            $"the ledger's raw grain declares exactly {declaredRaw} witnessed difference cell(s) — every "
+            + "computed raw difference must equal a declared cell (identity and both pinned values)."
             + $"{Environment.NewLine}{report.Render()}");
 
         var normalisedComputed = report.ComputedDifferences
             .Count(mismatch => mismatch.Grain == "normalised");
 
-        var pinnedNormalised = PinnedNormalisedCount(
-            DesignatedEntry(ledger, "normalised", "Pinned normalised-cell count").Difference);
+        var declaredNormalised = DeclaredCellCount(ledger, "normalised");
 
-        normalisedComputed.Should().Be(pinnedNormalised,
-            $"the ledger's normalised class entry pins the measured count at {pinnedNormalised} cells — the "
-            + "wildcard covers any cell, so the count is what makes the entry exact."
+        normalisedComputed.Should().Be(declaredNormalised,
+            $"the ledger's normalised grain declares exactly {declaredNormalised} witnessed difference cell(s) — "
+            + "every computed normalised difference must equal a declared cell (identity and both pinned values)."
             + $"{Environment.NewLine}{report.Render()}");
     }
 
-    // The designated pin entry: the grain's entries carrying the pin marker —
-    // the marker's presence, not position, designates it (the f3j ledger
-    // carries several wildcard entries per grain; exactly one is the pin).
-    private static ParallelRunDifferenceEntry DesignatedEntry(
-        ParallelRunLedger ledger, string grain, string marker)
-    {
-        return ledger.TriagedDifferences
-            .Where(entry => entry.Grain == grain
-                            && entry.Difference.Contains(marker, StringComparison.Ordinal))
-            .Should().ContainSingle(
-                $"the ledger's {grain} grain carries exactly one entry pinning its measured count "
-                + $"('{marker}: N') — without it the wildcard entry has no exact witness.")
-            .Subject;
-    }
-
-    private static int PinnedRawCount(string difference)
-    {
-        var match = Regex.Match(difference, @"Pinned raw-mismatch count: (\d+)");
-
-        if (!match.Success)
-        {
-            throw new InvalidOperationException(
-                "The ledger's raw class entry carries no 'Pinned raw-mismatch count: N' clause — "
-                + "the count pin (decision 1) is what makes the wildcard entry exact; curate it from the "
-                + "measured run, never omit it.");
-        }
-
-        return int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-    }
-
-    private static int PinnedNormalisedCount(string difference)
-    {
-        var match = Regex.Match(difference, @"Pinned normalised-cell count: (\d+)");
-
-        if (!match.Success)
-        {
-            throw new InvalidOperationException(
-                "The ledger's normalised class entry carries no 'Pinned normalised-cell count: N' clause — "
-                + "the count pin (decision 4) is what makes the wildcard entry exact; curate it from the "
-                + "measured run, never omit it.");
-        }
-
-        return int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-    }
+    // gs_03 — the structured declared count for a grain: the distinct
+    // (round, group, pilot, GS value, seed value) cells declared across the
+    // grain's entries. No count is parsed from descriptive prose — the
+    // ledger's structured fields are the expectation.
+    private static int DeclaredCellCount(ParallelRunLedger ledger, string grain) =>
+        ledger.TriagedDifferences
+            .Where(entry => entry.Grain.Equals(grain, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(entry => entry.Cells ?? [])
+            .Select(cell => (cell.Round, cell.Group, cell.PilotNo, cell.Gs, cell.Seed))
+            .Distinct()
+            .Count();
 
     // -------------------------------------------------------------- plumbing
 

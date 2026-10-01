@@ -126,10 +126,10 @@ public sealed class HarnessSelfCheckSteps
             .And.Contain(_seededMismatch.Delta);
 
         // gs-ledger-modes.md WI-6 — the witnessing arm's shadow: whatever the
-        // ledger carried, the entries that cover nothing of the seeded
+        // ledger carried, the entries that witness nothing of the seeded
         // mismatch are exactly the ones reported unwitnessed.
         report.UnwitnessedLedgerEntries.Should().BeEquivalentTo(
-            _subtractedLedger.Where(d => !d.CoversGrainRoundGroupPilot(_seededMismatch)).ToList(),
+            _subtractedLedger.Where(d => !Comparator.LedgerWitnesses(d, _seededMismatch)).ToList(),
             "unwitnessed = ledger entries whose divergence no longer fires");
     }
 
@@ -170,14 +170,20 @@ public sealed class HarnessSelfCheckSteps
 
     /// <summary>
     /// The ledger-entry shape of divergences.json naming exactly the seeded
-    /// cell (grain normalised, its round/group, its pilot).
+    /// cell (grain normalised, its round/group, its pilot) with both pinned
+    /// values — gs_03 exact: only the declared difference set satisfies the
+    /// contract, so the self-test entry pins what it excuses.
     /// </summary>
     private DivergenceEntry ExactCoverEntry(long pilotNo) => new(
         "normalised",
         _roundNo,
         _groupNo,
         JsonSerializer.SerializeToElement(pilotNo),
-        "self-test: covers exactly the seeded synthetic mismatch");
+        "self-test: covers exactly the seeded synthetic mismatch",
+        Disposition: "pending",
+        Kind: "numeric",
+        Ours: _seededMismatch.Ours,
+        Expected: _seededMismatch.Expected);
 
     /// <summary>
     /// A minimal in-memory fixture — only its divergence ledger is read on the

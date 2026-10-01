@@ -189,11 +189,25 @@ public sealed record ExpectedResultFile(
     // the oracle (a legitimately finalised snapshot, never invented
     // completion); ExcludedRounds discloses the archived rounds no comparison
     // is claimed for.
+    //
+    // gs_02_complete-result-oracles.md generalises the contract across the
+    // corpus: PreDropTotals pins the pre-drop (pre-penalty) aggregate per
+    // pilot, Penalties pins the aggregate penalty deduction per pilot
+    // (explicit zero where none — omission never means zero), Discards pins
+    // the discarded scoring units (round vs task, the fixture's own drop
+    // dimension) with their identities and values per pilot, and
+    // FieldAvailability declares every result field available, unavailable or
+    // inapplicable with a reason — the comparator asserts exactly the
+    // available fields, automatically.
     IReadOnlyList<ExpectedPilotTotal>? Totals = null,
     IReadOnlyList<ExpectedUnrankedPilot>? UnrankedZeroOnly = null,
     ExpectedScoredWindow? ScoredWindow = null,
     string? Lifecycle = null,
-    IReadOnlyList<int>? ExcludedRounds = null);
+    IReadOnlyList<int>? ExcludedRounds = null,
+    IReadOnlyList<ExpectedPreDropTotal>? PreDropTotals = null,
+    IReadOnlyList<ExpectedPilotPenalty>? Penalties = null,
+    IReadOnlyList<ExpectedPilotDiscards>? Discards = null,
+    IReadOnlyList<ResultFieldAvailability>? FieldAvailability = null);
 
 /// <summary>gs_01 — one pilot's declared final/progressive total, exact-decimal.</summary>
 public sealed record ExpectedPilotTotal(long PilotNo, decimal Total);
@@ -205,6 +219,45 @@ public sealed record ExpectedUnrankedPilot(long PilotNo, decimal Total);
 
 /// <summary>gs_01 — the source window, inclusive fixture RoundNos.</summary>
 public sealed record ExpectedScoredWindow(int FirstRound, int LastRound);
+
+/// <summary>
+/// gs_02 — one pilot's pre-drop (pre-penalty) aggregate: the sum of the
+/// pilot's best-per-original-round normalised cells as the report rollup
+/// states it, before drops and before aggregate penalties. Exact-decimal.
+/// </summary>
+public sealed record ExpectedPreDropTotal(long PilotNo, decimal Total);
+
+/// <summary>
+/// gs_02 — one pilot's aggregate penalty deduction: the total GS subtracts
+/// after summing the round cells (always explicit, even when zero — omission
+/// never means zero). Exact-decimal, non-negative.
+/// </summary>
+public sealed record ExpectedPilotPenalty(long PilotNo, decimal Deduction);
+
+/// <summary>
+/// gs_02 — one pilot's discarded scoring units: the fixture's own drop
+/// dimension as the unit ("round" for a ByRound policy, "task" for a ByTask
+/// policy — the source distinction is preserved, never normalised away),
+/// with the discarded fixture RoundNos and their values in parallel arrays
+/// (both ascending by round; both empty for a proven empty discard set).
+/// A discard set whose identity the source does not evidence is never
+/// populated here — the field is declared unavailable instead.
+/// </summary>
+public sealed record ExpectedPilotDiscards(
+    long PilotNo,
+    string Unit,
+    IReadOnlyList<int> DroppedRounds,
+    IReadOnlyList<decimal> DroppedValues);
+
+/// <summary>
+/// gs_02 — one result field's availability declaration. Field names the
+/// "total", "preDropTotal", "penaltyDeduction", "discards", "places" or
+/// "population" result field; Status is "available" (asserted automatically),
+/// "unavailable" (the source carries no evidence — never asserted, never
+/// treated as zero) or "inapplicable" (the concept does not apply to this
+/// fixture); Reason records why in the fixture's own evidential terms.
+/// </summary>
+public sealed record ResultFieldAvailability(string Field, string Status, string Reason);
 
 /// <summary>Rank strings are "n" or "=n" (GS displayed rank, HiddenRanking aside).</summary>
 public sealed record ExpectedRank(long PilotNo, string Rank);
@@ -246,6 +299,21 @@ public sealed record TeamStandingOracle(
 /// mode, and must keep witnessing a live computed mismatch in every mode.
 /// Null-tolerant widening precedent: ParallelRunProvenance.
 /// </para>
+/// <para>
+/// gs_03_exact-divergence-contracts.md — the typed expectation: every entry
+/// declares its <see cref="Kind"/> and is matched bidirectionally on its
+/// structured fields, never on prose. "numeric" pins the observed difference
+/// with <see cref="Ours"/> (SoarScore) and <see cref="Expected"/> (the GS
+/// oracle) exact-decimal values — a relocated cell, an altered value/delta
+/// or a different grain all fail. "excludedOracleCell" / "syntheticSlot" are
+/// documentary scope (an oracle cell deliberately never replayed, an our-only
+/// replay slot with no oracle counterpart) validated against the oracle and
+/// the compared set rather than a numeric witness. "unsupportedComparison"
+/// (the T1 team shape) discloses a comparison that does not run and is
+/// validated against the fixture's declared team method, never against a
+/// computed mismatch. <see cref="Evidence"/> names the evidence reference
+/// (oracle note, report, rule anchor) behind the reason.
+/// </para>
 /// </summary>
 public sealed record DivergenceEntry(
     string Grain,
@@ -253,21 +321,99 @@ public sealed record DivergenceEntry(
     int? Group,
     JsonElement? PilotNo,
     string Reason,
-    string? Disposition = null)
+    string? Disposition = null,
+    string? Kind = null,
+    decimal? Ours = null,
+    decimal? Expected = null,
+    string? Evidence = null)
 {
     /// <summary>True when the entry names this pilot, or "*" for all pilots.</summary>
     public bool Covers(long pilotNo) => PilotNo is { } p && (
         p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var n) && n == pilotNo
         || p.ValueKind == JsonValueKind.String && p.GetString() == "*");
 
-    /// <summary>True when this entry names the computed mismatch's cell — the
-    /// SubtractLedger predicate, shared with the WI-2 witnessing arm
-    /// (gs-ledger-modes.md). A null pilotNo covers any pilot, as always.</summary>
+    /// <summary>
+    /// The entry's expectation kind: numeric (an observed value difference
+    /// with pinned values), excludedOracleCell, syntheticSlot or
+    /// unsupportedComparison (documentary scope, validated — never matched —
+    /// against the oracle and the run). Absent reads as numeric for the
+    /// ledger-subtraction shape, but a numeric entry without pins is invalid
+    /// (see <see cref="RequirePins"/>) — tolerance-by-omission is not an
+    /// alternative. Throws on any other token: a typo must not silently
+    /// change what the entry claims.
+    /// </summary>
+    public string KindNormalized => (Kind ?? "numeric").ToLowerInvariant() switch
+    {
+        "numeric" => "numeric",
+        "excludedoraclecell" => "excludedOracleCell",
+        "syntheticslot" => "syntheticSlot",
+        "unsupportedcomparison" => "unsupportedComparison",
+        var k => throw new InvalidOperationException(
+            $"Ledger entry has unknown kind '{Kind}' (valid: numeric, excludedOracleCell, syntheticSlot, "
+            + $"unsupportedComparison): {Reason[..Math.Min(80, Reason.Length)]}"),
+    };
+
+    /// <summary>True for a documentary entry (every kind except numeric).</summary>
+    public bool IsDocumentary => KindNormalized is not "numeric";
+
+    /// <summary>
+    /// Throws unless a numeric entry pins both sides of the observed
+    /// difference exact-decimal. A numeric claim without values cannot be
+    /// matched bidirectionally, so it is an authoring bug, not a wildcard.
+    /// </summary>
+    public void RequirePins()
+    {
+        if (KindNormalized is not "numeric")
+        {
+            return;
+        }
+
+        if (Ours is null || Expected is null)
+        {
+            throw new InvalidOperationException(
+                $"Ledger entry ({Grain} r{Round?.ToString() ?? "*"}/g{Group?.ToString() ?? "*"} "
+                + $"p{PilotToken()}) claims kind 'numeric' but pins no values — a numeric difference "
+                + "must pin both SoarScore (ours) and GliderScore (expected) exact-decimal values.");
+        }
+    }
+
+    /// <summary>
+    /// True when this entry names the computed mismatch's cell — the
+    /// SubtractLedger predicate, shared with the witnessing arm
+    /// (gs-ledger-modes.md). A null pilotNo covers any pilot, as always.
+    /// <para>
+    /// gs_03 — kind-aware and bidirectional: a numeric entry covers a
+    /// mismatch only with equal pinned values on both sides (a moved cell,
+    /// an altered value/delta or a different grain is not covered);
+    /// documentary entries never cover a computed mismatch here — excluded
+    /// and synthetic scope shape the compared universe instead (see
+    /// Comparator), and an unsupported comparison by design witnesses
+    /// nothing numeric.
+    /// </para>
+    /// </summary>
     public bool CoversGrainRoundGroupPilot(GrainMismatch mismatch) =>
-        Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
-        && (Round is null || Round == mismatch.RoundNo)
-        && (Group is null || Group == mismatch.GroupNo)
-        && (PilotNo is null || Covers(mismatch.PilotNo));
+        CoversMismatch(mismatch);
+
+    /// <summary>
+    /// gs_03 — the kind-aware cover predicate replacing bare
+    /// identity matching. Numeric: grain, round/group scope, pilot AND both
+    /// pinned values equal. Documentary: never (scope is validated, not
+    /// subtracted).
+    /// </summary>
+    public bool CoversMismatch(GrainMismatch mismatch)
+    {
+        if (KindNormalized is not "numeric")
+        {
+            return false;
+        }
+
+        return Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
+            && (Round is null || Round == mismatch.RoundNo)
+            && (Group is null || Group == mismatch.GroupNo)
+            && (PilotNo is null || Covers(mismatch.PilotNo))
+            && Ours == mismatch.Ours
+            && Expected == mismatch.Expected;
+    }
 
     /// <summary>The pilot token as written ("13" or "*"), for report lines.</summary>
     public string PilotToken() => PilotNo is { } pilot && pilot.ValueKind == JsonValueKind.Number

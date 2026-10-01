@@ -1,11 +1,1192 @@
 {
   "source": "reconstructed-ladder",
+  "lifecycle": "finalised-full",
+  "scoredWindow": {
+    "firstRound": 1,
+    "lastRound": 14
+  },
+  "excludedRounds": [],
   "notes": [
     "No GliderScore report transcript exists for this comp, so ranks come from the documented ladder (arithmetic story, THE LADDER): best-per-original-round normalised sum minus per-pilot penalty totals, two lowest-cell drops (14 scored rounds >= Drop1AtRound=6 and >= Drop2AtRound=12; latest-equally-bad-first tie-break), report-time re-round to GroupScoreDecimals=0, Score DESC / RawScore DESC; class DurGeneral ends the ladder at rung 2; tied pilots share the displayed rank '=n'.",
     "A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine.",
     "The per-cell ground truth is strong: all 882 persisted NormalisedScore values (and all 882 RawScore values) were reproduced exactly by an independent recompute from the raw inputs and comp config (2026-08-26, WI-8 curation) before this ladder was applied to them; what remains unverified against GliderScore itself is only the report-level aggregation step, which no transcript covers yet.",
     "If Pete later supplies an Overall Results R1-R14 transcript, add it as overall-results-transcript.csv and upgrade this oracle to gs-report-transcript.",
-    "Percent is display-only (100 x Score / winner Score) and deliberately not recorded. Intra-tie ordering of '=n' groups is not significant (identical displayed rank; HiddenRanking within ties is implementation-defined)."
+    "Percent is display-only (100 x Score / winner Score) and deliberately not recorded. Intra-tie ordering of '=n' groups is not significant (identical displayed rank; HiddenRanking within ties is implementation-defined).",
+    "GS 02 complete-result oracle (2026-10-01): Scope: 14 drawn and scored rounds x 63 pilots (882 rows); included-in-standings R1-R14. Pilot 29's R13/G1 make-up cell aggregates into orig-R12 (destination-aware law)."
+  ],
+  "totals": [
+    {
+      "pilotNo": 1,
+      "total": 11326.0
+    },
+    {
+      "pilotNo": 2,
+      "total": 9755.0
+    },
+    {
+      "pilotNo": 3,
+      "total": 9970.0
+    },
+    {
+      "pilotNo": 4,
+      "total": 11784.0
+    },
+    {
+      "pilotNo": 5,
+      "total": 11973.0
+    },
+    {
+      "pilotNo": 6,
+      "total": 9967.0
+    },
+    {
+      "pilotNo": 7,
+      "total": 9658.0
+    },
+    {
+      "pilotNo": 8,
+      "total": 7139.0
+    },
+    {
+      "pilotNo": 9,
+      "total": 9167.0
+    },
+    {
+      "pilotNo": 10,
+      "total": 11377.0
+    },
+    {
+      "pilotNo": 11,
+      "total": 11152.0
+    },
+    {
+      "pilotNo": 12,
+      "total": 11597.0
+    },
+    {
+      "pilotNo": 13,
+      "total": 11903.0
+    },
+    {
+      "pilotNo": 14,
+      "total": 10575.0
+    },
+    {
+      "pilotNo": 15,
+      "total": 7539.0
+    },
+    {
+      "pilotNo": 16,
+      "total": 10188.0
+    },
+    {
+      "pilotNo": 17,
+      "total": 11954.0
+    },
+    {
+      "pilotNo": 18,
+      "total": 11382.0
+    },
+    {
+      "pilotNo": 19,
+      "total": 11367.0
+    },
+    {
+      "pilotNo": 20,
+      "total": 11799.0
+    },
+    {
+      "pilotNo": 21,
+      "total": 11784.0
+    },
+    {
+      "pilotNo": 22,
+      "total": 11920.0
+    },
+    {
+      "pilotNo": 23,
+      "total": 10297.0
+    },
+    {
+      "pilotNo": 24,
+      "total": 11756.0
+    },
+    {
+      "pilotNo": 25,
+      "total": 10806.0
+    },
+    {
+      "pilotNo": 26,
+      "total": 11743.0
+    },
+    {
+      "pilotNo": 27,
+      "total": 10751.0
+    },
+    {
+      "pilotNo": 28,
+      "total": 10893.0
+    },
+    {
+      "pilotNo": 29,
+      "total": 10867.0
+    },
+    {
+      "pilotNo": 30,
+      "total": 11165.0
+    },
+    {
+      "pilotNo": 31,
+      "total": 10455.0
+    },
+    {
+      "pilotNo": 32,
+      "total": 806.0
+    },
+    {
+      "pilotNo": 33,
+      "total": 11870.0
+    },
+    {
+      "pilotNo": 34,
+      "total": 9045.0
+    },
+    {
+      "pilotNo": 35,
+      "total": 10037.0
+    },
+    {
+      "pilotNo": 36,
+      "total": 9297.0
+    },
+    {
+      "pilotNo": 37,
+      "total": 9861.0
+    },
+    {
+      "pilotNo": 38,
+      "total": 9464.0
+    },
+    {
+      "pilotNo": 40,
+      "total": 10377.0
+    },
+    {
+      "pilotNo": 41,
+      "total": 11016.0
+    },
+    {
+      "pilotNo": 42,
+      "total": 10915.0
+    },
+    {
+      "pilotNo": 44,
+      "total": 10168.0
+    },
+    {
+      "pilotNo": 45,
+      "total": 11488.0
+    },
+    {
+      "pilotNo": 48,
+      "total": 11288.0
+    },
+    {
+      "pilotNo": 51,
+      "total": 9288.0
+    },
+    {
+      "pilotNo": 52,
+      "total": 10707.0
+    },
+    {
+      "pilotNo": 53,
+      "total": 11195.0
+    },
+    {
+      "pilotNo": 55,
+      "total": 11172.0
+    },
+    {
+      "pilotNo": 56,
+      "total": 11495.0
+    },
+    {
+      "pilotNo": 57,
+      "total": 8640.0
+    },
+    {
+      "pilotNo": 58,
+      "total": 9978.0
+    },
+    {
+      "pilotNo": 59,
+      "total": 7582.0
+    },
+    {
+      "pilotNo": 60,
+      "total": 9120.0
+    },
+    {
+      "pilotNo": 61,
+      "total": 9707.0
+    },
+    {
+      "pilotNo": 62,
+      "total": 12000.0
+    },
+    {
+      "pilotNo": 65,
+      "total": 9313.0
+    },
+    {
+      "pilotNo": 66,
+      "total": 8383.0
+    },
+    {
+      "pilotNo": 67,
+      "total": 4566.0
+    },
+    {
+      "pilotNo": 69,
+      "total": 838.0
+    },
+    {
+      "pilotNo": 70,
+      "total": 10176.0
+    },
+    {
+      "pilotNo": 71,
+      "total": 11050.0
+    },
+    {
+      "pilotNo": 73,
+      "total": 6670.0
+    },
+    {
+      "pilotNo": 74,
+      "total": 11520.0
+    }
+  ],
+  "preDropTotals": [
+    {
+      "pilotNo": 1,
+      "total": 12385
+    },
+    {
+      "pilotNo": 2,
+      "total": 10413
+    },
+    {
+      "pilotNo": 3,
+      "total": 10583
+    },
+    {
+      "pilotNo": 4,
+      "total": 13305
+    },
+    {
+      "pilotNo": 5,
+      "total": 13717
+    },
+    {
+      "pilotNo": 6,
+      "total": 10965
+    },
+    {
+      "pilotNo": 7,
+      "total": 10757
+    },
+    {
+      "pilotNo": 8,
+      "total": 7139
+    },
+    {
+      "pilotNo": 9,
+      "total": 10059
+    },
+    {
+      "pilotNo": 10,
+      "total": 12933
+    },
+    {
+      "pilotNo": 11,
+      "total": 12520
+    },
+    {
+      "pilotNo": 12,
+      "total": 13028
+    },
+    {
+      "pilotNo": 13,
+      "total": 13236
+    },
+    {
+      "pilotNo": 14,
+      "total": 11697
+    },
+    {
+      "pilotNo": 15,
+      "total": 7539
+    },
+    {
+      "pilotNo": 16,
+      "total": 11318
+    },
+    {
+      "pilotNo": 17,
+      "total": 13742
+    },
+    {
+      "pilotNo": 18,
+      "total": 12619
+    },
+    {
+      "pilotNo": 19,
+      "total": 12678
+    },
+    {
+      "pilotNo": 20,
+      "total": 13381
+    },
+    {
+      "pilotNo": 21,
+      "total": 13280
+    },
+    {
+      "pilotNo": 22,
+      "total": 13571
+    },
+    {
+      "pilotNo": 23,
+      "total": 11381
+    },
+    {
+      "pilotNo": 24,
+      "total": 13290
+    },
+    {
+      "pilotNo": 25,
+      "total": 11851
+    },
+    {
+      "pilotNo": 26,
+      "total": 13269
+    },
+    {
+      "pilotNo": 27,
+      "total": 11883
+    },
+    {
+      "pilotNo": 28,
+      "total": 12224
+    },
+    {
+      "pilotNo": 29,
+      "total": 12078
+    },
+    {
+      "pilotNo": 30,
+      "total": 12430
+    },
+    {
+      "pilotNo": 31,
+      "total": 11390
+    },
+    {
+      "pilotNo": 32,
+      "total": 806
+    },
+    {
+      "pilotNo": 33,
+      "total": 13491
+    },
+    {
+      "pilotNo": 34,
+      "total": 9792
+    },
+    {
+      "pilotNo": 35,
+      "total": 10564
+    },
+    {
+      "pilotNo": 36,
+      "total": 10127
+    },
+    {
+      "pilotNo": 37,
+      "total": 10938
+    },
+    {
+      "pilotNo": 38,
+      "total": 10391
+    },
+    {
+      "pilotNo": 40,
+      "total": 11271
+    },
+    {
+      "pilotNo": 41,
+      "total": 11765
+    },
+    {
+      "pilotNo": 42,
+      "total": 11532
+    },
+    {
+      "pilotNo": 44,
+      "total": 11337
+    },
+    {
+      "pilotNo": 45,
+      "total": 12748
+    },
+    {
+      "pilotNo": 48,
+      "total": 12727
+    },
+    {
+      "pilotNo": 51,
+      "total": 10482
+    },
+    {
+      "pilotNo": 52,
+      "total": 11897
+    },
+    {
+      "pilotNo": 53,
+      "total": 12497
+    },
+    {
+      "pilotNo": 55,
+      "total": 12488
+    },
+    {
+      "pilotNo": 56,
+      "total": 12928
+    },
+    {
+      "pilotNo": 57,
+      "total": 9419
+    },
+    {
+      "pilotNo": 58,
+      "total": 11175
+    },
+    {
+      "pilotNo": 59,
+      "total": 7929
+    },
+    {
+      "pilotNo": 60,
+      "total": 9780
+    },
+    {
+      "pilotNo": 61,
+      "total": 10764
+    },
+    {
+      "pilotNo": 62,
+      "total": 13996
+    },
+    {
+      "pilotNo": 65,
+      "total": 9850
+    },
+    {
+      "pilotNo": 66,
+      "total": 8763
+    },
+    {
+      "pilotNo": 67,
+      "total": 4566
+    },
+    {
+      "pilotNo": 69,
+      "total": 838
+    },
+    {
+      "pilotNo": 70,
+      "total": 11294
+    },
+    {
+      "pilotNo": 71,
+      "total": 12274
+    },
+    {
+      "pilotNo": 73,
+      "total": 6865
+    },
+    {
+      "pilotNo": 74,
+      "total": 12332
+    }
+  ],
+  "penalties": [
+    {
+      "pilotNo": 1,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 2,
+      "deduction": 100
+    },
+    {
+      "pilotNo": 3,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 4,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 5,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 6,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 7,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 8,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 9,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 10,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 11,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 12,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 13,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 14,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 15,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 16,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 17,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 18,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 19,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 20,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 21,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 22,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 23,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 24,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 25,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 26,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 27,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 28,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 29,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 30,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 31,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 32,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 33,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 34,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 35,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 36,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 37,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 38,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 40,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 41,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 42,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 44,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 45,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 48,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 51,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 52,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 53,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 55,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 56,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 57,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 58,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 59,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 60,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 61,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 62,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 65,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 66,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 67,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 69,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 70,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 71,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 73,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 74,
+      "deduction": 0
+    }
+  ],
+  "discards": [
+    {
+      "pilotNo": 1,
+      "unit": "task",
+      "droppedRounds": [4, 14],
+      "droppedValues": [624.0, 435.0]
+    },
+    {
+      "pilotNo": 2,
+      "unit": "task",
+      "droppedRounds": [1, 14],
+      "droppedValues": [504.0, 54.0]
+    },
+    {
+      "pilotNo": 3,
+      "unit": "task",
+      "droppedRounds": [3, 5],
+      "droppedValues": [0.0, 613.0]
+    },
+    {
+      "pilotNo": 4,
+      "unit": "task",
+      "droppedRounds": [3, 5],
+      "droppedValues": [678.0, 843.0]
+    },
+    {
+      "pilotNo": 5,
+      "unit": "task",
+      "droppedRounds": [1, 11],
+      "droppedValues": [980.0, 764.0]
+    },
+    {
+      "pilotNo": 6,
+      "unit": "task",
+      "droppedRounds": [4, 12],
+      "droppedValues": [414.0, 584.0]
+    },
+    {
+      "pilotNo": 7,
+      "unit": "task",
+      "droppedRounds": [1, 14],
+      "droppedValues": [580.0, 519.0]
+    },
+    {
+      "pilotNo": 8,
+      "unit": "task",
+      "droppedRounds": [4, 5],
+      "droppedValues": [0.0, 0.0]
+    },
+    {
+      "pilotNo": 9,
+      "unit": "task",
+      "droppedRounds": [1, 3],
+      "droppedValues": [399.0, 493.0]
+    },
+    {
+      "pilotNo": 10,
+      "unit": "task",
+      "droppedRounds": [2, 5],
+      "droppedValues": [829.0, 727.0]
+    },
+    {
+      "pilotNo": 11,
+      "unit": "task",
+      "droppedRounds": [3, 11],
+      "droppedValues": [696.0, 672.0]
+    },
+    {
+      "pilotNo": 12,
+      "unit": "task",
+      "droppedRounds": [1, 2],
+      "droppedValues": [669.0, 762.0]
+    },
+    {
+      "pilotNo": 13,
+      "unit": "task",
+      "droppedRounds": [3, 4],
+      "droppedValues": [715.0, 618.0]
+    },
+    {
+      "pilotNo": 14,
+      "unit": "task",
+      "droppedRounds": [3, 5],
+      "droppedValues": [525.0, 597.0]
+    },
+    {
+      "pilotNo": 15,
+      "unit": "task",
+      "droppedRounds": [13, 14],
+      "droppedValues": [0.0, 0.0]
+    },
+    {
+      "pilotNo": 16,
+      "unit": "task",
+      "droppedRounds": [2, 14],
+      "droppedValues": [533.0, 597.0]
+    },
+    {
+      "pilotNo": 17,
+      "unit": "task",
+      "droppedRounds": [2, 5],
+      "droppedValues": [931.0, 857.0]
+    },
+    {
+      "pilotNo": 18,
+      "unit": "task",
+      "droppedRounds": [3, 9],
+      "droppedValues": [682.0, 555.0]
+    },
+    {
+      "pilotNo": 19,
+      "unit": "task",
+      "droppedRounds": [2, 6],
+      "droppedValues": [573.0, 738.0]
+    },
+    {
+      "pilotNo": 20,
+      "unit": "task",
+      "droppedRounds": [5, 14],
+      "droppedValues": [697.0, 885.0]
+    },
+    {
+      "pilotNo": 21,
+      "unit": "task",
+      "droppedRounds": [2, 12],
+      "droppedValues": [723.0, 773.0]
+    },
+    {
+      "pilotNo": 22,
+      "unit": "task",
+      "droppedRounds": [1, 5],
+      "droppedValues": [719.0, 932.0]
+    },
+    {
+      "pilotNo": 23,
+      "unit": "task",
+      "droppedRounds": [2, 8],
+      "droppedValues": [540.0, 544.0]
+    },
+    {
+      "pilotNo": 24,
+      "unit": "task",
+      "droppedRounds": [1, 4],
+      "droppedValues": [819.0, 715.0]
+    },
+    {
+      "pilotNo": 25,
+      "unit": "task",
+      "droppedRounds": [4, 14],
+      "droppedValues": [513.0, 532.0]
+    },
+    {
+      "pilotNo": 26,
+      "unit": "task",
+      "droppedRounds": [4, 14],
+      "droppedValues": [788.0, 738.0]
+    },
+    {
+      "pilotNo": 27,
+      "unit": "task",
+      "droppedRounds": [3, 7],
+      "droppedValues": [602.0, 530.0]
+    },
+    {
+      "pilotNo": 28,
+      "unit": "task",
+      "droppedRounds": [4, 11],
+      "droppedValues": [745.0, 586.0]
+    },
+    {
+      "pilotNo": 29,
+      "unit": "task",
+      "droppedRounds": [4, 5],
+      "droppedValues": [706.0, 505.0]
+    },
+    {
+      "pilotNo": 30,
+      "unit": "task",
+      "droppedRounds": [2, 3],
+      "droppedValues": [659.0, 606.0]
+    },
+    {
+      "pilotNo": 31,
+      "unit": "task",
+      "droppedRounds": [4, 8],
+      "droppedValues": [552.0, 383.0]
+    },
+    {
+      "pilotNo": 32,
+      "unit": "task",
+      "droppedRounds": [13, 14],
+      "droppedValues": [0.0, 0.0]
+    },
+    {
+      "pilotNo": 33,
+      "unit": "task",
+      "droppedRounds": [5, 11],
+      "droppedValues": [811.0, 810.0]
+    },
+    {
+      "pilotNo": 34,
+      "unit": "task",
+      "droppedRounds": [3, 6],
+      "droppedValues": [371.0, 376.0]
+    },
+    {
+      "pilotNo": 35,
+      "unit": "task",
+      "droppedRounds": [11, 14],
+      "droppedValues": [0.0, 527.0]
+    },
+    {
+      "pilotNo": 36,
+      "unit": "task",
+      "droppedRounds": [2, 4],
+      "droppedValues": [382.0, 448.0]
+    },
+    {
+      "pilotNo": 37,
+      "unit": "task",
+      "droppedRounds": [2, 8],
+      "droppedValues": [596.0, 481.0]
+    },
+    {
+      "pilotNo": 38,
+      "unit": "task",
+      "droppedRounds": [3, 9],
+      "droppedValues": [460.0, 467.0]
+    },
+    {
+      "pilotNo": 40,
+      "unit": "task",
+      "droppedRounds": [8, 12],
+      "droppedValues": [597.0, 297.0]
+    },
+    {
+      "pilotNo": 41,
+      "unit": "task",
+      "droppedRounds": [1, 6],
+      "droppedValues": [87.0, 662.0]
+    },
+    {
+      "pilotNo": 42,
+      "unit": "task",
+      "droppedRounds": [4, 8],
+      "droppedValues": [617.0, 0.0]
+    },
+    {
+      "pilotNo": 44,
+      "unit": "task",
+      "droppedRounds": [1, 13],
+      "droppedValues": [542.0, 627.0]
+    },
+    {
+      "pilotNo": 45,
+      "unit": "task",
+      "droppedRounds": [7, 9],
+      "droppedValues": [609.0, 651.0]
+    },
+    {
+      "pilotNo": 48,
+      "unit": "task",
+      "droppedRounds": [4, 6],
+      "droppedValues": [761.0, 678.0]
+    },
+    {
+      "pilotNo": 51,
+      "unit": "task",
+      "droppedRounds": [5, 7],
+      "droppedValues": [619.0, 575.0]
+    },
+    {
+      "pilotNo": 52,
+      "unit": "task",
+      "droppedRounds": [6, 14],
+      "droppedValues": [611.0, 579.0]
+    },
+    {
+      "pilotNo": 53,
+      "unit": "task",
+      "droppedRounds": [1, 8],
+      "droppedValues": [750.0, 552.0]
+    },
+    {
+      "pilotNo": 55,
+      "unit": "task",
+      "droppedRounds": [1, 14],
+      "droppedValues": [681.0, 635.0]
+    },
+    {
+      "pilotNo": 56,
+      "unit": "task",
+      "droppedRounds": [4, 5],
+      "droppedValues": [759.0, 674.0]
+    },
+    {
+      "pilotNo": 57,
+      "unit": "task",
+      "droppedRounds": [2, 4],
+      "droppedValues": [504.0, 275.0]
+    },
+    {
+      "pilotNo": 58,
+      "unit": "task",
+      "droppedRounds": [1, 3],
+      "droppedValues": [634.0, 563.0]
+    },
+    {
+      "pilotNo": 59,
+      "unit": "task",
+      "droppedRounds": [7, 10],
+      "droppedValues": [49.0, 298.0]
+    },
+    {
+      "pilotNo": 60,
+      "unit": "task",
+      "droppedRounds": [1, 3],
+      "droppedValues": [273.0, 387.0]
+    },
+    {
+      "pilotNo": 61,
+      "unit": "task",
+      "droppedRounds": [3, 11],
+      "droppedValues": [501.0, 556.0]
+    },
+    {
+      "pilotNo": 62,
+      "unit": "task",
+      "droppedRounds": [2, 6],
+      "droppedValues": [999.0, 997.0]
+    },
+    {
+      "pilotNo": 65,
+      "unit": "task",
+      "droppedRounds": [3, 9],
+      "droppedValues": [279.0, 258.0]
+    },
+    {
+      "pilotNo": 66,
+      "unit": "task",
+      "droppedRounds": [4, 5],
+      "droppedValues": [0.0, 380.0]
+    },
+    {
+      "pilotNo": 67,
+      "unit": "task",
+      "droppedRounds": [13, 14],
+      "droppedValues": [0.0, 0.0]
+    },
+    {
+      "pilotNo": 69,
+      "unit": "task",
+      "droppedRounds": [13, 14],
+      "droppedValues": [0.0, 0.0]
+    },
+    {
+      "pilotNo": 70,
+      "unit": "task",
+      "droppedRounds": [3, 5],
+      "droppedValues": [523.0, 595.0]
+    },
+    {
+      "pilotNo": 71,
+      "unit": "task",
+      "droppedRounds": [4, 6],
+      "droppedValues": [504.0, 720.0]
+    },
+    {
+      "pilotNo": 73,
+      "unit": "task",
+      "droppedRounds": [3, 5],
+      "droppedValues": [195.0, 0.0]
+    },
+    {
+      "pilotNo": 74,
+      "unit": "task",
+      "droppedRounds": [1, 4],
+      "droppedValues": [300.0, 512.0]
+    }
+  ],
+  "fieldAvailability": [
+    {
+      "field": "total",
+      "status": "available",
+      "reason": "asserted per pilot; evidence: reconstructed ladder over persisted cells (all 882 RawScore/NormalisedScore values independently recomputed at curation; no transcript exists)"
+    },
+    {
+      "field": "preDropTotal",
+      "status": "available",
+      "reason": "asserted per pilot (best-per-original-round persisted-cell sum); evidence: reconstructed ladder over persisted cells (all 882 RawScore/NormalisedScore values independently recomputed at curation; no transcript exists)"
+    },
+    {
+      "field": "penaltyDeduction",
+      "status": "available",
+      "reason": "asserted per pilot, explicit zero where none; evidence: single persisted Penalty=100 row (R11 pilot 2); GS subtracts the per-pilot total after summing round cells"
+    },
+    {
+      "field": "discards",
+      "status": "available",
+      "reason": "asserted per ranked pilot (unit + round identities + values); evidence: Drop1AtRound=6 + Drop2AtRound=12 both crossed over 14 scored rounds (every pilot loses exactly two worst cells, latest-equally-bad-first)"
+    },
+    {
+      "field": "places",
+      "status": "available",
+      "reason": "asserted per pilot via rank strings incl '=n' tie membership; evidence: reconstructed ladder over persisted cells (all 882 RawScore/NormalisedScore values independently recomputed at curation; no transcript exists)"
+    },
+    {
+      "field": "population",
+      "status": "available",
+      "reason": "asserted bidirectionally (extra/missing ranked competitor fails; every registered pilot is ranked); evidence: reconstructed ladder over persisted cells (all 882 RawScore/NormalisedScore values independently recomputed at curation; no transcript exists)"
+    }
   ],
   "ranks": [
     {

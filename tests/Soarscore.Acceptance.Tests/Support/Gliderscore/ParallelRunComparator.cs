@@ -84,7 +84,7 @@ public sealed record ParallelRunReport(
     ParallelRunVerdict Verdict,
     IReadOnlyList<GrainMismatch> ComputedDifferences,
     IReadOnlyList<GrainMismatch> UntriagedDifferences,
-    IReadOnlyList<ParallelRunDifferenceEntry> MissingDifferences,
+    IReadOnlyList<ParallelRunMissingCell> MissingDifferences,
     IReadOnlyList<string> ProvenanceBreaks,
     int RawCellsCompared,
     int NormalisedCellsCompared,
@@ -101,7 +101,6 @@ public sealed record ParallelRunReport(
     public string Render()
     {
         var invariant = System.Globalization.CultureInfo.InvariantCulture;
-
         var lines = new List<string>
         {
             Verdict switch
@@ -157,10 +156,16 @@ public sealed record ParallelRunReport(
             lines.Add("");
             lines.Add(
                 $"TRIAGED differences that failed to appear ({MissingDifferences.Count}) — a triaged difference "
-                + "that fails to appear FAILS the scenario (WI-2.3):");
-            lines.AddRange(MissingDifferences.Select(e =>
-                $"  kind {e.TriageKind} {e.Grain} r{e.Round?.ToString() ?? "*"}/g{e.Group?.ToString() ?? "*"} "
-                + $"p{e.PilotToken()}: {e.Difference}"));
+                + "that fails to appear FAILS the scenario (WI-2.3): a resolved difference fails its stale "
+                + "expectation in every mode, never by editing the ledger to fit:");
+            lines.AddRange(MissingDifferences
+                .OrderBy(m => m.Grain, StringComparer.Ordinal)
+                .ThenBy(m => m.Cell.Round).ThenBy(m => m.Cell.Group).ThenBy(m => m.Cell.PilotNo)
+                .Select(m =>
+                    $"  {m.Grain} r{m.Cell.Round}/g{m.Cell.Group} p{m.Cell.PilotNo}: the ledger declares seed-run "
+                    + $"{m.Cell.Seed?.ToString(invariant) ?? "(none)"} vs GS oracle "
+                    + $"{m.Cell.Gs?.ToString(invariant) ?? "(none)"} but the run produced no such difference "
+                    + $"— {FirstSentence(m.EntryDifference)}"));
         }
 
         if (ProvenanceBreaks.Count > 0)
@@ -173,6 +178,16 @@ public sealed record ParallelRunReport(
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>The one-glance form of a long difference — the first
+    /// sentence, capped; the ledger JSON carries the full text.</summary>
+    private static string FirstSentence(string text)
+    {
+        var cut = text.IndexOf(". ", StringComparison.Ordinal);
+        var sentence = cut < 0 ? text : text[..(cut + 1)];
+
+        return sentence.Length <= 200 ? sentence : sentence[..197] + "...";
     }
 }
 
@@ -261,13 +276,18 @@ public static class ParallelRunComparator
         // The computed set, ledger-shaped and minus nothing.
         var computed = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).ToList();
 
-        // Set-equality in both directions (WI-2.3), wildcard-aware.
-        var untriaged = computed
-            .Where(mismatch => !ledger.TriagedDifferences.Any(entry => entry.Covers(mismatch)))
-            .ToList();
-        var missing = ledger.TriagedDifferences
-            .Where(entry => !computed.Any(mismatch => entry.Covers(mismatch)))
-            .ToList();
+        // gs_03 — structural validation before matching: unknown disposition
+        // tokens, cell-less entries and cells outside their entry's scope
+        // fail loudly in every mode (an authoring bug, never a quiet pass).
+        foreach (var entry in ledger.TriagedDifferences)
+        {
+            entry.ValidateCells();
+        }
+
+        // Set-equality in both directions (WI-2.3), gs_03 exact: every
+        // computed mismatch must equal a declared cell (identity AND both
+        // pinned values), and every declared cell must be witnessed.
+        var (untriaged, missing) = MatchDifferenceSets(computed, ledger);
 
         var provenanceBreaks = CheckProvenance(fixture, ledger, outcome, competition);
 
@@ -292,6 +312,47 @@ public static class ParallelRunComparator
             OracleCells: fixture.ExpectedScores.Scores.Count,
             TriagedEntries: ledger.TriagedDifferences.Count);
     }
+
+    /// <summary>
+    /// gs_03 — the pure set-equality core, shared by the compare and the
+    /// contract unit tests: every computed mismatch must equal a declared
+    /// cell (owning entry's grain, cell identity, both pinned values), and
+    /// every declared cell must be witnessed by a computed mismatch. Only
+    /// the declared difference set satisfies the contract — adding,
+    /// removing, relocating or altering one difference fails on one leg or
+    /// the other.
+    /// </summary>
+    internal static (
+        IReadOnlyList<GrainMismatch> Untriaged,
+        IReadOnlyList<ParallelRunMissingCell> Missing) MatchDifferenceSets(
+            IReadOnlyList<GrainMismatch> computed, ParallelRunLedger ledger)
+    {
+        var untriaged = computed
+            .Where(mismatch => !ledger.TriagedDifferences.Any(entry => entry.Covers(mismatch)))
+            .ToList();
+
+        var missing = ledger.TriagedDifferences
+            .SelectMany(entry => (entry.Cells ?? []).Select(cell => (entry, cell)))
+            .Where(x => !computed.Any(mismatch => CellWitnesses(x.entry, x.cell, mismatch)))
+            .Select(x => new ParallelRunMissingCell(
+                x.entry.Grain, x.cell, x.entry.Difference))
+            .ToList();
+
+        return (untriaged, missing);
+    }
+
+    /// <summary>gs_03 — true when the computed mismatch equals the declared
+    /// cell: the owning entry's grain, the cell's identity, and both pinned
+    /// values (seed-run vs <see cref="GrainMismatch.Ours"/>, GS oracle vs
+    /// <see cref="GrainMismatch.Expected"/>).</summary>
+    internal static bool CellWitnesses(
+        ParallelRunDifferenceEntry entry, ParallelRunExpectedCell cell, GrainMismatch mismatch) =>
+        entry.Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
+        && cell.Round == mismatch.RoundNo
+        && cell.Group == mismatch.GroupNo
+        && cell.PilotNo == mismatch.PilotNo
+        && cell.Gs == mismatch.Expected
+        && cell.Seed == mismatch.Ours;
 
     // ------------------------------------------------------- grain 1 (raw)
 

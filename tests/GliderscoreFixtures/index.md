@@ -166,6 +166,38 @@ line starts with the slug token and contains "skipped".
   group; UseTeams=true + dead series '1' flagged honestly, moot under this
   unconditional concept-gap skip.
 
+## Complete-result oracle coverage (GS 02, 2026-10-01)
+
+Every active fixture's `expected-result.json` now carries the complete-result
+oracle contract beside its rank strings: `totals`, `preDropTotals`,
+`penalties` (explicit zero where none — omission never means zero),
+`discards` (the fixture's own drop dimension as the unit — `round` for
+ByRound, `task` for ByTask — with round identities and values), `scoredWindow`
++ `lifecycle` + `excludedRounds` (the snapshot scope and row population), and
+`fieldAvailability` (every result field declared available, unavailable or
+inapplicable with a reason). The comparator asserts every available field
+automatically (exact-decimal, no tolerance); conservation stays the
+independent internal check. Provenance labels are unchanged —
+reconstructed expectations never acquire a report/persisted label.
+
+| fixture | source (unchanged) | window | drops (unit) | penalties |
+|---|---|---|---|---|
+| ales-sample-comp | reconstructed-ladder | R1–R3 full incl. unflown placeholders | 0 (round, proven empty) | 0 |
+| f3j-international | gs-report-transcript | R1–R16 full | 1 (task, `*` marks) | 0 |
+| f3j-international-flyoff | gs-report-transcript | R1–R4 full | 0 (round, proven empty, no `*`) | 0 |
+| f3k-sample-comp | gs-report-transcript | R1–R9 full incl. NoTaskSet placeholders | 1 (task, `*` on R9) | 42:100, 56:200, 65:100 |
+| jerilderie-2010 | reconstructed-ladder | R1–R14 full | 2 (task) | pilot 2:100 |
+| f3k-june-2020 | reconstructed-ladder | R1–R13 full with re-draw dedup | 0 (round, proven empty) | 0 |
+| f3k-southern-fling | reconstructed-ladder | R1–R15 full, pilot 89 absent R9–R15 | 0 (round, proven empty) | 0 |
+| f5j-christchurch-2019 | reconstructed-ladder | R1–R18 drawn, standings R1–R11 (R12–R18 zeros compared) | 0 (round, proven empty) | 0 |
+| f5j-hawkes-bay-trials | reconstructed-ladder | R1–R16 drawn, standings R1–R10 (R11–R16 zeros compared) | 0 (round, proven empty) | 0 |
+| f5j-nz-south-island | reconstructed-ladder | R1–R16 drawn, standings R1–R11 (R12–R16 zeros compared) | 0 (round, proven empty) | 0 |
+| f5k-ni-round-2 | server-persisted-progressive | snapshot R1–R6 (R7–R10 excluded, uncompared) | 1 (round, worst real score) | 0 |
+
+Pilot 88 (f5k, registered never-flew) is declared zero-only unranked and
+carries no discard assertion — his tied-zero cells evidence no external
+identity. Percent stays display-only and deliberately unrecorded everywhere.
+
 ## Standing skip reasons
 
 A competition matching either of these is indexed as `- <slug> — skipped —

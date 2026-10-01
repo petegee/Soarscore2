@@ -5,7 +5,9 @@
     "group": 3,
     "pilotNo": 101,
     "reason": "D5: draw-derivation step 2 (oracle-keyed keep-highest dedup) fires for real on this fixture's round-7 re-draw: pilot 101 was drawn in G3, cancelled (all-zero row) and re-flown in the new G4. The re-flown G4 row keeps the (round, pilot) seat on its higher oracle NormalisedScore (723.7 vs 0), so the cancelled G3 row is never replayed and oracle cell 5/7/3/0/101 (raw 0.0) is intentionally never compared. GS's own ladder rollup keeps each pilot's highest cell per original round (ladder.py), so the cancelled cell contributes nothing on either side and no ranking divergence follows.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/101; ladder.py best-per-original-round"
   },
   {
     "grain": "normalised",
@@ -13,7 +15,9 @@
     "group": 3,
     "pilotNo": 101,
     "reason": "D5: same excluded round-7 cancelled G3 row as the raw-grain entry - oracle cell 5/7/3/0/101 (NormalisedScore 0.0) is intentionally never replayed or compared.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/101; ladder.py best-per-original-round"
   },
   {
     "grain": "raw",
@@ -21,7 +25,9 @@
     "group": 3,
     "pilotNo": 102,
     "reason": "D5: draw-derivation step 2 (oracle-keyed keep-highest dedup) fires for real on this fixture's round-7 re-draw: pilot 102 was drawn in G3, cancelled (all-zero row) and re-flown in the new G4. The re-flown G4 row keeps the (round, pilot) seat on its higher oracle NormalisedScore (276.3 vs 0), so the cancelled G3 row is never replayed and oracle cell 5/7/3/0/102 (raw 0.0) is intentionally never compared. GS's own ladder rollup keeps each pilot's highest cell per original round (ladder.py), so the cancelled cell contributes nothing on either side and no ranking divergence follows.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/102; ladder.py best-per-original-round"
   },
   {
     "grain": "normalised",
@@ -29,7 +35,9 @@
     "group": 3,
     "pilotNo": 102,
     "reason": "D5: same excluded round-7 cancelled G3 row as the raw-grain entry - oracle cell 5/7/3/0/102 (NormalisedScore 0.0) is intentionally never replayed or compared.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/102; ladder.py best-per-original-round"
   },
   {
     "grain": "raw",
@@ -37,7 +45,9 @@
     "group": 3,
     "pilotNo": 128,
     "reason": "D5: draw-derivation step 2 (oracle-keyed keep-highest dedup) fires for real on this fixture's round-7 re-draw: pilot 128 was drawn in G3, cancelled (all-zero row) and re-flown in the new G4. The re-flown G4 row keeps the (round, pilot) seat on its higher oracle NormalisedScore (1000.0 vs 0), so the cancelled G3 row is never replayed and oracle cell 5/7/3/0/128 (raw 0.0) is intentionally never compared. GS's own ladder rollup keeps each pilot's highest cell per original round (ladder.py), so the cancelled cell contributes nothing on either side and no ranking divergence follows.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/128; ladder.py best-per-original-round"
   },
   {
     "grain": "normalised",
@@ -45,7 +55,9 @@
     "group": 3,
     "pilotNo": 128,
     "reason": "D5: same excluded round-7 cancelled G3 row as the raw-grain entry - oracle cell 5/7/3/0/128 (NormalisedScore 0.0) is intentionally never replayed or compared.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/128; ladder.py best-per-original-round"
   },
   {
     "grain": "raw",
@@ -53,7 +65,9 @@
     "group": 3,
     "pilotNo": 85,
     "reason": "D5: draw-derivation step 2 (oracle-keyed keep-highest dedup) fires for real on this fixture's round-7 re-draw: pilot 85 was drawn in G3, cancelled (all-zero row) and re-flown in the new G4. The re-flown G4 row keeps the (round, pilot) seat on its higher oracle NormalisedScore (157.9 vs 0), so the cancelled G3 row is never replayed and oracle cell 5/7/3/0/85 (raw 0.0) is intentionally never compared. GS's own ladder rollup keeps each pilot's highest cell per original round (ladder.py), so the cancelled cell contributes nothing on either side and no ranking divergence follows.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/85; ladder.py best-per-original-round"
   },
   {
     "grain": "normalised",
@@ -61,7 +75,9 @@
     "group": 3,
     "pilotNo": 85,
     "reason": "D5: same excluded round-7 cancelled G3 row as the raw-grain entry - oracle cell 5/7/3/0/85 (NormalisedScore 0.0) is intentionally never replayed or compared.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "excludedOracleCell",
+    "evidence": "expected-scores.json key 5/7/3/0/85; ladder.py best-per-original-round"
   },
   {
     "grain": "raw",
@@ -69,7 +85,11 @@
     "group": 2,
     "pilotNo": 85,
     "reason": "R1: representation divergence - GS computes and persists RawScore in binary64, and this cell carries an unrounded double-sum artefact left verbatim in the committed oracle (281.70000000000005; named by expected-scores.json's valuesAsPersisted note). Soarscore's FlightInterpreter computes exact decimal, so ours reprs clean at 1dp: 281.7 vs 281.70000000000005, delta 5e-14. The normalised grain is unaffected - the 1-dp HalfUp grid washes the artefact out. No arithmetic divergence on either side.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "numeric",
+    "ours": 281.7,
+    "expected": 281.70000000000005,
+    "evidence": "expected-scores.json valuesAsPersisted note; deferred-decisions.md R1"
   },
   {
     "grain": "raw",
@@ -77,7 +97,11 @@
     "group": 1,
     "pilotNo": 77,
     "reason": "R1: representation divergence - GS computes and persists RawScore in binary64, and this cell carries an unrounded double-sum artefact left verbatim in the committed oracle (682.5999999999999; named by expected-scores.json's valuesAsPersisted note). Soarscore's FlightInterpreter computes exact decimal, so ours reprs clean at 1dp: 682.6 vs 682.5999999999999, delta 1e-13. The normalised grain is unaffected - the 1-dp HalfUp grid washes the artefact out. No arithmetic divergence on either side.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "numeric",
+    "ours": 682.6,
+    "expected": 682.5999999999999,
+    "evidence": "expected-scores.json valuesAsPersisted note; deferred-decisions.md R1"
   },
   {
     "grain": "raw",
@@ -85,6 +109,10 @@
     "group": 3,
     "pilotNo": 128,
     "reason": "R1: representation divergence - GS computes and persists RawScore in binary64, and this cell carries an unrounded double-sum artefact left verbatim in the committed oracle (385.20000000000005; named by expected-scores.json's valuesAsPersisted note). Soarscore's FlightInterpreter computes exact decimal, so ours reprs clean at 1dp: 385.2 vs 385.20000000000005, delta 5e-14. The normalised grain is unaffected - the 1-dp HalfUp grid washes the artefact out. No arithmetic divergence on either side.",
-    "disposition": "permanent"
+    "disposition": "permanent",
+    "kind": "numeric",
+    "ours": 385.2,
+    "expected": 385.20000000000005,
+    "evidence": "expected-scores.json valuesAsPersisted note; deferred-decisions.md R1"
   }
 ]

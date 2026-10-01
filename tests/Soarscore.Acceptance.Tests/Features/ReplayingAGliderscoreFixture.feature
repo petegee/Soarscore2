@@ -26,6 +26,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 
@@ -35,6 +36,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 
@@ -55,6 +57,7 @@ Feature: Replaying a GliderScore fixture
       | 8    | 6    | 41127.6   | 13, 3, 2      |
       | 2    | 7    | 38068.6   | 32, 52, 44    |
       | 6    | 8    | 37094.3   | 43, 39, 7     |
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 2 accepted divergences
@@ -65,6 +68,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 1 accepted divergences
@@ -75,6 +79,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 1 accepted divergences
@@ -85,6 +90,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 11 accepted divergences
@@ -95,6 +101,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 14 accepted divergences
@@ -105,6 +112,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
     And the fixture's float32 persist-cast witness property holds over its scored normalised cells
@@ -115,6 +123,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And every ledgered divergence cites an arithmetic-story divergence ID
     And the fixture ledger records exactly 0 accepted divergences
@@ -125,6 +134,7 @@ Feature: Replaying a GliderScore fixture
     Then every raw flight score matches the fixture oracle exactly
     And every normalised round score matches the fixture oracle exactly
     And the final ranking matches the fixture oracle exactly
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 
@@ -143,6 +153,7 @@ Feature: Replaying a GliderScore fixture
       | 102   | 4319.200 |
     And the ranked population holds exactly those five pilots with pilot 88 recorded as zero-only unranked
     And only the six scored rounds are compared over the intact ten-round source
+    And the complete result oracle matches exactly
     And kept normalised cells minus dropped cells and aggregate penalties conserve into every final score
     And the fixture carries no ledgered divergences
 

@@ -1,10 +1,237 @@
 {
   "source": "reconstructed-ladder",
+  "lifecycle": "finalised-full-including-unflown-placeholders",
+  "scoredWindow": {
+    "firstRound": 1,
+    "lastRound": 3
+  },
+  "excludedRounds": [],
   "notes": [
     "No GliderScore report transcript exists for this comp, so ranks come from the documented ladder (arithmetic story, THE LADDER): Score DESC, RawScore DESC after report-time re-round to GroupScoreDecimals; no drops (Drop*=99); class DurALES ends the ladder at rung 2; tied pilots share the displayed rank '=n'.",
     "A mismatch against this oracle needs source-level triage before it can indict the Soarscore engine.",
     "Independently validated in the scoring-arithmetic story's reconciliation (2026-08-25): all 30 Scores rows recomputed exactly and the reconstructed ranking verified.",
-    "Totals behind the ranks: pilot 70 Score/RawScore 1030, pilot 48 835, pilot 13 440, remaining seven 0. Intra-tie ordering of the '=4' group is not significant (identical displayed rank; HiddenRanking within ties is implementation-defined). Percent is display-only and deliberately not recorded."
+    "Totals behind the ranks: pilot 70 Score/RawScore 1030, pilot 48 835, pilot 13 440, remaining seven 0. Intra-tie ordering of the '=4' group is not significant (identical displayed rank; HiddenRanking within ties is implementation-defined). Percent is display-only and deliberately not recorded.",
+    "GS 02 complete-result oracle (2026-10-01): Scope: 3 drawn rounds x 10 pilots (30 rows); only R1 carries flights — R2-R3 are wholly-unflown Updated=False placeholder zeros, replayed and compared as zero cells (35? no: 30 cells compared of 30). Included-in-standings: R1-R3 (zeros contribute nothing, no drops fire, so the full-window sum IS the standings total)."
+  ],
+  "totals": [
+    {
+      "pilotNo": 12,
+      "total": 0
+    },
+    {
+      "pilotNo": 13,
+      "total": 440
+    },
+    {
+      "pilotNo": 17,
+      "total": 0
+    },
+    {
+      "pilotNo": 21,
+      "total": 0
+    },
+    {
+      "pilotNo": 28,
+      "total": 0
+    },
+    {
+      "pilotNo": 42,
+      "total": 0
+    },
+    {
+      "pilotNo": 48,
+      "total": 835
+    },
+    {
+      "pilotNo": 56,
+      "total": 0
+    },
+    {
+      "pilotNo": 65,
+      "total": 0
+    },
+    {
+      "pilotNo": 70,
+      "total": 1030
+    }
+  ],
+  "preDropTotals": [
+    {
+      "pilotNo": 12,
+      "total": 0
+    },
+    {
+      "pilotNo": 13,
+      "total": 440
+    },
+    {
+      "pilotNo": 17,
+      "total": 0
+    },
+    {
+      "pilotNo": 21,
+      "total": 0
+    },
+    {
+      "pilotNo": 28,
+      "total": 0
+    },
+    {
+      "pilotNo": 42,
+      "total": 0
+    },
+    {
+      "pilotNo": 48,
+      "total": 835
+    },
+    {
+      "pilotNo": 56,
+      "total": 0
+    },
+    {
+      "pilotNo": 65,
+      "total": 0
+    },
+    {
+      "pilotNo": 70,
+      "total": 1030
+    }
+  ],
+  "penalties": [
+    {
+      "pilotNo": 12,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 13,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 17,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 21,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 28,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 42,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 48,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 56,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 65,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 70,
+      "deduction": 0
+    }
+  ],
+  "discards": [
+    {
+      "pilotNo": 12,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 13,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 17,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 21,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 28,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 42,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 48,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 56,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 65,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    },
+    {
+      "pilotNo": 70,
+      "unit": "round",
+      "droppedRounds": [],
+      "droppedValues": []
+    }
+  ],
+  "fieldAvailability": [
+    {
+      "field": "total",
+      "status": "available",
+      "reason": "asserted per pilot; evidence: reconstructed ladder over persisted cells (arithmetic story THE LADDER; no transcript exists)"
+    },
+    {
+      "field": "preDropTotal",
+      "status": "available",
+      "reason": "asserted per pilot (best-per-original-round persisted-cell sum); evidence: reconstructed ladder over persisted cells (arithmetic story THE LADDER; no transcript exists)"
+    },
+    {
+      "field": "penaltyDeduction",
+      "status": "available",
+      "reason": "asserted per pilot, explicit zero where none; evidence: scores-raw Penalty is 0 on every row — aggregate deduction 0 for every pilot, explicitly recorded (omission never means zero)"
+    },
+    {
+      "field": "discards",
+      "status": "available",
+      "reason": "asserted per ranked pilot (unit + round identities + values); evidence: proven empty: Drop1-5AtRound=99 and F3QDrop6to10 all 99 (competition.json scoring) — no threshold can fire"
+    },
+    {
+      "field": "places",
+      "status": "available",
+      "reason": "asserted per pilot via rank strings incl '=n' tie membership; evidence: reconstructed ladder over persisted cells (arithmetic story THE LADDER; no transcript exists)"
+    },
+    {
+      "field": "population",
+      "status": "available",
+      "reason": "asserted bidirectionally (extra/missing ranked competitor fails; every registered pilot is ranked); evidence: reconstructed ladder over persisted cells (arithmetic story THE LADDER; no transcript exists)"
+    }
   ],
   "ranks": [
     {

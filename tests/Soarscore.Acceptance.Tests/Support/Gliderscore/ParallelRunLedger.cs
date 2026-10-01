@@ -27,14 +27,18 @@
 //                         grain ("raw" | "normalised" | "ranking" — the
 //                         comparator's grains; WI-2.2's product grain "final
 //                         placings" is the comparator's "ranking"), the
-//                         difference in words, and the rulebook or
-//                         local-practice citation.
+//                         difference in words, the rulebook or
+//                         local-practice citation, and — gs_03 — the exact
+//                         witnessed difference set as cells (stable cell
+//                         identity with pinned GS and seed-run values, matched
+//                         bidirectionally: a moved cell or an altered
+//                         value/delta fails even at the same count).
 //
 // pilotNo arrives as either a number or "*" (the divergences.json precedent,
-// DivergenceEntry) — the wildcard is a matching convenience for entries whose
-// difference is genuinely per-cell anonymous; witnessed entries should name
-// their cells, because set-equality against the comparator's computed set is
-// the whole verification.
+// DivergenceEntry) — the scalar scope must contain every declared cell: a
+// per-pilot entry names its pilot, a class entry scopes null/"*". There are
+// no anonymous wildcards: set-equality against the comparator's computed set
+// is the whole verification, and only the declared difference set satisfies it.
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -165,6 +169,36 @@ public sealed record ParallelRunExcludedCell(
 }
 
 /// <summary>
+/// gs_03_exact-divergence-contracts.md — one declared computed difference: a
+/// single score cell (or ranking line) the seed-run and the GS oracle are
+/// triaged to differ on, with both sides pinned exact-decimal. Gs is the GS
+/// oracle value (<see cref="GrainMismatch.Expected"/>), Seed is the seed-run
+/// value (<see cref="GrainMismatch.Ours"/>); either may be null exactly where
+/// the comparator emits null (a rank-placement line carries both, a "=n"
+/// tie-group membership line carries null on the side that excludes the
+/// pilot). The grain rides the owning entry. Round/Group are the comparator's
+/// coordinates (0/0 for ranking lines).
+/// </summary>
+public sealed record ParallelRunExpectedCell(
+    int Round,
+    int Group,
+    long PilotNo,
+    decimal? Gs,
+    decimal? Seed);
+
+/// <summary>
+/// gs_03_exact-divergence-contracts.md — one declared difference the run no
+/// longer produces: a stale expectation. Carries the owning entry's grain
+/// (the cell itself carries no grain) and a short excerpt of the entry's
+/// difference prose so the failure names the triaged cause that discharged.
+/// A resolved difference fails its stale expectation in every mode.
+/// </summary>
+public sealed record ParallelRunMissingCell(
+    string Grain,
+    ParallelRunExpectedCell Cell,
+    string EntryDifference);
+
+/// <summary>
 /// One triaged, witnessed difference. Round/group are null when the entry is
 /// not scoped to a score cell (the ranking grain); pilotNo is a number or "*".
 /// <para>
@@ -172,6 +206,17 @@ public sealed record ParallelRunExcludedCell(
 /// DivergenceEntry: "permanent" (a cited rulebook-vs-local-practice split the
 /// seed class holds by design) is reported but never fails strict mode;
 /// anything else is "pending" and fails strict mode.
+/// </para>
+/// <para>
+/// gs_03_exact-divergence-contracts.md — the exact difference set: every
+/// entry declares its witnessed differences as <see cref="Cells"/>, each with
+/// stable cell identity and both pinned values. Verification is bidirectional
+/// over the ledger's whole declared set: a computed difference outside it —
+/// a moved cell at the same count, an altered value/delta at the same key —
+/// fails, and a declared cell the run no longer produces fails as stale in
+/// every mode. No count is parsed from <see cref="Difference"/> prose; the
+/// scalar round/group/pilot scope above must contain every declared cell (a
+/// class entry scopes null/"*", a per-pilot entry names its pilot).
 /// </para>
 /// </summary>
 public sealed record ParallelRunDifferenceEntry(
@@ -182,7 +227,8 @@ public sealed record ParallelRunDifferenceEntry(
     JsonElement? PilotNo,
     string Difference,
     string Citation,
-    string? Disposition = null)
+    string? Disposition = null,
+    IReadOnlyList<ParallelRunExpectedCell>? Cells = null)
 {
     /// <summary>True for a permanent-by-design entry (never fails strict mode);
     /// throws on any token other than pending/permanent — a typo must not
@@ -197,14 +243,71 @@ public sealed record ParallelRunDifferenceEntry(
     /// <summary>True when this entry names the computed mismatch's cell: same
     /// grain, the entry's round/group scope (null = any), and the entry's pilot
     /// (number or "*"). The set-equality verdict is this predicate in both
-    /// directions — every computed mismatch covered, every entry witnessed.</summary>
+    /// directions — every computed mismatch covered, every entry witnessed.
+    /// <para>
+    /// gs_03 — exact: the entry covers a computed mismatch only when one of
+    /// its declared <see cref="Cells"/> matches the mismatch's cell identity
+    /// AND both pinned values (a moved cell, an altered value/delta or a
+    /// different grain is not covered). An entry declaring no cells covers
+    /// nothing — <see cref="ValidateCells"/> fails such entries loudly at
+    /// compare time, so this predicate never faces them.
+    /// </para>
+    /// </summary>
     public bool Covers(GrainMismatch mismatch) =>
         Grain.Equals(mismatch.Grain, StringComparison.OrdinalIgnoreCase)
-        && (Round is null || Round == mismatch.RoundNo)
-        && (Group is null || Group == mismatch.GroupNo)
-        && PilotNo is { } pilot && (
-            pilot.ValueKind == JsonValueKind.Number && pilot.TryGetInt64(out var n) && n == mismatch.PilotNo
-            || pilot.ValueKind == JsonValueKind.String && pilot.GetString() == "*");
+        && (Cells ?? []).Any(cell =>
+            (Round is null || Round == cell.Round)
+            && (Group is null || Group == cell.Group)
+            && PilotCovers(cell.PilotNo)
+            && cell.Round == mismatch.RoundNo
+            && cell.Group == mismatch.GroupNo
+            && cell.PilotNo == mismatch.PilotNo
+            && cell.Gs == mismatch.Expected
+            && cell.Seed == mismatch.Ours);
+
+    /// <summary>True when the entry's scalar pilot scope contains the given pilot.</summary>
+    private bool PilotCovers(long pilotNo) => PilotNo is not { } pilot
+        || (pilot.ValueKind == JsonValueKind.Number && pilot.TryGetInt64(out var n) && n == pilotNo)
+        || (pilot.ValueKind == JsonValueKind.String && pilot.GetString() == "*");
+
+    /// <summary>
+    /// gs_03 — the structural validation every compare runs before matching:
+    /// unknown disposition tokens fail (via <see cref="Permanent"/>), every
+    /// entry declares a non-empty exact cell set, and every declared cell
+    /// falls inside the entry's scalar round/group/pilot scope (a class entry
+    /// scopes null/"*", a per-pilot entry names its pilot — a cell outside
+    /// its entry's scope is a typo, not a silent widening). Throws
+    /// <see cref="InvalidOperationException"/> — an authoring bug fails
+    /// loudly in every mode, never as a quiet mismatch.
+    /// </summary>
+    public void ValidateCells()
+    {
+        // Touch the disposition first: an unknown token must fail even on an
+        // otherwise well-formed entry.
+        _ = Permanent;
+
+        if (Cells is not { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"Parallel-run ledger entry ({Grain} r{Round?.ToString() ?? "*"}/g{Group?.ToString() ?? "*"}) "
+                + "declares no expected cells — every triaged difference must declare its exact witnessed "
+                + "difference set (cell identities with pinned GS and seed-run values).");
+        }
+
+        foreach (var cell in Cells)
+        {
+            if (Round is not null && Round != cell.Round
+                || Group is not null && Group != cell.Group
+                || !PilotCovers(cell.PilotNo))
+            {
+                throw new InvalidOperationException(
+                    $"Parallel-run ledger entry ({Grain} r{Round?.ToString() ?? "*"}/g{Group?.ToString() ?? "*"} "
+                    + $"p{PilotToken()}) declares cell r{cell.Round}/g{cell.Group} p{cell.PilotNo} outside its own "
+                    + "scope — a declared cell outside its entry's scope is a typo; widen the entry's scope "
+                    + "or move the cell.");
+            }
+        }
+    }
 
     /// <summary>The pilot token as written ("13" or "*"), for report lines.</summary>
     public string PilotToken() => PilotNo is { } pilot && pilot.ValueKind == JsonValueKind.Number

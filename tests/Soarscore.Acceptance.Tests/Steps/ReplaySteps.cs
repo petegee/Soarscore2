@@ -61,6 +61,12 @@ public sealed class ReplaySteps
 
         _report.UnwitnessedLedgerEntries.Should().BeEmpty(
             LedgerGate.UnwitnessedExplanation(_fixture, _report.UnwitnessedLedgerEntries));
+
+        // gs_03 — documentary scope breaks fail in every mode, like
+        // unwitnessed entries: a stale unsupported-comparison claim is a
+        // discharged divergence, never a silent carry.
+        _report.LedgerScopeBreaks.Should().BeEmpty(
+            LedgerGate.ScopeBreakExplanation(_fixture, _report.LedgerScopeBreaks));
     }
 
     // ------------------------------------------------------------------ Then
@@ -184,6 +190,63 @@ public sealed class ReplaySteps
             "grain 1 compares exactly the six scored rounds' cells.");
         report.NormalisedCellsCompared.Should().Be(35,
             "grain 2 compares exactly the six scored rounds' cells.");
+    }
+
+    [Then(@"^the complete result oracle matches exactly$")]
+    public void ThenTheCompleteResultOracleMatchesExactly()
+    {
+        // gs_02_complete-result-oracles.md — the acceptance witness beside the
+        // grain steps: every active fixture declares its snapshot scope and
+        // every result field's availability, all available fields are
+        // populated over the full ranked population, and the comparator's
+        // complete-result grains (total, pre-drop, penalty, discards —
+        // riding the ranking remainder under their own grain names) are
+        // empty. Places/population ride the ranking step above; conservation
+        // stays the independent internal check in the step below.
+        var oracle = Fixture!.ExpectedResult;
+
+        oracle.ScoredWindow.Should().NotBeNull(
+            $"{Fixture.Slug} must declare its included scoring window.");
+        oracle.Lifecycle.Should().NotBeNullOrEmpty(
+            $"{Fixture.Slug} must declare how the comparison reads the oracle.");
+        oracle.ExcludedRounds.Should().NotBeNull(
+            $"{Fixture.Slug} must disclose its excluded rounds (empty when none).");
+
+        var availability = (oracle.FieldAvailability ?? [])
+            .ToDictionary(e => e.Field, e => e.Status, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var field in new[] { "total", "preDropTotal", "penaltyDeduction", "discards", "places", "population" })
+        {
+            availability.TryGetValue(field, out var status).Should().BeTrue(
+                $"{Fixture.Slug} must declare availability for result field '{field}'.");
+            status.Should().Be("available",
+                $"{Fixture.Slug} declares '{field}' as '{status}' — every corpus fixture evidences every field; "
+                + "an unavailable field here means evidence was lost, not saved.");
+        }
+
+        var ranked = oracle.Ranks.Select(r => r.PilotNo).ToHashSet();
+        var zeroOnly = (oracle.UnrankedZeroOnly ?? []).Select(u => u.PilotNo).ToHashSet();
+
+        oracle.Totals.Should().NotBeNull();
+        oracle.Totals!.Select(t => t.PilotNo).Should().BeEquivalentTo(ranked,
+            "totals must cover exactly the ranked population (zero-only pilots assert via unrankedZeroOnly).");
+        oracle.PreDropTotals.Should().NotBeNull();
+        oracle.PreDropTotals!.Select(t => t.PilotNo).Should().BeEquivalentTo(ranked.Union(zeroOnly),
+            "pre-drop totals must cover the ranked population plus any zero-only pilots.");
+        oracle.Penalties.Should().NotBeNull();
+        oracle.Penalties!.Select(t => t.PilotNo).Should().BeEquivalentTo(ranked.Union(zeroOnly),
+            "penalty deductions must be explicit per pilot (zero where none) — omission never means zero.");
+        oracle.Discards.Should().NotBeNull();
+        oracle.Discards!.Select(d => d.PilotNo).Should().BeEquivalentTo(ranked,
+            "discards must cover exactly the ranked population (zero-only pilots carry no discard assertion).");
+
+        var report = Report();
+
+        report.RankingMismatches
+            .Where(m => m.Grain is "total" or "preDrop" or "penalty" or "discard")
+            .Should().BeEmpty(
+                $"the complete result oracle must match exactly for {Fixture.Slug}."
+                + $"{Environment.NewLine}{report.DiffTable()}");
     }
 
     [Then(@"^kept normalised cells minus dropped cells and aggregate penalties conserve into every final score$")]

@@ -16,7 +16,9 @@
     "GS 01 snapshot contract (2026-10-01): the comparison reads a LEGITIMATELY FINALISED SNAPSHOT of the six-round scoring window, never a progressive read and never invented completion. The replay prescribes the full ten-round draw through /prescribe-draw (R7–R10 groups from the archived stub rows; pilot 88's R6–R10 slots prescription-only, group unknowable — ReplayDriver), opens entries and captures only for rounds 1–6, completes only task-rounds 1–6 via /complete-task-round, finalises via /finalise-competition (6 flown >= minRounds 1), and reads /competition-result post-finalise. Rounds 7–10 are prescribed-but-unentered, so the engine omits them as absent-not-zero (NFR-4; ScoreCompetition finding 5; ScoreTaskRound's empty-group skip) — no phantom zero ever enters the drop pool, and the drop lands on the worst REAL score exactly as GS's TaskLastRound-gated pool does. No product-capability gap: every step above is a public command/query.",
     "GS 01 total pins: the five round-6 ProgressiveTotalScore values below are asserted exactly (decimal ==, no tolerance). A placeholder-zero discard publishes different totals at an identical placing order, so placings alone cannot pass — the totals grain fails that shape.",
     "GS 01 population: the ranked set must equal exactly the five pilots below; pilot 88 (registered, never flew — all R1–R5 rows zero stubs, rows deleted from R6) is declared unrankedZeroOnly with total 0.000. His R1–R5 flight-less zero cells ARE replayed and compared at grains 1–2; his final total must be 0 and he must hold no oracle-ranked place. Any other extra or missing ranked competitor fails, including an extra at a place the oracle never names.",
-    "GS 01 exclusions: rounds 7–10 (20 oracle cells) are disclosed excluded — archived placeholder stubs, never prescribed entries, never completed, never compared; no claim is made for any unrun cell. Source rows in scores-raw.json and every persisted value in expected-scores.json remain intact."
+    "GS 01 exclusions: rounds 7–10 (20 oracle cells) are disclosed excluded — archived placeholder stubs, never prescribed entries, never completed, never compared; no claim is made for any unrun cell. Source rows in scores-raw.json and every persisted value in expected-scores.json remain intact.",
+    "GS 02 complete-result oracle (2026-10-01): Scope: 10 drawn rounds; scored window R1-R6 (TaskLastRound=6); R7-R10 are archived placeholder stubs, prescribed but never entered/completed/compared (20 cells disclosed excluded, source rows intact).",
+    "GS 02 discards: pilot 88 (unrankedZeroOnly) carries no discard assertion — his five flight-less zero cells tie for the drop and GS omits him from standings entirely, so no external identity is evidenced; his total 0 is asserted via unrankedZeroOnly, never as a proven empty discard set."
   ],
   "totals": [
     {
@@ -44,6 +46,122 @@
     {
       "pilotNo": 88,
       "total": 0.000
+    }
+  ],
+  "preDropTotals": [
+    {
+      "pilotNo": 75,
+      "total": 5817.6
+    },
+    {
+      "pilotNo": 79,
+      "total": 4855.8
+    },
+    {
+      "pilotNo": 80,
+      "total": 5930.9
+    },
+    {
+      "pilotNo": 82,
+      "total": 5668.3
+    },
+    {
+      "pilotNo": 88,
+      "total": 0.0
+    },
+    {
+      "pilotNo": 102,
+      "total": 4743.5
+    }
+  ],
+  "penalties": [
+    {
+      "pilotNo": 75,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 79,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 80,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 82,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 88,
+      "deduction": 0
+    },
+    {
+      "pilotNo": 102,
+      "deduction": 0
+    }
+  ],
+  "discards": [
+    {
+      "pilotNo": 75,
+      "unit": "round",
+      "droppedRounds": [6],
+      "droppedValues": [889.500]
+    },
+    {
+      "pilotNo": 79,
+      "unit": "round",
+      "droppedRounds": [2],
+      "droppedValues": [495.900]
+    },
+    {
+      "pilotNo": 80,
+      "unit": "round",
+      "droppedRounds": [2],
+      "droppedValues": [930.900]
+    },
+    {
+      "pilotNo": 82,
+      "unit": "round",
+      "droppedRounds": [4],
+      "droppedValues": [872.200]
+    },
+    {
+      "pilotNo": 102,
+      "unit": "round",
+      "droppedRounds": [2],
+      "droppedValues": [424.300]
+    }
+  ],
+  "fieldAvailability": [
+    {
+      "field": "total",
+      "status": "available",
+      "reason": "asserted per pilot; evidence: GS server-persisted progressive standings at the last scored round (ResultsToRoundNo=6) + independent recompute at curation"
+    },
+    {
+      "field": "preDropTotal",
+      "status": "available",
+      "reason": "asserted per pilot (best-per-original-round persisted-cell sum); evidence: GS server-persisted progressive standings at the last scored round (ResultsToRoundNo=6) + independent recompute at curation"
+    },
+    {
+      "field": "penaltyDeduction",
+      "status": "available",
+      "reason": "asserted per pilot, explicit zero where none; evidence: scores-raw Penalty is 0 on all rows — aggregate deduction 0, explicitly recorded"
+    },
+    {
+      "field": "discards",
+      "status": "available",
+      "reason": "asserted per ranked pilot (unit + round identities + values); evidence: DropScoreOption=0 worst-individual-task-score with Drop1At=5 firing from round 5 (activation counts DISTINCT rounds with RawScore>0); candidate pool gated by TaskLastRound=MAX(RoundNo where Updated=True)=6, so the drop lands on the worst REAL score (curation recompute reproduces all 30 persisted cells exactly)"
+    },
+    {
+      "field": "places",
+      "status": "available",
+      "reason": "asserted per pilot via rank strings incl '=n' tie membership; evidence: GS server-persisted progressive standings at the last scored round (ResultsToRoundNo=6) + independent recompute at curation"
+    },
+    {
+      "field": "population",
+      "status": "available",
+      "reason": "asserted bidirectionally (extra/missing ranked competitor fails; pilot 88 declared zero-only unranked); evidence: GS server-persisted progressive standings at the last scored round (ResultsToRoundNo=6) + independent recompute at curation"
     }
   ],
   "ranks": [
