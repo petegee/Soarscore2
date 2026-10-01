@@ -1,7 +1,7 @@
 // The only routing surface exposed — kanban/completed/command-side-steel-thread-plan.md
-// WI-8, LADR-0003 "Web / API host": Minimal APIs, MapCommand/MapQuery helpers
-// only. Nothing in this project calls MapPost/MapGet/MapPut/etc. directly
-// outside these two methods, so registering a non-GET/POST verb is not
+// WI-8, LADR-0003 "Web / API host": Minimal APIs, MapCommand/MapQuery/MapBodilessCommand
+// helpers only. Nothing in this project calls MapPost/MapGet/MapPut/etc. directly
+// outside these three methods, so registering a non-GET/POST verb is not
 // something a later contributor can do by accident — the WI-2 route-shape
 // reflection test is the backstop that turns a slip into a failing build.
 
@@ -23,18 +23,31 @@ public static class EndpointRouteBuilderExtensions
     public static IEndpointRouteBuilder MapCommand<TCommand, TResult>(this IEndpointRouteBuilder endpoints, string path)
         where TCommand : ICommand<TResult>
     {
-        endpoints.MapPost(path, async (TCommand command, IDispatcher dispatcher, CancellationToken cancellationToken) =>
+        WithResults<TResult>(endpoints.MapPost(path, async (TCommand command, IDispatcher dispatcher, CancellationToken cancellationToken) =>
         {
             var result = await dispatcher.SendAsync<TResult>(command, cancellationToken);
             return result.ToHttpResult();
-        })
-        .Produces<TResult>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status401Unauthorized)
-        .ProducesProblem(StatusCodes.Status403Forbidden)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .ProducesProblem(StatusCodes.Status409Conflict)
-        .ProducesProblem(StatusCodes.Status500InternalServerError);
+        }));
+
+        return endpoints;
+    }
+
+    /// <summary>
+    /// POST — a bodiless Command. Binds <typeparamref name="TCommand"/> from the JSON
+    /// body when one is sent, and defaults to a fresh instance when none is
+    /// (ui_link-sign-in-empty-body: a missing body binds null for a nullable
+    /// parameter instead of 400ing, so both an empty body and <c>{}</c> reach
+    /// the handler). The <c>new()</c> constraint keeps this honest: only a
+    /// command with no body fields can take this path.
+    /// </summary>
+    public static IEndpointRouteBuilder MapBodilessCommand<TCommand, TResult>(this IEndpointRouteBuilder endpoints, string path)
+        where TCommand : ICommand<TResult>, new()
+    {
+        WithResults<TResult>(endpoints.MapPost(path, async (TCommand? command, IDispatcher dispatcher, CancellationToken cancellationToken) =>
+        {
+            var result = await dispatcher.SendAsync<TResult>(command ?? new TCommand(), cancellationToken);
+            return result.ToHttpResult();
+        }));
 
         return endpoints;
     }
@@ -47,20 +60,29 @@ public static class EndpointRouteBuilderExtensions
     public static IEndpointRouteBuilder MapQuery<TQuery, TResult>(this IEndpointRouteBuilder endpoints, string path)
         where TQuery : IQuery<TResult>
     {
-        endpoints.MapGet(path, async ([AsParameters] TQuery query, IDispatcher dispatcher, CancellationToken cancellationToken) =>
+        WithResults<TResult>(endpoints.MapGet(path, async ([AsParameters] TQuery query, IDispatcher dispatcher, CancellationToken cancellationToken) =>
         {
             var result = await dispatcher.QueryAsync<TResult>(query, cancellationToken);
             return result.ToHttpResult();
-        })
-        .Produces<TResult>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status401Unauthorized)
-        .ProducesProblem(StatusCodes.Status403Forbidden)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .ProducesProblem(StatusCodes.Status409Conflict)
-        .ProducesProblem(StatusCodes.Status500InternalServerError);
+        }));
 
         return endpoints;
+    }
+
+    /// <summary>
+    /// The one OpenAPI response declaration for all three mapping helpers
+    /// (ui_typed-openapi-responses): a typed 200 plus ProblemDetails errors.
+    /// </summary>
+    private static void WithResults<TResult>(RouteHandlerBuilder builder)
+    {
+        builder
+            .Produces<TResult>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
     /// <summary>

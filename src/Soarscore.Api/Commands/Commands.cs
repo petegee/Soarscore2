@@ -22,8 +22,8 @@ public static class Commands
         // authentication-and-authorisation.md WI-9 step 7: the sign-in,
         // role and capture-policy verbs. No body field ever carries the
         // caller's identity — it comes from the validated token (LinkSignIn
-        // takes no body at all).
-        app.MapCommand<LinkSignIn, LinkSignInResult>("/link-sign-in");
+        // is bodiless: both an empty body and {} reach the handler).
+        app.MapBodilessCommand<LinkSignIn, LinkSignInResult>("/link-sign-in");
         app.MapCommand<GrantRole, PersonId>("/grant-role");
         app.MapCommand<RevokeRole, PersonId>("/revoke-role");
         app.MapCommand<ConfigureCapturePolicy, CompetitionId>("/configure-capture-policy");
