@@ -1,6 +1,44 @@
 # Story stub - Jerilderie-2010 tape witness (50-f3j parallel run)
 
 **Status:** Backlog
+
+**Sequence:** GS 13/13 · Milestone 3: targeted seed witnesses
+**Refined:** 2026-10-01 · **Renamed from:** `jerilderie-2010-tape-witness.md`.
+**Dependencies:** Evidence-backed disposition of the recorded penalty (the
+existing owner gate below), GS 02 complete-result comparison and GS 03 exact
+difference contracts. Use GS 04 coverage tooling when available. GS 06 may
+strengthen this fixture's reconstructed result oracle independently.
+
+## Delivery and acceptance (2026-10-01 refinement)
+
+The original work and penalty gate below remain. Extend its result assertions to
+the complete GS 02 contract and its ledger to GS 03; re-measure all old numeric
+predictions against the current seed, including landing-zero/floor changes.
+
+- [ ] The unknown 100-point offence has an evidence-backed, owner-approved
+  disposition before a full seed replay; matching an amount to an infraction
+  name is not evidence.
+- [ ] The adopted definition is the shipped `50-f3j` seed. Tape readings are
+  captured verbatim with a declared compatible instrument through the public API.
+- [ ] The snapshot, dormant bindings and metric assumptions are explicit.
+- [ ] All available cell, total, discard, penalty, place and population fields
+  are compared; reconstructed versus independently observed evidence stays visible.
+- [ ] Every difference is precisely explained and pinned; no particular ranking
+  split is assumed merely because cell scores or totals differ.
+- [ ] The historical parity replay remains covered, strict GliderScore tests pass
+  on both stores and corpus/seed coverage records the completed witness.
+
+**Requirements:** `docs/users.md` raw-metric capture and trustworthy results;
+NFR-1/2's class-data law, NFR-4's recorded-data semantics, and the declared-tape
+decision in `kanban/deferred-decisions.md`. Verify current F3J.10/11, F3J.3.1 and
+NZ.2.4.4 citations through `fai-rules` before authoring differences. This story
+does not approve an inferred historical offence or a new domain concept.
+
+**Verification:** Real-data public-API acceptance plus the existing tape mapping
+and exact-comparison checks. If triage exposes a genuine engine/seed defect,
+pin it with a focused failing-first regression. The original implementation
+outline follows; later numbered contracts take precedence over older schemas.
+
 **Raised:** 2026-09-13 — split from `kanban/completed/tape-points-landing-seeds.md`
 WI-6 at that story's closure, by owner agreement, so the landed tape capability
 did not wait on this witness. This is the WI-6 work verbatim, plus its gate.

@@ -1,6 +1,71 @@
 # Story — Teams grain in the parallel-run comparison
 
-**Status:** Backlog — plan written 2026-09-13; decisions 1–7 proposed,
+**Status:** Backlog · **Refined:** 2026-10-01
+**Sequence:** GS 10/13 · Milestone 3: targeted team witnesses
+**Dependencies:** GS 02 complete individual results; GS 03 exact difference
+contracts. Use GS 04 coverage reporting when landed.
+**Renamed from:** `teams-grain-parallel-comparison.md`.
+
+## Current delivery contract
+
+Add team-result comparison to the F3J international canonical-seed parallel run:
+all eight externally evidenced GS teams, comparing total, place/tie membership,
+contributor set and complete team population. Reuse the parity overlap predicate
+and external team oracle; verify that the two sides' methods actually overlap.
+
+The detailed 2026-09-13 proposal below is retained as planning history, not an
+instruction to reproduce its predicted numbers or implement its old ledger shape.
+These amendments take precedence:
+
+- Re-measure the individual and team outcomes. The F3J landing-zero change retired
+  the sentinel difference and reduced individual placing splits from twenty to
+  six in the current ledger. Old aggregate deltas and team-swap predictions are
+  stale; neither eight changed totals nor particular swaps are acceptance targets.
+- Use GS 03's explicit field/kind and exact value/set expectations. Matching only
+  `(grain, team)` cannot distinguish several different fields for the same team.
+  Do not adopt the older 'no schema widening' claim without checking that contract.
+- Require exact coverage of every measured difference and all eight standings.
+  A fully equal grain is valid if the current evidence supports it; no forced
+  nonempty assertion or ledger entry may create a difference to meet a prediction.
+- Declare unrun team comparisons in coverage metadata. Check actual membership
+  and knobs for each future pair; the old Hawke's Bay populated-team claim is not
+  a verified prerequisite. Different team methods remain outside this story.
+- The earlier owner-confirmation status of proposed decisions remains; writing
+  these refinements does not approve a new classification policy.
+
+## Implementation outline
+
+1. Refresh overlap, individual aggregate and team-oracle evidence from the current
+   tree; resolve any policy conflict before implementation.
+2. Add the gated team comparison using public team-result reads and the shared
+   fixture identity mapping. An applicable comparison missing its oracle fails.
+3. Run the current seed pair, investigate causes, and author exact team-field
+   expectations with contributor-level explanations under GS 03.
+4. Extend the acceptance scenario, verify both stores and regenerate coverage.
+
+## Acceptance criteria
+
+- [ ] All eight GS team identities and their available fields are compared.
+- [ ] Extra/missing teams and changed totals, places or contributors fail unless
+  exactly covered by an evidence-backed difference expectation.
+- [ ] Shared places have the expected membership; display order is not a score.
+- [ ] Individual comparisons retain their independent assertions.
+- [ ] Empty/unsupported team scopes are explicit, never counted as parity.
+- [ ] Current measured results replace stale planning predictions in active
+  coverage; strict GliderScore runs pass on both backends.
+
+## Requirements and verification
+
+Supports `docs/users.md` trustworthy results and the NFR teams-MVP amendment's
+best-three configuration. It respects NFR-1/2 and the standing T1 decision in
+`kanban/deferred-decisions.md`. Consult `fai-rules` before adding rule citations;
+GS's configured team method is not itself a rulebook mandate. Invariant: changing
+one asserted team field or population identity breaks equality; extend GS 03's
+perturbation checks and add this real-data acceptance grain.
+
+## Prior detailed proposal (2026-09-13; revalidate against the contract above)
+
+**Original proposal:** Plan written 2026-09-13; decisions 1–7 proposed,
 owner confirmation gates WI-1.
 **Raised:** 2026-09-10 — closing the deliberate no-team-grain stance now that
 teams scoring is implemented (see `Features/ScoringTeams.feature` acceptance
@@ -285,7 +350,7 @@ never edited to fit in WI-1).
    deliberate no-team-grain stance holds (the ales precedent)" → "no teams
    are populated (Team='0' everywhere) and the declared NbrForTeamScore=2 is
    never emulated, so the teams grain's gate does not open"
-   (teams-grain-parallel-comparison.md). Provenance-only edit — the pair's
+    (gs_10_teams-grain-parallel-comparison.md). Provenance-only edit — the pair's
    triaged set is byte-untouched.
 4. **Scenario step**: the f3j scenario in
    `Features/ParallelRunningAGliderscoreFixture.feature` gains

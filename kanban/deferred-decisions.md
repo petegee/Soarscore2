@@ -215,7 +215,7 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   catalogue comparison excludes the convention row — the physical tape has
   no 0 m mark; d==0 composition divergence asserted deterministically).
   Revisit with the tape-measure-scale story or
-  `kanban/backlog/jerilderie-2010-tape-witness.md`. Do not add an engine
+  `kanban/backlog/gs_13_jerilderie-2010-tape-witness.md`. Do not add an engine
   zero-branch, do not "fix" the tape-path first-band award at 0, and do not
   drop the convention row to reunify them.
 

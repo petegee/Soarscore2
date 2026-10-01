@@ -265,7 +265,7 @@ Still open:
 - `OmitFromTeamScore=true` witness — a protection-only member excluded from
   its team's score; implemented but unexercised: zero sightings in every
   committed CompPilots.json, entries.json and source extraction; hunt
-  recorded, stub kanban/backlog/omit-from-teamscore-witness.md;
+  recorded, stub kanban/backlog/gs_12_omit-from-teamscore-witness.md;
 - Team classification for `NbrForTeamScore ≠ 3` — jerilderie-2010 (Nbr=4, 14
   populated teams) and f3k-sample-comp (Nbr=2, 4 populated teams) carry real
   team assignments but their team grain is T1-ledgered; unlocks only via a
