@@ -12,7 +12,7 @@ primary_region = 'syd'
 # Composition.cs's CorsOrigins doc. Bare origin, no trailing slash: browsers
 # send origins without one and the CORS policy matches exactly.
 [env]
-  SOARSCORE_CORS_ORIGINS = 'https://ndcscore.fly.dev'
+  SOARSCORE_CORS_ORIGINS = 'https://ndcscore.fly.dev,https://soarscore-ui.fly.dev'
 
 [[mounts]]
   source = 'data'
