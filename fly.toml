@@ -13,6 +13,10 @@ primary_region = 'syd'
 # send origins without one and the CORS policy matches exactly.
 [env]
   SOARSCORE_CORS_ORIGINS = 'https://ndcscore.fly.dev,https://soarscore-ui.fly.dev'
+  # ui_production-oidc-sign-in.md: the deployed engine enforces auth (D8).
+  # Non-secret mode only — Domain, Audience and BootstrapOrganisers travel as
+  # Fly secrets (see story summary), never committed here.
+  Soarscore__Auth__Mode = 'oidc'
 
 [[mounts]]
   source = 'data'

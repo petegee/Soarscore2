@@ -57,7 +57,14 @@ public sealed class LinkSignInHandler(
     IPeopleQuery peopleQuery,
     ICurrentUser currentUser,
     IClock clock,
-    AuthBootstrap bootstrap) : ICommandHandler<LinkSignIn, LinkSignInResult>
+    AuthBootstrap bootstrap,
+    // The /userinfo fallback (ui_production-oidc-sign-in.md, owner decision
+    // ii): real Auth0 custom-API access tokens carry no email claim, so arms
+    // 2 and 3 cannot run on token claims alone. Optional so mock/none
+    // compositions — where tokens always carry claims and no provider is
+    // registered — construct and resolve this handler unchanged; the fallback
+    // fires only when the token email is missing, never per sign-in.
+    IUserInfoProvider? userInfo = null) : ICommandHandler<LinkSignIn, LinkSignInResult>
 {
     public async Task<Result<LinkSignInResult>> HandleAsync(LinkSignIn command, CancellationToken cancellationToken)
     {
@@ -80,7 +87,6 @@ public sealed class LinkSignInHandler(
         // Captured once: nullable reference annotations are compile-time only,
         // and the null-flow the email guard establishes below does not carry
         // across property reads (ValidateContact's reasoning in reverse).
-        var email = currentUser.Email;
         var name = currentUser.Name;
 
         // Arm 1 — identity link found: that person. Any validated token may
@@ -92,7 +98,8 @@ public sealed class LinkSignInHandler(
             var identity = await peopleQuery.FindIdentityAsync(provider, subject, cancellationToken);
             if (identity is { } match)
             {
-                var granted = await ApplyBootstrapGrantAsync(match.PersonId, cancellationToken);
+                var granted = await ApplyBootstrapGrantAsync(
+                    match.PersonId, currentUser.Email, currentUser.EmailVerified, cancellationToken);
                 return granted.IsSuccess
                     ? Result<LinkSignInResult>.Success(new LinkSignInResult(match.PersonId))
                     : Result<LinkSignInResult>.Failure(granted.Code!, granted.Message!, granted.Defects);
@@ -100,7 +107,32 @@ public sealed class LinkSignInHandler(
         }
 
         // Arms 2 and 3 both need the token's email — to match on, and to
-        // register from. No email claim ⇒ neither can run (D5's create arm
+        // register from. A real Auth0 access token carries no email claim
+        // (ui_production-oidc-sign-in.md), so when it is missing the one
+        // /userinfo lookup recovers it — and only then (a token that already
+        // has the email never pays for the call). A userinfo email counts
+        // verified ONLY when the IdP vouches for it there; a lookup that
+        // yields no email falls through to the emailRequired refusal below,
+        // and an unreachable IdP fails the sign-in as identityLookupFailed.
+        var email = currentUser.Email;
+        var emailVerified = currentUser.EmailVerified;
+        if (string.IsNullOrWhiteSpace(email) && userInfo is not null)
+        {
+            var lookup = await LookupUserInfoAsync(cancellationToken);
+            if (lookup.IsFailure)
+            {
+                return Result<LinkSignInResult>.Failure(lookup.Code!, lookup.Message!, lookup.Defects);
+            }
+
+            if (lookup.Value is { Email: { } recovered } info && !string.IsNullOrWhiteSpace(recovered))
+            {
+                email = recovered;
+                emailVerified = info.EmailVerified;
+                name ??= info.Name;
+            }
+        }
+
+        // No email claim ⇒ neither can run (D5's create arm
         // names the failure).
         if (string.IsNullOrWhiteSpace(email))
         {
@@ -115,11 +147,11 @@ public sealed class LinkSignInHandler(
         // anyone who can register a victim's address at the IdP take over
         // their person record. Arm 1 above is unaffected: the identity link
         // decided it, not the email.
-        if (!currentUser.EmailVerified)
+        if (!emailVerified)
         {
             return Result<LinkSignInResult>.Failure(
                 "auth.signIn.emailNotVerified",
-                "The token's email claim is not verified — the identity provider must vouch for the address before it can match an existing person or create one.");
+                "The sign-in email address is not verified — the identity provider must vouch for the address before it can match an existing person or create one.");
         }
 
         // Arm 2 — a person already registered under this email: link the
@@ -131,7 +163,7 @@ public sealed class LinkSignInHandler(
         if (existing is { } person)
         {
             return await LinkToExistingPersonAsync(
-                person.Id, currentUser.Provider, currentUser.Subject, cancellationToken);
+                person.Id, currentUser.Provider, currentUser.Subject, email, emailVerified, cancellationToken);
         }
 
         // Arm 3 — nobody to match: create the person from the token claims
@@ -139,12 +171,28 @@ public sealed class LinkSignInHandler(
         return await CreatePersonAsync(email, name, cancellationToken);
     }
 
+    // The one /userinfo call per sign-in that needs it. A null result means
+    // the token simply carries no recoverable email — the caller falls
+    // through to emailRequired. Only a transport failure becomes a failure,
+    // as auth.signIn.identityLookupFailed (502 at the edge).
+    private async Task<Result<UserInfoResult?>> LookupUserInfoAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Result<UserInfoResult?>.Success(await userInfo!.LookupAsync(cancellationToken));
+        }
+        catch (UserInfoLookupException ex)
+        {
+            return Result<UserInfoResult?>.Failure("auth.signIn.identityLookupFailed", ex.Message);
+        }
+    }
+
     // Arm 2: the email-matched person's stream is loaded (fold + version),
     // the no-existing-identities guard runs, the identity is decided onto it,
     // appended Exact — then the bootstrap check runs against the freshly
     // linked person, per the WI-7 flow order.
     private async Task<Result<LinkSignInResult>> LinkToExistingPersonAsync(
-        PersonId personId, string? provider, string? subject, CancellationToken cancellationToken)
+        PersonId personId, string? provider, string? subject, string email, bool emailVerified, CancellationToken cancellationToken)
     {
         var loaded = await PersonLoader.LoadAsync(eventStore, personId, cancellationToken);
         if (loaded.IsFailure)
@@ -185,7 +233,7 @@ public sealed class LinkSignInHandler(
             return Result<LinkSignInResult>.Failure(append.Code!, append.Message!, append.Defects);
         }
 
-        var granted = await ApplyBootstrapGrantAsync(personId, cancellationToken);
+        var granted = await ApplyBootstrapGrantAsync(personId, email, emailVerified, cancellationToken);
         return granted.IsSuccess
             ? Result<LinkSignInResult>.Success(new LinkSignInResult(personId))
             : Result<LinkSignInResult>.Failure(granted.Code!, granted.Message!, granted.Defects);
@@ -247,9 +295,14 @@ public sealed class LinkSignInHandler(
     // (person.roleAlreadyHeld) cannot fire. A listed email whose person
     // already holds Organiser falls straight through — idempotent by
     // construction, which is what makes re-signing-in safe to repeat.
-    private async Task<Result<PersonId>> ApplyBootstrapGrantAsync(PersonId personId, CancellationToken cancellationToken)
+    // The email and verified values are parameters, not currentUser reads:
+    // arms 2 and 3 may have recovered them from /userinfo when the token
+    // carried no email claim, and the grant must ride the address that
+    // decided the arm — not the (absent) token claim.
+    private async Task<Result<PersonId>> ApplyBootstrapGrantAsync(
+        PersonId personId, string? email, bool emailVerified, CancellationToken cancellationToken)
     {
-        if (!IsBootstrapEmail(currentUser.Email))
+        if (!IsBootstrapEmail(email))
         {
             return Result<PersonId>.Success(personId);
         }
@@ -260,11 +313,11 @@ public sealed class LinkSignInHandler(
         // fails the whole sign-in, which is intended: arm 1's identity was
         // already linked, so nothing else about it is untrustworthy, but the
         // grant must not ride an unverified address.
-        if (!currentUser.EmailVerified)
+        if (!emailVerified)
         {
             return Result<PersonId>.Failure(
                 "auth.signIn.emailNotVerified",
-                "The token's email claim is not verified — the identity provider must vouch for the address before it can claim a bootstrap grant.");
+                "The sign-in email address is not verified — the identity provider must vouch for the address before it can claim a bootstrap grant.");
         }
 
         var loaded = await PersonLoader.LoadAsync(eventStore, personId, cancellationToken);

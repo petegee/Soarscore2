@@ -40,14 +40,23 @@ public static class EndpointRouteBuilderExtensions
     /// the handler). The <c>new()</c> constraint keeps this honest: only a
     /// command with no body fields can take this path.
     /// </summary>
+    /// <remarks>
+    /// The 502 documents /link-sign-in's IdP dependency
+    /// (ui_production-oidc-sign-in.md): the /userinfo fallback fails the
+    /// sign-in as auth.signIn.identityLookupFailed when the provider is
+    /// unreachable. This helper is currently used only by /link-sign-in, so
+    /// the declaration rides here rather than on the shared WithResults.
+    /// </remarks>
     public static IEndpointRouteBuilder MapBodilessCommand<TCommand, TResult>(this IEndpointRouteBuilder endpoints, string path)
         where TCommand : ICommand<TResult>, new()
     {
-        WithResults<TResult>(endpoints.MapPost(path, async (TCommand? command, IDispatcher dispatcher, CancellationToken cancellationToken) =>
+        var builder = endpoints.MapPost(path, async (TCommand? command, IDispatcher dispatcher, CancellationToken cancellationToken) =>
         {
             var result = await dispatcher.SendAsync<TResult>(command ?? new TCommand(), cancellationToken);
             return result.ToHttpResult();
-        }));
+        });
+        WithResults<TResult>(builder);
+        builder.ProducesProblem(StatusCodes.Status502BadGateway);
 
         return endpoints;
     }
@@ -136,6 +145,10 @@ public static class EndpointRouteBuilderExtensions
         // accounts, so it is refused; an organiser binds the identity
         // explicitly (/bind-identity).
         "auth.signIn.explicitLinkRequired" => StatusCodes.Status409Conflict,
+        // ui_production-oidc-sign-in.md: the /userinfo fallback reached the
+        // handler but the IdP could not be asked — a downstream outage, not
+        // a caller fault, so 502 rather than the 400 default bucket.
+        "auth.signIn.identityLookupFailed" => StatusCodes.Status502BadGateway,
         "auth.policyMissing" => StatusCodes.Status500InternalServerError,
         "eventStore.streamAlreadyExists" => StatusCodes.Status409Conflict,
         "eventStore.concurrencyConflict" => StatusCodes.Status409Conflict,

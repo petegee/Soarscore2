@@ -27,6 +27,7 @@ using Soarscore.Domain.Entries;
 using Soarscore.Domain.People;
 using Soarscore.Domain.PublishedClassDefinition;
 using Soarscore.Infrastructure;
+using Soarscore.Infrastructure.Auth;
 
 namespace Soarscore.Api;
 
@@ -190,9 +191,13 @@ public static class Composition
             // below. RequestCaller is the per-scope carrier — its comment
             // explains the indirection (its default fails closed to an
             // unauthenticated actor; the seeder hosts bind the system actor
-            // explicitly).
+            // explicitly). CallerAccessToken is the same shape for the raw
+            // bearer token: the /userinfo fallback (LinkSignIn, decision ii)
+            // needs the token itself, and the middleware binds only the
+            // ClaimsPrincipal, not the token.
             builder.Services.AddScoped<HttpCurrentUser>();
             builder.Services.AddScoped<RequestCaller>();
+            builder.Services.AddScoped<CallerAccessToken>();
             builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<RequestCaller>().User);
             builder.Services.AddScoped<IAuthorizationPipeline, AuthorizationPipeline>();
 
@@ -209,6 +214,27 @@ public static class Composition
                 // release deployment.
                 builder.Services.AddSingleton(auth.Mock!);
                 builder.Services.AddHostedService<MockPersonaSeederHost>();
+            }
+
+            if (auth.Mode is AuthMode.Oidc)
+            {
+                // ui_production-oidc-sign-in.md (decision ii): the /userinfo
+                // fallback behind LinkSignIn. Oidc-only — under mock/none no
+                // provider is registered, the handler's optional dependency
+                // stays null, and mock tokens always carry claims so the
+                // fallback could never fire there anyway. The HttpClient is a
+                // singleton owned by the container (never disposed per
+                // request); the provider is scoped because it reads the
+                // request's bearer token. Plain HttpClient, not
+                // IHttpClientFactory: one IdP endpoint, one low-frequency
+                // call shape (sign-ins only), no new package.
+                builder.Services.AddSingleton(new OidcUserInfoOptions(auth.Domain!));
+                builder.Services.AddSingleton(_ => new HttpClient
+                {
+                    BaseAddress = new Uri($"https://{auth.Domain}/"),
+                    Timeout = TimeSpan.FromSeconds(5),
+                });
+                builder.Services.AddScoped<IUserInfoProvider, OidcUserInfoProvider>();
             }
         }
         else
@@ -278,6 +304,19 @@ public static class Composition
                 var user = context.RequestServices.GetRequiredService<HttpCurrentUser>();
                 await user.BindAsync(context.User, context.RequestAborted);
                 caller.User = user;
+                // The /userinfo fallback needs the raw access token, which
+                // JwtBearer does not hand to the principal — so it is
+                // captured here, from the Authorization header, into the
+                // scoped carrier (header capture, not AuthenticateAsync: the
+                // token is already validated by UseAuthentication above, and
+                // re-authenticating would double the validation cost per
+                // request). Non-bearer requests leave the carrier empty and
+                // the provider reports no email rather than failing.
+                var header = context.Request.Headers.Authorization.ToString();
+                context.RequestServices.GetRequiredService<CallerAccessToken>().Token =
+                    header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        ? header["Bearer ".Length..].Trim()
+                        : null;
                 await next();
             });
         }
