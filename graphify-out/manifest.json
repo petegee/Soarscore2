@@ -48,15 +48,15 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Commands/Commands.cs": {
-    "mtime": 1790049564.504419,
-    "seen": 1790634485.263131,
-    "ast_hash": "c4e59a7eac5d6143cd7efa2f08a10661",
+    "mtime": 1790897021.393498,
+    "seen": 1790991586.2413514,
+    "ast_hash": "342907cd9b165a323cc733724aad74c6",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Composition.cs": {
-    "mtime": 1790049564.504419,
-    "seen": 1790634485.2631323,
-    "ast_hash": "cc552e676899d3f1bae67441e5e1954d",
+    "mtime": 1790902100.362428,
+    "seen": 1790991586.2413538,
+    "ast_hash": "274a1911679cecd894fa340559ab9dcb",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Program.cs": {
@@ -66,15 +66,15 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Queries/Queries.cs": {
-    "mtime": 1790049564.504419,
-    "seen": 1790634485.2631366,
-    "ast_hash": "48db50722a6f2470c2341bc749e7a3db",
+    "mtime": 1790896332.129235,
+    "seen": 1790991586.2413754,
+    "ast_hash": "4118a7add36f807cb58f71409205f367",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Routing/EndpointRouteBuilderExtensions.cs": {
-    "mtime": 1790049564.504419,
-    "seen": 1790634485.2631383,
-    "ast_hash": "c9807a07fd3b0c57b4ab71223a9980b5",
+    "mtime": 1790902183.3185978,
+    "seen": 1790991586.2413776,
+    "ast_hash": "221d5b9986324755349369e383931755",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Soarscore.Api.csproj": {
@@ -732,9 +732,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/ales-sample-comp/expected-result.json": {
-    "mtime": 1787687949.6797466,
-    "seen": 1790634485.2634044,
-    "ast_hash": "ee59fd42b1f4e9371b7a68e8b738891b",
+    "mtime": 1790824469.801826,
+    "seen": 1790991586.2446587,
+    "ast_hash": "25c41815cfe3a5994fad022c9805ba05",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/ales-sample-comp/expected-scores.json": {
@@ -936,9 +936,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/validate.py": {
-    "mtime": 1788726794.2491238,
-    "seen": 1790634485.26346,
-    "ast_hash": "3b9c1290273d23fadd2fd1d0b722a513",
+    "mtime": 1790991012.6764154,
+    "seen": 1790991586.2454119,
+    "ast_hash": "d43597c3965a997562bb89d77c48a6df",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj": {
@@ -1842,9 +1842,9 @@
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/Program.cs": {
-    "mtime": 1789361737.8671412,
-    "seen": 1790634485.2641232,
-    "ast_hash": "0852dd17f8ceabab49e523e3671d4145",
+    "mtime": 1790803328.7907665,
+    "seen": 1790991586.2534385,
+    "ast_hash": "c23b92457fb001652728d3128cefd2c9",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/SeedF3B.cs": {
@@ -1938,15 +1938,15 @@
     "semantic_hash": ""
   },
   ".github/workflows/build-and-test.yml": {
-    "mtime": 1790740538.1928146,
-    "seen": 1790746480.990188,
-    "ast_hash": "17a0301a342d4fecb26505127b9b1bc7",
+    "mtime": 1790988969.0451436,
+    "seen": 1790991586.25399,
+    "ast_hash": "5c120f2e93539e1061c0e0ee094fd9b7",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790537434.3489327,
-    "seen": 1790634485.264167,
-    "ast_hash": "8aa09420a83ab8091a238301688e26c2",
+    "mtime": 1790989071.263707,
+    "seen": 1790991586.2539911,
+    "ast_hash": "e33488ad39b468a9a044fbe43a9cd564",
     "semantic_hash": ""
   },
   "docs/aggregate-roots.md": {
@@ -2292,9 +2292,9 @@
     "semantic_hash": ""
   },
   "kanban/deferred-decisions.md": {
-    "mtime": 1790737545.2585328,
-    "seen": 1790746480.9923546,
-    "ast_hash": "6624ec40fdafd925ea60adc52b09a11d",
+    "mtime": 1790990577.9468906,
+    "seen": 1790991586.256303,
+    "ast_hash": "f64a9b53e016cbf874fb01ced47a9ccc",
     "semantic_hash": ""
   },
   "kanban/tech-debt.md": {
@@ -2304,21 +2304,21 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/extract/README.md": {
-    "mtime": 1788726518.7015178,
-    "seen": 1790634485.2643962,
-    "ast_hash": "e628b23c7ac3f40e53be59045fdae3b4",
+    "mtime": 1790989043.376826,
+    "seen": 1790991586.25638,
+    "ast_hash": "e7bf16a0e1eea1b7b126320478dc8a33",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/index.md": {
-    "mtime": 1788726464.2253244,
-    "seen": 1790634485.2643979,
-    "ast_hash": "c0c215fab2ebb99a48357143d7a7c02f",
+    "mtime": 1790991034.3891327,
+    "seen": 1790991586.2563815,
+    "ast_hash": "c767e44ce8e546d78dbdc55c733b7503",
     "semantic_hash": ""
   },
   "tools/Soarscore.SeedData/README.md": {
-    "mtime": 1785963953.5316064,
-    "seen": 1790634485.2644022,
-    "ast_hash": "5c4b0de1d3134452abb4a664c484bb29",
+    "mtime": 1790802945.7735868,
+    "seen": 1790991586.2564058,
+    "ast_hash": "4fdf6e68f4699974cd4f6240ac765136",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/Competitions/PrescribeDraw.cs": {
@@ -2358,9 +2358,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international-flyoff/expected-result.json": {
-    "mtime": 1787710863.3414369,
-    "seen": 1790634485.2634676,
-    "ast_hash": "40ff0c390984f3fbd1cfb20b99accd7d",
+    "mtime": 1790824469.8092268,
+    "seen": 1790991586.2454748,
+    "ast_hash": "2f344c2012633fdfe464145e2336c1de",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international-flyoff/expected-scores.json": {
@@ -2394,9 +2394,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international/expected-result.json": {
-    "mtime": 1787703012.901963,
-    "seen": 1790634485.2634807,
-    "ast_hash": "a0cc478bc8de26e530667e717c57354e",
+    "mtime": 1790824469.807227,
+    "seen": 1790991586.2455971,
+    "ast_hash": "e5b4665f3e4c3e8a267c74c8e558ad8f",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international/expected-scores.json": {
@@ -2430,9 +2430,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-sample-comp/expected-result.json": {
-    "mtime": 1787712025.6596794,
-    "seen": 1790634485.2635248,
-    "ast_hash": "0f4b0c772689e3aeeef154f2001de770",
+    "mtime": 1790824469.812068,
+    "seen": 1790991586.2460492,
+    "ast_hash": "7b96408ec88c7cc3341f73cde4c17e43",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-sample-comp/expected-scores.json": {
@@ -2466,9 +2466,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/jerilderie-2010/expected-result.json": {
-    "mtime": 1787713086.9669158,
-    "seen": 1790634485.2636652,
-    "ast_hash": "9b904a2281dedeaf521584f295eb0c95",
+    "mtime": 1790824469.8212268,
+    "seen": 1790991586.2476585,
+    "ast_hash": "72f598b5e66f1727b2e7e257b2bf54bc",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/jerilderie-2010/expected-scores.json": {
@@ -2670,33 +2670,33 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/ReplaySteps.cs": {
-    "mtime": 1789011392.126715,
-    "seen": 1790634485.2637582,
-    "ast_hash": "96da78f7acc6fdf69871a2b9e82c6775",
+    "mtime": 1790826187.3589005,
+    "seen": 1790991586.2488973,
+    "ast_hash": "dbddc2e70b3227743ed06ef656b1785f",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/Comparator.cs": {
-    "mtime": 1789011311.8920965,
-    "seen": 1790634485.2637815,
-    "ast_hash": "522abc5fd891d8b49a65d5d3440b75f3",
+    "mtime": 1790990582.7848852,
+    "seen": 1790991586.249197,
+    "ast_hash": "3c573a9ca7ed9a41630c796338edd69b",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/FixtureLoader.cs": {
-    "mtime": 1788402819.612757,
-    "seen": 1790634485.2637851,
-    "ast_hash": "3a4520746d6867483cd98ea59c6dec80",
+    "mtime": 1790888930.0919473,
+    "seen": 1790991586.2492008,
+    "ast_hash": "ae6adea55368f4a82d430b5fe7871e24",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/FixtureModels.cs": {
-    "mtime": 1789011384.4626558,
-    "seen": 1790634485.2637868,
-    "ast_hash": "f6f850440c8da61c851d6469d7d3f2d8",
+    "mtime": 1790825977.3554137,
+    "seen": 1790991586.2492027,
+    "ast_hash": "121c935d298104d34237eb6d03413d17",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ReplayDriver.cs": {
-    "mtime": 1790049564.5077267,
-    "seen": 1790634485.2637942,
-    "ast_hash": "d8db140baccb34c352ae41da00b8317c",
+    "mtime": 1790887303.804849,
+    "seen": 1790991586.2492306,
+    "ast_hash": "5603e38d8099e15e57f6e614d3737254",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international-flyoff/class-definition.json": {
@@ -2712,9 +2712,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international/divergences.json": {
-    "mtime": 1789011478.8237927,
-    "seen": 1790634485.2634778,
-    "ast_hash": "8af3a9538c98d3b346703d7d1d417013",
+    "mtime": 1790826326.628486,
+    "seen": 1790991586.2455752,
+    "ast_hash": "6981234d11d8d9ece57ccbc4e4a2918b",
     "semantic_hash": ""
   },
   "gliderscore-online-data-mining.md": {
@@ -2730,9 +2730,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/HarnessSelfCheckSteps.cs": {
-    "mtime": 1789011571.1220944,
-    "seen": 1790634485.2637436,
-    "ast_hash": "edd87fda86c4aeafbb0846f1ae5bfc93",
+    "mtime": 1790826247.5650399,
+    "seen": 1790991586.2487714,
+    "ast_hash": "f599f39886d03c4934fd796f81dc136e",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/jerilderie-2010/class-definition.json": {
@@ -2742,9 +2742,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/jerilderie-2010/divergences.json": {
-    "mtime": 1789011881.8324888,
-    "seen": 1790634485.2636626,
-    "ast_hash": "61505b3b73d1f9f42aacbf5d15f8c5d1",
+    "mtime": 1790826326.6289725,
+    "seen": 1790991586.2476375,
+    "ast_hash": "512b54f274192c0b2f17c061231e2b2f",
     "semantic_hash": ""
   },
   "kanban/completed/gliderscore-replay-and-compare-harness.md": {
@@ -3186,9 +3186,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-june-2020/expected-result.json": {
-    "mtime": 1787822721.294243,
-    "seen": 1790634485.2634983,
-    "ast_hash": "eedf98aa69b408efae16ca556ae2fb34",
+    "mtime": 1790824469.8242269,
+    "seen": 1790991586.2457561,
+    "ast_hash": "206369ef1b8b5663ccd2031848951e90",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-june-2020/expected-scores.json": {
@@ -3216,9 +3216,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-southern-fling/expected-result.json": {
-    "mtime": 1787822721.2250214,
-    "seen": 1790634485.2635384,
-    "ast_hash": "128722fffd285c8105614526e9dd0177",
+    "mtime": 1790824469.8272269,
+    "seen": 1790991586.2461715,
+    "ast_hash": "ea02b5b7e6e45095cc80188f3a7f3551",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-southern-fling/ladder.py": {
@@ -3246,9 +3246,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/expected-result.json": {
-    "mtime": 1787822721.1913543,
-    "seen": 1790634485.263593,
-    "ast_hash": "118d15d6494c0e9283f5294a931fae9e",
+    "mtime": 1790824469.8342268,
+    "seen": 1790991586.2468057,
+    "ast_hash": "52e24793e90e563d7c89d9151b312c6a",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-hawkes-bay-trials/expected-scores.json": {
@@ -3276,9 +3276,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-christchurch-2019/expected-result.json": {
-    "mtime": 1787822537.0303843,
-    "seen": 1790634485.2635643,
-    "ast_hash": "f666117aad02412a9c0670bb139a1154",
+    "mtime": 1790824469.8319294,
+    "seen": 1790991586.2464592,
+    "ast_hash": "4cdb556c690f49cc77b7c97f92fc9174",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-nz-south-island/ladder.py": {
@@ -3288,9 +3288,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-nz-south-island/expected-result.json": {
-    "mtime": 1787822660.7117045,
-    "seen": 1790634485.2636175,
-    "ast_hash": "e4b8f1c5cccbc73e79e4a79fa64b9c17",
+    "mtime": 1790824469.8372269,
+    "seen": 1790991586.2471385,
+    "ast_hash": "a81fb9a0851123d58de799a8392e58ab",
     "semantic_hash": ""
   },
   "kanban/completed/grow-corpus-nz-master-five-fixtures.md": {
@@ -3306,9 +3306,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-june-2020/divergences.json": {
-    "mtime": 1789011478.8239877,
-    "seen": 1790634485.2634945,
-    "ast_hash": "89b3edda8009ea8bdbd3b04bf3e20a1a",
+    "mtime": 1790826326.6287072,
+    "seen": 1790991586.245735,
+    "ast_hash": "89c17c9b89dc53f9ea2ccccd721bddfe",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-southern-fling/class-definition.json": {
@@ -3318,9 +3318,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-southern-fling/divergences.json": {
-    "mtime": 1789011478.824183,
-    "seen": 1790634485.263535,
-    "ast_hash": "86398f3cde8fd7987ce6efd7b21cd376",
+    "mtime": 1790826326.628854,
+    "seen": 1790991586.2461503,
+    "ast_hash": "360293f9f502cc7328fd0930a6cf1b15",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5j-christchurch-2019/class-definition.json": {
@@ -3417,12 +3417,6 @@
     "mtime": 1790737293.599563,
     "seen": 1790746480.9899876,
     "ast_hash": "770b83a4c3227e13e59d43a2eca74b5d",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/fai-conformant-f3k-fixture-hunt.md": {
-    "mtime": 1788123175.1965485,
-    "seen": 1790634485.264239,
-    "ast_hash": "5464fb0ee8466ccb5ab80a28f3009fae",
     "semantic_hash": ""
   },
   "kanban/completed/aggregated-scoped-zero-effects-and-entry-scoped-disqualify-no-op.md": {
@@ -3666,9 +3660,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3k-sample-comp/divergences.json": {
-    "mtime": 1789011478.824059,
-    "seen": 1790634485.2635212,
-    "ast_hash": "249e83fa22ff62546f68553dcac8266f",
+    "mtime": 1790989356.8620481,
+    "seen": 1790991586.246029,
+    "ast_hash": "c2cc267a7154c3f2c7313b89a33b9cd6",
     "semantic_hash": ""
   },
   "tests/Soarscore.Application.Tests/Commands/Competitions/FinaliseCompetitionTeamCaptureTests.cs": {
@@ -3693,12 +3687,6 @@
     "mtime": 1788403221.2219272,
     "seen": 1790634485.2634838,
     "ast_hash": "86bee7ae3fac84686208b0129234e968",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/omit-from-teamscore-witness.md": {
-    "mtime": 1788726699.9463546,
-    "seen": 1790634485.2642448,
-    "ast_hash": "5715ba3f75023fbb76150151d8ea90d7",
     "semantic_hash": ""
   },
   "tests/Soarscore.Domain.Tests/NzNdcSeedArithmeticTests.cs": {
@@ -3762,9 +3750,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5k-ni-round-2/expected-result.json": {
-    "mtime": 1788493798.9083078,
-    "seen": 1790634485.2636406,
-    "ast_hash": "a67b54da9b9bcc8dfe83732efc397380",
+    "mtime": 1790824469.8382268,
+    "seen": 1790991586.2474446,
+    "ast_hash": "3afba6ca5a0b98bb2e5d003d311de295",
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f5k-ni-round-2/expected-scores.json": {
@@ -3852,39 +3840,33 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/ales-sample-comp/parallel-run/80-nz-m-ales200.json": {
-    "mtime": 1790537434.4989295,
-    "seen": 1790634485.2634501,
-    "ast_hash": "ac810a1d0a075ba70fa4d49b83a79bfb",
+    "mtime": 1790826546.8897338,
+    "seen": 1790991586.2453027,
+    "ast_hash": "6574a00fb4968b8187fbba7bb2a6d6fb",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/ParallelRunSteps.cs": {
-    "mtime": 1789011395.4637406,
-    "seen": 1790634485.263748,
-    "ast_hash": "aa5dde80f37adcb47ce194ed8a8c0a70",
+    "mtime": 1790991228.3451796,
+    "seen": 1790991586.248814,
+    "ast_hash": "fdb42990b1e573e6bb7fd045631777c5",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ParallelRunComparator.cs": {
-    "mtime": 1789000230.8124084,
-    "seen": 1790634485.263791,
-    "ast_hash": "295b3e94ac617473f9ef6b6e5af842bd",
+    "mtime": 1790990648.5188134,
+    "seen": 1790991586.2492282,
+    "ast_hash": "b0be2db1502de7f5095dfc707ef93c0e",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/ParallelRunLedger.cs": {
-    "mtime": 1789011275.1268132,
-    "seen": 1790634485.263793,
-    "ast_hash": "e2a2465d1987d187dd21509fa24b2c48",
+    "mtime": 1790826134.930779,
+    "seen": 1790991586.2492297,
+    "ast_hash": "776abc0475df035b625d92fb014835ff",
     "semantic_hash": ""
   },
   "kanban/completed/seed-definition-parallel-run.md": {
     "mtime": 1788688826.7201798,
     "seen": 1790634485.2643769,
     "ast_hash": "e59542dd12739868872968ba16a2c190",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/second-nbr3-team-witness.md": {
-    "mtime": 1788726683.6174185,
-    "seen": 1790634485.2642503,
-    "ast_hash": "7fb4ea079bff1d00903be38a0399fd51",
     "semantic_hash": ""
   },
   "kanban/completed/grow-corpus-team-parity-fixtures.md": {
@@ -3894,9 +3876,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Steps/RecordingAGliderscoreFixtureSteps.cs": {
-    "mtime": 1788908647.3482273,
-    "seen": 1790634485.2637515,
-    "ast_hash": "c8ee947cfd6e97aa0003fe89473cbc72",
+    "mtime": 1790826271.8960965,
+    "seen": 1790991586.2488353,
+    "ast_hash": "a82b09814f1704db079271c55a2243e3",
     "semantic_hash": ""
   },
   "kanban/completed/corpus-parallel-run-mapping-table.md": {
@@ -3906,9 +3888,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/parallel-run-mapping.md": {
-    "mtime": 1789331555.4264145,
-    "seen": 1790634485.2643993,
-    "ast_hash": "d9012172ad67ffa8db55dfeb2faf5388",
+    "mtime": 1790991034.3892293,
+    "seen": 1790991586.2563822,
+    "ast_hash": "cd6d73a7f19ac3356855f03304f5679b",
     "semantic_hash": ""
   },
   "kanban/completed/literal-record-replay-scenarios.md": {
@@ -4025,118 +4007,10 @@
     "ast_hash": "3fe718568eb6e2d15fa5a2d173bda5eb",
     "semantic_hash": ""
   },
-  "--nologo/tools/Soarscore.SeedData/json/10-f3k.json": {
-    "mtime": 1788929674.5703766,
-    "seen": 1790634485.2630563,
-    "ast_hash": "40954c0514c9b8b20b3d770bedd1b26b",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/20-f3b.json": {
-    "mtime": 1788929674.6683767,
-    "seen": 1790634485.2630613,
-    "ast_hash": "427958b08586608cdfbb2e16aa533f4e",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/30-f5j.json": {
-    "mtime": 1788929674.6743767,
-    "seen": 1790634485.2630649,
-    "ast_hash": "f8b3b1a332c815fda339583f5e69f415",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/40-f5k.json": {
-    "mtime": 1788929674.6753767,
-    "seen": 1790634485.2630675,
-    "ast_hash": "fea0f682cf72c337257514eef8cebc49",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/50-f3j.json": {
-    "mtime": 1788929674.6783767,
-    "seen": 1790634485.2630703,
-    "ast_hash": "3d448d8bc8e1d3c80edd6148976c62de",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/60-f5l.json": {
-    "mtime": 1788929674.6793766,
-    "seen": 1790634485.2630723,
-    "ast_hash": "3ff0155f1f6f12c49887b4bf87b35533",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/70-f3f.json": {
-    "mtime": 1788929674.6803765,
-    "seen": 1790634485.2630742,
-    "ast_hash": "5ecf2e4fe011460318e7979f6e368f15",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/80-nz-m-ales200.json": {
-    "mtime": 1788929674.6813767,
-    "seen": 1790634485.263076,
-    "ast_hash": "7f8b5eb6f82682726c6dc4438f5dfed6",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/81-nz-m-ndc.json": {
-    "mtime": 1788929674.6823766,
-    "seen": 1790634485.2630787,
-    "ast_hash": "b105bb9d888ce416ec62db19762a7c94",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/83-nz-n-ales123.json": {
-    "mtime": 1788929674.6823766,
-    "seen": 1790634485.2630804,
-    "ast_hash": "603c26e5cecf99310afbd5763a18f558",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/85-nz-p-radian.json": {
-    "mtime": 1788929674.6823766,
-    "seen": 1790634485.2630823,
-    "ast_hash": "4d793e4f49f10a48b4624917b9705aeb",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/85b-nz-f3k-ndc.json": {
-    "mtime": 1788929674.6833766,
-    "seen": 1790634485.2630847,
-    "ast_hash": "b4efed06852a4055c195cfd69c7425b7",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/85c-nz-f5j-ndc.json": {
-    "mtime": 1788929674.6833766,
-    "seen": 1790634485.2630863,
-    "ast_hash": "ccfb8848ad870dec04d2999008325b93",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/85d-nz-f5k-ndc.json": {
-    "mtime": 1788929674.6843767,
-    "seen": 1790634485.263088,
-    "ast_hash": "e900950cf05092ae4d4d48c7644457cd",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/86-nz-x5j.json": {
-    "mtime": 1788929674.6893766,
-    "seen": 1790634485.2630897,
-    "ast_hash": "532ab0c3b9415e2c3530128cd106d6f1",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/90-aggregate.json": {
-    "mtime": 1788929674.6903765,
-    "seen": 1790634485.263091,
-    "ast_hash": "bb4b9fbf1d59288d79e07017a942f007",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/tapes/tape-nz-ales-m-10m.json": {
-    "mtime": 1788929674.6973765,
-    "seen": 1790634485.2630932,
-    "ast_hash": "f5a276f3e0676af8504663c07c4e7822",
-    "semantic_hash": ""
-  },
-  "--nologo/tools/Soarscore.SeedData/json/tapes/tape-nz-f3j-side.json": {
-    "mtime": 1788929674.6933765,
-    "seen": 1790634485.263095,
-    "ast_hash": "086e67e2552f107ebd7e4560aa92cdf2",
-    "semantic_hash": ""
-  },
   "tests/GliderscoreFixtures/f5j-christchurch-2019/parallel-run/30-f5j.json": {
-    "mtime": 1790049564.5067267,
-    "seen": 1790634485.2635822,
-    "ast_hash": "a74c61f5afb82d25695da13a6312bc94",
+    "mtime": 1790990955.9644773,
+    "seen": 1790991586.246683,
+    "ast_hash": "3bdbf30b49940b86bdfae4265a769468",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/F5JChristchurchTapeReadingExamplesTests.cs": {
@@ -4254,9 +4128,9 @@
     "semantic_hash": ""
   },
   "tests/GliderscoreFixtures/f3j-international/parallel-run/50-f3j.json": {
-    "mtime": 1790634223.2414043,
-    "seen": 1790634485.263486,
-    "ast_hash": "af8da6e298d894d7c394765e537bb164",
+    "mtime": 1790990970.242072,
+    "seen": 1790991586.2456493,
+    "ast_hash": "2e8799d97189c3b444e0bf328e8f09e3",
     "semantic_hash": ""
   },
   "kanban/completed/f3j-international-parallel-run-retriage.md": {
@@ -4266,9 +4140,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/CorpusDivergenceReport.cs": {
-    "mtime": 1789011813.065959,
-    "seen": 1790634485.2637837,
-    "ast_hash": "1b7dcdfca53facb9249c4e3e2e341105",
+    "mtime": 1790988955.5822012,
+    "seen": 1790991586.2491987,
+    "ast_hash": "f3b849a5dbb03affee86b0ecee5bac76",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/GsLedgerMode.cs": {
@@ -4278,21 +4152,15 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/LedgerGate.cs": {
-    "mtime": 1789011380.3706243,
-    "seen": 1790634485.26379,
-    "ast_hash": "1c06c392520a32fa8d6039c9fb8d9916",
+    "mtime": 1790826217.6149707,
+    "seen": 1790991586.2492268,
+    "ast_hash": "947085a5e7709d18beb3a8ea1ef7f88b",
     "semantic_hash": ""
   },
   "kanban/backlog/f3j-international-flyoff-parallel-run-witness.md": {
     "mtime": 1789009677.4973373,
     "seen": 1790634485.264232,
     "ast_hash": "52a9bc75230fbc8a8e636f674271cef2",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/teams-grain-parallel-comparison.md": {
-    "mtime": 1789331555.4264145,
-    "seen": 1790634485.264255,
-    "ast_hash": "8e00bda6fa90560e4308c378eeae219d",
     "semantic_hash": ""
   },
   "kanban/completed/gs-ledger-modes.md": {
@@ -4302,8 +4170,8 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/appsettings.json": {
-    "mtime": 1790049564.504419,
-    "seen": 1790634485.2631454,
+    "mtime": 1790905188.2045796,
+    "seen": 1790991586.2414203,
     "ast_hash": "a986ac1fca0c4642f6100b1a7a2fecb5",
     "semantic_hash": ""
   },
@@ -4332,15 +4200,15 @@
     "semantic_hash": ""
   },
   "SS/All Class Definitions.yml": {
-    "mtime": 1789085308.104186,
-    "seen": 1790634485.2641702,
-    "ast_hash": "d80ede976f567062fae2975f15d65628",
+    "mtime": 1790802421.2468781,
+    "seen": 1790991586.2539942,
+    "ast_hash": "09eed3a49a180e79487b156cb318d00f",
     "semantic_hash": ""
   },
   "SS/F3K Class Definition.yml": {
-    "mtime": 1789085673.0600524,
-    "seen": 1790634485.264172,
-    "ast_hash": "008513b6e931f2b336f928315825eb05",
+    "mtime": 1790802423.8518863,
+    "seen": 1790991586.2539973,
+    "ast_hash": "f85640f81aa7bd9208b768f96090c6fc",
     "semantic_hash": ""
   },
   "SS/openapi.json.yml": {
@@ -4353,12 +4221,6 @@
     "mtime": 1789085187.389577,
     "seen": 1790634485.2641788,
     "ast_hash": "7590d5d0e8b80709cfae817dec8615b4",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/ci-seed-corpus-drift-guard.md": {
-    "mtime": 1789331555.4264145,
-    "seen": 1790634485.264227,
-    "ast_hash": "6d7c97698c7e6aa53008599bb4237266",
     "semantic_hash": ""
   },
   "kanban/completed/seed-class-corpus-at-startup.md": {
@@ -4398,21 +4260,15 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1789092116.6841345,
-    "seen": 1790634485.2641687,
-    "ast_hash": "2ce5586aca483466a64108ae57f0dec1",
+    "mtime": 1790989057.7317648,
+    "seen": 1790991586.2539928,
+    "ast_hash": "31c8f09ddf74176bade9eec8ab8266d7",
     "semantic_hash": ""
   },
   "kanban/completed/competition-event-log-endpoint.md": {
     "mtime": 1789095148.1390948,
     "seen": 1790634485.2642744,
     "ast_hash": "644e6496368d2de6c907685ce484e08c",
-    "semantic_hash": ""
-  },
-  "kanban/backlog/jerilderie-2010-tape-witness.md": {
-    "mtime": 1789331555.4264145,
-    "seen": 1790634485.2642426,
-    "ast_hash": "94ea80b4dbbfc82335ac4ee9b1100cd6",
     "semantic_hash": ""
   },
   "kanban/completed/tape-points-landing-seeds.md": {
@@ -4434,9 +4290,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CommandPolicyTable.cs": {
-    "mtime": 1790049564.505241,
-    "seen": 1790634485.2631528,
-    "ast_hash": "39c4a5fa65f47f4a072fcb4a805c532d",
+    "mtime": 1790896332.129235,
+    "seen": 1790991586.2414675,
+    "ast_hash": "3fd3eeeb2fc64be575b33c38c1970325",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Auth/CommandScopes.cs": {
@@ -4596,9 +4452,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/People/LinkSignIn.cs": {
-    "mtime": 1790049564.5053499,
-    "seen": 1790634485.2632427,
-    "ast_hash": "80d8ff196e9186d828304d52354102c7",
+    "mtime": 1790901981.3407495,
+    "seen": 1790991586.242517,
+    "ast_hash": "f7f307e3db6884cd765f05bb67e5a3e6",
     "semantic_hash": ""
   },
   "src/Soarscore.Application/Commands/People/RevokeRole.cs": {
@@ -4656,9 +4512,9 @@
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/AuthSettings.cs": {
-    "mtime": 1790049585.578,
-    "seen": 1790634485.2631168,
-    "ast_hash": "f24d306a40e46b3cc45cc1183f6de9f1",
+    "mtime": 1790902183.1825957,
+    "seen": 1790991586.2412171,
+    "ast_hash": "7662e285425751ea84e13d35c1318f02",
     "semantic_hash": ""
   },
   "src/Soarscore.Api/Auth/BearerSecurityScheme.cs": {
@@ -4698,9 +4554,9 @@
     "semantic_hash": ""
   },
   "tests/Soarscore.Architecture.Tests/CompositionGuardTests.cs": {
-    "mtime": 1790050041.581,
-    "seen": 1790634485.2639227,
-    "ast_hash": "40e722f0daf0bec6d42e3a7f19016d65",
+    "mtime": 1790902189.8386896,
+    "seen": 1790991586.2509913,
+    "ast_hash": "6998b0943682f55794e7c1ae490271a9",
     "semantic_hash": ""
   },
   "tests/Soarscore.Acceptance.Tests/Parallelism.cs": {
@@ -4973,12 +4829,6 @@
     "ast_hash": "8ce64ceaf6a7498a02988448b8ec661d",
     "semantic_hash": ""
   },
-  "kanban/backlog/turn-around-window-score-validation.md": {
-    "mtime": 1790740357.142692,
-    "seen": 1790746480.9911444,
-    "ast_hash": "7a85bd029326d1fe8b8f614cd0d03477",
-    "semantic_hash": ""
-  },
   "kanban/completed/competition-total-floor-and-fai-floor-audit.md": {
     "mtime": 1790737551.5866075,
     "seen": 1790746480.991362,
@@ -4989,6 +4839,390 @@
     "mtime": 1790654841.3183782,
     "seen": 1790746480.9919708,
     "ast_hash": "73be4de7a378d61eae3ec68d052723b9",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Auth/CallerAccessToken.cs": {
+    "mtime": 1790901856.0989833,
+    "seen": 1790991586.2414658,
+    "ast_hash": "4c59125d0a47b033cf497a9cf166d256",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Auth/UserInfo.cs": {
+    "mtime": 1790902208.7599566,
+    "seen": 1790991586.2416356,
+    "ast_hash": "6e0ad01c8a2f5eed86d058abacce7445",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Queries/Competitions/GetCompetitionRoster.cs": {
+    "mtime": 1790896308.6538854,
+    "seen": 1790991586.2429147,
+    "ast_hash": "0c10979e45f1401befba5cedce023ca4",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Application/Queries/Competitions/GetDrawMatrix.cs": {
+    "mtime": 1790896338.5283303,
+    "seen": 1790991586.2429163,
+    "ast_hash": "517b5d2af439e2122e09418b2bbf8f99",
+    "semantic_hash": ""
+  },
+  "src/Soarscore.Infrastructure/Auth/OidcUserInfoProvider.cs": {
+    "mtime": 1790901868.5191584,
+    "seen": 1790991586.2442381,
+    "ast_hash": "d9d9b54ee092386b596da7d7291db42d",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/corpus-registry.json": {
+    "mtime": 1790991015.442373,
+    "seen": 1790991586.2453437,
+    "ast_hash": "c0b3e42c32579499c5fe4e2c1ee6605b",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/corpus-registry.schema.json": {
+    "mtime": 1790887146.7042987,
+    "seen": 1790991586.245345,
+    "ast_hash": "acaabbea2de5dcc1e93ba02c93050c34",
+    "semantic_hash": ""
+  },
+  "tests/GliderscoreFixtures/extract/corpus.py": {
+    "mtime": 1790889661.6559002,
+    "seen": 1790991586.2453463,
+    "ast_hash": "9c2c876171e80e103fd7240281ddf58b",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/CompetitionRosterTests.cs": {
+    "mtime": 1790896452.340025,
+    "seen": 1790991586.2485487,
+    "ast_hash": "5c96bc478db541d5796abb227b52156a",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/CompleteResultOracleTests.cs": {
+    "mtime": 1790824859.2700179,
+    "seen": 1790991586.2485504,
+    "ast_hash": "71e10626df103ea263d9ab547ef797a2",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/CorpusCoverageTests.cs": {
+    "mtime": 1790888879.0511134,
+    "seen": 1790991586.2485514,
+    "ast_hash": "c3c8945d0d1fa6f177566c10a7f48fdd",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/ExactDivergenceContractTests.cs": {
+    "mtime": 1790990927.3155086,
+    "seen": 1790991586.2485728,
+    "ast_hash": "6149bb61af7a625ab1c4bd45813f1848",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/LinkSignInEmptyBodyTests.cs": {
+    "mtime": 1790897042.1218066,
+    "seen": 1790991586.2485938,
+    "ast_hash": "411ad59785dba7c4bd0f135a8d144a9b",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/OidcPinnedUserInfoTests.cs": {
+    "mtime": 1790902355.5848126,
+    "seen": 1790991586.248595,
+    "ast_hash": "8197f5ac879c5f55276a20869c202e59",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/SnapshotResultParityTests.cs": {
+    "mtime": 1790822896.2067163,
+    "seen": 1790991586.2486157,
+    "ast_hash": "981919ea9815eacdc4f57789f18e01ce",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Acceptance.Tests/Support/Gliderscore/CorpusReplayRegistry.cs": {
+    "mtime": 1790888842.5805173,
+    "seen": 1790991586.2491996,
+    "ast_hash": "bb31e6db5d74ca65644881a6a1b8a56a",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Application.Tests/Commands/People/LinkSignInUserInfoFallbackTests.cs": {
+    "mtime": 1790902266.015405,
+    "seen": 1790991586.2502112,
+    "ast_hash": "98d717438a8694bc2d99f8ab6b6f2e8d",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Application.Tests/Queries/Competitions/GetCompetitionRosterHandlerTests.cs": {
+    "mtime": 1790896355.027576,
+    "seen": 1790991586.2505038,
+    "ast_hash": "b2b44e63cdd87e778c996785d40f1110",
+    "semantic_hash": ""
+  },
+  "tests/Soarscore.Application.Tests/Queries/Competitions/GetDrawMatrixHandlerTests.cs": {
+    "mtime": 1790801395.5016613,
+    "seen": 1790991586.250505,
+    "ast_hash": "02191cb20358a85b2a58aafb6c32fff8",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/10-f3k.json": {
+    "mtime": 1790803347.7758236,
+    "seen": 1790991586.2538984,
+    "ast_hash": "84e622a7fc6d3c2a5669e98248eaad24",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/20-f3b.json": {
+    "mtime": 1790803347.8648238,
+    "seen": 1790991586.2538998,
+    "ast_hash": "5e6d10fe869be4b115a506f49940f43f",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/30-f5j.json": {
+    "mtime": 1790803347.8698237,
+    "seen": 1790991586.253901,
+    "ast_hash": "b46933d24b01a6dcc7293e0cffb24462",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/40-f5k.json": {
+    "mtime": 1790803347.8728237,
+    "seen": 1790991586.2539024,
+    "ast_hash": "5256186fd9ad7976eef7ec0af89855d5",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/50-f3j.json": {
+    "mtime": 1790803347.8758237,
+    "seen": 1790991586.2539034,
+    "ast_hash": "487f740864bb7cf96ed5700014a54a47",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/60-f5l.json": {
+    "mtime": 1790803347.876824,
+    "seen": 1790991586.253904,
+    "ast_hash": "5b78d6e0391fa1dd87d88ca2b972c81d",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/70-f3f.json": {
+    "mtime": 1790803347.8778238,
+    "seen": 1790991586.2539048,
+    "ast_hash": "08d00cc4d52675f93aede5dbafe4022e",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/80-nz-m-ales200.json": {
+    "mtime": 1790803347.8788238,
+    "seen": 1790991586.2539062,
+    "ast_hash": "b3651a77f569be5e15f177ee899ac318",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/81-nz-m-ndc.json": {
+    "mtime": 1790803347.8788238,
+    "seen": 1790991586.2539074,
+    "ast_hash": "239ca74d59f81355e34cd31efd8bdb54",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/83-nz-n-ales123.json": {
+    "mtime": 1790803347.8788238,
+    "seen": 1790991586.2539084,
+    "ast_hash": "a0f501f33955c9198c4280f88f6108cf",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/85-nz-p-radian.json": {
+    "mtime": 1790803347.879824,
+    "seen": 1790991586.2539096,
+    "ast_hash": "068788e4f4825372851b0aea1ef2dec0",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/85b-nz-f3k-ndc.json": {
+    "mtime": 1790803347.879824,
+    "seen": 1790991586.25391,
+    "ast_hash": "95adb151606a367e5758fd4805cd4b82",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/85c-nz-f5j-ndc.json": {
+    "mtime": 1790803347.8848238,
+    "seen": 1790991586.253911,
+    "ast_hash": "59540e01055eabf4e9ac46889ffbeea4",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/85d-nz-f5k-ndc.json": {
+    "mtime": 1790803347.8858237,
+    "seen": 1790991586.2539117,
+    "ast_hash": "b8fbaadb62de0c424b8b7df268c93fa9",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/86-nz-x5j.json": {
+    "mtime": 1790803347.886824,
+    "seen": 1790991586.2539127,
+    "ast_hash": "ec586fe99fb99e66ed1dadd39831df9d",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/87-nz-h-thermal-2m.json": {
+    "mtime": 1790803347.886824,
+    "seen": 1790991586.2539139,
+    "ast_hash": "7610215adf0a28514e4d3b09d62f1b25",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/90-aggregate.json": {
+    "mtime": 1790803347.886824,
+    "seen": 1790991586.2539146,
+    "ast_hash": "c661014f1c7ec5dddf21c4213d08745c",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/tapes/tape-measure.json": {
+    "mtime": 1790803347.8938239,
+    "seen": 1790991586.2539155,
+    "ast_hash": "83aa7f7013b7547052fe259b0890da81",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/tapes/tape-nz-ales-m-10m.json": {
+    "mtime": 1790803347.8938239,
+    "seen": 1790991586.2539167,
+    "ast_hash": "f5a276f3e0676af8504663c07c4e7822",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/tapes/tape-nz-f3b-side.json": {
+    "mtime": 1790803347.892824,
+    "seen": 1790991586.2539175,
+    "ast_hash": "9238ec5eba255b41cb9480d2dd33d378",
+    "semantic_hash": ""
+  },
+  "tools/Soarscore.SeedData/json/tapes/tape-nz-f3j-side.json": {
+    "mtime": 1790803347.889824,
+    "seen": 1790991586.2539184,
+    "ast_hash": "086e67e2552f107ebd7e4560aa92cdf2",
+    "semantic_hash": ""
+  },
+  "SS/Draw Matrix Round Window.yml": {
+    "mtime": 1790802429.0869026,
+    "seen": 1790991586.253995,
+    "ast_hash": "d122e7dfd75db918c1132f0afff522c8",
+    "semantic_hash": ""
+  },
+  "SS/Draw Matrix.yml": {
+    "mtime": 1790802426.1508934,
+    "seen": 1790991586.2539957,
+    "ast_hash": "2c748cde154252cbe72171828b600f05",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/christchurch-teams-method-split.md": {
+    "mtime": 1790991034.3433917,
+    "seen": 1790991586.2546906,
+    "ast_hash": "62fd06358d128f0b494dee41932a6686",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/draw-fairness-matrix.md": {
+    "mtime": 1790801697.8746243,
+    "seen": 1790991586.2546918,
+    "ast_hash": "bf46ca99ac610b7381a91dec8289168c",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_06_independent-result-report-acquisition.md": {
+    "mtime": 1790820232.074136,
+    "seen": 1790991586.2547882,
+    "ast_hash": "51279b4618f4d88dd48fcb625a5f50f4",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_07_f5k-canonical-seed-parallel-run.md": {
+    "mtime": 1790820232.0742943,
+    "seen": 1790991586.254789,
+    "ast_hash": "5c27e0a882c014eb82d404f93807a827",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_08_fai-conformant-f3k-fixture-hunt.md": {
+    "mtime": 1790820310.887762,
+    "seen": 1790991586.25479,
+    "ast_hash": "31ec15a6a91c839b9039ab3f7676cc31",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_09_f5j-south-island-seed-parallel-run.md": {
+    "mtime": 1790820232.0743783,
+    "seen": 1790991586.2547913,
+    "ast_hash": "62d3b16b030c39aa7e2475fb81f4242d",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_11_second-nbr3-team-witness.md": {
+    "mtime": 1790820310.8888028,
+    "seen": 1790991586.2547922,
+    "ast_hash": "b2672a36522e887ac7704c2af1bb01fa",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_12_omit-from-teamscore-witness.md": {
+    "mtime": 1790820310.8889806,
+    "seen": 1790991586.254793,
+    "ast_hash": "8eab9026ef4fc827cdde46db99815b9e",
+    "semantic_hash": ""
+  },
+  "kanban/backlog/gs_13_jerilderie-2010-tape-witness.md": {
+    "mtime": 1790820310.889249,
+    "seen": 1790991586.254794,
+    "ast_hash": "e768d106feb8370fa724eba67caff594",
+    "semantic_hash": ""
+  },
+  "kanban/completed/ci-seed-corpus-drift-guard.md": {
+    "mtime": 1790803344.0908124,
+    "seen": 1790991586.2551355,
+    "ast_hash": "a986f6e451d07ec8dbb30103af65ec9c",
+    "semantic_hash": ""
+  },
+  "kanban/completed/gs_01_f5k-snapshot-result-parity.md": {
+    "mtime": 1790823284.346348,
+    "seen": 1790991586.2555168,
+    "ast_hash": "1f1d4b937bb4612d4d21425184b38a6d",
+    "semantic_hash": ""
+  },
+  "kanban/completed/gs_02_complete-result-oracles.md": {
+    "mtime": 1790825432.151224,
+    "seen": 1790991586.2555175,
+    "ast_hash": "c90dd23603ec4cb3e4676c3fd18c1378",
+    "semantic_hash": ""
+  },
+  "kanban/completed/gs_03_exact-divergence-contracts.md": {
+    "mtime": 1790883831.2397351,
+    "seen": 1790991586.2555187,
+    "ast_hash": "f49575132b04b948a187159ecb66c704",
+    "semantic_hash": ""
+  },
+  "kanban/completed/gs_04_executable-corpus-manifest.md": {
+    "mtime": 1790890689.9018993,
+    "seen": 1790991586.2555196,
+    "ast_hash": "60803e9da0e7d83a2be6eda112c18e22",
+    "semantic_hash": ""
+  },
+  "kanban/completed/gs_05_ci-coverage-contract.md": {
+    "mtime": 1790989187.2702112,
+    "seen": 1790991586.2555206,
+    "ast_hash": "737d3212a2ad05b758dcce87cd8068e0",
+    "semantic_hash": ""
+  },
+  "kanban/completed/gs_10_teams-grain-parallel-comparison.md": {
+    "mtime": 1790991569.380807,
+    "seen": 1790991586.255521,
+    "ast_hash": "be38a523436d17cc5f014d9490a07ab6",
+    "semantic_hash": ""
+  },
+  "kanban/completed/turn-around-window-score-validation.md": {
+    "mtime": 1790746496.4889324,
+    "seen": 1790991586.2562988,
+    "ast_hash": "063b0a7cb3912fba9a45f9cf2ad0e772",
+    "semantic_hash": ""
+  },
+  "kanban/completed/ui_competition-roster-read.md": {
+    "mtime": 1790895589.7447639,
+    "seen": 1790991586.2562995,
+    "ast_hash": "51aa475e4dca1d0ee78b4540c48b8d7f",
+    "semantic_hash": ""
+  },
+  "kanban/completed/ui_cors-for-soarscoreui-spa.md": {
+    "mtime": 1790895605.0430067,
+    "seen": 1790991586.2563002,
+    "ast_hash": "4dafab4d5e9f90e0e5036e951bc55a95",
+    "semantic_hash": ""
+  },
+  "kanban/completed/ui_link-sign-in-empty-body.md": {
+    "mtime": 1790895597.0538797,
+    "seen": 1790991586.2563007,
+    "ast_hash": "903601a8e069b0e7fad4c237e514604d",
+    "semantic_hash": ""
+  },
+  "kanban/completed/ui_production-oidc-sign-in.md": {
+    "mtime": 1790895616.339186,
+    "seen": 1790991586.2563016,
+    "ast_hash": "7c93b949e0a531f2f36add39ee384297",
+    "semantic_hash": ""
+  },
+  "kanban/completed/ui_typed-openapi-responses.md": {
+    "mtime": 1790895577.9315765,
+    "seen": 1790991586.256302,
+    "ast_hash": "d7db7fc89f45d019746ebd5c980817d2",
     "semantic_hash": ""
   }
 }
