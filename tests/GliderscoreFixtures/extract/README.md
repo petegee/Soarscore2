@@ -203,9 +203,12 @@ Access/Jet nomenclature: `Boolean`, `Byte`, `Integer`, `Long`, `Currency`,
 ## Validation
 
 `validate.py` checks a *curated* fixture directory (the JSON files beside
-`extract/`) against the story's schema-v1 rules. It is stdlib-only, run by hand,
-offline — same developer-tool status as `extract.py`; nothing in the build or CI
-invokes it.
+`extract/`) against the story's schema-v1 rules. It is stdlib-only, offline —
+same developer-tool status as `extract.py`; nothing in product builds invokes
+it. CI runs it as an offline gate over committed JSON only
+(`validate.py --index` for the registry/fixture/scenario contract, beside
+`corpus.py regen --check`): no extraction, no Jet/SQL Server archives, no live
+services.
 
 ```sh
 python3 validate.py <fixture-dir> [--index PATH]
@@ -328,8 +331,8 @@ entry/cell counts, every seed file under
 `tools/Soarscore.SeedData/json/`). Hand prose outside the
 `corpus-generated` markers is untouched; expected VALUES keep their one
 authoritative location each (the generator copies counts and shapes only).
-`--check` exits 1 with a diff on any drift (the CI-ready gate — GS 05 wires
-it in). `--self-test` proves byte-deterministic regen and drift detection
+`--check` exits 1 with a diff on any drift (the CI gate, wired in by GS 05).
+`--self-test` proves byte-deterministic regen and drift detection
 on a throwaway miniature corpus.
 
 Exit code 0 on pass, 1 on any failure; warnings go to stderr and do not fail the
@@ -457,7 +460,7 @@ Drop the filter to run the rest of the acceptance suite alongside.
    **Refresh the generated summaries** from `tests/GliderscoreFixtures` with
    `python3 extract/corpus.py regen` (hand prose is untouched; only the
    `corpus-generated` blocks move) and keep `regen --check` green — GS 05
-   wires that check into CI.
+   wired that check plus `validate.py --index` into CI, so drift reds the build.
 4. **Replay.** Any mismatch prints one diff table (pilot × round × grain,
    ours / expected / delta).
 5. **Triage** every difference: *importer/authoring bug* · *our engine

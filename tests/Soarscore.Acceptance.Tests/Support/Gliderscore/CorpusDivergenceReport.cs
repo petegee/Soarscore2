@@ -5,6 +5,14 @@
 // ledger. Generated output under TestResults/ — never a docs file, never a
 // status document (board rule 7); the write is best-effort because report
 // generation must never fail the run it summarises.
+//
+// GS 05 — the header now pins the run identity (store + ledger mode) and the
+// corpus snapshot (commit + registry active/skipped sets), and the tail names
+// the fixtures with no ledgered divergences and the skipped fixtures, so the
+// report distinguishes compared fixtures from never-compared ones. Compared-
+// cell totals are referenced (the generated index.md block), never copied.
+// Ledger visibility only: per-scenario outcomes live in the TRX, and a red
+// run claims no coverage from this file.
 
 using Reqnroll;
 
@@ -16,6 +24,7 @@ public static class CorpusDivergenceReport
     {
         var corpus = FixtureLoader.ResolveCorpusDirectory();
         var mode = GsLedgerModeReader.FromEnvironment();
+        var store = Environment.GetEnvironmentVariable("SOARSCORE_TEST_STORE") ?? "postgres";
         var invariant = System.Globalization.CultureInfo.InvariantCulture;
 
         var lines = new List<string>
@@ -23,7 +32,15 @@ public static class CorpusDivergenceReport
             "# SoarScore ↔ GliderScore divergence report",
             "",
             $"Generated {DateTime.UtcNow:yyyy-MM-dd HH:mm}UTC by the @gliderscore acceptance run — "
-            + $"{GsLedgerModeReader.EnvironmentVariableName}={mode.ToString().ToLowerInvariant()}.",
+            + $"SOARSCORE_TEST_STORE={store}, {GsLedgerModeReader.EnvironmentVariableName}={mode.ToString().ToLowerInvariant()}.",
+            "",
+            SnapshotIdentityLine(corpus),
+            "",
+            "Ledger visibility only: this file lists committed ledger entries, never the run's verdict. "
+            + "Which assertions ran, passed, failed or skipped lives in the test results (one TRX per backend "
+            + "in CI); a run that did not finish green claims no coverage from this file. Unsupported "
+            + "comparisons (grains the harness never runs) appear below as documentary entries; skipped "
+            + "fixtures are listed at the end and are never compared.",
             "",
             "Every ledgered, triaged difference between SoarScore and GliderScore across the corpus. "
             + "`pending` entries are actionable debt (strict mode fails them); `permanent` entries are decided "
@@ -139,6 +156,49 @@ public static class CorpusDivergenceReport
             $"Totals: parity {fixtureEntryTotal} entr"
             + (fixtureEntryTotal == 1 ? "y" : "ies") + $", parallel-run {pairEntryTotal} entr"
             + (pairEntryTotal == 1 ? "y" : "ies") + ".");
+        lines.Add("");
+
+        // GS 05 — compared vs never-compared, explicitly: fixtures with an
+        // empty ledger compare exact on every grain when their scenarios pass
+        // (TRX), while skipped registry fixtures never replay at all.
+        if (CorpusReplayRegistry.RegistryGoverns)
+        {
+            var exactSlugs = new List<string>();
+
+            foreach (var slug in FixtureLoader.ActiveSlugs())
+            {
+                if (!Directory.Exists(Path.Combine(corpus, slug)))
+                {
+                    continue;
+                }
+
+                if (FixtureLoader.Load(slug).Divergences.Count == 0)
+                {
+                    exactSlugs.Add(slug);
+                }
+            }
+
+            lines.Add("## Fixtures with no ledgered divergences");
+            lines.Add("");
+            lines.Add(exactSlugs.Count == 0
+                ? "None — every active fixture carries ledgered entries above."
+                : string.Join(", ", exactSlugs)
+                    + " — exact on every compared grain when their scenarios pass (see the TRX).");
+            lines.Add("");
+
+            var skipped = CorpusReplayRegistry.ManifestEntries()
+                .Where(e => e.Status == "skipped")
+                .Select(e => e.Slug)
+                .ToList();
+
+            lines.Add("## Skipped fixtures (never compared)");
+            lines.Add("");
+            lines.Add(skipped.Count == 0
+                ? "None."
+                : string.Join(", ", skipped)
+                    + " — skip-listed in index.md; no replay runs and no comparison is claimed.");
+            lines.Add("");
+        }
 
         var path = PathFor();
 
@@ -146,6 +206,37 @@ public static class CorpusDivergenceReport
         File.WriteAllText(path, string.Join(Environment.NewLine, lines) + Environment.NewLine);
 
         return path;
+    }
+
+    /// <summary>GS 05 — the corpus snapshot identity: which commit and which
+    /// registry set this run's ledgers were read from. Compared-cell totals
+    /// are referenced (the generated index.md block), never copied, so this
+    /// line cannot drift from the summaries `corpus.py regen --check` gates.
+    /// Best-effort like the rest of the report: the hook swallows failures.
+    /// </summary>
+    private static string SnapshotIdentityLine(string corpus)
+    {
+        var sha = Environment.GetEnvironmentVariable("GITHUB_SHA");
+        var commit = string.IsNullOrWhiteSpace(sha)
+            ? "working tree (no GITHUB_SHA)"
+            : $"commit {sha[..Math.Min(12, sha.Length)]}";
+
+        if (!CorpusReplayRegistry.RegistryGoverns)
+        {
+            return $"Corpus snapshot: {commit}; corpus-registry.json absent (pre-registry checkout) — "
+                + "the index alone governs the fixture set.";
+        }
+
+        var manifest = CorpusReplayRegistry.ManifestEntries();
+        var active = manifest.Where(e => e.Status == "active").Select(e => e.Slug).ToList();
+        var skipped = manifest.Where(e => e.Status == "skipped").Select(e => e.Slug).ToList();
+
+        return $"Corpus snapshot: {commit}; corpus-registry.json schema v1 — "
+            + $"{active.Count} active ({string.Join(", ", active)}), "
+            + $"{skipped.Count} skipped ({string.Join(", ", skipped)}). "
+            + "Compared-cell totals per fixture: tests/GliderscoreFixtures/index.md "
+            + "(generated oracle-coverage block, `corpus.py regen --check` gated); "
+            + "seed coverage: tests/GliderscoreFixtures/parallel-run-mapping.md.";
     }
 
     /// <summary>gs_03 — the structured kind without throwing: the report is

@@ -41,9 +41,123 @@ jobs:
       - name: Test
         run: dotnet test Soarscore.sln --configuration Release --no-build
 
+  # GS 05 — the GliderScore corpus contract, offline: registry schema and
+  # index agreement, fixture contracts, scenario coverage (validate.py) and
+  # the generated coverage summaries (corpus.py regen --check), plus the
+  # contract unit tests that need no store — CorpusCoverageTests (every
+  # active fixture / parallel-run mode has its executable scenario) and the
+  # comparator negative checks (ExactDivergenceContractTests,
+  # CompleteResultOracleTests). Stdlib-only Python over committed JSON;
+  # no extraction/curation, no Jet/SQL Server archives, no live services.
+  gs-corpus-contract:
+    name: GliderScore corpus contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Soarscore.sln
+
+      - name: Build
+        run: dotnet build Soarscore.sln --configuration Release --no-restore
+
+      - name: Validate registry, fixture contracts and scenario coverage
+        run: python3 tests/GliderscoreFixtures/extract/validate.py --index tests/GliderscoreFixtures/index.md
+
+      - name: Generated-summary drift check
+        run: python3 tests/GliderscoreFixtures/extract/corpus.py regen --check
+
+      - name: Corpus-contract unit tests
+        run: dotnet test tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~CorpusCoverageTests|FullyQualifiedName~ExactDivergenceContractTests|FullyQualifiedName~CompleteResultOracleTests"
+
+  # GS 05 — explicit per-backend strict-mode GliderScore checks. Only the
+  # @gliderscore scenarios run here (Category=gliderscore), so unrelated
+  # solution tests are not duplicated; the build-and-test job above retains
+  # the full suite. Each job replays the whole corpus in strict mode against
+  # its disposable store (a sqlite temp file / a Testcontainers PostgreSQL —
+  # committed fixtures only) and uploads its TRX plus the run's divergence
+  # report even on failure (if: always). The gs-* jobs wait for the contract
+  # above, so a known-bad corpus never pays for replay.
+  gs-sqlite:
+    name: GliderScore strict (sqlite)
+    needs: gs-corpus-contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Soarscore.sln
+
+      - name: Build
+        run: dotnet build Soarscore.sln --configuration Release --no-restore
+
+      - name: Strict GliderScore replay (sqlite)
+        env:
+          SOARSCORE_TEST_STORE: sqlite
+          SOARSCORE_GS_LEDGER_MODE: strict
+        run: dotnet test tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj --configuration Release --no-build --filter "Category=gliderscore" --logger "trx;LogFileName=gs-sqlite.trx" --results-directory TestResults/gs-sqlite
+
+      - name: Upload per-backend results and divergence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gs-results-sqlite
+          path: |
+            TestResults/gs-sqlite/
+            TestResults/gs-divergences.md
+
+  gs-postgres:
+    name: GliderScore strict (postgres)
+    needs: gs-corpus-contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Soarscore.sln
+
+      - name: Build
+        run: dotnet build Soarscore.sln --configuration Release --no-restore
+
+      - name: Strict GliderScore replay (postgres)
+        env:
+          SOARSCORE_TEST_STORE: postgres
+          SOARSCORE_GS_LEDGER_MODE: strict
+        run: dotnet test tests/Soarscore.Acceptance.Tests/Soarscore.Acceptance.Tests.csproj --configuration Release --no-build --filter "Category=gliderscore" --logger "trx;LogFileName=gs-postgres.trx" --results-directory TestResults/gs-postgres
+
+      - name: Upload per-backend results and divergence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gs-results-postgres
+          path: |
+            TestResults/gs-postgres/
+            TestResults/gs-divergences.md
+
   deploy:
     name: Deploy app
-    needs: build-and-test
+    needs: [build-and-test, gs-sqlite, gs-postgres]
     if: github.event_name == 'push'    # never deploy from pull_request runs
     runs-on: ubuntu-latest
     concurrency: deploy-group    # optional: ensure only one action runs at a time

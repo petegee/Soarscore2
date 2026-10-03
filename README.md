@@ -72,7 +72,12 @@ every supported backend: a real PostgreSQL via Testcontainers (tagged
 `Category=Storage`) and a Fisher/SQLite temp file (untagged, in the fast loop).
 Acceptance tests run against one store per run, selected by
 `SOARSCORE_TEST_STORE` (`postgres`, the default, or `sqlite`) — proving a
-backend means running the suite once per store.
+backend means running the suite once per store. CI enforces this for the
+GliderScore corpus: `gs-sqlite` and `gs-postgres` replay every fixture in
+strict mode (`SOARSCORE_GS_LEDGER_MODE=strict`) and upload each backend's
+results plus its divergence report, gated behind the offline corpus-contract
+checks (`validate.py --index`, `corpus.py regen --check`, coverage and
+comparator contract tests) — see `.github/workflows/build-and-test.yml`.
 
 ## Running
 

@@ -103,7 +103,9 @@ and no existing real data that needs to be preserved, or migrated.
   feature has a real user-facing workflow to cover, not an optional extra.
   `tests/Soarscore.Acceptance.Tests` runs against one store per run, selected by
   `SOARSCORE_TEST_STORE` (`postgres`, the default, or `sqlite`) — so proving a
-  backend means running it twice, once per store.
+  backend means running it twice, once per store. CI holds this for the
+  GliderScore corpus: strict-mode replay on both stores plus the offline
+  corpus-contract gates, every run.
 - During planning, identify where **property-based testing** (CsCheck) will
   add value and be appropriate — a genuine invariant, algorithm, or class of
   input where example-based tests would leave gaps (e.g. draw fairness, score
