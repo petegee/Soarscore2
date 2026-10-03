@@ -100,6 +100,7 @@ public static class CommandPolicyTable
         [typeof(GetDrawMatrix)] = new AuthenticatedPolicy(),
         [typeof(GetTeamRosters)] = new AuthenticatedPolicy(),
         [typeof(FindEntries)] = new AuthenticatedPolicy(),
+        [typeof(GetEntry)] = new AuthenticatedPolicy(),
         // Security review 2026-09-16, D4 deviation: the roster carries every
         // pilot's contact details and roles — organiser-only.
         [typeof(FindPeople)] = new OrganiserPolicy(),

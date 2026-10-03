@@ -172,6 +172,7 @@ public static class Composition
         builder.Services.AddScoped<ICommandHandler<AnnulEntry, EntryId>, AnnulEntryHandler>();
         builder.Services.AddScoped<ICommandHandler<RecordEntryPenalty, EntryId>, RecordEntryPenaltyHandler>();
         builder.Services.AddScoped<IQueryHandler<FindEntries, IReadOnlyList<EntrySummary>>, FindEntriesHandler>();
+        builder.Services.AddScoped<IQueryHandler<GetEntry, EntryView>, GetEntryHandler>();
 
         builder.Services.AddScoped<IQueryHandler<GetTaskRoundRecording, TaskRoundRecordingView>, GetTaskRoundRecordingHandler>();
         builder.Services.AddScoped<IQueryHandler<ScoreTaskRound, IReadOnlyList<GroupScoreView>>, ScoreTaskRoundHandler>();

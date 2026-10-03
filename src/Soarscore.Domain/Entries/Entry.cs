@@ -32,9 +32,29 @@ using Soarscore.Domain.Scoring;
 
 namespace Soarscore.Domain.Entries;
 
-public readonly record struct EntryId(Guid Value)
+/// <summary>
+/// <see cref="IParsable{TSelf}"/> so ASP.NET's Minimal API parameter binding
+/// (<c>[AsParameters]</c> query records, e.g. GetEntry) can bind this
+/// straight from a query-string value — no Api-layer converter needed.
+/// Mirrors People/Person.cs's PersonId.
+/// </summary>
+public readonly record struct EntryId(Guid Value) : IParsable<EntryId>
 {
     public static EntryId New() => new(Guid.CreateVersion7());
+
+    public static EntryId Parse(string s, IFormatProvider? provider) => new(Guid.Parse(s, provider));
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out EntryId result)
+    {
+        if (Guid.TryParse(s, provider, out var value))
+        {
+            result = new EntryId(value);
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
 
     public override string ToString() => Value.ToString();
 }

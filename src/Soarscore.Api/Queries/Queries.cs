@@ -28,6 +28,7 @@ public static class Queries
         app.MapQuery<GetCompetitionRoster, CompetitionRosterView>("/competition-roster");
 
         app.MapQuery<FindEntries, IReadOnlyList<EntrySummary>>("/entries");
+        app.MapQuery<GetEntry, EntryView>("/entry");
 
         app.MapQuery<GetTaskRoundRecording, TaskRoundRecordingView>("/task-round-recording");
 
