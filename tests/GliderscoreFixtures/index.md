@@ -219,7 +219,7 @@ no fixture's coverage changed, only where each cell is owned:
 | fixture | oracle | window | archive rows | compared cells | exclusions | drops (unit) | penalties | seed witnesses |
 |---|---|---|---|---|---|---|---|---|
 | ales-sample-comp | reconstructed-ladder (reconstructed) | R1–R3, finalised-full-including-unflown-placeholders | 30 | 30 | none | 0 (round, proven empty) | 0 | 80-nz-m-ales200: ledger 3 entries/3 cells |
-| f3j-international | gs-report-transcript (external) | R1–R16, finalised-full | 485 | 485 | ledger 2 (1 normalised, 1 raw); parallel-run excluded 1 cell | 1 (task, 30/30 pilots) | 0 | 50-f3j: ledger 10 entries/283 cells, 1 excluded |
+| f3j-international | gs-report-transcript (external) | R1–R16, finalised-full | 485 | 485 | ledger 2 (1 normalised, 1 raw); parallel-run excluded 1 cell | 1 (task, 30/30 pilots) | 0 | 50-f3j: ledger 18 entries/291 cells, 1 excluded |
 | f3j-international-flyoff | gs-report-transcript (external) | R1–R4, finalised-full | 28 | 28 | none | 0 (round, proven empty) | 0 | parity only |
 | f3k-sample-comp | gs-report-transcript (external) | R1–R9, finalised-full-including-unflown-placeholders | 90 | 90 | ledger 1 (1 team) | 1 (task, 10/10 pilots) | pilot 42:−100, pilot 56:−200, pilot 65:−100 | parity only |
 | jerilderie-2010 | reconstructed-ladder (reconstructed) | R1–R14, finalised-full | 882 | 882 | ledger 1 (1 team) | 2 (task, 63/63 pilots) | pilot 2:−100 | parity only |
@@ -231,7 +231,7 @@ no fixture's coverage changed, only where each cell is owned:
 | f5k-ni-round-2 | server-persisted-progressive (external) | R1–R6 of drawn R1–R10, finalised-snapshot-of-scored-window | 55 | 35 | excludedRounds=[7, 8, 9, 10] (20 cells uncompared) | 1 (round, 5/5 pilots) | 0 | parity only |
 | f3b-international | none (skipped) | — | n/a (no directory) | n/a | n/a | n/a | n/a | skipped |
 
-Corpus: 12 competitions (11 active, 1 skipped); 2807 archive rows; 2787 compared cells; 20 excluded-round cells uncompared; 29 ledgered divergence entries; 3 seed-witness pairs (3 ledgers landed, 434 structured witness cells); oracles 4 external / 7 reconstructed; team ladders 1.
+Corpus: 12 competitions (11 active, 1 skipped); 2807 archive rows; 2787 compared cells; 20 excluded-round cells uncompared; 29 ledgered divergence entries; 3 seed-witness pairs (3 ledgers landed, 442 structured witness cells); oracles 4 external / 7 reconstructed; team ladders 1.
 <!-- corpus-generated:end:oracle-coverage -->
 
 Pilot 88 (f5k, registered never-flew) is declared zero-only unranked and

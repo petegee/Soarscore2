@@ -42,11 +42,55 @@
 //     re-authoring the ledger beside a re-triage, never re-authoring the seed
 //     to fit.
 //
-// Out of scope by the three-grain contract (and noted here so the absence is
-// deliberate, not forgotten): the parity harness's conservation self-check and
-// team grains. The parallel-run claim is about the score papers and placings
-// against GS's oracle; conservation is a parity-path integrity check over our
-// own data, and ales's UseTeams=false leaves no team grain to run.
+// Out of scope by the four-grain contract (and noted here so the absence is
+// deliberate, not forgotten): the parity harness's conservation self-check.
+// Conservation is a parity-path integrity check over our own data.
+//
+// The teams grain (gs_10_teams-grain-parallel-comparison.md) runs under the
+// parity path's ONE overlap predicate (Comparator.TeamGrainOverlap, shared
+// verbatim, never redefined): UseTeams=true with the MVP's own method
+// (NbrForTeamScore == 3) and populated teams. Where the gate stays shut the
+// grain contributes nothing: UseTeams=false means GS computes no team
+// standings either (the ales precedent); NbrForTeamScore≠3 or no populated
+// teams means a different (or absent) GS method that is never emulated (the
+// T1 discipline; christchurch carries both arms shut). An applicable pair
+// without expected-teams.json throws before anything is compared (the ladder
+// grain's guard discipline): a curation bug, never a skip.
+//
+// The grain compares PRODUCTS, not derivations: the seed-run's derived team
+// standings (GET /competition-team-result, a pure read-model over the same
+// store state the individual grains read) against the GS team ladder
+// (expected-teams.json). Per oracle standing: the total exact-decimal, the
+// place against the rank string's numeric part ('=' trimmed), and the counted
+// pilots as a SET (GS's trim order is a display artefact, never compared; an
+// unmapped contributor is its own mismatch). The universe (derived count vs
+// oracle count, every derived team mapping to an oracle standing) is pinned
+// too. Never compared: counted-pilot order, display order inside a shared
+// place, GS's overlay keys (SumOfIndividualRankings / HighestTeamPilotPlacing
+// / TeamRawScore — not carried by the oracle), and the engine-internal MVP
+// derivation contract (the parity team grain's job). Place-group membership
+// needs no separate rows: groups are a function of per-team places over a
+// pinned universe, so equal places over equal populations ARE equal
+// membership — a team placed outside its oracle group always surfaces
+// through its own direct place row.
+//
+// Coordinate convention (no schema widening — the GS 03 check in the story:
+// the full (grain, round, group, pilot, GS, seed) identity already
+// distinguishes every asserted row): team-level rows carry
+// (round 0, group 0, pilotNo = GS team number); contributor-membership rows
+// carry (round 0, group = GS team number, pilotNo = contributor pilot
+// number) with 1 on the counting side and null on the other (the ranking
+// grain's '=n' membership-line precedent). Total and place rows share their
+// coordinates and are distinguished by their pinned values — team totals are
+// sums of three individual final aggregates (10^4 magnitudes on real
+// ladders) while places run 1..N, so one kind's row can never equal the
+// other's; entries stay one-per-(team, kind), fully enumerated.
+//
+// Every team-grain difference on the f3j-international pair is a CONSEQUENCE
+// of the already-triaged individual classes (the team method agrees on both
+// sides, parity-proven): kind 1, permanent, cited to the method agreement
+// plus the contributing member-cell classes. No independent team cause can
+// hide here.
 
 using Soarscore.Application;
 using Soarscore.Application.Queries.Scoring;
@@ -90,7 +134,9 @@ public sealed record ParallelRunReport(
     int NormalisedCellsCompared,
     int RankingPilotsCompared,
     int OracleCells,
-    int TriagedEntries)
+    int TriagedEntries,
+    int TeamStandingsCompared = 0,
+    int OracleTeamStandings = 0)
 {
     public bool Exact => Verdict == ParallelRunVerdict.Exact;
 
@@ -241,6 +287,13 @@ public static class ParallelRunComparator
             client, $"/competition-result?competitionRef={outcome.CompetitionId.Value}");
         Comparator.CompareRankingGrain(fixture, outcome, finalScores, rankingMismatches);
 
+        // The teams grain (see the file header): gated, oracle-guarded, read
+        // through the public team-result surface. Skipped pairs contribute
+        // nothing — an unrun comparison is explicit (both counters zero),
+        // never counted as parity.
+        var (teamsMismatches, teamStandingsCompared, oracleTeamStandings) =
+            await CompareTeamsGrainAsync(fixture, outcome, competition, client);
+
         // Coverage, same discipline as parity: an oracle cell never compared is
         // itself a computed difference (a slot that failed to open must not
         // silently shrink the difference set toward the triaged set).
@@ -274,7 +327,7 @@ public static class ParallelRunComparator
             comparableUniverse, comparedNormalised, "normalised", normalisedMismatches);
 
         // The computed set, ledger-shaped and minus nothing.
-        var computed = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).ToList();
+        var computed = rawMismatches.Concat(normalisedMismatches).Concat(rankingMismatches).Concat(teamsMismatches).ToList();
 
         // gs_03 — structural validation before matching: unknown disposition
         // tokens, cell-less entries and cells outside their entry's scope
@@ -310,7 +363,9 @@ public static class ParallelRunComparator
             NormalisedCellsCompared: comparedNormalised.Count,
             RankingPilotsCompared: fixture.ExpectedResult.Ranks.Length,
             OracleCells: fixture.ExpectedScores.Scores.Count,
-            TriagedEntries: ledger.TriagedDifferences.Count);
+            TriagedEntries: ledger.TriagedDifferences.Count,
+            TeamStandingsCompared: teamStandingsCompared,
+            OracleTeamStandings: oracleTeamStandings);
     }
 
     /// <summary>
@@ -401,6 +456,215 @@ public static class ParallelRunComparator
                 }
             }
         }
+    }
+
+    // -------------------------------------------------------- teams grain
+
+    /// <summary>
+    /// gs_10 — the gated teams grain (see the file header for the contract).
+    /// The gate is the parity path's ONE overlap predicate
+    /// (<see cref="Comparator.TeamGrainOverlap"/>, shared verbatim): where it
+    /// stays shut the grain contributes nothing (both counters zero — an
+    /// unrun comparison is explicit, never counted as parity). Where it opens
+    /// the GS team-ladder oracle is REQUIRED (the ladder grain's guard):
+    /// a team-bearing overlap pair without one throws, never skips.
+    ///
+    /// Both sides are read through public surfaces with the shared fixture
+    /// identity mapping (the ladder grain's bridges): the seed-run's derived
+    /// standings from GET /competition-team-result (a pure read-model over
+    /// the same store state the individual grains read) keyed back to GS team
+    /// numbers through the replay's "Team {n}" names, contributors back to
+    /// pilot numbers through the outcome's competitor bridge. The two sides'
+    /// methods must actually overlap — a null derived product or a method /
+    /// source other than the MVP's bestThreeScoreSum over
+    /// competitionFinalAggregate contributes one run-broken row, never
+    /// silent (a defect, never a triaged difference).
+    /// </summary>
+    /// <returns>The ledger-shaped rows, how many oracle standings were
+    /// compared through to completion, and the oracle standing count.</returns>
+    private static async Task<(IReadOnlyList<GrainMismatch> Mismatches, int Compared, int OracleCount)>
+        CompareTeamsGrainAsync(
+            GliderscoreFixture fixture,
+            ReplayOutcome outcome,
+            Competition competition,
+            HttpClient client)
+    {
+        if (!Comparator.TeamGrainOverlap(fixture))
+        {
+            return ([], 0, fixture.ExpectedTeams?.Standings.Count ?? 0);
+        }
+
+        if (fixture.ExpectedTeams is not { } oracle)
+        {
+            throw new InvalidOperationException(
+                $"Fixture '{fixture.Slug}': expected-teams.json is missing although the fixture opens the teams-grain gate "
+                + "(UseTeams=true, NbrForTeamScore == 3, populated teams) — the GS team-ladder oracle was never "
+                + "authored. A team-bearing overlap pair without one is a curation bug; author the ladder "
+                + "(grow-corpus-team-parity-fixtures.md WI-1C) rather than skip the comparison.");
+        }
+
+        var mismatches = new List<GrainMismatch>();
+        var pilotByCompetitor = outcome.CompetitorByPilotNo.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+        var derived = (await Comparator.GetAsync<TeamStandingsView>(
+                client, $"/competition-team-result?competitionRef={outcome.CompetitionId.Value}"))
+            .Derived;
+
+        if (derived is null
+            || derived.Method != TeamClassificationEngine.MethodBestThreeScoreSum
+            || derived.SourceClassification != TeamClassificationEngine.SourceCompetitionFinalAggregate)
+        {
+            mismatches.Add(new GrainMismatch(
+                "teams", 0, 0, 0, null, null,
+                derived is null
+                    ? "the derived team standings are null although the fixture opens the teams-grain gate "
+                        + "(UseTeams=true, NbrForTeamScore == 3, populated teams) and the replay mapped its teams."
+                    : $"the derived team classification is '{derived.Method}' over '{derived.SourceClassification}' "
+                        + $"but the gate overlaps only the MVP's '{TeamClassificationEngine.MethodBestThreeScoreSum}' over "
+                        + $"'{TeamClassificationEngine.SourceCompetitionFinalAggregate}' — the two sides' methods "
+                        + "do not overlap."));
+            return (mismatches, 0, oracle.Standings.Count);
+        }
+
+        var teamRefByNumber = new Dictionary<int, ScoringTeamId>();
+        var numberByTeamRef = new Dictionary<ScoringTeamId, int>();
+
+        foreach (var team in competition.ScoringTeams)
+        {
+            if (team.Name.StartsWith("Team ", StringComparison.Ordinal)
+                && int.TryParse(team.Name["Team ".Length..], out var number))
+            {
+                teamRefByNumber[number] = team.Id;
+                numberByTeamRef[team.Id] = number;
+            }
+        }
+
+        // Universe: the complete team population. The count row pins team 0
+        // (GS team numbers start at 1); extras/missing pin the side that
+        // exists, null on the other.
+        if (derived.Standings.Length != oracle.Standings.Count)
+        {
+            mismatches.Add(new GrainMismatch(
+                "teams", 0, 0, 0, derived.Standings.Length, oracle.Standings.Count,
+                $"team universe: the seed-run derived {derived.Standings.Length} standings but the GS ladder "
+                + $"carries {oracle.Standings.Count}."));
+        }
+
+        var oracleNumbers = oracle.Standings.Select(s => s.Team).ToHashSet();
+
+        foreach (var (teamRef, number) in numberByTeamRef)
+        {
+            if (!oracleNumbers.Contains(number))
+            {
+                var extra = derived.Standings.First(s => s.TeamRef == teamRef);
+                mismatches.Add(new GrainMismatch(
+                    "teams", number, 0, 0, extra.Total, null,
+                    $"team {number}: the seed-run derives a standing totalling {extra.Total} but the GS ladder "
+                    + "names no such team."));
+            }
+        }
+
+        var compared = 0;
+
+        foreach (var oracleStanding in oracle.Standings)
+        {
+            if (!teamRefByNumber.TryGetValue(oracleStanding.Team, out var teamRef))
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", oracleStanding.Team, 0, 0, null, oracleStanding.TeamScore,
+                    $"team {oracleStanding.Team}: the GS ladder totals {oracleStanding.TeamScore} but the replay "
+                    + "defined no such team."));
+                continue;
+            }
+
+            var standing = derived.Standings.FirstOrDefault(s => s.TeamRef == teamRef);
+
+            if (standing is null)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", oracleStanding.Team, 0, 0, null, oracleStanding.TeamScore,
+                    $"team {oracleStanding.Team}: the GS ladder totals {oracleStanding.TeamScore} but the seed-run "
+                    + "derived no standing."));
+                continue;
+            }
+
+            compared++;
+
+            if (standing.Total != oracleStanding.TeamScore)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", oracleStanding.Team, 0, 0, standing.Total, oracleStanding.TeamScore,
+                    $"team {oracleStanding.Team} total: seed-run {standing.Total} vs GS ladder "
+                    + $"{oracleStanding.TeamScore}."));
+            }
+
+            var place = int.Parse(
+                oracleStanding.Rank.TrimStart('='),
+                System.Globalization.CultureInfo.InvariantCulture);
+
+            if (standing.Placing != place)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", oracleStanding.Team, 0, 0, standing.Placing, place,
+                    $"team {oracleStanding.Team} place: seed-run {standing.Placing} vs GS ladder "
+                    + $"'{oracleStanding.Rank}'."));
+            }
+
+            // The counted pilots as a SET — GS's trim order is a display
+            // artefact, never compared (the ladder grain's discipline). One
+            // membership row per pilot in the symmetric difference, 1 on the
+            // counting side and null on the other (the ranking grain's '=n'
+            // membership-line precedent); the team number rides the group
+            // coordinate (see the file header).
+            var ourCounted = new List<long>();
+            var unmapped = new List<string>();
+
+            foreach (var contributor in standing.Contributors)
+            {
+                if (pilotByCompetitor.TryGetValue(contributor.CompetitorRef, out var pilotNo))
+                {
+                    ourCounted.Add(pilotNo);
+                }
+                else
+                {
+                    unmapped.Add(contributor.CompetitorRef.ToString());
+                }
+            }
+
+            if (unmapped.Count > 0)
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", oracleStanding.Team, 0, 0, null, null,
+                    $"team {oracleStanding.Team} contributors: seed-run contributor(s) "
+                    + $"[{string.Join(", ", unmapped)}] map to no replayed pilot — the GS ladder's counted pilots "
+                    + "cannot be compared."));
+                continue;
+            }
+
+            foreach (var pilot in ourCounted.Where(p => !oracleStanding.CountedPilots.Contains(p)).Order())
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", pilot, 0, oracleStanding.Team, 1, null,
+                    $"team {oracleStanding.Team} contributors: seed-run counts pilot {pilot} but the GS ladder "
+                    + "does not."));
+            }
+
+            foreach (var pilot in oracleStanding.CountedPilots.Where(p => !ourCounted.Contains(p)).Order())
+            {
+                mismatches.Add(new GrainMismatch(
+                    "teams", pilot, 0, oracleStanding.Team, null, 1,
+                    $"team {oracleStanding.Team} contributors: the GS ladder counts pilot {pilot} but the seed-run "
+                    + "does not."));
+            }
+        }
+
+        // Place-group membership rides the per-team place rows above (see
+        // the file header): groups are a function of places over the pinned
+        // universe above, so a team placed outside its oracle group always
+        // surfaces through its own direct place row. No separate rows, no
+        // double-report — and display order inside a shared place is carried
+        // by no row at all, by design.
+        return (mismatches, compared, oracle.Standings.Count);
     }
 
     // ---------------------------------------------------------- provenance

@@ -1,6 +1,6 @@
 # Story — Teams grain in the parallel-run comparison
 
-**Status:** Backlog · **Refined:** 2026-10-01
+**Status:** Completed (2026-10-03) · **Refined:** 2026-10-01
 **Sequence:** GS 10/13 · Milestone 3: targeted team witnesses
 **Dependencies:** GS 02 complete individual results; GS 03 exact difference
 contracts. Use GS 04 coverage reporting when landed.
@@ -45,13 +45,13 @@ These amendments take precedence:
 
 ## Acceptance criteria
 
-- [ ] All eight GS team identities and their available fields are compared.
-- [ ] Extra/missing teams and changed totals, places or contributors fail unless
+- [x] All eight GS team identities and their available fields are compared.
+- [x] Extra/missing teams and changed totals, places or contributors fail unless
   exactly covered by an evidence-backed difference expectation.
-- [ ] Shared places have the expected membership; display order is not a score.
-- [ ] Individual comparisons retain their independent assertions.
-- [ ] Empty/unsupported team scopes are explicit, never counted as parity.
-- [ ] Current measured results replace stale planning predictions in active
+- [x] Shared places have the expected membership; display order is not a score.
+- [x] Individual comparisons retain their independent assertions.
+- [x] Empty/unsupported team scopes are explicit, never counted as parity.
+- [x] Current measured results replace stale planning predictions in active
   coverage; strict GliderScore runs pass on both backends.
 
 ## Requirements and verification
@@ -443,3 +443,37 @@ ledgers otherwise unchanged.
 - **Regression proof:** the ales and christchurch pairs are the inert proofs
   (the grain skips both); the parity path is untouched; the full suite green
   on both stores is the discipline.
+
+## Completion (2026-10-03)
+
+Measured outcome (replaces the stale 2026-09-13 predictions per the contract
+amendments): all 8 f3j-international team totals split seed-minus-GS —
+T5 +25.2, T4 +5.3, T3 +32.0, T7 +10.9, T1 +91.1, T8 +148.7, T2 +108.2,
+T6 +74.5 — each decomposing exactly into its counted members' triaged
+aggregate deltas (R1 540 decay, −30 late-landing rows, rounding grid +
+cascade; no member exceeds a ledger-stated cause). Places agree 8/8 and
+counted sets agree 8/8 — no swaps, no contributor flips — so the grain adds
+exactly 8 `grain: "teams"` ledger entries (kind 1, permanent, cited;
+consequence-only, method agreement parity-proven). Ledger now 18 entries /
+291 structured witness cells; the stale 8-totals-plus-swaps prediction and
+the no-team-grain stance are retired in the ledger note, the comparator
+header and `parallel-run-mapping.md`.
+
+Proof, all local, strict mode throughout (strict is the default;
+`SOARSCORE_GS_LEDGER_MODE` unset): `validate.py --index` corpus PASS (11
+active, 1 skipped); `corpus.py regen --check` fresh; `Category=gliderscore`
+sqlite 18/18, postgres 18/18 via Testcontainers; full acceptance suite
+sqlite 217/217, postgres 217/217; `ExactDivergenceContractTests` 52/52
+(includes 16 new teams-grain/gate cases: set-equality, relocated/altered
+totals, field discrimination, contributor side-flip, extra/missing teams,
+place-group surfacing, empty-set explicitness, gate open + 5 shut arms);
+Domain 956/956, Application 473/473, Architecture 18/18 — the no-`src/`-change
+proof (`git diff` touches only `tests/`, `tests/GliderscoreFixtures/`,
+`kanban/`, `graphify-out/`).
+
+WI-4 done: mapping-table flip (f3j row folds the measured teams outcome;
+hawkes-bay row gains the `expected-teams.json`-or-guard-throws clause —
+gate verified shut there today: `NbrForTeamScore=3` but all `Team='0'`);
+backlog stub `christchurch-teams-method-split.md` (NbrForTeamScore≠3 method
+split); `deferred-decisions.md` T1 reopen note; christchurch ledger
+provenance-only note edit; `graphify update .` re-ran. Nothing committed.

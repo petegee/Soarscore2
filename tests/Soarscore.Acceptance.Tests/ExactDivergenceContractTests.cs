@@ -474,6 +474,210 @@ public sealed class ExactDivergenceContractTests
             "an unknown disposition token must fail rather than silently demote the entry");
     }
 
+    // ------------------------------------------------- parallel: teams grain
+
+    private static ParallelRunDifferenceEntry TeamsTotal(int team, decimal gs, decimal seed) =>
+        new(1, "teams", null, null, Pilot(team), $"synthetic team {team} total split", "synthetic citation",
+            "permanent", [new ParallelRunExpectedCell(0, 0, team, gs, seed)]);
+
+    private static ParallelRunDifferenceEntry TeamsPlace(int team, decimal gs, decimal seed) =>
+        new(1, "teams", null, null, Pilot(team), $"synthetic team {team} place split", "synthetic citation",
+            "permanent", [new ParallelRunExpectedCell(0, 0, team, gs, seed)]);
+
+    private static ParallelRunDifferenceEntry TeamsContributors(int team, params ParallelRunExpectedCell[] cells) =>
+        new(1, "teams", null, team, PilotStar(), $"synthetic team {team} contributor split", "synthetic citation",
+            "permanent", cells);
+
+    private static List<GrainMismatch> TeamsComputed() =>
+    [
+        new GrainMismatch("teams", 5, 0, 0, 44496.9m, 44471.7m, "team 5 total: seed-run 44496.9 vs GS ladder 44471.7."),
+        new GrainMismatch("teams", 4, 0, 0, 2, 3, "team 4 place: seed-run 2 vs GS ladder '3'."),
+        new GrainMismatch("teams", 17, 0, 5, 1, null, "team 5 contributors: seed-run counts pilot 17 but the GS ladder does not."),
+        new GrainMismatch("teams", 21, 0, 5, null, 1, "team 5 contributors: the GS ladder counts pilot 21 but the seed-run does not."),
+    ];
+
+    private static ParallelRunLedger TeamsLedger() => ParallelLedger(
+        TeamsTotal(5, 44471.7m, 44496.9m),
+        TeamsPlace(4, 3, 2),
+        TeamsContributors(5,
+            new ParallelRunExpectedCell(0, 5, 17, null, 1),
+            new ParallelRunExpectedCell(0, 5, 21, 1, null)));
+
+    [Fact]
+    public void TeamsDeclaredSet_MatchesExactly()
+    {
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            TeamsComputed(), TeamsLedger());
+
+        untriaged.Should().BeEmpty("every computed team row equals a declared cell");
+        missing.Should().BeEmpty("every declared team cell is witnessed");
+    }
+
+    [Theory]
+    [InlineData(6)]
+    [InlineData(1)]
+    public void TeamsRelocatedTotal_Fails_EvenWithSameValues(long otherTeam)
+    {
+        var computed = TeamsComputed();
+        computed[0] = computed[0] with { PilotNo = otherTeam };
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            computed, TeamsLedger());
+
+        untriaged.Should().ContainSingle("the moved total is outside the declared set")
+            .Which.PilotNo.Should().Be(otherTeam);
+        missing.Should().ContainSingle("the declared team-5 total no longer fires — stale in every mode");
+    }
+
+    [Fact]
+    public void TeamsAlteredTotal_Fails_AtTheSameKey()
+    {
+        var computed = TeamsComputed();
+        computed[0] = computed[0] with { Ours = 44497.0m };
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            computed, TeamsLedger());
+
+        untriaged.Should().ContainSingle("an unexpected total at the same team is untriaged");
+        missing.Should().ContainSingle("the declared total pin is now stale");
+    }
+
+    [Fact]
+    public void TeamsPlaceRow_IsNotCoveredByTheTotalEntry()
+    {
+        // Field discrimination: the total and place rows share their
+        // coordinates and are distinguished by their pinned values — a place
+        // row never matches a total entry (and vice versa).
+        var computed = TeamsComputed();
+        computed.RemoveAt(0);
+
+        var totalOnly = ParallelLedger(TeamsTotal(5, 44471.7m, 44496.9m));
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(computed, totalOnly);
+
+        untriaged.Should().HaveCount(3, "no total entry covers a place or contributor row");
+        missing.Should().ContainSingle("the declared total never fired");
+    }
+
+    [Fact]
+    public void TeamsContributorSideFlip_Fails_AtTheSameKey()
+    {
+        // The membership line pins null on the excluding side (the ranking
+        // '=n' precedent): a valued impostor at the same identity fails.
+        var computed = TeamsComputed();
+        computed[2] = computed[2] with { Expected = 1 };
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            computed, TeamsLedger());
+
+        untriaged.Should().ContainSingle("a valued line is not the declared null-side line");
+        missing.Should().ContainSingle("the declared null-side membership line never appeared");
+    }
+
+    [Fact]
+    public void TeamsExtraTeam_Fails_AsUntriaged()
+    {
+        var computed = TeamsComputed();
+        computed.Add(new GrainMismatch("teams", 9, 0, 0, 10000.0m, null,
+            "team 9: the seed-run derives a standing but the GS ladder names no such team."));
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            computed, TeamsLedger());
+
+        untriaged.Should().ContainSingle().Which.PilotNo.Should().Be(9);
+        missing.Should().BeEmpty("every declared team cell still fires");
+    }
+
+    [Fact]
+    public void TeamsMissingTeam_FailsMissing()
+    {
+        var ledger = ParallelLedger(
+            TeamsTotal(5, 44471.7m, 44496.9m),
+            new ParallelRunDifferenceEntry(
+                1, "teams", null, null, Pilot(9), "synthetic team 9 missing", "synthetic citation",
+                "permanent", [new ParallelRunExpectedCell(0, 0, 9, 37000.0m, null)]));
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            [new GrainMismatch("teams", 5, 0, 0, 44496.9m, 44471.7m, "team 5 total.")], ledger);
+
+        untriaged.Should().BeEmpty("nothing computed is outside the set");
+        missing.Should().ContainSingle("a missing team fails its stale expectation");
+    }
+
+    [Fact]
+    public void TeamsPlacedOutsideItsGroup_SurfacesThroughItsPlaceRow()
+    {
+        // Place-group membership needs no separate rows: a team placed
+        // outside its oracle '=n' group always surfaces through its own
+        // direct place row.
+        var ledger = ParallelLedger(TeamsPlace(6, 2, 2));
+        var computed = new List<GrainMismatch>
+        {
+            new("teams", 6, 0, 0, 3, 2, "team 6 place: seed-run 3 vs GS ladder '=2'."),
+        };
+
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(computed, ledger);
+
+        untriaged.Should().ContainSingle("the displaced team's place row is untriaged");
+        missing.Should().ContainSingle("the declared '=2' place pin never appeared");
+    }
+
+    [Fact]
+    public void TeamsEmptySet_MatchesEmptyLedger()
+    {
+        // An unrun comparison is explicit, never counted as parity: no rows
+        // against no entries is clean, and the gate tests below pin when the
+        // grain runs at all.
+        var (untriaged, missing) = ParallelRunComparator.MatchDifferenceSets(
+            [], ParallelLedger());
+
+        untriaged.Should().BeEmpty();
+        missing.Should().BeEmpty();
+    }
+
+    // ------------------------------------------------- parallel: gate predicate
+
+    [Fact]
+    public void TeamsGate_OpensForPopulatedNbr3Teams()
+    {
+        TeamsGate(F3JLike()).Should().BeTrue("f3j-international opens the grain");
+    }
+
+    [Theory]
+    [InlineData(false, 3, true, "ales: UseTeams=false computes no team standings on either side")]
+    [InlineData(true, 2, false, "christchurch: NbrForTeamScore=2 is never emulated")]
+    [InlineData(true, 2, true, "a populated NbrForTeamScore=2 fixture is still a method split")]
+    [InlineData(true, 3, false, "hawkes-bay: NbrForTeamScore=3 with no populated teams compares nothing")]
+    [InlineData(false, 3, false, "no teams anywhere runs nothing")]
+    public void TeamsGate_StaysShutOutsideTheOverlap(bool useTeams, int? nbr, bool populated, string because)
+    {
+        TeamsGate(TeamsFixture(useTeams, nbr, populated)).Should().BeFalse(because);
+    }
+
+    private static bool TeamsGate(GliderscoreFixture fixture) =>
+        Comparator.TeamGrainOverlap(fixture);
+
+    private static GliderscoreFixture F3JLike() => TeamsFixture(useTeams: true, nbrForTeamScore: 3, populated: true);
+
+    private static GliderscoreFixture TeamsFixture(bool useTeams, int? nbrForTeamScore, bool populated) => new(
+        Slug: "synthetic-teams-gate",
+        Directory: "",
+        Competition: new CompetitionFile(
+            new CompetitionIdentity(0, "synthetic", "F3J", "2026-01-01"),
+            new CompetitionScoring(1, 0, 0),
+            new FamilyRowsTable(),
+            Triage: new TriageTable(useTeams, null, nbrForTeamScore)),
+        Entries: new EntriesFile(
+            new CompPilotsTable(populated
+                ? [new CompPilotRow(1, 1, false), new CompPilotRow(2, 1, false), new CompPilotRow(3, 1, false)]
+                : []),
+            new PilotsTable([])),
+        ScoresRaw: new ScoresRawFile([]),
+        ExpectedScores: new ExpectedScoresFile(new Dictionary<string, ExpectedCell>()),
+        ExpectedResult: new ExpectedResultFile([]),
+        Divergences: [],
+        Definition: null!);
+
     // -------------------------------------------------------------- plumbing
 
     private static DivergenceEntry Numeric(string grain, int round, int group, long pilot, decimal ours, decimal expected) =>

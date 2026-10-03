@@ -23,7 +23,7 @@
       ],
       "sourceRef": "sources/gliderscore-example-comps-extract/ (shared extraction of record; DurTargetTimeByRound empty)",
       "oracleRef": "gs-report-transcript: expected-scores.json + expected-result.json (R1-R16 full) + expected-teams.json (8 teams)",
-      "comparison": { "grains": ["raw", "normalised", "ranking", "teamLadder"] },
+      "comparison": { "grains": ["raw", "normalised", "ranking", "teamLadder", "teams"] },
       "evidenceLinks": [
         "overall-results-transcript.csv",
         "team-results-transcript.csv",

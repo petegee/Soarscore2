@@ -100,7 +100,8 @@ public sealed class ParallelRunSteps
         report.TriagedSetMatches.Should().BeTrue(
             $"the parallel-run claim is 'the differences are exactly the triaged set'; "
             + $"compared raw {report.RawCellsCompared}/{report.OracleCells} oracle cells, normalised "
-            + $"{report.NormalisedCellsCompared}/{report.OracleCells}, ranking {report.RankingPilotsCompared} pilots."
+            + $"{report.NormalisedCellsCompared}/{report.OracleCells}, ranking {report.RankingPilotsCompared} pilots, "
+            + $"teams {report.TeamStandingsCompared}/{report.OracleTeamStandings} standings."
             + $"{Environment.NewLine}{report.Render()}");
 
         report.UntriagedDifferences.Should().BeEmpty(
@@ -250,6 +251,49 @@ public sealed class ParallelRunSteps
                 "every triaged per-pilot ranking entry must be witnessed — a triaged placing that fails to "
                 + "appear FAILS the scenario."
                 + $"{Environment.NewLine}{report.Render()}");
+    }
+
+    // gs_10_teams-grain-parallel-comparison.md — the teams-grain leg: every
+    // computed teams mismatch is covered by a triaged teams entry (identity
+    // AND both pinned values, per (team, kind)), every teams entry is
+    // witnessed, and the compared-count pin keeps a silently shrunk
+    // comparison from faking the match. No non-empty assertion: a fully
+    // equal grain is valid where the evidence supports it — the verdict step
+    // asserts the global set-equality, this step its teams-grain legs.
+    [Then(@"^the team standings match the GS team ladder exactly as the ledger triages$")]
+    public void ThenTheTeamStandingsMatchTheGsTeamLadderExactlyAsTheLedgerTriages()
+    {
+        var report = Report();
+        var ledger = Ledger();
+
+        var teamsComputed = report.ComputedDifferences
+            .Where(mismatch => mismatch.Grain == "teams")
+            .ToList();
+
+        var teamsEntries = ledger.TriagedDifferences
+            .Where(entry => entry.Grain == "teams")
+            .ToList();
+
+        teamsComputed
+            .Where(mismatch => !teamsEntries.Any(entry => entry.Covers(mismatch)))
+            .Should().BeEmpty(
+                "every computed teams mismatch must be covered by a triaged per-team entry — "
+                + "an uncovered team total, place or contributor is a re-triage or a kind-3 escalation, "
+                + "never a ledger edit."
+                + $"{Environment.NewLine}{report.Render()}");
+
+        teamsEntries
+            .Where(entry => !teamsComputed.Any(mismatch => entry.Covers(mismatch)))
+            .Should().BeEmpty(
+                "every triaged per-team entry must be witnessed — a triaged team total that fails to "
+                + "appear FAILS the scenario."
+                + $"{Environment.NewLine}{report.Render()}");
+
+        report.TeamStandingsCompared.Should().Be(report.OracleTeamStandings,
+            $"the teams grain must compare every GS team standing through to completion "
+            + $"(oracle carries {report.OracleTeamStandings}) — a short count is a skipped standing, "
+            + "never parity."
+            + $"{Environment.NewLine}{report.Render()}");
     }
 
     // f3j-international-parallel-run-retriage.md WI-2 item 2 — the count pins,

@@ -1664,8 +1664,13 @@ public static class Comparator
     /// own method (NbrForTeamScore == 3). A different NbrForTeamScore is a
     /// different method — T1-ledgered, never emulated — and for those
     /// fixtures neither team stage runs at all.
+    ///
+    /// Internal (not private): the parallel-run comparator reuses this ONE
+    /// predicate verbatim for its gated teams grain
+    /// (gs_10_teams-grain-parallel-comparison.md) — one overlap definition
+    /// across both harnesses, never two.
     /// </summary>
-    private static bool TeamGrainOverlap(GliderscoreFixture fixture) =>
+    internal static bool TeamGrainOverlap(GliderscoreFixture fixture) =>
         fixture.Competition.Triage?.UseTeams == true
         && fixture.Competition.Triage?.NbrForTeamScore == 3
         && fixture.Entries.CompPilots.Rows.Any(r => (r.Team ?? 0) > 0);

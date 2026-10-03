@@ -41,5 +41,6 @@ Feature: Parallel-running a GliderScore fixture under a seed competition class
     When the harness parallel-runs the GliderScore fixture "f3j-international" under the seed class "50-f3j"
     Then the parallel-run verdict is exactly the triaged differences
     And the final placings split from the GliderScore oracle exactly as the ledger triages
+    And the team standings match the GS team ladder exactly as the ledger triages
     And the witnessed split counts match the ledger's pins
     And every ledgered difference is a triaged rulebook-vs-local-practice difference with a citation

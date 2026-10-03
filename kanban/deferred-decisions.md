@@ -418,6 +418,13 @@ Deferred by `kanban/completed/task-round-lifecycle.md` (2026-08-18).
   Add them when a pair actually needs them, not before; the comparator was
   widened private→internal only (`Comparator.cs`), so this is a scope
   decision, not a structural limitation.
+  **Reopened 2026-10-03** (`kanban/completed/gs_10_teams-grain-parallel-comparison.md`):
+  the gated teams grain lands for exactly the pairs the parity
+  `TeamGrainOverlap` predicate opens with a team oracle present
+  (f3j-international: `UseTeams=true`, `NbrForTeamScore=3`, populated teams,
+  `expected-teams.json` present) — the pair this decision's own "when a pair
+  actually needs them" clause anticipates. The conservation grain stays out;
+  pairs where the gate stays shut (ales, christchurch) run unchanged.
 
 ## Teams
 

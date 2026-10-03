@@ -46,7 +46,7 @@
     "notes": [
       "The story's original guaranteed-divergence claim \u2014 GS's local Drop1AtRound=8 forcing a drop-policy split \u2014 stands WITHDRAWN: GS DropScoreOption=0, Drop1AtRound=8 (competition.json scoring) equals the seed's phases[0].drops[0] applyWhenRoundsCompletedAtLeast: 8, and F3J.3.1 a \u2014 'If more than seven qualification rounds are flown, then the lowest score will be discarded before determining the aggregate score' \u2014 makes 8 the rulebook threshold (16 scored rounds fire exactly one drop per pilot on both sides). The 20 ranking moves come from the score cells, not the drop policy; where the dropped cell sits differently on each side (pilot 12: R14 vs R1, pilot 25: R13 vs R1, pilot 26: R9 vs R14, pilot 54: R13 vs R7, pilot 2: R13 vs R16) that is a consequence of the cell differences below, never a policy difference.",
       "The \u221230 payload is not mapped \u2014 the offences differ (decision 3): all 11 FlightScoreDeduction=30 rows carry flight times 182\u2013596 s, inside the 600 s working time, so F3J.10.3's overfly offence (flying past the end of working time) cannot describe them; GS's durFlightPenalty=1 late-landing scheme (competition.json familyRows.Dur; provenance.json: '11 rows carry FlightScoreDeduction=30; Penalty is 0 everywhere') is a local GS construct the rulebook does not state. The harness captures nothing for the column under this seed \u2014 the capture gate reads the published definition (ReplayDriver.cs:1161-1168) and the seed declares no lateLandingDeduction metric \u2014 so the seed-run scores those rows +30 relative to GS. Triaged below, never reconciled.",
-      "Teams reach no persisted score: UseTeams=true with all 30 pilots assigned across 8 teams (sizes 4,3,4,4,4,3,4,4 \u2014 competition.json triageJustification.teams), but team standings are report-time aggregations of unchanged individual normalised scores, never an input to them; the parallel comparator's deliberate no-team-grain stance holds (the ales precedent).",
+      "Teams are compared at their own grain (gs_10_teams-grain-parallel-comparison.md retires the no-team-grain stance): the comparator's gated teams grain runs on this pair (UseTeams=true, NbrForTeamScore=3, 8 populated teams, expected-teams.json present), comparing each GS team standing's total, place and counted-pilot set plus the complete population against the seed-run's derived standings. Every team-grain difference is a consequence of the triaged individual classes (the team method agrees on both sides, parity-proven) \u2014 no independent team cause hides here. Counted-pilot order, display order inside shared places and GS's overlay keys are never compared (comparator header).",
       "GS re-rounds Score and RawScore to GroupScoreDecimals (1 dp, RoundOrTruncate=0 HalfUp) before comparing, then sorts Score DESC / RawScore DESC with ties displayed '=n' \u2014 the =n tie-display semantics vs the engine's exact-decimal ties. Inert on this pair: no aggregate ties exist on either side (every rank 1\u201330 is distinct on both sides), but the rounding grid's sub-0.1 shifts are exactly the kind of perturbation that could create or dissolve an '=n' display \u2014 a rounding-cascade disclosure, not a separate entry.",
       "Unexercised parameters: flyoffSize is defaulted (9) \u2014 the defaulted arm binds nothing (christchurch decision-8 precedent) and the fly-off never draws; carryPenalties is unbound (decision 6 \u2014 a Flag bind would widen the decimal-typed bind pipeline for a parameter that is never read: the fly-off phase never draws, so promotion's CarryPenalties never resolves; F3J states nothing about carry-over); flyoffMinRounds is bound (1, above) but never read. Unbound-but-never-read is safe: the engine resolves parameters per use, and phase 2's parameters are never reached.",
       "The R1 540 target is oracle-reconciled knowledge and is never bound under the seed (decision 4): the export carries no DurTargetTimeByRound rows at all (competition.json scheduleTables.DurTargetTimeByRound.rows is empty \u2014 ReplayDriver.cs:185-203) and 22 R1 flights over 540 s imply the target exactly (every decay witness solves T = (t + TS)/2 = 540); the fixture's RoundParameterBindings entry is parity-only and the parallel run refuses fixture round binds (ReplayDriver.cs:646-655), and the seed declares no targetTime parameter \u2014 nothing to bind. The decay difference is triaged below, never applied.",
@@ -2153,6 +2153,158 @@
           "pilotNo": 64,
           "gs": null,
           "seed": 24
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 5,
+      "difference": "Team-ladder split, team 5: seed-run 44496.9 vs GS 44471.7 (delta +25.2). Counted set agrees (62, 56, 21 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (1, no '=' on either side). Contributing member aggregates (seed minus GS): p62 +5.7 (R1G2 decay cell + 1 rounding-grid cell + cascade rescale; the decayed round drops, so little survives to the aggregate); p56 +21.3 (R1G1 decay + 6 grid cells + cascade); p21 -1.8 (R1G3 decay + 4 grid cells + cascade). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p62 +5.7 (R1G2 decay cell + 1 rounding-grid cell + cascade rescale; the decayed round drops, so little survives to the aggregate); p56 +21.3 (R1G1 decay + 6 grid cells + cascade); p21 -1.8 (R1G3 decay + 4 grid cells + cascade). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 5,
+          "gs": 44471.7,
+          "seed": 44496.9
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 4,
+      "difference": "Team-ladder split, team 4: seed-run 43418.9 vs GS 43413.6 (delta +5.3). Counted set agrees (47, 22, 11 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (2, no '=' on either side). Contributing member aggregates (seed minus GS): p47 +18.1 (R1G1 decay + 7 grid cells + cascade); p22 -12.0 (R1G2 decay + 7 grid cells + cascade); p11 -0.8 (rounding grid alone, 9 cells \u2014 no raw cell of his own). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p47 +18.1 (R1G1 decay + 7 grid cells + cascade); p22 -12.0 (R1G2 decay + 7 grid cells + cascade); p11 -0.8 (rounding grid alone, 9 cells \u2014 no raw cell of his own). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 4,
+          "gs": 43413.6,
+          "seed": 43418.9
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 3,
+      "difference": "Team-ladder split, team 3: seed-run 43261.1 vs GS 43229.1 (delta +32.0). Counted set agrees (26, 12, 28 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (3, no '=' on either side). Contributing member aggregates (seed minus GS): p26 +32.9 (R1G3 decay + 6 grid cells + cascade); p12 -0.8 (grid alone, 9 cells); p28 -0.1 (R1G2 decay + 6 grid cells + cascade). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p26 +32.9 (R1G3 decay + 6 grid cells + cascade); p12 -0.8 (grid alone, 9 cells); p28 -0.1 (R1G2 decay + 6 grid cells + cascade). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 3,
+          "gs": 43229.1,
+          "seed": 43261.1
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 7,
+      "difference": "Team-ladder split, team 7: seed-run 42681.5 vs GS 42670.6 (delta +10.9). Counted set agrees (49, 54, 46 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (4, no '=' on either side). Contributing member aggregates (seed minus GS): p49 -0.7 (R1G1 decay + 8 grid cells); p54 +12.4 (R1G3 decay + the R13G4 -30 row + 8 grid cells + cascade); p46 -0.8 (grid alone, 8 cells). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p49 -0.7 (R1G1 decay + 8 grid cells); p54 +12.4 (R1G3 decay + the R13G4 -30 row + 8 grid cells + cascade); p46 -0.8 (grid alone, 8 cells). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 7,
+          "gs": 42670.6,
+          "seed": 42681.5
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 1,
+      "difference": "Team-ladder split, team 1: seed-run 41285.5 vs GS 41194.4 (delta +91.1). Counted set agrees (30, 29, 42 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (5, no '=' on either side). Contributing member aggregates (seed minus GS): p30 +14.0 (R1G2 decay + 8 grid cells + cascade); p29 +2.6 (R1G1 decay + 9 grid cells + cascade); p42 +74.5 (R1G3 decay + the R13G1 -30 row + 7 grid cells + cascade). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p30 +14.0 (R1G2 decay + 8 grid cells + cascade); p29 +2.6 (R1G1 decay + 9 grid cells + cascade); p42 +74.5 (R1G3 decay + the R13G1 -30 row + 7 grid cells + cascade). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 1,
+          "gs": 41194.4,
+          "seed": 41285.5
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 8,
+      "difference": "Team-ladder split, team 8: seed-run 41276.3 vs GS 41127.6 (delta +148.7). Counted set agrees (13, 3, 2 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (6, no '=' on either side). Contributing member aggregates (seed minus GS): p13 +53.4 (R1G3 decay + 4 grid cells); p3 +9.5 (R1G2 decay + 10 grid cells + cascade); p2 +85.8 (two -30 rows R6G3/R10G3 + 5 grid cells + cascade). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p13 +53.4 (R1G3 decay + 4 grid cells); p3 +9.5 (R1G2 decay + 10 grid cells + cascade); p2 +85.8 (two -30 rows R6G3/R10G3 + 5 grid cells + cascade). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 8,
+          "gs": 41127.6,
+          "seed": 41276.3
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 2,
+      "difference": "Team-ladder split, team 2: seed-run 38176.8 vs GS 38068.6 (delta +108.2). Counted set agrees (32, 52, 44 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (7, no '=' on either side). Contributing member aggregates (seed minus GS): p32 -12.5 (R1G2 decay + 9 grid cells + cascade); p52 +22.0 (R1G3 decay + 7 grid cells + cascade); p44 +98.7 (R1G1 decay+deduction cell + the R14G3 -30 row + 6 grid cells + cascade). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p32 -12.5 (R1G2 decay + 9 grid cells + cascade); p52 +22.0 (R1G3 decay + 7 grid cells + cascade); p44 +98.7 (R1G1 decay+deduction cell + the R14G3 -30 row + 6 grid cells + cascade). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 2,
+          "gs": 38068.6,
+          "seed": 38176.8
+        }
+      ]
+    },
+    {
+      "triageKind": 1,
+      "grain": "teams",
+      "round": null,
+      "group": null,
+      "pilotNo": 6,
+      "difference": "Team-ladder split, team 6: seed-run 37168.8 vs GS 37094.3 (delta +74.5). Counted set agrees (43, 39, 7 on both sides \u2014 seed contributor order vs GS trim order, order never compared); place agrees (8, no '=' on either side). Contributing member aggregates (seed minus GS): p43 +15.2 (R1G3 decay + 6 grid cells + cascade); p39 +16.3 (R1G1 decay + 7 grid cells + cascade); p7 +43.0 (two -30 rows R5G4/R14G4 + 5 grid cells). Drop-round specifics sit below the comparator's grain on this pair \u2014 unwitnessed by the report, so undisclosed beyond the agreed drop policy (provenance note 1). No independent team cause exists on this pair.",
+      "citation": "Contributing member-cell classes: p43 +15.2 (R1G3 decay + 6 grid cells + cascade); p39 +16.3 (R1G1 decay + 7 grid cells + cascade); p7 +43.0 (two -30 rows R5G4/R14G4 + 5 grid cells). Method agreement (consequence-only basis): GS NbrForTeamScore=3 top-3-of-final-aggregate (competition.json triage; GetTeamScores Rpt_Results_TeamResults_MOD.vb:303-468 per the oracle's own notes) is exactly the MVP bestThreeScoreSum over competitionFinalAggregate (TeamClassification.cs:128,131) \u2014 parity-proven by the ladder grain on this very fixture (grow-corpus-team-parity-fixtures.md WI-1D). Local practice throughout: F3J's rulebook legislates no team-scoring method (docs/rules/f3j.md carries no team mandate), so no FAI clause is cited for team arithmetic. Triage kind 1 \u2014 local variation: correct on both sides.",
+      "disposition": "permanent",
+      "cells": [
+        {
+          "round": 0,
+          "group": 0,
+          "pilotNo": 6,
+          "gs": 37094.3,
+          "seed": 37168.8
         }
       ]
     }

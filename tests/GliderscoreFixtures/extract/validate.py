@@ -749,13 +749,18 @@ def check_registry_entry_refs(corpus_dir, seed_dir, slug, entry, errors):
         )
     comparison = entry.get("comparison") if isinstance(entry, dict) else None
     grains = comparison.get("grains") if isinstance(comparison, dict) else None
-    if isinstance(grains, list) and "teamLadder" in grains and not (
-        corpus_dir / slug / "expected-teams.json"
-    ).is_file():
+    # gs_10 — the parallel "teams" grain reads the same GS team-ladder oracle
+    # as the parity "teamLadder" grain, so both tokens require it.
+    team_grains = (
+        {g for g in grains if g in ("teamLadder", "teams")}
+        if isinstance(grains, list)
+        else set()
+    )
+    if team_grains and not (corpus_dir / slug / "expected-teams.json").is_file():
         fail(
             errors,
-            f"registry: fixture {slug!r}: field comparison.grains claims teamLadder "
-            f"but {slug}/expected-teams.json is absent (the ladder grain's oracle)",
+            f"registry: fixture {slug!r}: field comparison.grains claims "
+            f"{sorted(team_grains)} but {slug}/expected-teams.json is absent (the team grains' oracle)",
         )
 
 
